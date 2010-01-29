@@ -15,18 +15,108 @@
  */
 package com.android.tradefed.command;
 
+import com.android.ddmlib.AndroidDebugBridge;
+import com.android.ddmlib.DdmPreferences;
+import com.android.ddmlib.Log;
+import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.config.ConfigurationFactory;
+import com.android.tradefed.device.DeviceManager;
+import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.invoker.TestInvocation;
+import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.log.ILeveledLogOutput;
+
 /**
- * Placeholder command-line launcher for Trade Federation
+ * Command-line launcher for Trade Federation.
+ * <p/>
+ * Loads the test configuration based on command line arguments, connects to available device,
+ * and delegates off to {@link ITestInvocation} to perform the work of running of tests
  */
 public class Command {
+
+
+    // Package private constructor so this can be created by tests
+    Command() {
+    }
+
+    /**
+     * The main worker method that will parse the command line arguments, and invoke the test run.
+     * <p/>
+     * TODO: support "--help"
+     * @param args the command line arguments
+     */
+    void run(String[] args) {
+        try {
+            IConfiguration config = createConfiguration(args);
+            ILeveledLogOutput logger = config.getLogOutput();
+            Log.setLogOutput(logger);
+            DdmPreferences.setLogLevel(logger.getLogLevel());
+            ITestInvocation instance = createRunInstance();
+            IDeviceManager manager = getDeviceManager();
+            ITestDevice device = manager.allocateDevice();
+            instance.invoke(device, config);
+        } catch (DeviceNotAvailableException e) {
+            System.out.println("Could not find device to test");
+        } catch (ConfigurationException e) {
+            System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
+        }
+
+        exit();
+    }
+
+    private void exit() {
+        AndroidDebugBridge.terminate();
+    }
+
+    /**
+     * Factory method for creating a {@link TestInvocation}.
+     *
+     * @returns the {@link ITestInvocation} to use
+     */
+    ITestInvocation createRunInstance() {
+        return new TestInvocation();
+    }
+
+    /**
+     * Factory method for getting a reference to the {@link IDeviceManager}
+     *
+     * @returns the {@link IDeviceManager} to use
+     */
+    IDeviceManager getDeviceManager() {
+        return DeviceManager.getInstance();
+    }
+
+    /**
+     * Factory method for creating a {@link IConfiguration}.
+     *
+     * @param args the command line arguments
+     * @returns the {@link IConfiguration} populated with option values supplied in args
+     * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
+     */
+    IConfiguration createConfiguration(String[] args) throws ConfigurationException {
+        return ConfigurationFactory.createConfigurationFromArgs(args);
+    }
+
+    /**
+     * Output the command line usage of this program to stdout
+     *
+     * @param config the {@link IConfiguration} in use.
+     */
+    void printUsage(IConfiguration config) {
+        // TODO: Also print out list of configs from ConfigurationFactory?
+        config.printCommandUsage(System.out);
+    }
 
     /**
      * Main entry point for TradeFederation command line launcher
      *
-     * @param args command line arguments.
-     *
+     * @param args command line arguments. Expected format: [option] [config_name]
      */
     public static void main(String[] args) {
-        throw new UnsupportedOperationException();
+        Command cmd = new Command();
+        cmd.run(args);
     }
 }
