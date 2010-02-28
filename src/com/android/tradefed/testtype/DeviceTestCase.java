@@ -15,22 +15,36 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.device.ITestDevice;
 
-import junit.framework.Test;
+import junit.framework.TestCase;
 
 /**
- * A specialization of JUnit Test that reports results to a {@link ITestRunListener}.
- *
- * This is desirable so the results of a remote test don't need to be unnecessarily marshalled and
- * unmarshalled from {@link Test} objects.
+ * Helper JUnit test case that stores reference to an Android device.
  */
-public interface IRemoteTest extends Test {
+public class DeviceTestCase extends TestCase implements IDeviceTest {
+
+    private ITestDevice mDevice;
+
+    public DeviceTestCase() {
+        super();
+    }
+
+    public DeviceTestCase(String name) {
+        super(name);
+    }
 
     /**
-     * Runs the tests, and reports results to the listener.
-     *
-     * @param listener the {@link ITestRunListener}
+     * {@inheritDoc}
      */
-    public void run(ITestRunListener listener);
+    public ITestDevice getDevice() {
+        return mDevice;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setDevice(ITestDevice device) {
+        mDevice = device;
+    }
 }

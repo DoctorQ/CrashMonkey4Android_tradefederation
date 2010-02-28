@@ -15,14 +15,31 @@
  */
 package com.android.tradefed.result;
 
+import com.android.ddmlib.testrunner.TestIdentifier;
+
 import junit.textui.ResultPrinter;
 
 /**
- * A test result reporter that forwards results to the JUnit text result printer
+ * A test result reporter that forwards results to the JUnit text result printer.
  */
-public class TextResultReporter extends TestResultForwarder implements ITestInvocationListener {
+public class TextResultReporter extends InvocationToJUnitResultForwarder
+    implements ITestInvocationListener {
 
+    /**
+     * Creates a {@link TextResultReporter}.
+     */
     public TextResultReporter() {
         super(new ResultPrinter(System.out));
+    }
+
+    /**
+     * Overrides parent to explicitly print out failures. The ResultPrinter relies on the runner
+     * calling "print" at end of test run to do this.
+     * {@inheritDoc}
+     */
+    @Override
+    public void testFailed(TestFailure status, TestIdentifier testId, String trace) {
+        ResultPrinter printer = (ResultPrinter)getJUnitListener();
+        printer.getWriter().format("\nTest %s: %s \n stack: %s ", status, testId, trace);
     }
 }

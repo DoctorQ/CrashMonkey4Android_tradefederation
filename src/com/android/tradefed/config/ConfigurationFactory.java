@@ -22,18 +22,37 @@ import java.io.File;
  */
 public final class ConfigurationFactory {
 
+    static final String INSTRUMENT_CONFIG = "instrument";
+    private static final Object HOST_TEST_CONFIG = "host";
+
     private ConfigurationFactory() {
     }
 
     /**
-     * Create the default {@link IConfiguration}, whose delegates will be no-op implementations.
+     * Gets the built-in {@link IConfiguration} with given name
+     *
+     * @param name the unique name of the {@link IConfiguration}
+     * @return the {@link IConfiguration}
+     * @throws ConfigurationException if the {@link IConfiguration} could not be loaded.
      */
-    public static IConfiguration createDefaultConfiguration() {
-        return new DefaultConfiguration();
+    public static IConfiguration getConfiguration(String name) throws ConfigurationException {
+        // TODO: hardcoded names for now
+        if (INSTRUMENT_CONFIG.equals(name)) {
+            return new InstrumentConfiguration();
+        } else if (HOST_TEST_CONFIG.equals(name)) {
+            return new HostTestConfiguration();
+        }
+        throw new ConfigurationException(String.format("Could not find configuration with name %s",
+                name));
     }
+
 
     /**
      * Create the {@link IConfiguration} from given XML file.
+     *
+     * @param xmlFile the {@link File} to read configuration from
+     * @return the loaded {@link IConfiguration}.
+     * @throws {@link ConfigurationException} if configuration could not be loaded
      */
     public static IConfiguration createConfigurationFromXML(File xmlFile)
             throws ConfigurationException {
@@ -42,17 +61,29 @@ public final class ConfigurationFactory {
 
     /**
      * Create the {@link IConfiguration} from command line arguments.
+     * <p/>
+     * Expected format is [options] <configuration name>.
      *
+     * @param args the command line arguments
+     * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have
+     * been populated with values in args.
      * @throws {@link ConfigurationException} if configuration could not be loaded
      */
     public static IConfiguration createConfigurationFromArgs(String[] args)
             throws ConfigurationException {
-        // TODO: get configuration to use from name
-        IConfiguration config = createDefaultConfiguration();
+        if (args.length == 0) {
+            throw new ConfigurationException("Configuration to run was not specified");
+        }
+        // last argument is config name
+        final String configName = args[args.length-1];
+        IConfiguration config = getConfiguration(configName);
 
-        // TODO: do this for all objects, not just Test
-        ArgsOptionParser parser = new ArgsOptionParser(config.getTest());
-        parser.parse(args);
+        for (Object configObject : config.getConfigurationObjects()) {
+            ArgsOptionParser parser = new ArgsOptionParser(configObject);
+            parser.parse(args);
+        }
+        // TODO: it would be nice to at least print a warning about unused args, or duplicate option
+        // names across objects
         return config;
     }
 }

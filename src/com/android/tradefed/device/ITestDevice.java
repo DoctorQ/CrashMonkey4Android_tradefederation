@@ -19,7 +19,6 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 
-
 /**
  *  Provides an reliable and slightly higher level API to a ddmlib {@link IDevice}.
  *

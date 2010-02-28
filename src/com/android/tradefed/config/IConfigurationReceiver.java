@@ -16,7 +16,7 @@
 package com.android.tradefed.config;
 
 /**
- * Simple interface to represent object that accepts a {@link IConfiguration}
+ * Simple interface to represent object that accepts an {@link IConfiguration}.
  *
  * TODO: can {@link Option} be used for this instead
  */

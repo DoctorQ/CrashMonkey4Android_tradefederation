@@ -23,6 +23,7 @@ import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import java.io.PrintStream;
+import java.util.Collection;
 
 import junit.framework.Test;
 
@@ -34,7 +35,6 @@ import junit.framework.Test;
  * {@link Option}'s
  */
 public interface IConfiguration {
-
 
     /**
      * Gets the {@link IBuildProvider} from the configuration.
@@ -111,9 +111,18 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
+     * Gets a list of all configuration objects.
+     *
+     * @return a {@link Collection} of all configuration objects
+     * @throws {@link ConfigurationException} if the config objects could not be fully loaded
+     */
+    public Collection<? extends Object> getConfigurationObjects() throws ConfigurationException;
+
+    /**
      * Outputs a command line usage help text to given printStream.
      *
      * @param out the {@link PrintStream} to use.
+     * @throws {@link ConfigurationException}
      */
-    public void printCommandUsage(PrintStream out);
+    public void printCommandUsage(PrintStream out) throws ConfigurationException;
 }

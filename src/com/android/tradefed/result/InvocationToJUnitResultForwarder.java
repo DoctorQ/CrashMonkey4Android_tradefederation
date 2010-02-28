@@ -16,7 +16,6 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
@@ -30,17 +29,21 @@ import junit.framework.TestListener;
 import junit.framework.TestResult;
 
 /**
- * A class that listens to {@link ITestRunListener} events and forwards them to a
- * {@link junit.framework.TestListener}
+ * A class that listens to {@link ITestInvocationListener} events and forwards them to a
+ * {@link junit.framework.TestListener}.
  * <p/>
  */
- public class TestResultForwarder implements ITestInvocationListener {
+ public class InvocationToJUnitResultForwarder implements ITestInvocationListener {
 
-    private static final String LOG_TAG = "TestResultForwarder";
-    private final TestListener mJUnitListener;
+    private static final String LOG_TAG = "InvocationToJUnitResultForwarder";
+    private TestListener mJUnitListener;
 
-    TestResultForwarder(TestListener junitListener) {
+    public InvocationToJUnitResultForwarder(TestListener junitListener) {
         mJUnitListener = junitListener;
+    }
+
+    protected TestListener getJUnitListener() {
+        return mJUnitListener;
     }
 
     /**
@@ -101,6 +104,7 @@ import junit.framework.TestResult;
      * {@inheritDoc}
      */
     public void testStarted(TestIdentifier test) {
+        Log.d(LOG_TAG, test.toString());
         mJUnitListener.startTest(new TestIdentifierResult(test));
     }
 
@@ -133,7 +137,7 @@ import junit.framework.TestResult;
         }
 
         /**
-         * Specialize this to base equality on TestIdentifier
+         * Specialize this to base equality on TestIdentifier.
          */
         @Override
         public boolean equals(Object other) {
@@ -141,7 +145,7 @@ import junit.framework.TestResult;
         }
 
         /**
-         * Specialize this to base hashCode on TestIdentifier
+         * Specialize this to base hashCode on TestIdentifier.
          */
         @Override
         public int hashCode() {
@@ -149,7 +153,7 @@ import junit.framework.TestResult;
         }
 
         /**
-         * Return a user-friendly descriptive string
+         * Return a user-friendly descriptive string.
          */
         @Override
         public String toString() {
@@ -201,9 +205,7 @@ import junit.framework.TestResult;
 
         @Override
         public Throwable fillInStackTrace() {
-            // Force exception to be thrown here. don't want parent to override the data.
-            // alternatively could make this a no-op
-            throw new UnsupportedOperationException();
+            return this;
         }
     }
 

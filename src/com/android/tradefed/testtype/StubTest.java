@@ -19,7 +19,7 @@ import junit.framework.Test;
 import junit.framework.TestResult;
 
 /**
- * No-op empty test implementation
+ * No-op empty test implementation.
  */
 public class StubTest implements Test {
 

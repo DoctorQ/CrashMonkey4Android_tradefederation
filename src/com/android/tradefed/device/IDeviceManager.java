@@ -24,7 +24,7 @@ public interface IDeviceManager {
     /**
      * Request a device for testing.
      *
-     * @returns a {@link ITestDevice} for testing.
+     * @return a {@link ITestDevice} for testing.
      * @throws DeviceNotAvailableException if no device is available.
      */
     public ITestDevice allocateDevice() throws DeviceNotAvailableException;

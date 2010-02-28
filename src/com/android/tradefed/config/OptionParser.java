@@ -202,11 +202,7 @@ class OptionParser {
     }
 
     protected Field fieldForArg(String name) throws ConfigurationException {
-        final Field field = optionMap.get(name);
-        if (field == null) {
-            throw new ConfigurationException("unrecognized option '" + name + "'");
-        }
-        return field;
+        return optionMap.get(name);
     }
 
     @SuppressWarnings("unchecked")

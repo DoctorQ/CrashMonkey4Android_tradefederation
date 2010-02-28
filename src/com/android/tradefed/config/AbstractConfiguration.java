@@ -23,6 +23,7 @@ import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -127,10 +128,17 @@ abstract class AbstractConfiguration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
-    public void printCommandUsage(PrintStream out) {
+    public Collection<? extends Object> getConfigurationObjects() {
+        return mConfigMap.values();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printCommandUsage(PrintStream out) throws ConfigurationException {
         // TODO: pretty print the output ?
         // TODO: this implementation probably belongs in ArgsOptionParser
-        for (Object configObject : mConfigMap.values()) {
+        for (Object configObject : getConfigurationObjects()) {
             printOptionsForObject(configObject, out);
         }
     }
