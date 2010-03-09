@@ -23,7 +23,7 @@ import java.io.File;
 public final class ConfigurationFactory {
 
     static final String INSTRUMENT_CONFIG = "instrument";
-    private static final Object HOST_TEST_CONFIG = "host";
+    static final String HOST_TEST_CONFIG = "host";
 
     private ConfigurationFactory() {
     }

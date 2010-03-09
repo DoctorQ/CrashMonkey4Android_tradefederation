@@ -27,6 +27,7 @@ public class ConfigurationFactoryTest extends TestCase {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
     }
@@ -38,6 +39,16 @@ public class ConfigurationFactoryTest extends TestCase {
     public void testGetConfiguration_instrument() throws ConfigurationException {
         assertNotNull(ConfigurationFactory.getConfiguration(
                 ConfigurationFactory.INSTRUMENT_CONFIG));
+        // TODO: check that returned config is valid
+    }
+
+    /**
+     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} with
+     * {@link ConfigurationFactory#HOST_TEST_CONFIG} returns a valid config.
+     */
+    public void testGetConfiguration_host() throws ConfigurationException {
+        assertNotNull(ConfigurationFactory.getConfiguration(
+                ConfigurationFactory.HOST_TEST_CONFIG));
         // TODO: check that returned config is valid
     }
 
@@ -79,5 +90,4 @@ public class ConfigurationFactoryTest extends TestCase {
             // expected
         }
     }
-
 }

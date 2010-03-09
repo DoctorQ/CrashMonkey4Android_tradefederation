@@ -18,10 +18,14 @@ package com.android.tradefed;
 import com.android.tradefed.command.CommandTest;
 import com.android.tradefed.config.AbstractConfigurationTest;
 import com.android.tradefed.config.ArgsOptionParserTest;
+import com.android.tradefed.config.ConfigurationFactoryTest;
+import com.android.tradefed.config.OptionParserTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.TestDeviceTest;
 import com.android.tradefed.invoker.TestInvocationTest;
+import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.TestResultForwarderTest;
+import com.android.tradefed.testtype.HostTestTest;
 import com.android.tradefed.testtype.InstrumentationTestTest;
 
 import junit.framework.Test;
@@ -34,17 +38,23 @@ import junit.framework.TestSuite;
  */
 public class UnitTests extends TestSuite {
 
+    public UnitTests() {
+        super();
+        addTestSuite(CommandTest.class);
+        addTestSuite(AbstractConfigurationTest.class);
+        addTestSuite(ArgsOptionParserTest.class);
+        addTestSuite(OptionParserTest.class);
+        addTestSuite(ConfigurationFactoryTest.class);
+        addTestSuite(DeviceManagerTest.class);
+        addTestSuite(TestDeviceTest.class);
+        addTestSuite(TestInvocationTest.class);
+        addTestSuite(JUnitToInvocationResultForwarderTest.class);
+        addTestSuite(TestResultForwarderTest.class);
+        addTestSuite(InstrumentationTestTest.class);
+        addTestSuite(HostTestTest.class);
+    }
+
     public static Test suite() {
-        TestSuite suite = new TestSuite();
-        // TODO: instead of explicitly listing each class, consider dynamically discovering classes
-        suite.addTestSuite(CommandTest.class);
-        suite.addTestSuite(AbstractConfigurationTest.class);
-        suite.addTestSuite(ArgsOptionParserTest.class);
-        suite.addTestSuite(DeviceManagerTest.class);
-        suite.addTestSuite(TestDeviceTest.class);
-        suite.addTestSuite(TestInvocationTest.class);
-        suite.addTestSuite(TestResultForwarderTest.class);
-        suite.addTestSuite(InstrumentationTestTest.class);
-        return suite;
+        return new UnitTests();
     }
 }

@@ -61,10 +61,9 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Test normal run scenario with a single test result
+     * Test normal run scenario with a single test result.
      */
     public void testRun() {
-
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
         mMockRemoteRunner.run(mMockListener);
         EasyMock.replay(mMockRemoteRunner);
@@ -72,7 +71,35 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Test that IllegalArgumentException is thrown when attempting run without setting package
+     * Test normal run scenario with a test class specified.
+     */
+    public void testRun_class() {
+        final String className = "FooTest";
+        mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
+        mMockRemoteRunner.setClassName(className);
+        mMockRemoteRunner.run(mMockListener);
+        EasyMock.replay(mMockRemoteRunner);
+        mInstrumentationTest.setClassName(className);
+        mInstrumentationTest.run(mMockListener);
+    }
+
+    /**
+     * Test normal run scenario with a test class and method specified.
+     */
+    public void testRun_classMethod() {
+        final String className = "FooTest";
+        final String methodName = "testFoo";
+        mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
+        mMockRemoteRunner.setMethodName(className, methodName);
+        mMockRemoteRunner.run(mMockListener);
+        EasyMock.replay(mMockRemoteRunner);
+        mInstrumentationTest.setClassName(className);
+        mInstrumentationTest.setMethodName(methodName);
+        mInstrumentationTest.run(mMockListener);
+    }
+
+    /**
+     * Test that IllegalArgumentException is thrown when attempting run without setting package.
      */
     public void testRun_noPackage() {
         mInstrumentationTest.setPackageName(null);
@@ -86,7 +113,7 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Test that IllegalArgumentException is thrown when attempting run without setting device
+     * Test that IllegalArgumentException is thrown when attempting run without setting device.
      */
     public void testRun_noDevice() {
         mInstrumentationTest.setDevice(null);

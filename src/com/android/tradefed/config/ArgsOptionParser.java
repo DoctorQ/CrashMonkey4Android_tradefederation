@@ -99,31 +99,36 @@ class ArgsOptionParser extends OptionParser {
         final Handler handler = getHandler(field.getGenericType());
         if (value == null) {
             if (handler.isBoolean()) {
-                value = arg.startsWith("--no-") ? "false" : "true";
+                value = name.startsWith(BOOL_FALSE_PREFIX) ? "false" : "true";
             } else {
                 value = grabNextValue(args, name, field);
             }
         }
-        setValue(optionSource, field, arg, handler, value);
+        setValue(field, arg, handler, value);
     }
 
     // Given boolean options a and b, and non-boolean option f, we want to allow:
     // -ab
     // -abf out.txt
     // -abfout.txt
-    // (But not -abf=out.txt --- POSIX doesn't mention that either way, but GNU expressly forbids it.)
+    // (But not -abf=out.txt --- POSIX doesn't mention that either way, but GNU expressly forbids
+    // it.)
     private void parseGroupedShortOptions(String arg, Iterator<String> args)
             throws ConfigurationException {
         for (int i = 1; i < arg.length(); ++i) {
-            final String name = SHORT_NAME_PREFIX + arg.charAt(i);
-            // TODO: fix this to handle a field that was not found
+            final String name = String.valueOf(arg.charAt(i));
             final Field field = fieldForArg(name);
+            if (field == null) {
+                // not an option for this source
+                continue;
+            }
             final Handler handler = getHandler(field.getGenericType());
             String value;
             if (handler.isBoolean()) {
                 value = "true";
             } else {
-                // We need a value. If there's anything left, we take the rest of this "short option".
+                // We need a value. If there's anything left, we take the rest of this
+                // "short option".
                 if (i + 1 < arg.length()) {
                     value = arg.substring(i + 1);
                     i = arg.length() - 1;
@@ -131,7 +136,7 @@ class ArgsOptionParser extends OptionParser {
                     value = grabNextValue(args, name, field);
                 }
             }
-            setValue(optionSource, field, arg, handler, value);
+            setValue(field, arg, handler, value);
         }
     }
 
@@ -142,15 +147,17 @@ class ArgsOptionParser extends OptionParser {
      * @param args
      * @param name
      * @param field
+     * @throws ConfigurationException
      *
      * @returns
      */
-    private String grabNextValue(Iterator<String> args, String name, Field field) {
+    private String grabNextValue(Iterator<String> args, String name, Field field)
+            throws ConfigurationException {
         if (!args.hasNext()) {
             final String type = field.getType().getSimpleName().toLowerCase();
-            throw new RuntimeException("option '" + name + "' requires a " + type + " argument");
+            throw new ConfigurationException(String.format("option '%s' requires a %s argument",
+                    name, type));
         }
         return args.next();
     }
-
 }

@@ -31,15 +31,15 @@ import junit.framework.TestResult;
  */
 public class InstrumentationTest implements IDeviceTest, IRemoteTest {
 
-    @Option(name = "package", shortName = "p",
+    @Option(name = "package", shortName = 'p',
             description="The manifest package name of the Android test application to run")
     private String mPackageName = null;
 
-    @Option(name = "class", shortName = "c",
+    @Option(name = "class", shortName = 'c',
             description="The test class name to run")
     private String mTestClassName = null;
 
-    @Option(name = "method", shortName = "m",
+    @Option(name = "method", shortName = 'm',
             description="The test method name to run.")
     private String mTestMethodName = null;
 

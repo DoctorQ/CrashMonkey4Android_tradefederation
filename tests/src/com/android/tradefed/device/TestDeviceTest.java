@@ -43,6 +43,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         mMockIDevice = EasyMock.createMock(IDevice.class);

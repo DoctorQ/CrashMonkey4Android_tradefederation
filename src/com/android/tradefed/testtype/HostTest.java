@@ -57,6 +57,14 @@ public class HostTest implements IDeviceTest {
         return 1;
     }
 
+    void setClassName(String className) {
+        mClassName = className;
+    }
+
+    void setMethodName(String methodName) {
+        mMethodName = methodName;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -64,32 +72,48 @@ public class HostTest implements IDeviceTest {
         if (mClassName == null) {
             throw new IllegalArgumentException("Missing Test class name");
         }
-        if (mDevice == null) {
-            throw new IllegalArgumentException("Missing device");
-        }
-
-        Test test = loadTest(mClassName);
+        Class<?> classObj = loadTestClass(mClassName);
+        Test test = loadTest(classObj);
         if (test instanceof IDeviceTest) {
+            if (mDevice == null) {
+                throw new IllegalArgumentException("Missing device");
+            }
             ((IDeviceTest)test).setDevice(mDevice);
         }
-        if (test instanceof TestCase && mMethodName != null) {
+        if (test instanceof TestCase) {
             TestCase testCase = (TestCase)test;
-            testCase.setName(mMethodName);
+            if (mMethodName != null) {
+                // run a single test method
+                testCase.setName(mMethodName);
+            } else {
+                // wrap the test in a suite, because the JUnit TestCase.run implementation can
+                // only run a single method
+                DeviceTestSuite testSuite = new DeviceTestSuite();
+                testSuite.addTestSuite(classObj);
+                testSuite.setDevice(mDevice);
+                test = testSuite;
+            }
         }
         test.run(result);
     }
 
-    private Test loadTest(String className) throws IllegalArgumentException {
+    private Class<?> loadTestClass(String className) throws IllegalArgumentException  {
         try {
-            Class<?> classObj = Class.forName(className);
+            return Class.forName(className);
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(String.format("Could not load Test class %s",
+                    className), e);
+        }
+    }
+
+    private Test loadTest(Class<?> classObj) throws IllegalArgumentException {
+        final String className = classObj.getName();
+        try {
             Object testObject = classObj.newInstance();
             if (!(testObject instanceof Test)) {
                 throw new IllegalArgumentException(String.format("%s is not a Test", className));
             }
             return (Test)testObject;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(String.format("Could not load Test class %s",
-                    className), e);
         } catch (InstantiationException e) {
             throw new IllegalArgumentException(String.format("Could not load Test class %s",
                     className), e);

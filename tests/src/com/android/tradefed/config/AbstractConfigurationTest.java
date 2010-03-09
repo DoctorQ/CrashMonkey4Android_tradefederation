@@ -15,6 +15,14 @@
  */
 package com.android.tradefed.config;
 
+import com.android.tradefed.device.IDeviceRecovery;
+import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.targetsetup.IBuildProvider;
+import com.android.tradefed.targetsetup.ITargetPreparer;
+
+import org.easymock.EasyMock;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
@@ -61,6 +69,7 @@ public class AbstractConfigurationTest extends TestCase {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         mConfig = new TestConfiguration();
@@ -102,6 +111,64 @@ public class AbstractConfigurationTest extends TestCase {
         } catch (ConfigurationException e) {
             // expected
         }
+    }
+
+    /**
+     * Test method for {@link com.android.tradefed.config.AbstractConfiguration#getBuildProvider()}.
+     */
+    public void testGetBuildProvider() throws ConfigurationException {
+        final IBuildProvider provider = EasyMock.createMock(IBuildProvider.class);
+        mConfig.addObject(AbstractConfiguration.BUILD_PROVIDER_NAME, provider);
+        assertEquals(provider, mConfig.getBuildProvider());
+    }
+
+    /**
+     * Test method for {@link AbstractConfiguration#getTargetPreparer()}.
+     */
+    public void testGetTargetPreparer() throws ConfigurationException {
+        final ITargetPreparer prep = EasyMock.createMock(ITargetPreparer.class);
+        mConfig.addObject(AbstractConfiguration.TARGET_PREPARER_NAME, prep);
+        assertEquals(prep, mConfig.getTargetPreparer());
+    }
+
+    /**
+     * Test method for {@link AbstractConfiguration#getTest()}.
+     * @throws ConfigurationException
+     */
+    public void testGetTest() throws ConfigurationException {
+        final Test test = EasyMock.createMock(Test.class);
+        mConfig.addObject(AbstractConfiguration.TEST_NAME, test);
+        assertEquals(test, mConfig.getTest());
+    }
+
+    /**
+     * Test method for {@link AbstractConfiguration#getDeviceRecovery()}.
+     * @throws ConfigurationException
+     */
+    public void testGetDeviceRecovery() throws ConfigurationException {
+        final IDeviceRecovery recovery = EasyMock.createMock(IDeviceRecovery.class);
+        mConfig.addObject(AbstractConfiguration.DEVICE_RECOVERY_NAME, recovery);
+        assertEquals(recovery, mConfig.getDeviceRecovery());
+    }
+
+    /**
+     * Test method for {@link AbstractConfiguration#getLogOutput()}.
+     * @throws ConfigurationException
+     */
+    public void testGetLogOutput() throws ConfigurationException {
+        final ILeveledLogOutput logger = EasyMock.createMock(ILeveledLogOutput.class);
+        mConfig.addObject(AbstractConfiguration.LOGGER_NAME, logger);
+        assertEquals(logger, mConfig.getLogOutput());
+    }
+
+    /**
+     * Test method for {@link AbstractConfiguration#getTestInvocationListener()}.
+     * @throws ConfigurationException
+     */
+    public void testGetTestInvocationListener() throws ConfigurationException {
+        final ITestInvocationListener listener = EasyMock.createMock(ITestInvocationListener.class);
+        mConfig.addObject(AbstractConfiguration.RESULT_REPORTER_NAME, listener);
+        assertEquals(listener, mConfig.getTestInvocationListener());
     }
 
     /**
