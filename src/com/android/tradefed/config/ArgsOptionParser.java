@@ -18,8 +18,8 @@ package com.android.tradefed.config;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 
 /**
  * An option parser that parses options from command line arguments.
@@ -47,10 +47,10 @@ class ArgsOptionParser extends OptionParser {
      * @throws ConfigurationException if error occurred parsing the arguments.
      */
     public List<String> parse(String[] args) throws ConfigurationException {
-        return parseOptions(Arrays.asList(args).iterator());
+        return parseOptions(Arrays.asList(args).listIterator());
     }
 
-    private List<String> parseOptions(Iterator<String> args) throws ConfigurationException {
+    private List<String> parseOptions(ListIterator<String> args) throws ConfigurationException {
         final List<String> leftovers = new ArrayList<String>();
 
         // Scan 'args'.
@@ -79,7 +79,8 @@ class ArgsOptionParser extends OptionParser {
         return leftovers;
     }
 
-    private void parseLongOption(String arg, Iterator<String> args) throws ConfigurationException {
+    private void parseLongOption(String arg, ListIterator<String> args)
+            throws ConfigurationException {
         // remove prefix to just get name
         String name = arg.replaceFirst("^" + OPTION_NAME_PREFIX, "");
         String value = null;
@@ -93,7 +94,8 @@ class ArgsOptionParser extends OptionParser {
 
         final Field field = fieldForArg(name);
         if (field == null) {
-            // not an option for this source
+            // not an option for this source - discard the value associated with this arg
+            discardNextValue(args);
             return;
         }
         final Handler handler = getHandler(field.getGenericType());
@@ -113,13 +115,14 @@ class ArgsOptionParser extends OptionParser {
     // -abfout.txt
     // (But not -abf=out.txt --- POSIX doesn't mention that either way, but GNU expressly forbids
     // it.)
-    private void parseGroupedShortOptions(String arg, Iterator<String> args)
+    private void parseGroupedShortOptions(String arg, ListIterator<String> args)
             throws ConfigurationException {
         for (int i = 1; i < arg.length(); ++i) {
             final String name = String.valueOf(arg.charAt(i));
             final Field field = fieldForArg(name);
             if (field == null) {
                 // not an option for this source
+                discardNextValue(args);
                 continue;
             }
             final Handler handler = getHandler(field.getGenericType());
@@ -151,7 +154,7 @@ class ArgsOptionParser extends OptionParser {
      *
      * @returns
      */
-    private String grabNextValue(Iterator<String> args, String name, Field field)
+    private String grabNextValue(ListIterator<String> args, String name, Field field)
             throws ConfigurationException {
         if (!args.hasNext()) {
             final String type = field.getType().getSimpleName().toLowerCase();
@@ -159,5 +162,19 @@ class ArgsOptionParser extends OptionParser {
                     name, type));
         }
         return args.next();
+    }
+
+    /**
+     * Removes the next element of args if it is a value for previous option argument. (ie is a
+     * non-option).
+     */
+    private void discardNextValue(ListIterator<String> args) {
+        if (args.hasNext()) {
+            String value = args.next();
+            if (value.startsWith(OPTION_NAME_PREFIX) || value.startsWith(SHORT_NAME_PREFIX)) {
+                // this is an option, put it back
+                args.previous();
+            }
+        }
     }
 }

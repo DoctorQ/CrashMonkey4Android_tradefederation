@@ -24,7 +24,7 @@ import com.android.tradefed.config.Option;
  */
 public class StdoutLogger implements ILeveledLogOutput {
 
-    @Option(name="log_level", description="minimum log level to display")
+    @Option(name="log-level", description="minimum log level to display")
     private String mLogLevel = LogLevel.INFO.getStringValue();
 
     /**

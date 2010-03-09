@@ -33,7 +33,7 @@ import com.android.tradefed.log.ILeveledLogOutput;
  * Command-line launcher for Trade Federation.
  * <p/>
  * Loads the test configuration based on command line arguments, connects to available device,
- * and delegates off to {@link ITestInvocation} to perform the work of running of tests
+ * and delegates off to {@link ITestInvocation} to perform the work of running of tests.
  */
 public class Command {
 
@@ -63,6 +63,9 @@ public class Command {
             System.out.println("Could not find device to test");
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
+        } catch (Exception e) {
+            System.out.println("Uncaught exception!");
+            e.printStackTrace();
         }
 
         exit();

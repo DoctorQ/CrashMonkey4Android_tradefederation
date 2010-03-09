@@ -18,6 +18,7 @@ package com.android.tradefed.testtype;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
+import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
@@ -31,6 +32,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
 
     private static final String TEST_PACKAGE_VALUE = "com.android.tradefed.testapp";
     private static final String TEST_CLASS_VALUE = "com.android.tradefed.testapp.OnDeviceTest";
+    private static final int TOTAL_TEST_CLASS_TESTS = 4;
+    private static final int TOTAL_TEST_CLASS_PASSED_TESTS = 1;
     private static final String PASSED_TEST_METHOD = "testPassed";
     private static final String FAILED_TEST_METHOD = "testFailed";
     private static final String CRASH_TEST_METHOD = "testCrash";
@@ -50,7 +53,9 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setPackageName(TEST_PACKAGE_VALUE);
         mInstrumentationTest.setDevice(getDevice());
         // use no timeout by default
-        mInstrumentationTest.setRunTimeout(-1);
+        mInstrumentationTest.setTestTimeout(-1);
+        // set to no rerun by default
+        mInstrumentationTest.setRerunMode(false);
         mMockListener = EasyMock.createStrictMock(ITestInvocationListener.class);
     }
 
@@ -106,13 +111,16 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test run scenario where test run hangs indefinitely, and times out.
      */
     public void testRun_testTimeout() {
+        final long timeout = 1000;
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(TIMEOUT_TEST_METHOD);
-        mInstrumentationTest.setRunTimeout(1000);
+        mInstrumentationTest.setTestTimeout(timeout);
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
-        mMockListener.testRunFailed("timeout: test did not complete in 1000 ms");
+        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
+                (String)EasyMock.anyObject());
+        mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
         mMockListener.testRunEnded(EasyMock.anyLong());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
@@ -148,4 +156,21 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         rebootThread.start();
         mInstrumentationTest.run(mMockListener);
     }
+
+    /**
+     * Test running all the tests with rerun on. At least one method will cause run to stop
+     * (currently TIMEOUT_TEST_METHOD and CRASH_TEST_METHOD). Verify that results are
+     * recorded for all tests in the suite.
+     */
+    public void testRun_rerun() throws InterruptedException, IOException {
+        // run all tests in class
+        mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
+        mInstrumentationTest.setRerunMode(true);
+        mInstrumentationTest.setTestTimeout(1000);
+        CollectingTestListener listener = new CollectingTestListener();
+        mInstrumentationTest.run(listener);
+        assertEquals(TOTAL_TEST_CLASS_TESTS, listener.getTestResults().size());
+        assertEquals(TOTAL_TEST_CLASS_PASSED_TESTS, listener.getNumPassedTests());
+    }
+
 }
