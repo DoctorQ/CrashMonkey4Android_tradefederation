@@ -33,7 +33,6 @@ import junit.framework.TestListener;
  */
  public class JUnitToInvocationResultForwarder implements TestListener {
 
-    private static final String LOG_TAG = "JUnitToInvocationResultForwarder";
     private final ITestInvocationListener mInvocationListener;
 
     public JUnitToInvocationResultForwarder(ITestInvocationListener invocationListener) {
@@ -96,5 +95,4 @@ import junit.framework.TestListener;
         throwable.printStackTrace(bytePrintStream);
         return outputStream.toString();
     }
-
 }

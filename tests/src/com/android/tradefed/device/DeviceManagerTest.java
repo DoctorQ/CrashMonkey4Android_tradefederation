@@ -34,6 +34,7 @@ public class DeviceManagerTest extends TestCase {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected void setUp() throws Exception {
         super.setUp();
         mMockAdbBridge = EasyMock.createMock(IAndroidDebugBridge.class);

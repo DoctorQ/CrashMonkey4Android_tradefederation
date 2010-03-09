@@ -27,6 +27,9 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
 public @interface Option {
+
+    static final char NO_SHORT_NAME = '0';
+
     /**
      * The mandatory unique name for this option.
      * This will map to a command line argument prefixed with two '-' characters.
@@ -38,9 +41,11 @@ public @interface Option {
     /**
      * Optional abbreviated name for option.
      * This will map to a command line argument prefixed with a single '-'.
-     * e.g. "-h" where h = shortName
+     * e.g. "-h" where h = shortName.
+     *
+     * '0' is reserved to mean the option has no shortName.
      **/
-    String shortName() default "";
+    char shortName() default NO_SHORT_NAME;
 
     /**
      * User friendly description of the option.

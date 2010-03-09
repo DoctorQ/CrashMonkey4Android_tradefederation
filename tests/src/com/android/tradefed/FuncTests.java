@@ -19,6 +19,8 @@ import com.android.tradefed.device.TestDeviceFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;
 
+import junit.framework.Test;
+
 /**
  * A test suite for all Trade Federation functional tests.
  * <p/>
@@ -32,4 +34,7 @@ public class FuncTests extends DeviceTestSuite {
         this.addTestSuite(InstrumentationTestFuncTest.class);
     }
 
+    public static Test suite() {
+        return new FuncTests();
+    }
 }

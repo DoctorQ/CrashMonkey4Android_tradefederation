@@ -79,6 +79,9 @@ import java.util.HashMap;
  * are processed. Any remaining positional arguments are returned as a
  * List<String>.
  *
+ * Fields processed include public, protected, default (package) access, and private fields, but
+ * excludes inherited fields.
+ *
  * Here's a simple example:
  *
  * // This doesn't need to be a separate class, if your application doesn't warrant it.
@@ -137,6 +140,7 @@ import java.util.HashMap;
  */
 class OptionParser {
 
+    protected static final String BOOL_FALSE_PREFIX = "no-";
     private static final HashMap<Class<?>, Handler> handlers = new HashMap<Class<?>, Handler>();
     static {
         handlers.put(boolean.class, new BooleanHandler());
@@ -159,6 +163,7 @@ class OptionParser {
         handlers.put(String.class, new StringHandler());
         handlers.put(File.class, new FileHandler());
     }
+
     @SuppressWarnings("unchecked")
     Handler getHandler(Type type) throws ConfigurationException {
         if (type instanceof ParameterizedType) {
@@ -206,22 +211,23 @@ class OptionParser {
     }
 
     @SuppressWarnings("unchecked")
-    protected static void setValue(Object object, Field field, String arg, Handler handler,
+    protected void setValue(Field field, String optionName, Handler handler,
             String valueText) throws ConfigurationException {
 
         Object value = handler.translate(valueText);
         if (value == null) {
             final String type = field.getType().getSimpleName().toLowerCase();
-            throw new ConfigurationException("couldn't convert '" + valueText + "' to a " + type
-                    + " for option '" + arg + "'");
+            throw new ConfigurationException(
+                    String.format("Couldn't convert '%s' to a %s for option '%s'", valueText, type,
+                            optionName));
         }
         try {
             field.setAccessible(true);
             if (Collection.class.isAssignableFrom(field.getType())) {
-                Collection collection = (Collection)field.get(object);
+                Collection collection = (Collection)field.get(optionSource);
                 collection.add(value);
             } else {
-                field.set(object, value);
+                field.set(optionSource, value);
             }
         } catch (IllegalAccessException ex) {
             throw new ConfigurationException("internal error", ex);
@@ -240,12 +246,20 @@ class OptionParser {
             if (field.isAnnotationPresent(Option.class)) {
                 final Option option = field.getAnnotation(Option.class);
                 addNameToMap(optionMap, option.name(), field);
-                if (option.shortName() != null && !"".equals(option.shortName())) {
-                    addNameToMap(optionMap, option.shortName(), field);
+                if (option.shortName() != Option.NO_SHORT_NAME) {
+                    addNameToMap(optionMap, String.valueOf(option.shortName()), field);
+                }
+                if (isBooleanField(field)) {
+                    // add the corresponding "no" option to make boolean false
+                    addNameToMap(optionMap, BOOL_FALSE_PREFIX + option.name(), field);
                 }
             }
         }
         return optionMap;
+    }
+
+    protected boolean isBooleanField(Field field) throws ConfigurationException {
+        return getHandler(field.getGenericType()).isBoolean();
     }
 
     /**
@@ -283,6 +297,7 @@ class OptionParser {
             return true;
         }
 
+        @Override
         Object translate(String valueText) {
             if (valueText.equalsIgnoreCase("true") || valueText.equalsIgnoreCase("yes")) {
                 return Boolean.TRUE;
@@ -294,6 +309,7 @@ class OptionParser {
     }
 
     static class ByteHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Byte.parseByte(valueText);
@@ -304,6 +320,7 @@ class OptionParser {
     }
 
     static class ShortHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Short.parseShort(valueText);
@@ -314,6 +331,7 @@ class OptionParser {
     }
 
     static class IntegerHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Integer.parseInt(valueText);
@@ -324,6 +342,7 @@ class OptionParser {
     }
 
     static class LongHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Long.parseLong(valueText);
@@ -334,6 +353,7 @@ class OptionParser {
     }
 
     static class FloatHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Float.parseFloat(valueText);
@@ -344,6 +364,7 @@ class OptionParser {
     }
 
     static class DoubleHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             try {
                 return Double.parseDouble(valueText);
@@ -354,12 +375,14 @@ class OptionParser {
     }
 
     static class StringHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             return valueText;
         }
     }
 
     static class FileHandler extends Handler {
+        @Override
         Object translate(String valueText) {
             return new File(valueText);
         }
