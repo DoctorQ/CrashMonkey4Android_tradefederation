@@ -24,14 +24,14 @@ import junit.framework.TestCase;
 import junit.framework.TestListener;
 
 /**
- * Unit tests for {@link TestResultForwarder}.
+ * Unit tests for {@link InvocationToJUnitResultForwarder}.
  */
 public class TestResultForwarderTest extends TestCase {
 
     private static final String TEST_NAME = "testName";
     private static final String CLASS_NAME = "className";
     private TestListener mJUnitListener;
-    private TestResultForwarder mTestForwarder;
+    private InvocationToJUnitResultForwarder mTestForwarder;
     private TestIdentifier mTestIdentifier;
 
     /**
@@ -40,12 +40,12 @@ public class TestResultForwarderTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mJUnitListener = EasyMock.createMock(TestListener.class);
-        mTestForwarder = new TestResultForwarder(mJUnitListener);
+        mTestForwarder = new InvocationToJUnitResultForwarder(mJUnitListener);
         mTestIdentifier = new TestIdentifier(CLASS_NAME, TEST_NAME);
     }
 
     /**
-     * Simple test for {@link TestResultForwarder#testEnded(TestIdentifier)}.
+     * Simple test for {@link InvocationToJUnitResultForwarder#testEnded(TestIdentifier)}.
      * <p/>
      * Verifies that data put into TestIdentifier is forwarded in correct format
      */

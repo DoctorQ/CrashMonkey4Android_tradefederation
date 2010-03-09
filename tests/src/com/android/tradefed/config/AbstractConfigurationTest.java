@@ -107,7 +107,7 @@ public class AbstractConfigurationTest extends TestCase {
     /**
      * Basic test for {@link AbstractConfiguration#printCommandUsage(java.io.PrintStream)}.
      */
-    public void testPrintCommandUsage() {
+    public void testPrintCommandUsage() throws ConfigurationException {
         // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);

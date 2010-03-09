@@ -23,21 +23,18 @@ import com.android.tradefed.targetsetup.StubTargetPreparer;
 import com.android.tradefed.testtype.InstrumentationTest;
 
 /**
- * The default trade federation configuration.
+ * A configuration for simply running an Android instrumentation test.
  *
  * Returns stub no-op objects for most delegates, except
  *   - uses a stdout logger and result reporter
  *   - and a instrumentation test
  */
-class DefaultConfiguration extends AbstractConfiguration {
+class InstrumentConfiguration extends AbstractConfiguration {
 
     /**
-     * Creates a {@link DefaultConfiguration}, and all its associated delegate objects.
-     *
-     * TODO: this method needs to be updated as additional built in config object types are added.
-     * Would be nice if this was statically enforced or flagged somehow.
+     * Creates a {@link InstrumentConfiguration}, and all its associated delegate objects.
      */
-    DefaultConfiguration() {
+    InstrumentConfiguration() {
         super();
         addObject(BUILD_PROVIDER_NAME, new StubBuildProvider());
         addObject(DEVICE_RECOVERY_NAME, new StubDeviceRecovery());

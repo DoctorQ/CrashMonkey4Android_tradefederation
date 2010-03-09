@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright (C) 2010 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,18 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_PATH := $(call my-dir)
+# A simpler helper script that runs the Trade Federation functional tests
 
-include $(CLEAR_VARS)
+lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
-# Only compile source java files in this lib.
-LOCAL_SRC_FILES := $(call all-java-files-under, src)
-
-LOCAL_MODULE := GoogleTradeFedTests
-
-LOCAL_JAVA_LIBRARIES := GoogleTradeFed ddmlib easymock junit
-
-include $(BUILD_HOST_JAVA_LIBRARY)
-
-# Build all sub-directories
-include $(call all-makefiles-under,$(LOCAL_PATH))
+java -cp $lib_path/easymock.jar:$lib_path/junit.jar:$lib_path/hosttestlib.jar:$lib_path/ddmlib.jar:$lib_path/GoogleTradeFed.jar:$lib_path/GoogleTradeFedTests.jar com.android.tradefed.command.Command --class com.android.tradefed.FuncTests "@$" host 

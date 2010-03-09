@@ -20,6 +20,7 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
@@ -28,7 +29,6 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
 import junit.framework.Test;
-import junit.framework.TestListener;
 import junit.framework.TestResult;
 
 /**
@@ -42,7 +42,7 @@ import junit.framework.TestResult;
  */
 public class TestInvocation implements ITestInvocation {
 
-    private static final String LOG_TAG = "BaseTestInvocation";
+    private static final String LOG_TAG = "TestInvocation";
 
     /**
      * Constructs a {@link TestInvocation}
@@ -61,12 +61,15 @@ public class TestInvocation implements ITestInvocation {
             ITestInvocationListener listener = config.getTestInvocationListener();
             IBuildInfo info = buildProvider.getBuild();
             preparer.setUp(device, info);
-            runTests(device, test, listener);
+            runTests(device, info, test, listener);
         } catch (TargetSetupError e) {
             Log.e(LOG_TAG, e);
         } catch (IllegalArgumentException e) {
             Log.e(LOG_TAG, e);
         } catch (ConfigurationException e) {
+            Log.e(LOG_TAG, e);
+        } catch (Exception e) {
+            Log.e(LOG_TAG, "Uncaught exception!");
             Log.e(LOG_TAG, e);
         }
     }
@@ -75,26 +78,31 @@ public class TestInvocation implements ITestInvocation {
      * Runs the test.
      *
      * @param device the {@link ITestDevice} to run tests on
+     * @param buildInfo the {@link BuildInfo} describing the build target
      * @param test the {@link Test} to run
      * @param listener the {@link ITestInvocationListener} that listens for test results in real
      * time
      */
-    private void runTests(ITestDevice device, Test test, ITestInvocationListener listener) {
+    private void runTests(ITestDevice device, IBuildInfo buildInfo, Test test,
+            ITestInvocationListener listener) {
         if (test instanceof IDeviceTest) {
             ((IDeviceTest)test).setDevice(device);
         }
-
+        listener.invocationStarted(buildInfo);
         if (test instanceof IRemoteTest) {
             // run as a remote test, so results are forwarded directly to TestInvocationListener
             ((IRemoteTest) test).run(listener);
-        } else if (listener instanceof TestListener) {
-            // run as a JUnit test, and wrap the TestInvocationListener in a JUnit listener
-            TestResult result = new TestResult();
-            result.addListener((TestListener)listener);
-            test.run(result);
         } else {
-            // TODO: add a class which can forward JUnit forwarder
-            throw new UnsupportedOperationException();
+            listener.testRunStarted(test.countTestCases());
+            long startTime = System.currentTimeMillis();
+            // forward the JUnit results to the invocation listener
+            JUnitToInvocationResultForwarder resultForwarder =
+                new JUnitToInvocationResultForwarder(listener);
+            TestResult result = new TestResult();
+            result.addListener(resultForwarder);
+            test.run(result);
+            listener.testRunEnded(System.currentTimeMillis() - startTime);
         }
+        listener.invocationEnded();
     }
 }

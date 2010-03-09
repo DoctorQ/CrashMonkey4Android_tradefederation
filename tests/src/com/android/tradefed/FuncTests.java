@@ -13,24 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.testtype;
+package com.android.tradefed;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
-
-import junit.framework.Test;
+import com.android.tradefed.device.TestDeviceFuncTest;
+import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.testtype.InstrumentationTestFuncTest;
 
 /**
- * A specialization of JUnit Test that reports results to a {@link ITestRunListener}.
- *
- * This is desirable so the results of a remote test don't need to be unnecessarily marshalled and
- * unmarshalled from {@link Test} objects.
+ * A test suite for all Trade Federation functional tests.
+ * <p/>
+ * These tests require a device.
  */
-public interface IRemoteTest extends Test {
+public class FuncTests extends DeviceTestSuite {
 
-    /**
-     * Runs the tests, and reports results to the listener.
-     *
-     * @param listener the {@link ITestRunListener}
-     */
-    public void run(ITestRunListener listener);
+    public FuncTests() {
+        super();
+        this.addTestSuite(TestDeviceFuncTest.class);
+        this.addTestSuite(InstrumentationTestFuncTest.class);
+    }
+
 }

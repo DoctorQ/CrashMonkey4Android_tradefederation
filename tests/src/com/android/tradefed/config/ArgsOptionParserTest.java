@@ -15,8 +15,6 @@
  */
 package com.android.tradefed.config;
 
-import org.easymock.internal.ExpectedInvocation;
-
 import junit.framework.TestCase;
 
 /**
@@ -39,23 +37,6 @@ public class ArgsOptionParserTest extends TestCase {
 
         @Option(name="my_option")
         private String mMyOption = DEFAULT_VALUE;
-    }
-
-    /**
-     * Test parsing args for an optionSource that has no {@link Option} fields specified.
-     * <p/>
-     * {@link ExpectedInvocation} {@link ConfigurationException} to be thrown.
-     * TODO: this behavior needs to be corrected
-     */
-    public void testParse_noOptionFields() throws ConfigurationException  {
-        NoOptionSource object = new NoOptionSource();
-        ArgsOptionParser parser = new ArgsOptionParser(object);
-        try {
-            parser.parse(new String[] {"--my_option", "set"});
-            fail("did not throw ConfigurationException");
-        } catch (ConfigurationException e) {
-            // expected
-        }
     }
 
     /**
@@ -82,17 +63,15 @@ public class ArgsOptionParserTest extends TestCase {
    }
 
    /**
-    * Test parsing args for an option that does not exist
+    * Test parsing args for an option that does not exist.
     */
-   public void testParse_optionNotPresent() {
+   public void testParse_optionNotPresent() throws ConfigurationException {
        OneOptionSource object = new OneOptionSource();
-       try {
-           ArgsOptionParser parser = new ArgsOptionParser(object);
-           parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expected
-       }
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       final String expectedValue = "set";
+       // extra option should be ignored
+       parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
+       assertEquals(expectedValue, object.mMyOption);
    }
 
    // TODO: add tests for @Option's of different data types

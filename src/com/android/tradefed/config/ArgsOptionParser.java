@@ -92,6 +92,10 @@ class ArgsOptionParser extends OptionParser {
         }
 
         final Field field = fieldForArg(name);
+        if (field == null) {
+            // not an option for this source
+            return;
+        }
         final Handler handler = getHandler(field.getGenericType());
         if (value == null) {
             if (handler.isBoolean()) {
@@ -112,6 +116,7 @@ class ArgsOptionParser extends OptionParser {
             throws ConfigurationException {
         for (int i = 1; i < arg.length(); ++i) {
             final String name = SHORT_NAME_PREFIX + arg.charAt(i);
+            // TODO: fix this to handle a field that was not found
             final Field field = fieldForArg(name);
             final Handler handler = getHandler(field.getGenericType());
             String value;

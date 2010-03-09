@@ -12,18 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_PATH := $(call my-dir)
+LOCAL_PATH:= $(call my-dir)
 
 include $(CLEAR_VARS)
 
-# Only compile source java files in this lib.
+LOCAL_MODULE_TAGS := tests
+
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
-LOCAL_MODULE := GoogleTradeFedTests
+LOCAL_SDK_VERSION := current
 
-LOCAL_JAVA_LIBRARIES := GoogleTradeFed ddmlib easymock junit
+LOCAL_PACKAGE_NAME := TradeFedTestApp
 
-include $(BUILD_HOST_JAVA_LIBRARY)
-
-# Build all sub-directories
-include $(call all-makefiles-under,$(LOCAL_PATH))
+include $(BUILD_PACKAGE)

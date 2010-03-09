@@ -18,15 +18,15 @@ package com.android.tradefed.command;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
-import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
+import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceManager;
-import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.ILeveledLogOutput;
 
 /**
@@ -37,8 +37,9 @@ import com.android.tradefed.log.ILeveledLogOutput;
  */
 public class Command {
 
-
-    // Package private constructor so this can be created by tests
+    /**
+     *  Package private constructor so this can be created by tests.
+     */
     Command() {
     }
 
@@ -74,7 +75,7 @@ public class Command {
     /**
      * Factory method for creating a {@link TestInvocation}.
      *
-     * @returns the {@link ITestInvocation} to use
+     * @return the {@link ITestInvocation} to use
      */
     ITestInvocation createRunInstance() {
         return new TestInvocation();
@@ -83,7 +84,7 @@ public class Command {
     /**
      * Factory method for getting a reference to the {@link IDeviceManager}
      *
-     * @returns the {@link IDeviceManager} to use
+     * @return the {@link IDeviceManager} to use
      */
     IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
@@ -93,7 +94,7 @@ public class Command {
      * Factory method for creating a {@link IConfiguration}.
      *
      * @param args the command line arguments
-     * @returns the {@link IConfiguration} populated with option values supplied in args
+     * @return the {@link IConfiguration} populated with option values supplied in args
      * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
      */
     IConfiguration createConfiguration(String[] args) throws ConfigurationException {
@@ -101,17 +102,17 @@ public class Command {
     }
 
     /**
-     * Output the command line usage of this program to stdout
+     * Output the command line usage of this program to stdout.
      *
      * @param config the {@link IConfiguration} in use.
      */
-    void printUsage(IConfiguration config) {
+    void printUsage(IConfiguration config) throws ConfigurationException {
         // TODO: Also print out list of configs from ConfigurationFactory?
         config.printCommandUsage(System.out);
     }
 
     /**
-     * Main entry point for TradeFederation command line launcher
+     * Main entry point for TradeFederation command line launcher.
      *
      * @param args command line arguments. Expected format: [option] [config_name]
      */

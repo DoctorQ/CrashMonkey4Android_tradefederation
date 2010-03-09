@@ -17,7 +17,7 @@ package com.android.tradefed.device;
 
 
 /**
- * Thrown when a device is no longer available for testing
+ * Thrown when a device is no longer available for testing.
  * e.g. the adb connection to the device has been lost, device has stopped responding to commands,
  * etc
  */
