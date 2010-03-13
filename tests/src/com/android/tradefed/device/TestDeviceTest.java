@@ -158,6 +158,10 @@ public class TestDeviceTest extends TestCase {
             return 0;
         }
 
+        public String getMountPoint(String name) {
+            return null;
+        }
+
         public RawImage getScreenshot() throws IOException {
             return null;
         }
