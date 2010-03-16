@@ -24,6 +24,7 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
@@ -56,7 +57,7 @@ public class Command {
             Log.setLogOutput(logger);
             DdmPreferences.setLogLevel(logger.getLogLevel());
             ITestInvocation instance = createRunInstance();
-            IDeviceManager manager = getDeviceManager();
+            IDeviceManager manager = getDeviceManager(config.getDeviceRecovery());
             ITestDevice device = manager.allocateDevice();
             instance.invoke(device, config);
         } catch (DeviceNotAvailableException e) {
@@ -89,7 +90,8 @@ public class Command {
      *
      * @return the {@link IDeviceManager} to use
      */
-    IDeviceManager getDeviceManager() {
+    IDeviceManager getDeviceManager(IDeviceRecovery recovery) {
+        DeviceManager.init(recovery);
         return DeviceManager.getInstance();
     }
 

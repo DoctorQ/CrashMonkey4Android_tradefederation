@@ -18,6 +18,7 @@ package com.android.tradefed.testtype;
 
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
 import java.util.Collection;
@@ -31,14 +32,27 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
 
     /** the Android package name of test application */
     private final String mPackageName;
+    /** the Android InstrumentationTestRunner class name to use */
+    private final String mRunnerName;
+
     /** the set of tests to run */
     private final Collection<TestIdentifier> mTests;
     /** Aborts the test run if any test takes longer than the specified number of milliseconds */
     private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
     private ITestDevice mDevice = null;
 
-    InstrumentationListTest(String packageName, Collection<TestIdentifier> testsToRun) {
+    /**
+     * Creates a {@link InstrumentationListTest}.
+     *
+     * @param packageName the Android manifest package of test application
+     * @param runnerName the Instrumentation runner to use
+     * @param testsToRun a {@link Collection} of tests to run. Note this {@link Collection} will be
+     * used as is (ie a reference to the testsToRun object will be kept).
+     */
+    InstrumentationListTest(String packageName, String runnerName,
+            Collection<TestIdentifier> testsToRun) {
         mPackageName = packageName;
+        mRunnerName = runnerName;
         mTests = testsToRun;
     }
 
@@ -80,7 +94,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestRunListener listener) {
+    public void run(final ITestRunListener listener) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -89,6 +103,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             InstrumentationTest runner = createInstrumentationTest();
             runner.setDevice(mDevice);
             runner.setPackageName(mPackageName);
+            runner.setRunnerName(mRunnerName);
             runner.setClassName(testToRun.getClassName());
             runner.setMethodName(testToRun.getTestName());
             runner.setTestTimeout(mTestTimeout);

@@ -55,4 +55,14 @@ public interface IDeviceManager {
      * @param listener the listener previously added.
      */
     public void removeListener(IDeviceListener listener);
+
+    /**
+     * Waits for device to be online.
+     *
+     * @param device the previously allocated {@link ITestDevice}
+     * @param time the maximum time in ms to wait
+     *
+     * @throws DeviceNotAvailableException if time expires and device is still not online.
+     */
+    public void waitForDevice(ITestDevice device, long time) throws DeviceNotAvailableException;
 }

@@ -30,6 +30,7 @@ public class DeviceManagerTest extends TestCase {
 
     private DeviceManager mDeviceManager;
     private IAndroidDebugBridge mMockAdbBridge;
+    private IDeviceRecovery mMockRecovery;
 
     /**
      * {@inheritDoc}
@@ -38,7 +39,8 @@ public class DeviceManagerTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockAdbBridge = EasyMock.createMock(IAndroidDebugBridge.class);
-        mDeviceManager = new DeviceManager() {
+        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
+        mDeviceManager = new DeviceManager(mMockRecovery) {
             @Override
             void initAdb() {
                 // do nothing
@@ -99,9 +101,8 @@ public class DeviceManagerTest extends TestCase {
      */
     public void testFreeDevice_noop() throws DeviceNotAvailableException {
         IDevice mockIDevice = EasyMock.createMock(IDevice.class);
-        ITestDevice testDevice = EasyMock.createMock(ITestDevice.class);
-        EasyMock.expect(testDevice.getIDevice()).andReturn(mockIDevice);
-        EasyMock.expect(mockIDevice.getSerialNumber()).andReturn("dontexist");
+        ITestDevice testDevice = EasyMock.createNiceMock(ITestDevice.class);
+        EasyMock.expect(testDevice.getSerialNumber()).andReturn("dontexist");
         EasyMock.replay(testDevice);
         EasyMock.replay(mockIDevice);
         mDeviceManager.freeDevice(testDevice);
@@ -120,5 +121,4 @@ public class DeviceManagerTest extends TestCase {
     public void testRemoveListener() {
         // TODO: implement this
     }
-
 }

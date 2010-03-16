@@ -18,6 +18,10 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.ITestRunListener;
+
+import java.util.Collection;
 
 /**
  *  Provides an reliable and slightly higher level API to a ddmlib {@link IDevice}.
@@ -26,6 +30,21 @@ import com.android.ddmlib.IShellOutputReceiver;
  *  interface for devices which have gone offline.
  */
 public interface ITestDevice {
+
+    /**
+     * Returns a reference to the associated ddmlib {@link IDevice}.
+     *
+     * @return the {@link IDevice}
+     */
+    public IDevice getIDevice();
+
+
+    /**
+     * Convenience method to get serial number of this device.
+     *
+     * @return the {@link String} serial number
+     */
+    public String getSerialNumber();
 
     /**
      * Executes the given adb shell command.
@@ -47,11 +66,21 @@ public interface ITestDevice {
      */
     public String executeShellCommand(String command) throws DeviceNotAvailableException;
 
+
     /**
-     * Returns a reference to the associated ddmlib {@link IDevice}.
+     * Runs instrumentation tests, and provides device recovery.
+     * <p/>
+     * If connection with device is lost before test run completes, and recovery succeeds, this
+     * method will simply return control to caller. eg test command will not be rerun.
+     * <p/>
+     * If connection with device is lost before test run completes, and recovery fails, all
+     * listeners will be informed of testRunFailed and DeviceNotAvailableException will be thrown.
      *
-     * @return the {@link IDevice}
+     * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
+     * @param listeners the test result listeners
+     * @throws DeviceNotAvailableException if connection with device is lost and recovery fails.
      */
-    public IDevice getIDevice();
+    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException;
 
 }

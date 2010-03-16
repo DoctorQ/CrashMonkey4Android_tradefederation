@@ -237,6 +237,11 @@ import junit.framework.TestResult;
         // ignore
     }
 
-
+    /**
+     * {@inheritDoc}
+     */
+    public void invocationFailed(String message, Throwable cause) {
+        // ignore
+    }
 }
 

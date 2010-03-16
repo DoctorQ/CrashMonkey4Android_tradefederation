@@ -16,14 +16,14 @@
 package com.android.tradefed.device;
 
 /**
- * Empty no-op implementation of a {@link IDeviceRecovery}.
+ * Empty implementation of a {@link IDeviceRecovery}.
  */
 public class StubDeviceRecovery implements IDeviceRecovery {
 
     /**
      * {@inheritDoc}
      */
-    public boolean recoverDevice(ITestDevice device) {
-        return false;
+    public void recoverDevice(ITestDevice device) throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException("device recovery not implemented");
     }
 }

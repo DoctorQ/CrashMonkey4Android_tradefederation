@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.config;
 
-import com.android.tradefed.device.StubDeviceRecovery;
+import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.StdoutLogger;
 import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetsetup.StubBuildProvider;
@@ -37,7 +37,7 @@ class HostTestConfiguration extends AbstractConfiguration {
     HostTestConfiguration() throws ConfigurationException {
         super();
         addObject(BUILD_PROVIDER_NAME, new StubBuildProvider());
-        addObject(DEVICE_RECOVERY_NAME, new StubDeviceRecovery());
+        addObject(DEVICE_RECOVERY_NAME, new WaitDeviceRecovery());
         addObject(TARGET_PREPARER_NAME, new StubTargetPreparer());
         addObject(TEST_NAME, new HostTest());
         addObject(LOGGER_NAME, new StdoutLogger());

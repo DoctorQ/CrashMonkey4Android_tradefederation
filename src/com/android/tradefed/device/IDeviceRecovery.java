@@ -24,9 +24,8 @@ public interface IDeviceRecovery {
      * Attempt to recover the given device that can no longer be communicated with.
      *
      * @param device the {@link ITestDevice} to recover.
-     * @return <code>true</code> if device was recovered successfully, <code>false</code>
-     * otherwise.
+     * @throws DeviceNotAvailableException if device could not be recovered
      */
-    public boolean recoverDevice(ITestDevice device);
+    public void recoverDevice(ITestDevice device) throws DeviceNotAvailableException;
 
 }

@@ -23,10 +23,14 @@ import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.log.LogReceiver;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.ITestRunListener;
 
 import org.easymock.EasyMock;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -39,6 +43,7 @@ public class TestDeviceTest extends TestCase {
     private IDevice mMockIDevice;
     private IShellOutputReceiver mMockReceiver;
     private TestDevice mTestDevice;
+    private IDeviceRecovery mMockRecovery;
 
     /**
      * {@inheritDoc}
@@ -48,7 +53,8 @@ public class TestDeviceTest extends TestCase {
         super.setUp();
         mMockIDevice = EasyMock.createMock(IDevice.class);
         mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
-        mTestDevice = new TestDevice(mMockIDevice);
+        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
+        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery);
     }
 
     /**
@@ -74,7 +80,6 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException {
         final String testCommand = "simple command";
         final String expectedOutput = "this is the output\r\n in two lines\r\n";
-        final String[] input = new String[] {"this is the output", " in two lines"};
 
         // expect shell command to be called, with any receiver
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), (IShellOutputReceiver)
@@ -83,7 +88,8 @@ public class TestDeviceTest extends TestCase {
               new MockDevice() {
                   @Override
                   public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                      ((MultiLineReceiver) receiver).processNewLines(input);
+                      byte[] inputData = expectedOutput.getBytes();
+                      receiver.addOutput(inputData, 0, inputData.length);
                   }
               });
         EasyMock.replay(mMockIDevice);
@@ -92,23 +98,134 @@ public class TestDeviceTest extends TestCase {
 
     /**
      * Test {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)} behavior when
-     * {@link IDevice} throws IOException.
+     * {@link IDevice} throws IOException and recovery immediately fails.
      * <p/>
      * Verify that a DeviceNotAvailableException is thrown.
-     * TODO: change this to expect retries etc
      */
-    public void testExecuteShellCommand_ioException() throws IOException {
+    public void testExecuteShellCommand_recoveryFail() throws Exception {
         final String testCommand = "simple command";
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall().andThrow(new IOException());
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
+        mMockRecovery.recoverDevice(mTestDevice);
+        EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
         try {
             mTestDevice.executeShellCommand(testCommand, mMockReceiver);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
         }
+    }
+
+    /**
+     * Test {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)} behavior when
+     * {@link IDevice} throws IOException and recovery succeeds.
+     * <p/>
+     * Verify that command is re-tried.
+     */
+    public void testExecuteShellCommand_recoveryRetry() throws Exception {
+        final String testCommand = "simple command";
+        // expect shell command to be called
+        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        EasyMock.expectLastCall().andThrow(new IOException());
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
+        mMockRecovery.recoverDevice(mTestDevice);
+        EasyMock.expectLastCall();
+        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        EasyMock.expectLastCall();
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        mTestDevice.executeShellCommand(testCommand, mMockReceiver);
+    }
+
+    /**
+     * Test {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)} behavior when
+     * {@link IDevice} repeatedly throws IOException and recovery succeeds.
+     * <p/>
+     * Verify that DeviceNotAvailableException is thrown.
+     */
+    public void testExecuteShellCommand_recoveryAttempts() throws Exception {
+        final String testCommand = "simple command";
+        // expect shell command to be called
+        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        EasyMock.expectLastCall().andThrow(new IOException()).anyTimes();
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
+        mMockRecovery.recoverDevice(mTestDevice);
+        EasyMock.expectLastCall().anyTimes();
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        try {
+            mTestDevice.executeShellCommand(testCommand, mMockReceiver);
+            fail("DeviceNotAvailableException not thrown");
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link TestDevice#runInstrumentationTests(IRemoteAndroidTestRunner, Collection)}
+     * success case.
+     */
+    public void testRunInstrumentationTests() throws Exception {
+        IRemoteAndroidTestRunner mockRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
+        Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(0);
+        // expect runner.run command to be called
+        mockRunner.run(listeners);
+        EasyMock.replay(mockRunner);
+        mTestDevice.runInstrumentationTests(mockRunner, listeners);
+    }
+
+    /**
+     * Test {@link TestDevice#runInstrumentationTests(IRemoteAndroidTestRunner, Collection)}
+     * when recovery fails.
+     */
+    public void testRunInstrumentationTests_recoveryFails() throws Exception {
+        IRemoteAndroidTestRunner mockRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
+        Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
+        ITestRunListener listener = EasyMock.createMock(ITestRunListener.class);
+        listeners.add(listener);
+        mockRunner.run(listeners);
+        EasyMock.expectLastCall().andThrow(new IOException());
+        EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
+        listener.testRunFailed((String)EasyMock.anyObject());
+        mMockRecovery.recoverDevice(mTestDevice);
+        EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
+        EasyMock.replay(listener);
+        EasyMock.replay(mockRunner);
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        try {
+            mTestDevice.runInstrumentationTests(mockRunner, listeners);
+            fail("DeviceNotAvailableException not thrown");
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link TestDevice#runInstrumentationTests(IRemoteAndroidTestRunner, Collection)}
+     * when recovery succeeds.
+     */
+    public void testRunInstrumentationTests_recoverySucceeds() throws Exception {
+        IRemoteAndroidTestRunner mockRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
+        Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
+        ITestRunListener listener = EasyMock.createMock(ITestRunListener.class);
+        listeners.add(listener);
+        mockRunner.run(listeners);
+        EasyMock.expectLastCall().andThrow(new IOException());
+        EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
+        listener.testRunFailed((String)EasyMock.anyObject());
+        mMockRecovery.recoverDevice(mTestDevice);
+        EasyMock.replay(listener);
+        EasyMock.replay(mockRunner);
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        mTestDevice.runInstrumentationTests(mockRunner, listeners);
     }
 
     /**
@@ -227,6 +344,5 @@ public class TestDeviceTest extends TestCase {
         public String uninstallPackage(String packageName) throws IOException {
             return null;
         }
-
     }
 }

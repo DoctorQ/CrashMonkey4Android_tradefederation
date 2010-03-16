@@ -16,6 +16,7 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
@@ -51,12 +52,12 @@ public class InstrumentationListTestTest extends TestCase {
     /**
      * Test normal run scenario with a single test.
      */
-    public void testRun() {
+    public void testRun() throws DeviceNotAvailableException {
         final String packageName = "com.foo";
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
         final Collection<TestIdentifier> testList = new ArrayList<TestIdentifier>(1);
         testList.add(test);
-        mInstrumentationListTest = new InstrumentationListTest(packageName, testList) {
+        mInstrumentationListTest = new InstrumentationListTest(packageName, "foo", testList) {
             @Override
             InstrumentationTest createInstrumentationTest() {
                 return mMockInstrumentationTest;
@@ -73,8 +74,8 @@ public class InstrumentationListTestTest extends TestCase {
     /**
      * Test that IllegalArgumentException is thrown when attempting run without setting device.
      */
-    public void testRun_noDevice() {
-        mInstrumentationListTest = new InstrumentationListTest("foo",
+    public void testRun_noDevice() throws DeviceNotAvailableException {
+        mInstrumentationListTest = new InstrumentationListTest("foo", "foo",
                 new ArrayList<TestIdentifier>()) {
             @Override
             InstrumentationTest createInstrumentationTest() {

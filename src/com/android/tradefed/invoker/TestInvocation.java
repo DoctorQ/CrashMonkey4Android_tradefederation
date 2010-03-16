@@ -18,6 +18,7 @@ package com.android.tradefed.invoker;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
@@ -54,23 +55,37 @@ public class TestInvocation implements ITestInvocation {
      * {@inheritDoc}
      */
     public void invoke(ITestDevice device, IConfiguration config) {
+        ITestInvocationListener listener = null;
         try {
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
             Test test = config.getTest();
-            ITestInvocationListener listener = config.getTestInvocationListener();
+            listener = config.getTestInvocationListener();
             IBuildInfo info = buildProvider.getBuild();
             preparer.setUp(device, info);
             runTests(device, info, test, listener);
         } catch (TargetSetupError e) {
-            Log.e(LOG_TAG, e);
+            handleError(listener, e);
         } catch (IllegalArgumentException e) {
-            Log.e(LOG_TAG, e);
+            handleError(listener, e);
         } catch (ConfigurationException e) {
-            Log.e(LOG_TAG, e);
-        } catch (Exception e) {
+            handleError(listener, e);
+        } catch (DeviceNotAvailableException e) {
+            handleError(listener, e);
+        } catch (Throwable e) {
             Log.e(LOG_TAG, "Uncaught exception!");
-            Log.e(LOG_TAG, e);
+            handleError(listener, e);
+        }
+    }
+
+    /**
+     * Handle an exception that occurred during test run
+     * @param listener
+     */
+    private void handleError(ITestInvocationListener listener, Throwable e) {
+        Log.e(LOG_TAG, e);
+        if (listener != null) {
+            listener.invocationFailed(e.getMessage(), e);
         }
     }
 
@@ -82,9 +97,10 @@ public class TestInvocation implements ITestInvocation {
      * @param test the {@link Test} to run
      * @param listener the {@link ITestInvocationListener} that listens for test results in real
      * time
+     * @throws DeviceNotAvailableException
      */
     private void runTests(ITestDevice device, IBuildInfo buildInfo, Test test,
-            ITestInvocationListener listener) {
+            ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (test instanceof IDeviceTest) {
             ((IDeviceTest)test).setDevice(device);
         }

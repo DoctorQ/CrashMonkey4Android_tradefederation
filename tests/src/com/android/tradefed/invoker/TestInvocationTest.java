@@ -74,7 +74,7 @@ public class TestInvocationTest extends TestCase {
      * <p/>
      * Verifies that all external interfaces get notified as expected.
      */
-    public void testInvoke_RemoteTest() throws TargetSetupError, ConfigurationException {
+    public void testInvoke_RemoteTest() throws Exception {
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         setupNormalInvoke(test);
         test.run(mMockTestListener);
@@ -118,7 +118,7 @@ public class TestInvocationTest extends TestCase {
      * Test the {@link TestInvocation#invoke(IDevice, IConfiguration)} scenario where the
      * test is a {@link IDeviceTest} and a {@link IConfigurationReceiver}
      */
-    public void testInvoke_deviceConfigTest() throws ConfigurationException, TargetSetupError {
+    public void testInvoke_deviceConfigTest() throws Exception {
          DeviceConfigTest mockDeviceConfigTest = EasyMock.createMock(DeviceConfigTest.class);
          EasyMock.expect(mMockConfiguration.getTest()).andReturn(mockDeviceConfigTest);
          mockDeviceConfigTest.setDevice(mMockDevice);

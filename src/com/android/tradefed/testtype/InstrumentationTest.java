@@ -24,9 +24,12 @@ import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
+import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.RunUtil.IRunnableResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -38,12 +41,25 @@ import junit.framework.TestResult;
  */
 public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCallback {
 
+    /** max number of attempts to collect list of tests in package */
+    private static final int COLLECT_TESTS_ATTEMPTS = 3;
+
+    /** time in ms between collect list of tests attempts */
+    private static final int COLLECT_TESTS_POLL_INTERVAL = 5 * 1000;
+
+    /** max time in ms to allow for single  collect list of tests attempt */
+    private static final int COLLECT_TESTS_OP_TIMEOUT = 2 * 60 * 1000;
+
     static final String TIMED_OUT_MSG = "timed out: test did not complete in %d ms";
     private static final String LOG_TAG = "InstrumentationTest";
 
     @Option(name = "package", shortName = 'p',
             description="The manifest package name of the Android test application to run")
     private String mPackageName = null;
+
+    @Option(name = "runner",
+            description="The instrumentation test runner class name to use")
+    private String mRunnerName = "android.test.InstrumentationTestRunner";
 
     @Option(name = "class", shortName = 'c',
             description="The test class name to run")
@@ -79,6 +95,13 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      */
     void setPackageName(String packageName) {
         mPackageName = packageName;
+    }
+
+    /**
+     * Optionally, set the Android instrumentation runner to use.
+     */
+    void setRunnerName(String runnerName) {
+        mRunnerName = runnerName;
     }
 
     /**
@@ -157,14 +180,15 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * @return the {@link IRemoteAndroidTestRunner} to use.
      */
-    IRemoteAndroidTestRunner createRemoteAndroidTestRunner(String packageName, IDevice device) {
-        return new RemoteAndroidTestRunner(packageName, device);
+    IRemoteAndroidTestRunner createRemoteAndroidTestRunner(String packageName, String runnerName,
+            IDevice device) {
+        return new RemoteAndroidTestRunner(packageName, runnerName, device);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestRunListener listener) {
+    public void run(final ITestRunListener listener) throws DeviceNotAvailableException {
         if (mPackageName == null) {
             throw new IllegalArgumentException("package name has not been set");
         }
@@ -172,7 +196,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             throw new IllegalArgumentException("Device has not been set");
         }
 
-        mRunner = createRemoteAndroidTestRunner(mPackageName,
+        mRunner = createRemoteAndroidTestRunner(mPackageName, mRunnerName,
                 mDevice.getIDevice());
         if (mTestClassName != null) {
             if (mTestMethodName != null) {
@@ -190,10 +214,11 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (mTestTimeout >= 0) {
             mListeners.add(new TestTimeoutListener(mTestTimeout, this));
         }
+
         if (expectedTests != null) {
             runWithRerun(listener, expectedTests);
         } else {
-            mRunner.run(mListeners);
+            mDevice.runInstrumentationTests(mRunner, mListeners);
         }
     }
 
@@ -204,15 +229,15 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      * @param expectedTests the full set of expected tests in this run.
      */
     private void runWithRerun(final ITestRunListener listener,
-            Collection<TestIdentifier> expectedTests) {
+            Collection<TestIdentifier> expectedTests) throws DeviceNotAvailableException {
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);
-        mRunner.run(mListeners);
+        mDevice.runInstrumentationTests(mRunner, mListeners);
         if (testTracker.isRunFailure() || !testTracker.isRunComplete()) {
             // get the delta incomplete tests
             expectedTests.removeAll(testTracker.getTests());
             InstrumentationListTest testRerunner = new InstrumentationListTest(mPackageName,
-                    expectedTests);
+                    mRunnerName, expectedTests);
             testRerunner.setDevice(getDevice());
             testRerunner.setTestTimeout(getTestTimeout());
             testRerunner.run(listener);
@@ -228,21 +253,74 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      * @param runner the {@link IRemoteAndroidTestRunner} to use to run the tests.
      * @return a {@link Collection} of {@link TestIdentifier}s that represent all tests to be
      * executed by this run
+     * @throws DeviceNotAvailableException
      */
-    private Collection<TestIdentifier> collectTestsToRun(IRemoteAndroidTestRunner runner) {
+    private Collection<TestIdentifier> collectTestsToRun(final IRemoteAndroidTestRunner runner)
+            throws DeviceNotAvailableException {
         if (isRerunMode()) {
             runner.setLogOnly(true);
-            CollectingTestListener listener = new CollectingTestListener();
-            runner.run(listener);
+            // try to collect tests multiple times, in case device is temporarily not available
+            // on first attempt
+            CollectingTestsRunnable collectRunnable = new CollectingTestsRunnable(mDevice,
+                    mRunner);
+            boolean result = RunUtil.runTimedRetry(COLLECT_TESTS_OP_TIMEOUT,
+                    COLLECT_TESTS_POLL_INTERVAL, COLLECT_TESTS_ATTEMPTS, collectRunnable);
             runner.setLogOnly(false);
-            if (!listener.isRunFailure() && listener.isRunComplete()) {
-                return listener.getTests();
+            if (result) {
+                return collectRunnable.getTests();
+            } else if (collectRunnable.getException() != null) {
+                throw collectRunnable.getException();
+            } else {
+                Log.w(LOG_TAG, String.format("Failed to collect tests to run for %s",
+                        mPackageName));
             }
-            Log.w(LOG_TAG, String.format("Failed to collect tests to run for %s",
-                    mPackageName));
-            // TODO: collect device logcat ?
         }
         return null;
+    }
+
+    /**
+     * Collects list of tests to be executed by this test run.
+     * Wrapped as a {@link IRunnableResult} so this command can be re-attempted.
+     */
+    private static class CollectingTestsRunnable implements IRunnableResult {
+        private final IRemoteAndroidTestRunner mRunner;
+        private final ITestDevice mDevice;
+        private Collection<TestIdentifier> mTests;
+        private DeviceNotAvailableException mException;
+
+        public CollectingTestsRunnable(ITestDevice device, IRemoteAndroidTestRunner runner) {
+            mRunner = runner;
+            mDevice = device;
+            mTests = null;
+            mException = null;
+        }
+
+        public boolean run() {
+            CollectingTestListener listener = new CollectingTestListener();
+            Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
+            listeners.add(listener);
+            try {
+                mDevice.runInstrumentationTests(mRunner, listeners);
+                mTests = listener.getTests();
+                return !listener.isRunFailure() && listener.isRunComplete();
+            } catch (DeviceNotAvailableException e) {
+                // TODO: should throw this immediately if it occurs, rather than continuing to
+                // retry
+                mException = e;
+            }
+            return false;
+        }
+
+        /**
+         * Gets the collected tests. Must be called after {@link run}.
+         */
+        public Collection<TestIdentifier> getTests() {
+            return new ArrayList<TestIdentifier>(mTests);
+        }
+
+        public DeviceNotAvailableException getException() {
+            return mException;
+        }
     }
 
     /**

@@ -15,10 +15,11 @@
  */
 package com.android.tradefed.command;
 
-import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.ConfigurationException;
-import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.StdoutLogger;
@@ -39,6 +40,7 @@ public class CommandTest extends TestCase {
     private IDeviceManager mMockDeviceManager;
     private IConfiguration mMockConfiguration;
     private ITestDevice mMockDevice;
+    private IDeviceRecovery mMockRecovery;
 
     @Override
     protected void setUp() throws Exception {
@@ -46,6 +48,7 @@ public class CommandTest extends TestCase {
         mMockTestInvoker = EasyMock.createMock(ITestInvocation.class);
         mMockDeviceManager = EasyMock.createMock(IDeviceManager.class);
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
+        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
 
         mCommand = new Command() {
@@ -55,7 +58,7 @@ public class CommandTest extends TestCase {
             }
 
             @Override
-            IDeviceManager getDeviceManager() {
+            IDeviceManager getDeviceManager(IDeviceRecovery recovery) {
                 return mMockDeviceManager;
             }
 
@@ -72,6 +75,7 @@ public class CommandTest extends TestCase {
     public void testRun() throws DeviceNotAvailableException, ConfigurationException {
         // expect getLogOutput to be called
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
+        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
         // expect doRun is invoked with the device
@@ -91,6 +95,7 @@ public class CommandTest extends TestCase {
     public void testRun_noDevice() throws DeviceNotAvailableException, ConfigurationException {
         // expect getLogOutput to be called
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
+        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice()).andThrow(
                  new DeviceNotAvailableException("no device"));

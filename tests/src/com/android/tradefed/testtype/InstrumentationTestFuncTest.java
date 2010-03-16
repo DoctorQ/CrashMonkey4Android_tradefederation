@@ -18,6 +18,7 @@ package com.android.tradefed.testtype;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 
@@ -62,7 +63,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test normal run scenario with a single passed test result.
      */
-    public void testRun() {
+    public void testRun() throws DeviceNotAvailableException {
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, PASSED_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(PASSED_TEST_METHOD);
@@ -77,7 +78,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test normal run scenario with a single failed test result.
      */
-    public void testRun_testFailed() {
+    public void testRun_testFailed() throws DeviceNotAvailableException {
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, FAILED_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(FAILED_TEST_METHOD);
@@ -95,13 +96,16 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test run scenario where test process crashes.
      */
-    public void testRun_testCrash() {
+    public void testRun_testCrash() throws DeviceNotAvailableException {
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, CRASH_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(CRASH_TEST_METHOD);
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
-        mMockListener.testRunFailed("java.lang.RuntimeException");
+        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
+                (String)EasyMock.anyObject());
+        mMockListener.testEnded(EasyMock.eq(expectedTest));
+        mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
@@ -110,7 +114,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test run scenario where test run hangs indefinitely, and times out.
      */
-    public void testRun_testTimeout() {
+    public void testRun_testTimeout() throws DeviceNotAvailableException {
         final long timeout = 1000;
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
@@ -129,13 +133,16 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test run scenario where device reboots during test run.
      */
-    public void testRun_deviceReboot() throws InterruptedException, IOException {
+    public void testRun_deviceReboot() throws Exception {
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE,
                 TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(TIMEOUT_TEST_METHOD);
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
+        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
+                (String)EasyMock.anyObject());
+        mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         // fork off a thread to do the reboot
@@ -145,7 +152,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 // wait for test run to begin
                 try {
                     Thread.sleep(500);
-                    Runtime.getRuntime().exec("adb reboot");
+                    Runtime.getRuntime().exec(String.format("adb -s %s reboot",
+                            getDevice().getIDevice().getSerialNumber()));
                 } catch (InterruptedException e) {
                     Log.w(LOG_TAG, "interrupted");
                 } catch (IOException e) {
@@ -162,7 +170,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * (currently TIMEOUT_TEST_METHOD and CRASH_TEST_METHOD). Verify that results are
      * recorded for all tests in the suite.
      */
-    public void testRun_rerun() throws InterruptedException, IOException {
+    public void testRun_rerun() throws Exception {
         // run all tests in class
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setRerunMode(true);
@@ -172,5 +180,4 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         assertEquals(TOTAL_TEST_CLASS_TESTS, listener.getTestResults().size());
         assertEquals(TOTAL_TEST_CLASS_PASSED_TESTS, listener.getNumPassedTests());
     }
-
 }

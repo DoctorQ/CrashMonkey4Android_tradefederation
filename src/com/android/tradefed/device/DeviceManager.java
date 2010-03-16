@@ -24,7 +24,6 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import java.util.HashSet;
 import java.util.Set;
 
-// TODO: make this thread safe
 /**
  * {@inheritDoc}
  */
@@ -35,11 +34,10 @@ public class DeviceManager implements IDeviceManager {
     /** Tracks the {@link IDevice#getSerialNumber()} currently allocated for testing. */
     private Set<String> mDeviceSerialsInUse;
     private IAndroidDebugBridge mAdbBridge;
+    private final IDeviceRecovery mRecovery;
 
-    /**
-     * * The default maximum time to wait for a device to be connected.
-     */
-    private static final int DEFAULT_MAX_WAIT_DEVICE_TIME = 10000;
+    /** The default maximum time in ms to wait for a device to be connected. */
+    private static final int DEFAULT_MAX_WAIT_DEVICE_TIME = 10 * 1000;
 
     private static final String LOG_TAG = "DeviceManager";
 
@@ -47,15 +45,35 @@ public class DeviceManager implements IDeviceManager {
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
      */
-    DeviceManager() {
+    DeviceManager(IDeviceRecovery recovery) {
         mDeviceSerialsInUse = new HashSet<String>();
         initAdb();
         mAdbBridge = createAdbBridge();
+        mRecovery = recovery;
     }
 
-    public static IDeviceManager getInstance() {
+    /**
+     * Creates the static {@link IDeviceManager} instance to be used.
+     *
+     * @param recovery the {@link IDeviceRecovery} to use.
+     * @throws IllegalStateException if init has already been called
+     */
+    public synchronized static void init(IDeviceRecovery recovery) {
         if (sInstance == null) {
-            sInstance = new DeviceManager();
+            sInstance = new DeviceManager(recovery);
+        } else {
+            throw new IllegalStateException();
+        }
+    }
+
+    /**
+     * Return the previously created {@link IDeviceManager} instance to use.
+     *
+     * @throws IllegalStateException if init() has not been called
+     */
+    public synchronized static IDeviceManager getInstance() {
+        if (sInstance == null) {
+            throw new IllegalStateException();
         }
         return sInstance;
     }
@@ -63,27 +81,16 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice() throws DeviceNotAvailableException {
+    public synchronized ITestDevice allocateDevice() throws DeviceNotAvailableException {
         for (IDevice device : mAdbBridge.getDevices()) {
             if (!mDeviceSerialsInUse.contains(device.getSerialNumber())) {
                 mDeviceSerialsInUse.add(device.getSerialNumber());
-                return new TestDevice(device);
+                return new TestDevice(device, mRecovery);
             }
         }
-        String deviceSerial = null;
-        // TODO move this logic elsewhere
-        Log.i(LOG_TAG, "Waiting for device...");
-        NewDeviceListener listener = new NewDeviceListener(deviceSerial);
-        mAdbBridge.addDeviceChangeListener(listener);
-        IDevice device = listener.waitForDevice(DEFAULT_MAX_WAIT_DEVICE_TIME);
-        mAdbBridge.removeDeviceChangeListener(listener);
-        if (device == null) {
-            throw new DeviceNotAvailableException("Could not connect to device");
-        } else {
-            Log.i(LOG_TAG, String.format("Connected to %s", device.getSerialNumber()));
-        }
-        return new TestDevice(device);
-
+        // TODO: move this to a separate method
+        IDevice device = waitForDevice((String)null, DEFAULT_MAX_WAIT_DEVICE_TIME);
+        return new TestDevice(device, mRecovery);
     }
 
     /**
@@ -91,7 +98,7 @@ public class DeviceManager implements IDeviceManager {
      *
      * Exposed so tests can mock this.
      */
-    void initAdb() {
+    synchronized void initAdb() {
         AndroidDebugBridge.init(false /* clientSupport */);
     }
 
@@ -101,22 +108,24 @@ public class DeviceManager implements IDeviceManager {
      * Exposed so tests can mock this.
      * @returns the {@link IAndroidDebugBridge}
      */
-    IAndroidDebugBridge createAdbBridge() {
+    synchronized IAndroidDebugBridge createAdbBridge() {
         return new AndroidDebugBridgeWrapper();
     }
 
     /**
      * {@inheritDoc}
      */
-    public void freeDevice(ITestDevice device) {
-        // TODO: log error if not present
-        mDeviceSerialsInUse.remove(device.getIDevice().getSerialNumber());
+    public synchronized void freeDevice(ITestDevice device) {
+        if (!mDeviceSerialsInUse.remove(device.getSerialNumber())) {
+            Log.w(LOG_TAG, String.format("freeDevice called with unallocated device %s",
+                    device.getSerialNumber()));
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void registerListener(IDeviceListener listener) {
+    public synchronized void registerListener(IDeviceListener listener) {
         // TODO implement this
         throw new UnsupportedOperationException();
     }
@@ -124,26 +133,60 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public void removeListener(IDeviceListener listener) {
+    public synchronized void removeListener(IDeviceListener listener) {
         // TODO implement this
         throw new UnsupportedOperationException();
 
     }
 
     /**
-     * Listener for new Android devices.
-     *
-     * TODO: temporary class, remove this.
+     * {@inheritDoc}
      */
-    private static class NewDeviceListener implements IDeviceChangeListener {
+    public void waitForDevice(ITestDevice testDevice, long time)
+            throws DeviceNotAvailableException {
+        if (testDevice.getIDevice().isOnline()) {
+            // if device has disappeared from adb entirely, it may still be marked as online
+            // ensure its active on adb bridge
+            for (IDevice device : mAdbBridge.getDevices()) {
+                if (device.getSerialNumber().equals(testDevice.getSerialNumber())) {
+                    Log.i(LOG_TAG, String.format("Device %s is already online",
+                            device.getSerialNumber()));
+                    return;
+                }
+            }
+        }
+        waitForDevice(testDevice.getSerialNumber(), time);
+    }
+
+    private IDevice waitForDevice(String deviceSerial, long time)
+            throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Waiting for device %s...", deviceSerial));
+        AdbDeviceListener listener = new AdbDeviceListener(deviceSerial);
+        mAdbBridge.addDeviceChangeListener(listener);
+        IDevice device = listener.waitForDevice(time);
+        mAdbBridge.removeDeviceChangeListener(listener);
+        if (device == null) {
+            throw new DeviceNotAvailableException(String.format("Could not connect to device %s",
+                    deviceSerial));
+        } else {
+            Log.i(LOG_TAG, String.format("Connected to %s", device.getSerialNumber()));
+        }
+        return device;
+    }
+
+    /**
+     * Listens to DDMS for an Android devices.
+     */
+    private static class AdbDeviceListener implements IDeviceChangeListener {
         private IDevice mDevice;
         private String mSerial;
 
-        public NewDeviceListener(String serial) {
+        public AdbDeviceListener(String serial) {
             mSerial = serial;
         }
 
         public void deviceChanged(IDevice device, int changeMask) {
+            // TODO: handle this
         }
 
         public void deviceConnected(IDevice device) {

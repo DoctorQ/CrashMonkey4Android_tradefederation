@@ -53,6 +53,8 @@ public interface ITestInvocationListener extends ITestRunListener {
      * An alternate {@link #testRunStarted(int)} that provides a name for the test run.
      *
      * @param name {@link String} name of the test run, unique per invocation
+     *
+     * TODO: not sure this is needed
      */
     public void testRunStarted(String name, int numTests);
 
@@ -70,5 +72,13 @@ public interface ITestInvocationListener extends ITestRunListener {
      * @param buildInfo information about the build being tested
      */
     public void invocationEnded();
+
+    /**
+     * Reports an incomplete invocation due to a fatal error.
+     *
+     * @param message a {@link String} error description
+     * @param cause the {@link Throwable} cause of the failure
+     */
+    public void invocationFailed(String message, Throwable cause);
 
 }
