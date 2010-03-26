@@ -38,7 +38,7 @@ import java.io.File;
  *  - invocationEnded()
  * <p/>
  * Note that this is re-using the {@link com.android.ddmlib.testrunner.ITestRunListener}
- * because its a generic interface. The results being reported are not necessarily device specific.
+ * because it's a generic interface. The results being reported are not necessarily device specific.
  */
 public interface ITestInvocationListener extends ITestRunListener {
 
