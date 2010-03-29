@@ -53,7 +53,7 @@ public class InstrumentationTestTest extends TestCase {
         super.setUp();
 
         mMockIDevice = EasyMock.createMock(IDevice.class);
-        mMockTestDevice = EasyMock.createMock(ITestDevice.class);
+        mMockTestDevice = EasyMock.createNiceMock(ITestDevice.class);
         EasyMock.expect(mMockTestDevice.getIDevice()).andReturn(mMockIDevice);
         mMockRemoteRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
         mMockListener = EasyMock.createMock(ITestInvocationListener.class);

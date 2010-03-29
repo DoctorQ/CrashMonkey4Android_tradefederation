@@ -21,7 +21,7 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_MODULE := GoogleTradeFedTests
 
-LOCAL_JAVA_LIBRARIES := GoogleTradeFed ddmlib easymock junit
+LOCAL_JAVA_LIBRARIES := GoogleTradeFed ddmlib easymock junit kxml2-2.3.0
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 

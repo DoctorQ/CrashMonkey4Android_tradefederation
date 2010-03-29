@@ -48,7 +48,8 @@ public class CollectingTestListenerTest extends TestCase {
         assertTrue(mCollectingTestListener.isRunComplete());
         assertFalse(mCollectingTestListener.isRunFailure());
         assertEquals(1, mCollectingTestListener.getTestResults().size());
-        assertEquals(TestStatus.PASSED, mCollectingTestListener.getTestResults().get(test));
+        assertEquals(TestStatus.PASSED,
+                mCollectingTestListener.getTestResults().get(test).getStatus());
         assertTrue(mCollectingTestListener.getTests().contains(test));
     }
 

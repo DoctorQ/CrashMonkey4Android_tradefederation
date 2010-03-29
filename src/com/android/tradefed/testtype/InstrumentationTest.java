@@ -205,7 +205,6 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
                 mRunner.setClassName(mTestClassName);
             }
         }
-
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
         mListeners = new ArrayList<ITestRunListener>();
@@ -258,6 +257,8 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     private Collection<TestIdentifier> collectTestsToRun(final IRemoteAndroidTestRunner runner)
             throws DeviceNotAvailableException {
         if (isRerunMode()) {
+            Log.d(LOG_TAG, String.format("Collecting test info for %s on device %s",
+                    mPackageName, mDevice.getSerialNumber()));
             runner.setLogOnly(true);
             // try to collect tests multiple times, in case device is temporarily not available
             // on first attempt
@@ -271,8 +272,8 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             } else if (collectRunnable.getException() != null) {
                 throw collectRunnable.getException();
             } else {
-                Log.w(LOG_TAG, String.format("Failed to collect tests to run for %s",
-                        mPackageName));
+                Log.w(LOG_TAG, String.format("Failed to collect tests to run for %s on device %s",
+                        mPackageName, mDevice.getSerialNumber()));
             }
         }
         return null;

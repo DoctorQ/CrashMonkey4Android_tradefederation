@@ -18,7 +18,8 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 
-import java.util.Hashtable;
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,15 +29,51 @@ import java.util.Set;
 public class CollectingTestListener implements ITestRunListener {
 
     enum TestStatus {
+        /** Test error */
+        ERROR,
         /** Test failed. */
         FAILURE,
         /** Test passed */
         PASSED
     }
 
-    // stores the test results. Hashtable is thread-safe so no need for extra synchronized blocks.
-    private Map<TestIdentifier, TestStatus> mTestResults =
-        new Hashtable<TestIdentifier, TestStatus>();
+    /**
+     * Container for a result of a single test.
+     */
+    public static class TestResult {
+        private final TestStatus mStatus;
+        private final String mStackTrace;
+
+        TestResult(TestStatus status, String trace) {
+            mStatus = status;
+            mStackTrace = trace;
+        }
+
+        TestResult(TestStatus status) {
+            this(status, null);
+        }
+
+        /**
+         * Get the {@link TestStatus} result of the test.
+         */
+        public TestStatus getStatus() {
+            return mStatus;
+        }
+
+        /**
+         * Get the associated {@link String} stack trace. Should be <code>null</code> if
+         * {@link #getStatus()} is {@link TestStatus.PASSED}.
+         */
+        public String getStackTrace() {
+            return mStackTrace;
+        }
+    }
+
+    // Stores the test results
+    // Uses a synchronized map to make thread safe.
+    // Uses a LinkedHashmap to have predictable iteration order
+    private Map<TestIdentifier, TestResult> mTestResults =
+        Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
     private boolean mIsRunComplete = false;
     private boolean mIsRunFailed = false;
 
@@ -53,7 +90,7 @@ public class CollectingTestListener implements ITestRunListener {
     public void testEnded(TestIdentifier test) {
         // only record test pass if failure not already recorded
         if (!mTestResults.containsKey(test)) {
-            mTestResults.put(test, TestStatus.PASSED);
+            mTestResults.put(test, new TestResult(TestStatus.PASSED));
         }
     }
 
@@ -61,7 +98,11 @@ public class CollectingTestListener implements ITestRunListener {
      * {@inheritDoc}
      */
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-        mTestResults.put(test, TestStatus.FAILURE);
+        if (status.equals(TestFailure.ERROR)) {
+            mTestResults.put(test, new TestResult(TestStatus.ERROR, trace));
+        } else {
+            mTestResults.put(test, new TestResult(TestStatus.FAILURE, trace));
+        }
     }
 
     /**
@@ -110,7 +151,7 @@ public class CollectingTestListener implements ITestRunListener {
     /**
      * Gets the map of test results.
      */
-    public Map<TestIdentifier, TestStatus> getTestResults() {
+    public Map<TestIdentifier, TestResult> getTestResults() {
         return mTestResults;
     }
 
@@ -125,12 +166,31 @@ public class CollectingTestListener implements ITestRunListener {
      * Gets the number of passed tests.
      */
     public int getNumPassedTests() {
-        int passed = 0;
-        for (TestStatus status : getTestResults().values()) {
-            if (TestStatus.PASSED.equals(status)) {
-                passed++;
+        return getNumTestsWithStatus(TestStatus.PASSED);
+    }
+
+    /**
+     * Gets the number of failed tests.
+     */
+    public int getNumFailedTests() {
+        return getNumTestsWithStatus(TestStatus.FAILURE);
+    }
+
+    /**
+     * Gets the number of test with {@link TestStatus.ERROR} status.
+     */
+    public int getNumErrorTests() {
+        return getNumTestsWithStatus(TestStatus.ERROR);
+    }
+
+    private int getNumTestsWithStatus(TestStatus status) {
+        // TODO: consider caching these values
+        int count = 0;
+        for (TestResult result : getTestResults().values()) {
+            if (status.equals(result.getStatus())) {
+                count++;
             }
         }
-        return passed;
+        return count;
     }
 }
