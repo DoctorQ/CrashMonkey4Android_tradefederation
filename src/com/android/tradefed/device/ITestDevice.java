@@ -21,6 +21,7 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 
+import java.io.File;
 import java.util.Collection;
 
 /**
@@ -38,7 +39,6 @@ public interface ITestDevice {
      */
     public IDevice getIDevice();
 
-
     /**
      * Convenience method to get serial number of this device.
      *
@@ -51,9 +51,9 @@ public interface ITestDevice {
      *
      * @param command the adb shell command to run
      * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
-     * @throws DeviceNotAvailableException
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
      */
-
     public void executeShellCommand(String command, IShellOutputReceiver receiver)
         throws DeviceNotAvailableException;
 
@@ -62,10 +62,10 @@ public interface ITestDevice {
      *
      * @param command the adb shell command to run
      * @return the shell output
-     * @throws DeviceNotAvailableException
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
      */
     public String executeShellCommand(String command) throws DeviceNotAvailableException;
-
 
     /**
      * Runs instrumentation tests, and provides device recovery.
@@ -78,9 +78,45 @@ public interface ITestDevice {
      *
      * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
      * @param listeners the test result listeners
-     * @throws DeviceNotAvailableException if connection with device is lost and recovery fails.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
      */
     public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException;
+
+    /**
+     * Retrieves a file off device.
+     *
+     * @param remoteFilePath the absolute path to file on device.
+     * @param localFile the local file to store contents in. If non-empty, contents will be
+     * replaced.
+     * @return <code>true</code> if file was retrieved successfully. <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean pullFile(String remoteFilePath, File localFile)
+            throws DeviceNotAvailableException;
+
+    /**
+     * Push a file to device
+     *
+     * @param localFile the local file to push
+     * @param deviceFilePath the remote destination absolute file path
+     * @return <code>true</code> if file was pushed successfully. <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean pushFile(File localFile, String deviceFilePath)
+            throws DeviceNotAvailableException;
+
+    /**
+     * Helper method to determine if file on device exists.
+     *
+     * @param deviceFilePath the absolute path of file on device to check
+     * @return <code>true</code> if file exists, <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException;
 
 }

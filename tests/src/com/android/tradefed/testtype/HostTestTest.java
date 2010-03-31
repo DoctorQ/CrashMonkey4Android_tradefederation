@@ -62,6 +62,11 @@ public class HostTestTest extends TestCase {
            }
            return false;
         }
+
+        @Override
+        public int hashCode() {
+            return getName().hashCode();
+        }
     }
 
     public static class SuccessTestSuite extends TestSuite {
@@ -94,6 +99,11 @@ public class HostTestTest extends TestCase {
                }
            }
            return false;
+        }
+
+        @Override
+        public int hashCode() {
+            return getName().hashCode();
         }
     }
 

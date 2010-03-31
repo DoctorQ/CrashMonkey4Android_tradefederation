@@ -17,30 +17,30 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.StdoutLogger;
-import com.android.tradefed.result.TextResultReporter;
+import com.android.tradefed.result.XmlResultReporter;
 import com.android.tradefed.targetsetup.StubBuildProvider;
 import com.android.tradefed.targetsetup.StubTargetPreparer;
-import com.android.tradefed.testtype.InstrumentationTest;
+import com.android.tradefed.testtype.testdefs.XmlDefsTest;
 
 /**
- * A configuration for simply running an Android instrumentation test.
- *
- * Returns stub no-op objects for most delegates, except
- *   - uses a stdout logger and result reporter
- *   - and a instrumentation test
+ * A {@link IConfiguration} for running instrumentation tests contained in test_def.xml files
+ * <p/>
+ * Uses a stdout logger and XML result reporter.
  */
-class InstrumentConfiguration extends AbstractConfiguration {
+class TestDefConfiguration extends AbstractConfiguration {
 
     /**
-     * Creates a {@link InstrumentConfiguration}, and all its associated delegate objects.
+     * Creates a {@link TestDefConfiguration}, and all its associated delegate objects.
+     *
+     * @throws ConfigurationException
      */
-    InstrumentConfiguration() {
+    TestDefConfiguration() throws ConfigurationException {
         super();
         addObject(BUILD_PROVIDER_NAME, new StubBuildProvider());
         addObject(DEVICE_RECOVERY_NAME, new WaitDeviceRecovery());
         addObject(TARGET_PREPARER_NAME, new StubTargetPreparer());
-        addObject(TEST_NAME, new InstrumentationTest());
+        addObject(TEST_NAME, new XmlDefsTest());
         addObject(LOGGER_NAME, new StdoutLogger());
-        addObject(RESULT_REPORTER_NAME, new TextResultReporter());
+        addObject(RESULT_REPORTER_NAME, new XmlResultReporter());
     }
 }

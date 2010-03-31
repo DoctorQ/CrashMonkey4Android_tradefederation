@@ -16,13 +16,13 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.StubTestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
@@ -199,35 +199,16 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Empty implementation of {@link ITestDevice}.
-     * <p/>
-     * Needed in order to handle the EasyMock andDelegateTo operation.
+     * Test that IllegalArgumentException is thrown if an invalid test size is provided.
      */
-    private static class StubTestDevice implements ITestDevice {
-
-        public void executeShellCommand(String command, IShellOutputReceiver receiver)
-                throws DeviceNotAvailableException {
-            // ignore
-        }
-
-        public String executeShellCommand(String command) throws DeviceNotAvailableException {
-            // ignore
-            return null;
-        }
-
-        public IDevice getIDevice() {
-             // ignore
-            return null;
-        }
-
-        public String getSerialNumber() {
-            // ignore
-            return null;
-        }
-
-        public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
-                Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
-            // ignore
+    public void testRun_badTestSize() throws Exception {
+        mInstrumentationTest.setTestSize("foo");
+        EasyMock.replay(mMockRemoteRunner);
+        try {
+            mInstrumentationTest.run(mMockListener);
+            fail("IllegalArgumentException not thrown");
+        } catch (IllegalArgumentException e) {
+            // expected
         }
     }
 }

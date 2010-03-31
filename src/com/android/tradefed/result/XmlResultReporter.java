@@ -48,6 +48,7 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     @Option(name="report-file", description="path file to xml test result report")
     private File mReportFile = null;
 
+    @SuppressWarnings("unused")
     private IBuildInfo mBuildInfo = null;
 
     private static final String LOG_TAG = "XmlReportReporter";
@@ -61,8 +62,8 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     private static final String ATTR_ERRORS = "errors";
     private static final String ATTR_FAILURES = "failures";
     private static final String ATTR_TESTS = "tests";
-    private static final String ATTR_TYPE = "type";
-    private static final String ATTR_MESSAGE = "message";
+    //private static final String ATTR_TYPE = "type";
+    //private static final String ATTR_MESSAGE = "message";
     private static final String PROPERTIES = "properties";
     private static final String ATTR_CLASSNAME = "classname";
     private static final String TIMESTAMP = "timestamp";
@@ -75,14 +76,18 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
      * {@inheritDoc}
      */
     public void invocationEnded() {
-        generateReport(mReportFile);
+        if (mReportFile != null) {
+            generateReport(mReportFile);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void invocationFailed(String message, Throwable e) {
-        generateReport(mReportFile);
+        if (mReportFile != null) {
+            generateReport(mReportFile);
+        }
     }
 
     /**

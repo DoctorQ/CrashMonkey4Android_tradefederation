@@ -18,4 +18,4 @@
 
 lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
-java -cp $lib_path/easymock.jar:$lib_path/junit.jar:$lib_path/hosttestlib.jar:$lib_path/ddmlib.jar:$lib_path/GoogleTradeFed.jar:$lib_path/GoogleTradeFedTests.jar com.android.tradefed.command.Command --class com.android.tradefed.FuncTests "$@" host
+java -cp $lib_path/easymock.jar:$lib_path/junit.jar:$lib_path/kxml2-2.3.0.jar:$lib_path/ddmlib.jar:$lib_path/GoogleTradeFed.jar:$lib_path/GoogleTradeFedTests.jar com.android.tradefed.command.Command --class com.android.tradefed.FuncTests "$@" host

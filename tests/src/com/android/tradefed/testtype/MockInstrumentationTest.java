@@ -20,7 +20,7 @@ import com.android.ddmlib.testrunner.ITestRunListener;
 /**
  * Mock for InstrumentationTest.
  */
-class MockInstrumentationTest extends InstrumentationTest {
+public class MockInstrumentationTest extends InstrumentationTest {
 
     private ITestRunListener mListener = null;
 
@@ -29,7 +29,7 @@ class MockInstrumentationTest extends InstrumentationTest {
         mListener = listener;
     }
 
-    ITestRunListener getListener() {
+    public ITestRunListener getListener() {
         return mListener;
     }
 }

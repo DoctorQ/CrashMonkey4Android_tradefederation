@@ -19,7 +19,6 @@ import com.android.ddmlib.Client;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.log.LogReceiver;

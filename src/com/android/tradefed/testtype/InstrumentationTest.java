@@ -22,6 +22,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -74,6 +75,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             + " milliseconds ")
     private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
+    @Option(name = "size",
+            description="Restrict test to a specific test size")
+    private String mTestSize = null;
+
     @Option(name = "rerun",
             description="Rerun non-executed tests individually if test run fails to complete")
     private boolean mIsRerunMode = true;
@@ -93,29 +98,43 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * Set the Android manifest package to run.
      */
-    void setPackageName(String packageName) {
+    public void setPackageName(String packageName) {
         mPackageName = packageName;
     }
 
     /**
      * Optionally, set the Android instrumentation runner to use.
      */
-    void setRunnerName(String runnerName) {
+    public void setRunnerName(String runnerName) {
         mRunnerName = runnerName;
     }
 
     /**
      * Optionally, set the test class name to run.
      */
-    void setClassName(String testClassName) {
+    public void setClassName(String testClassName) {
         mTestClassName = testClassName;
     }
 
     /**
      * Optionally, set the test method to run.
      */
-    void setMethodName(String testMethodName) {
+    public void setMethodName(String testMethodName) {
         mTestMethodName = testMethodName;
+    }
+
+    /**
+     * Optionally, set the test size to run.
+     */
+    public void setTestSize(String size) {
+        mTestSize = size;
+    }
+
+    /**
+     * Get the Android manifest package to run.
+     */
+    public String getPackageName() {
+        return mPackageName;
     }
 
     /**
@@ -133,9 +152,16 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     }
 
     /**
+     * Get the test size to run. Returns <code>null</code> if no size has been set.
+     */
+    String getTestSize() {
+        return mTestSize;
+    }
+
+    /**
      * Optionally, set the maximum time for each test.
      */
-    void setTestTimeout(long timeout) {
+    public void setTestTimeout(long timeout) {
         mTestTimeout = timeout;
     }
 
@@ -149,7 +175,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * Optionally, set the rerun mode.
      */
-    void setRerunMode(boolean rerun) {
+    public void setRerunMode(boolean rerun) {
         mIsRerunMode = rerun;
     }
 
@@ -205,6 +231,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
                 mRunner.setClassName(mTestClassName);
             }
         }
+        if (mTestSize != null) {
+            mRunner.setTestSize(TestSize.getTestSize(mTestSize));
+        }
+
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
         mListeners = new ArrayList<ITestRunListener>();

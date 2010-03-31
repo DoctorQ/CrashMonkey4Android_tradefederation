@@ -26,10 +26,13 @@ import com.android.tradefed.invoker.TestInvocationTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.TestResultForwarderTest;
+import com.android.tradefed.result.XmlResultReporterTest;
 import com.android.tradefed.testtype.HostTestTest;
 import com.android.tradefed.testtype.InstrumentationListTestTest;
 import com.android.tradefed.testtype.InstrumentationTestTest;
 import com.android.tradefed.testtype.TestTimeoutListenerTest;
+import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
+import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -54,10 +57,13 @@ public class UnitTests extends TestSuite {
         addTestSuite(CollectingTestListenerTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(TestResultForwarderTest.class);
+        addTestSuite(XmlResultReporterTest.class);
         addTestSuite(InstrumentationListTestTest.class);
         addTestSuite(InstrumentationTestTest.class);
         addTestSuite(HostTestTest.class);
         addTestSuite(TestTimeoutListenerTest.class);
+        addTestSuite(XmlDefsParserTest.class);
+        addTestSuite(XmlDefsTestTest.class);
     }
 
     public static Test suite() {

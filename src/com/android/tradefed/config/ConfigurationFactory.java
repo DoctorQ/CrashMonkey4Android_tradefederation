@@ -24,6 +24,7 @@ public final class ConfigurationFactory {
 
     static final String INSTRUMENT_CONFIG = "instrument";
     static final String HOST_TEST_CONFIG = "host";
+    static final String TEST_DEF_CONFIG = "testdef";
 
     private ConfigurationFactory() {
     }
@@ -41,11 +42,12 @@ public final class ConfigurationFactory {
             return new InstrumentConfiguration();
         } else if (HOST_TEST_CONFIG.equals(name)) {
             return new HostTestConfiguration();
+        } else if (TEST_DEF_CONFIG.equals(name)) {
+            return new TestDefConfiguration();
         }
         throw new ConfigurationException(String.format("Could not find configuration with name %s",
                 name));
     }
-
 
     /**
      * Create the {@link IConfiguration} from given XML file.
