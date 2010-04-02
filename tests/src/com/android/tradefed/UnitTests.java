@@ -23,6 +23,7 @@ import com.android.tradefed.config.OptionParserTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.TestDeviceTest;
 import com.android.tradefed.invoker.TestInvocationTest;
+import com.android.tradefed.log.FileLoggerTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.TestResultForwarderTest;
@@ -54,6 +55,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(DeviceManagerTest.class);
         addTestSuite(TestDeviceTest.class);
         addTestSuite(TestInvocationTest.class);
+        addTestSuite(FileLoggerTest.class);
         addTestSuite(CollectingTestListenerTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(TestResultForwarderTest.class);

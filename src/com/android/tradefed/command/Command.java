@@ -51,9 +51,10 @@ public class Command {
      * @param args the command line arguments
      */
     void run(String[] args) {
+        ILeveledLogOutput logger = null;
         try {
             IConfiguration config = createConfiguration(args);
-            ILeveledLogOutput logger = config.getLogOutput();
+            logger = config.getLogOutput();
             Log.setLogOutput(logger);
             DdmPreferences.setLogLevel(logger.getLogLevel());
             ITestInvocation instance = createRunInstance();
@@ -67,6 +68,11 @@ public class Command {
         } catch (Exception e) {
             System.out.println("Uncaught exception!");
             e.printStackTrace();
+        }
+        finally {
+            if (logger != null) {
+                logger.closeLog();
+            }
         }
 
         exit();

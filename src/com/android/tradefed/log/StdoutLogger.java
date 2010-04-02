@@ -51,4 +51,9 @@ public class StdoutLogger implements ILeveledLogOutput {
         return mLogLevel;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void closeLog() {}
+
 }

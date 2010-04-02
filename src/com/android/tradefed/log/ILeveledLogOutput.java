@@ -30,4 +30,11 @@ public interface ILeveledLogOutput extends ILogOutput {
      * @return the {@link String} form of the {@link LogLevel}
      */
     public String getLogLevel();
+
+    /**
+     * Closes the log and performs any cleanup before closing, as necessary.
+     *
+     */
+    public void closeLog();
+
 }

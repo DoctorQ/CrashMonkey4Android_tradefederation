@@ -36,7 +36,8 @@ public final class ConfigurationFactory {
      * @return the {@link IConfiguration}
      * @throws ConfigurationException if the {@link IConfiguration} could not be loaded.
      */
-    public static IConfiguration getConfiguration(String name) throws ConfigurationException {
+    public static IConfiguration getConfiguration(String name)
+            throws ConfigurationException {
         // TODO: hardcoded names for now
         if (INSTRUMENT_CONFIG.equals(name)) {
             return new InstrumentConfiguration();
