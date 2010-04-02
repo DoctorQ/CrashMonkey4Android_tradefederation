@@ -28,6 +28,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -193,7 +194,12 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (expectedTests != null) {
             runWithRerun(listener, expectedTests);
         } else {
-            mRunner.run(mListeners);
+            try {
+				mRunner.run(mListeners);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
         }
     }
 
@@ -207,7 +213,12 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             Collection<TestIdentifier> expectedTests) {
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);
-        mRunner.run(mListeners);
+        try {
+			mRunner.run(mListeners);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
         if (testTracker.isRunFailure() || !testTracker.isRunComplete()) {
             // get the delta incomplete tests
             expectedTests.removeAll(testTracker.getTests());
@@ -233,7 +244,12 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (isRerunMode()) {
             runner.setLogOnly(true);
             CollectingTestListener listener = new CollectingTestListener();
-            runner.run(listener);
+            try {
+				runner.run(listener);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
             runner.setLogOnly(false);
             if (!listener.isRunFailure() && listener.isRunComplete()) {
                 return listener.getTests();

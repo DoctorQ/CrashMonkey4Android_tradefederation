@@ -25,6 +25,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
 
+import java.io.IOException;
 import java.util.Collection;
 
 import junit.framework.TestCase;
@@ -70,9 +71,10 @@ public class InstrumentationTestTest extends TestCase {
 
     /**
      * Test normal run scenario with a single test result.
+     * @throws IOException 
      */
     @SuppressWarnings("unchecked")
-    public void testRun() {
+    public void testRun() throws IOException {
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
         mMockRemoteRunner.run((Collection<ITestRunListener>)EasyMock.anyObject());
         // verify the mock listener is passed through to the runner
@@ -142,9 +144,10 @@ public class InstrumentationTestTest extends TestCase {
 
     /**
      * Test normal run scenario with a test class specified.
+     * @throws IOException 
      */
     @SuppressWarnings("unchecked")
-    public void testRun_class() {
+    public void testRun_class() throws IOException {
         final String className = "FooTest";
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
         mMockRemoteRunner.setClassName(className);
@@ -156,9 +159,10 @@ public class InstrumentationTestTest extends TestCase {
 
     /**
      * Test normal run scenario with a test class and method specified.
+     * @throws IOException 
      */
     @SuppressWarnings("unchecked")
-    public void testRun_classMethod() {
+    public void testRun_classMethod() throws IOException {
         final String className = "FooTest";
         final String methodName = "testFoo";
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
@@ -200,8 +204,9 @@ public class InstrumentationTestTest extends TestCase {
 
     /**
      * Test a test run when a test times out.
+     * @throws IOException 
      */
-    public void testRun_timeout() {
+    public void testRun_timeout() throws IOException {
         final long timeout = 1000;
         mInstrumentationTest.setTestTimeout(timeout);
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
@@ -219,8 +224,9 @@ public class InstrumentationTestTest extends TestCase {
 
     /**
      * Test the rerun mode when test run fails.
+     * @throws IOException 
      */
-    public void testRun_rerun() {
+    public void testRun_rerun() throws IOException {
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
         mMockRemoteRunner.run((Collection<ITestRunListener>)EasyMock.anyObject());
