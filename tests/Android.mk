@@ -19,9 +19,10 @@ include $(CLEAR_VARS)
 # Only compile source java files in this lib.
 LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
-LOCAL_MODULE := GoogleTradeFedTests
+LOCAL_MODULE := TradeFedTests
 
-LOCAL_JAVA_LIBRARIES := GoogleTradeFed ddmlib easymock junit kxml2-2.3.0
+LOCAL_STATIC_JAVA_LIBRARIES := easymock
+LOCAL_JAVA_LIBRARIES := TradeFed
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 

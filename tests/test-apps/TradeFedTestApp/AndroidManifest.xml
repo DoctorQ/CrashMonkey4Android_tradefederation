@@ -24,4 +24,6 @@
         android:targetPackage="com.android.tradefed.testapp"
         android:label="test app for tradefed" />
 
+    <uses-sdk android:minSdkVersion="3" />
+
 </manifest>
