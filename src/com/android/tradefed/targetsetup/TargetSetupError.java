@@ -30,4 +30,15 @@ public class TargetSetupError extends Exception {
     public TargetSetupError(String reason) {
         super(reason);
     }
+
+    /**
+     * Constructs a new (@link TargetSetupError} with a meaningful error message, and a
+     * cause.
+     *
+     * @param reason a detailed error message.
+     * @param cause a {@link Throwable} capturing the original cause of the TargetSetupError
+     */
+    public TargetSetupError(String reason, Throwable cause) {
+        super(reason, cause);
+    }
 }

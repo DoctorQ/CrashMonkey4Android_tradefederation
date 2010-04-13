@@ -23,6 +23,7 @@ import com.android.ddmlib.Log;
 public class RunUtil {
 
     private static final String LOG_TAG = "RunUtil";
+    private static final int POLL_TIME_INCREASE_FACTOR = 4;
 
     private RunUtil() {
     }
@@ -72,8 +73,14 @@ public class RunUtil {
      */
     public static boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
             IRunnableResult runnable) {
-        return runEscalatingTimedRetry(opTimeout, pollInterval, 1 /* pollTimeIncreaseFactor */,
-                attempts, runnable);
+        for (int i = 0; i < attempts; i++) {
+            if (runTimed(opTimeout, runnable)) {
+                return true;
+            }
+            Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
+            sleep(pollInterval);
+        }
+        return false;
     }
 
     /**
@@ -83,29 +90,33 @@ public class RunUtil {
      * used when performing an operation such as polling a server, to give it time to recover
      * in case it is temporarily down.
      *
-     * @param opTimeout maximum time to wait in ms for one operation attempt
-     * @param initialPollInterval the initial time in ms to wait between command retries
-     * @param pollIntervalScaleFactor factor to increase poll period by after each failed runnable
-     * execution. eg if initialPollInterval = 1 and pollIntervalScaleFactor = 2, poll times will be
-     * 1, 2, 4, 8, etc
-     * @param attempts the maximum number of attempts to try
+     * @param opTimeout maximum time to wait in ms for a single operation attempt
+     * @param initialPollInterval initial time to wait between operation attempts
+     * @param maxPollInterval the max time to wait between operation attempts
+     * @param maxTime the total approximate maximum time to keep trying the operation
      * @param runnable {@link IRunnableResult} to execute
-     * @return <code>true</code> if operation completed successfully before attempts reached.
+     * @return <code>true</code> if operation completed successfully before maxTime expired
      */
-    public static boolean runEscalatingTimedRetry(long opTimeout, long initialPollInterval,
-            int pollIntervalScaleFactor, int attempts, IRunnableResult runnable) {
-        boolean success = false;
+    public static boolean runEscalatingTimedRetry(final long opTimeout,
+            final long initialPollInterval, final long maxPollInterval, final long maxTime,
+            final IRunnableResult runnable) {
+        // wait an initial time provided
         long pollInterval = initialPollInterval;
-        for (int i = 0; i < attempts; i++) {
-            success = runTimed(opTimeout, runnable);
-            if (success) {
-                break;
+        final long initialTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() < (initialTime + maxTime)) {
+            if (runTimed(opTimeout, runnable)) {
+                return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
             sleep(pollInterval);
-            pollInterval *= pollIntervalScaleFactor;
+            // somewhat arbitrarily, increase the poll time by a factor of 4 for each attempt,
+            // up to the previously decided maximum
+            pollInterval *= POLL_TIME_INCREASE_FACTOR;
+            if (pollInterval > maxPollInterval) {
+                pollInterval = maxPollInterval;
+            }
         }
-        return success;
+        return false;
     }
 
     /**

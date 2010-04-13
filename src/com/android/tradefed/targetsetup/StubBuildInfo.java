@@ -27,10 +27,4 @@ public class StubBuildInfo implements IBuildInfo {
         return 0;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public String getBuildFilePath(String alias) {
-        return null;
-    }
 }

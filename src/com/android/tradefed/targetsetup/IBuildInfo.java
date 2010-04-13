@@ -21,6 +21,7 @@ package com.android.tradefed.targetsetup;
  * TODO: what other generic interfaces need to be added:
  * Some potential candidates:
  *   - getBuildDescription - user meaningful string describing build
+ *   - getBranch - too specific ?
  */
 public interface IBuildInfo {
 
@@ -29,12 +30,4 @@ public interface IBuildInfo {
      */
     public int getBuildId();
 
-    /**
-     * Returns the local file path a build file with given alias.
-     *
-     * @param alias unique name of build file. The set of available alias' will be implementation
-     * specific.
-     * @return absolute file path of build file
-     */
-    public String getBuildFilePath(String alias);
 }
