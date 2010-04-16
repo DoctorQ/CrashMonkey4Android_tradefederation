@@ -78,6 +78,7 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
+        mMockDeviceManager.freeDevice(mMockDevice);
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         // switch mock objects to verify mode
@@ -88,7 +89,7 @@ public class CommandTest extends TestCase {
     }
 
     /**
-     * Test that scenario where device cannot be connected.
+     * Test run when a device cannot be allocated.
      * <p/>
      * Expect exception to be captured gracefully and run to not proceed.
      */
@@ -126,5 +127,28 @@ public class CommandTest extends TestCase {
         // expect RunInstance to NOT be called
         EasyMock.replay(mMockTestInvoker);
         command.run(new String[] {});
+    }
+
+    /**
+     * Test that scenario where the invocation throws a unexpected exception
+     * <p/>
+     * Expect exception to be captured gracefully and device to be freed.
+     */
+    public void testRun_uncaughtThrowable() throws ConfigurationException,
+            DeviceNotAvailableException {
+        // expect getLogOutput to be called
+        EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
+        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
+        // expect to be asked for device to connect to and return the mock device
+        EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
+        mMockDeviceManager.freeDevice(mMockDevice);
+        // expect doRun is invoked with the device
+        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
+        EasyMock.expectLastCall().andThrow(new RuntimeException());
+        // switch mock objects to verify mode
+        EasyMock.replay(mMockConfiguration);
+        EasyMock.replay(mMockDeviceManager);
+        EasyMock.replay(mMockTestInvoker);
+        mCommand.run(new String[] {});
     }
 }

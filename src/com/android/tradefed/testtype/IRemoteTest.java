@@ -15,13 +15,13 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.result.ITestInvocationListener;
 
 import junit.framework.Test;
 
 /**
- * A specialization of JUnit Test that reports results to a {@link ITestRunListener}.
+ * A specialization of JUnit Test that reports results to a {@link ITestInvocationListener}.
  *
  * This is desirable so the results of a remote test don't need to be unnecessarily marshalled and
  * unmarshalled from {@link Test} objects.
@@ -31,8 +31,8 @@ public interface IRemoteTest extends Test {
     /**
      * Runs the tests, and reports results to the listener.
      *
-     * @param listener the {@link ITestRunListener}
+     * @param listener the {@link ITestInvocationListener}
      * @throws DeviceNotAvailableException
      */
-    public void run(ITestRunListener listener) throws DeviceNotAvailableException;
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException;
 }

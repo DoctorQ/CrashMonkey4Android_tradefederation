@@ -16,10 +16,10 @@
 package com.android.tradefed.testtype.testdefs;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.InstrumentationTest;
@@ -108,7 +108,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
-    public void run(ITestRunListener listener) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (getDevice() == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -166,6 +166,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
                 File tmpFile = File.createTempFile("test_defs", ".xml");
                 getDevice().pullFile(remoteFilePath, tmpFile);
                 files.add(tmpFile);
+                tmpFile.deleteOnExit();
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Failed to create temp file");
                 Log.e(LOG_TAG, e);

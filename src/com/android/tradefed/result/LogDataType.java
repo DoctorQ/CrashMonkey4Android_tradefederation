@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.testtype;
-
-import com.android.tradefed.result.ITestInvocationListener;
+package com.android.tradefed.result;
 
 /**
- * Mock for InstrumentationTest.
+ * Represents the data type of log data.
  */
-public class MockInstrumentationTest extends InstrumentationTest {
+public enum LogDataType {
 
-    private ITestInvocationListener mListener = null;
+    TEXT("txt"),
+    PNG("png"),
+    UNKNOWN("tmp");
 
-    @Override
-    public void run(final ITestInvocationListener listener) {
-        mListener = listener;
+    private final String mFileExt;
+
+    LogDataType(String fileExt) {
+        mFileExt = fileExt;
     }
 
-    public ITestInvocationListener getListener() {
-        return mListener;
+    String getFileExt() {
+        return mFileExt;
     }
 }

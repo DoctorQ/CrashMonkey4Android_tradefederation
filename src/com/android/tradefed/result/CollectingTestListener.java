@@ -15,18 +15,19 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.targetsetup.IBuildInfo;
 
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * A thread-safe {@link ITestRunListener} that will collect all test results.
+ * A thread-safe {@link ITestInvocationListener} that will collect all test results.
  */
-public class CollectingTestListener implements ITestRunListener {
+public class CollectingTestListener implements ITestInvocationListener {
 
     enum TestStatus {
         /** Test error */
@@ -192,5 +193,40 @@ public class CollectingTestListener implements ITestRunListener {
             }
         }
         return count;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void invocationEnded() {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void invocationFailed(String message, Throwable cause) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void invocationStarted(IBuildInfo buildInfo) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void testRunStarted(String name, int numTests) {
+        // ignore
     }
 }

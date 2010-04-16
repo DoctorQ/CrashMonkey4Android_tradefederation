@@ -18,7 +18,7 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
-import java.io.File;
+import java.io.InputStream;
 
 /**
  * Listener for test results from the test invocation.
@@ -31,10 +31,12 @@ import java.io.File;
  *  - testEnded
  *  ....
  *  - testRunEnded
+ *  - [testRunLog+]
  *  ....
  *  - testRunStarted
  *  ...
  *  - testRunEnded
+ *  - [testRunLog+]
  *  - invocationEnded()
  * <p/>
  * Note that this is re-using the {@link com.android.ddmlib.testrunner.ITestRunListener}
@@ -59,12 +61,15 @@ public interface ITestInvocationListener extends ITestRunListener {
     public void testRunStarted(String name, int numTests);
 
     /**
-     * An alternate {@link #testRunFailed(long)} that provides a log of the test run.
+     * Provides the associated log or debug data from the test run.
+     * <p/>
+     * Called zero or more times immediately following a testRunFailed or testRunEnded.
      *
-     * @param elapsedTime reported elapsed time, in milliseconds
-     * @param name {@link String} name of the test run, unique per invocation
+     * @param dataName a {@link String} descriptive name of the data. e.g. "deviceLogcat".
+     * @param dataType the {@link LogDataType} of the data
+     * @param dataStream the {@link InputStream} of the data.
      */
-    public void testRunFailed(String errorMessage, File log);
+    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream);
 
     /**
      * Reports the end of the test invocation.

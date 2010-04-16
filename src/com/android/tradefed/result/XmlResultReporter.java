@@ -26,6 +26,7 @@ import org.kxml2.io.KXmlSerializer;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -43,15 +44,12 @@ import java.util.TimeZone;
  * <p/>
  * Ported from dalvik runner XmlReportPrinter.
  */
-public class XmlResultReporter extends CollectingTestListener implements ITestInvocationListener {
-
-    @Option(name="report-file", description="path file to xml test result report")
-    private File mReportFile = null;
-
-    @SuppressWarnings("unused")
-    private IBuildInfo mBuildInfo = null;
+public class XmlResultReporter extends CollectingTestListener {
 
     private static final String LOG_TAG = "XmlReportReporter";
+
+    private static final String TEST_RESULT_FILE_SUFFIX = ".xml";
+    private static final String TEST_RESULT_FILE_PREFIX = "test_result";
 
     private static final String TESTSUITE = "testsuite";
     private static final String TESTCASE = "testcase";
@@ -72,30 +70,41 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     /** the XML namespace */
     private static final String ns = null;
 
+    private static final String REPORT_DIR_NAME = "output-file-path";
+    @Option(name=REPORT_DIR_NAME, description="file system path to directory to store xml " +
+            "test results and associated logs")
+    private File mReportDir = null;
+
+    @SuppressWarnings("unused")
+    private IBuildInfo mBuildInfo = null;
+
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationEnded() {
-        if (mReportFile != null) {
-            generateReport(mReportFile);
+        if (mReportDir != null) {
+            generateReport(mReportDir);
         }
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationFailed(String message, Throwable e) {
-        if (mReportFile != null) {
-            generateReport(mReportFile);
+        if (mReportDir != null) {
+            generateReport(mReportDir);
         }
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationStarted(IBuildInfo buildInfo) {
-        if (mReportFile == null) {
-            throw new IllegalArgumentException("missing report-file");
+        if (mReportDir == null) {
+            throw new IllegalArgumentException(String.format("missing %s", REPORT_DIR_NAME));
         }
         mBuildInfo = buildInfo;
     }
@@ -103,26 +112,20 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     /**
      * {@inheritDoc}
      */
-    public void testRunFailed(String errorMessage, File log) {
-        Log.i(LOG_TAG, String.format("Run failed: %s", errorMessage));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void testRunStarted(String name, int numTests) {
         // ignore for now
     }
 
     /**
-     * Populates the report file with the report data from the completed tests.
+     * Creates a report file and populates it with the report data from the completed tests.
      */
-    private void generateReport(File reportFile) {
+    private void generateReport(File reportDir) {
         String timestamp = getTimestamp();
 
         OutputStream stream = null;
         try {
-            stream = createOutputStream(reportFile);
+            stream = createOutputResultStream(reportDir);
             KXmlSerializer serializer = new KXmlSerializer();
             serializer.setOutput(stream, "UTF-8");
             serializer.startDocument("UTF-8", null);
@@ -132,7 +135,7 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
             printTestResults(serializer, timestamp);
             serializer.endDocument();
             String msg = String.format("XML test result file generated at %s. Total tests %d, " +
-                    "Failed %d, Error %d", reportFile.getAbsolutePath(), getTestResults().size(),
+                    "Failed %d, Error %d", reportDir.getAbsolutePath(), getTestResults().size(),
                     getNumFailedTests(), getNumErrorTests());
             System.out.println(msg);
             Log.i(LOG_TAG, msg);
@@ -162,9 +165,11 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     }
 
     /**
-     * Creates the output stream to use. Exposed for mocking.
+     * Creates the output stream to use for test results. Exposed for mocking.
      */
-    OutputStream createOutputStream(File reportFile) throws IOException {
+    OutputStream createOutputResultStream(File reportDir) throws IOException {
+        File reportFile = File.createTempFile(TEST_RESULT_FILE_PREFIX, TEST_RESULT_FILE_SUFFIX,
+                reportDir);
         return new FileOutputStream(reportFile);
     }
 
@@ -190,7 +195,7 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     }
 
     void print(KXmlSerializer serializer, TestIdentifier testId, TestResult testResult)
-    throws IOException {
+            throws IOException {
 
         serializer.startTag(ns, TESTCASE);
         serializer.attribute(ns, ATTR_NAME, testId.getTestName());
@@ -225,7 +230,23 @@ public class XmlResultReporter extends CollectingTestListener implements ITestIn
     /**
      * Sets the report file to use. Exposed for mocking.
      */
-    void setReportFile(File file) {
-        mReportFile = file;
+    void setReportDir(File file) {
+        mReportDir = file;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream) {
+        File logFile;
+        try {
+            logFile = new LogFileSaver(mReportDir).saveLogData(dataName, dataType, dataStream);
+            Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "Failed to save log data");
+            Log.e(LOG_TAG, e);
+        }
+    }
+
 }

@@ -53,6 +53,16 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
+     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} with
+     * {@link ConfigurationFactory#TEST_DEF_CONFIG} returns a valid config.
+     */
+    public void testGetConfiguration_testdef() throws ConfigurationException {
+        assertNotNull(ConfigurationFactory.getConfiguration(
+                ConfigurationFactory.TEST_DEF_CONFIG));
+        // TODO: check that returned config is valid
+    }
+
+    /**
      * Test calling {@link ConfigurationFactory#getConfiguration(String)} with a name that does not
      * exist.
      */

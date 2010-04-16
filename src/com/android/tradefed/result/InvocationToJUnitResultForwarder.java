@@ -20,6 +20,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 
@@ -243,5 +244,11 @@ import junit.framework.TestResult;
     public void invocationFailed(String message, Throwable cause) {
         // ignore
     }
-}
 
+    /**
+     * {@inheritDoc}
+     */
+    public void testRunLog(String dataName, LogDataType logData, InputStream dataStream) {
+        // ignore
+    }
+}

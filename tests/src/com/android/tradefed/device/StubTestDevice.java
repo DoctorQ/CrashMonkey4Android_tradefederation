@@ -21,6 +21,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Collection;
 
 /**
@@ -28,7 +29,7 @@ import java.util.Collection;
  * <p/>
  * Needed in order to handle the EasyMock andDelegateTo operation.
  */
-public class StubTestDevice implements ITestDevice {
+public class StubTestDevice implements ILogTestDevice {
 
     public void executeShellCommand(String command, IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
@@ -67,5 +68,24 @@ public class StubTestDevice implements ITestDevice {
 
     public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException {
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public InputStream getLogcat() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void startLogcat() {
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void stopLogcat() {
     }
 }

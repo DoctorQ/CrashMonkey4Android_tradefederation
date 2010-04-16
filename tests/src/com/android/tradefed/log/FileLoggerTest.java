@@ -18,14 +18,13 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
-import com.android.tradefed.testtype.HostTest;
-
-import junit.framework.TestCase;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link FileLogger}.

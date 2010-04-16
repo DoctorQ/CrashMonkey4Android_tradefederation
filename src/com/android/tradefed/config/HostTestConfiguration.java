@@ -16,7 +16,6 @@
 package com.android.tradefed.config;
 
 import com.android.tradefed.device.WaitDeviceRecovery;
-import com.android.tradefed.device.StubDeviceRecovery;
 import com.android.tradefed.log.FileLogger;
 import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetsetup.StubBuildProvider;

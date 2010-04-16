@@ -28,6 +28,8 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
+import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.RunUtil.IRunnableResult;
@@ -42,6 +44,8 @@ import junit.framework.TestResult;
  */
 public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCallback {
 
+    private static final String LOG_TAG = "InstrumentationTest";
+
     /** max number of attempts to collect list of tests in package */
     private static final int COLLECT_TESTS_ATTEMPTS = 3;
 
@@ -51,8 +55,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /** max time in ms to allow for single  collect list of tests attempt */
     private static final int COLLECT_TESTS_OP_TIMEOUT = 2 * 60 * 1000;
 
+    /** name of saved device logcat file */
+    private static final String DEVICE_LOGCAT_NAME = "%s_logcat_";
+
     static final String TIMED_OUT_MSG = "timed out: test did not complete in %d ms";
-    private static final String LOG_TAG = "InstrumentationTest";
 
     @Option(name = "package", shortName = 'p',
             description="The manifest package name of the Android test application to run")
@@ -214,7 +220,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestRunListener listener) throws DeviceNotAvailableException {
+    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mPackageName == null) {
             throw new IllegalArgumentException("package name has not been set");
         }
@@ -235,6 +241,22 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
 
+        try {
+            doTestRun(listener);
+        } finally {
+            listener.testRunLog(String.format(DEVICE_LOGCAT_NAME, mPackageName), LogDataType.TEXT,
+                    mDevice.getLogcat());
+        }
+    }
+
+    /**
+     * Execute test run.
+     *
+     * @param listener the test result listener
+     * @throws DeviceNotAvailableException if device stops communicating
+     */
+    private void doTestRun(final ITestInvocationListener listener)
+            throws DeviceNotAvailableException {
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
         mListeners = new ArrayList<ITestRunListener>();
@@ -257,7 +279,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      * @param listener {@link ITestRunListener}
      * @param expectedTests the full set of expected tests in this run.
      */
-    private void runWithRerun(final ITestRunListener listener,
+    private void runWithRerun(final ITestInvocationListener listener,
             Collection<TestIdentifier> expectedTests) throws DeviceNotAvailableException {
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);

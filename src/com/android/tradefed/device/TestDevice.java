@@ -24,21 +24,38 @@ import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 
 /**
  * Default implementation of a {@link ITestDevice}
  */
-class TestDevice implements ITestDevice {
+class TestDevice implements ILogTestDevice {
 
     private static final String LOG_TAG = "TestDevice";
     /** the default number of command retry attempts to perform */
     private static final int MAX_RETRY_ATTEMPTS = 3;
+    /** time in ms to wait before retrying a logcat operation if interrupted */
+    private static final int LOGCAT_SLEEP_TIME = 10*1000;
+    /** the max number of bytes to store in logcat tmp buffer */
+    private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
+    private static final String LOGCAT_CMD = "logcat -v threadtime";
+    /**
+     * The maximum number of bytes returned by {@link TestDevice#getLogcat()}.
+     * TODO: make this configurable
+     */
+    private static final int LOGCAT_MAX_DATA = 512 * 1024;
 
     private final IDevice mIDevice;
     private final IDeviceRecovery mRecovery;
+    private LogCatReceiver mLogcatReceiver;
 
     /**
      * Interface for a generic device communication attempt.
@@ -229,5 +246,210 @@ class TestDevice implements ITestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(this);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void startLogcat() {
+        if (mLogcatReceiver != null) {
+            Log.d(LOG_TAG, String.format("Already capturing logcat for %s, ignoring",
+                    getSerialNumber()));
+            return;
+        }
+        mLogcatReceiver = new LogCatReceiver();
+        mLogcatReceiver.start();
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p/>
+     * Works in two modes:
+     * <li>If the logcat is currently being captured in the background (i.e. the
+     * manager of this device is calling startLogcat and stopLogcat as appropriate), will return
+     * the current contents of the background logcat capture, up to {@link #LOGCAT_MAX_DATA}.
+     * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
+     */
+    public InputStream getLogcat() {
+        if (mLogcatReceiver == null) {
+            Log.w(LOG_TAG, String.format("Not capturing logcat for %s, returning a dump for",
+                    getSerialNumber()));
+            return getLogcatDump();
+        } else {
+            return mLogcatReceiver.getLogcatData();
+        }
+    }
+
+    /**
+     * Get a dump of the current logcat for device, up to a max of {@link #LOGCAT_MAX_DATA}.
+     *
+     * @return a {@link InputStream} of the logcat data. An empty stream is returned if fail to
+     * capture logcat data.
+     */
+    private InputStream getLogcatDump() {
+        String output = "";
+        try {
+            // use IDevice directly because we don't want callers to handle
+            // DeviceNotAvailableException for this method
+            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            // add -d parameter to make this a non blocking call
+            getIDevice().executeShellCommand(LOGCAT_CMD + " -d", receiver);
+            output = receiver.getOutput();
+            if (output.length() > LOGCAT_MAX_DATA) {
+                output = output.substring(LOGCAT_MAX_DATA - output.length(), output.length());
+            }
+        } catch (IOException e) {
+            Log.w(LOG_TAG, String.format("Failed to get logcat dump %s", getSerialNumber()));
+        }
+        return new ByteArrayInputStream(output.getBytes());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void stopLogcat() {
+        if (mLogcatReceiver != null) {
+            mLogcatReceiver.cancel();
+            mLogcatReceiver = null;
+        } else {
+            Log.w(LOG_TAG, String.format("Attempting to stop logcat when not capturing for %s",
+                    getSerialNumber()));
+        }
+    }
+
+    /**
+     * A background thread that captures logcat data into a temporary host file.
+     * <p/>
+     * This is done so:
+     * <li>if device goes permanently offline during a test, the log data is retained.
+     * <li>to capture more data than may fit in device's circular log.
+     */
+    private class LogCatReceiver extends Thread implements IShellOutputReceiver {
+
+        private boolean mIsCancelled = false;
+        private OutputStream mOutStream;
+        private File mTmpFile;
+
+        /**
+         * {@inheritDoc}
+         */
+        public void addOutput(byte[] data, int offset, int length) {
+            try {
+                mOutStream.write(data, offset, length);
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format(
+                        "failed to write logcat data for %s.", getSerialNumber()));
+            }
+        }
+
+        public InputStream getLogcatData() {
+            flush();
+            try {
+                FileInputStream fileStream = new FileInputStream(mTmpFile);
+                // adjust stream position to so only up to LOGCAT_MAX_DATA bytes can be read
+                if (mTmpFile.length() > LOGCAT_MAX_DATA) {
+                    fileStream.skip(mTmpFile.length() - LOGCAT_MAX_DATA);
+                }
+                return fileStream;
+            } catch (IOException e) {
+                Log.e(LOG_TAG, String.format(
+                        "failed to get logcat data for %s.", getSerialNumber()));
+                Log.e(LOG_TAG, e);
+                // return an empty input stream
+                return new ByteArrayInputStream(new byte[0]);
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public void flush() {
+            try {
+                mOutStream.flush();
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format(
+                        "failed to flush logcat data for %s.", getSerialNumber()));
+            }
+        }
+
+        public void cancel() {
+            mIsCancelled = true;
+            try {
+                if (mOutStream != null) {
+                    mOutStream.close();
+                    mOutStream = null;
+                }
+
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format(
+                        "failed to close logcat stream for %s.", getSerialNumber()));
+            }
+            if (mTmpFile != null) {
+                mTmpFile.delete();
+                mTmpFile = null;
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean isCancelled() {
+            return mIsCancelled;
+        }
+
+        @Override
+        public void run() {
+            try {
+                mTmpFile = File.createTempFile(String.format("logcat_%s_", getSerialNumber()),
+                        ".txt");
+                Log.i(LOG_TAG, String.format("Created tmp logcat file %s",
+                        mTmpFile.getAbsolutePath()));
+                mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
+                        LOGCAT_BUFF_SIZE);
+
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format(
+                        "failed to create tmp logcat file for %s.", getSerialNumber()));
+                return;
+            }
+
+            // continually run in a loop attempting to grab logcat data, skipping recovery
+            // this is done so logcat data can continue to be captured even if device goes away and
+            // then comes back online
+            while (!isCancelled()) {
+                try {
+                    Log.i(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
+                    getIDevice().executeShellCommand(LOGCAT_CMD, this);
+                } catch (IOException e) {
+                    final String msg = String.format(
+                            "logcat capture interrupted for %s. Sleeping for %d ms. May see " +
+                            "duplicate content in log.",
+                            getSerialNumber(), LOGCAT_SLEEP_TIME);
+                    Log.w(LOG_TAG, msg);
+                    appendDeviceLogMsg(msg);
+                }
+                try {
+                    sleep(LOGCAT_SLEEP_TIME);
+                } catch (InterruptedException e) {
+                    // ignore
+                }
+            }
+        }
+
+        /**
+         * Adds a message to the captured device log.
+         * @param msg
+         */
+        private void appendDeviceLogMsg(String msg) {
+            // add the msg to device tmp log, so readers will know logcat was interrupted
+            try {
+                mOutStream.write("\n*******************\n".getBytes());
+                mOutStream.write(msg.getBytes());
+                mOutStream.write("\n*******************\n".getBytes());
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format(
+                        "failed to write logcat data for %s.", getSerialNumber()));
+            }
+        }
     }
 }

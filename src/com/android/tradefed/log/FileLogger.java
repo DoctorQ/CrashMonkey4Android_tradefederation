@@ -77,7 +77,7 @@ public class FileLogger implements ILeveledLogOutput {
     public void printLog(LogLevel logLevel, String tag, String message) {
         String outMessage = Log.getLogFormatString(logLevel, tag, message);
         if (logLevel.getPriority() >= mLogLevelDisplay.getPriority()) {
-            System.out.println(outMessage);
+            System.out.print(outMessage);
         }
         try {
             if (mLogWriter != null) {

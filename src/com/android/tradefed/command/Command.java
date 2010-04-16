@@ -52,29 +52,32 @@ public class Command {
      */
     void run(String[] args) {
         ILeveledLogOutput logger = null;
+        IDeviceManager manager = null;
+        ITestDevice device = null;
         try {
             IConfiguration config = createConfiguration(args);
             logger = config.getLogOutput();
             Log.setLogOutput(logger);
             DdmPreferences.setLogLevel(logger.getLogLevel());
             ITestInvocation instance = createRunInstance();
-            IDeviceManager manager = getDeviceManager(config.getDeviceRecovery());
-            ITestDevice device = manager.allocateDevice();
+            manager = getDeviceManager(config.getDeviceRecovery());
+            device = manager.allocateDevice();
             instance.invoke(device, config);
         } catch (DeviceNotAvailableException e) {
             System.out.println("Could not find device to test");
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             System.out.println("Uncaught exception!");
             e.printStackTrace();
         }
-        finally {
-            if (logger != null) {
-                logger.closeLog();
-            }
-        }
 
+        if (manager != null && device != null) {
+            manager.freeDevice(device);
+        }
+        if (logger != null) {
+            logger.closeLog();
+        }
         exit();
     }
 

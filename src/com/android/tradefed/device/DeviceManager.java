@@ -81,16 +81,24 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public synchronized ITestDevice allocateDevice() throws DeviceNotAvailableException {
-        for (IDevice device : mAdbBridge.getDevices()) {
-            if (!mDeviceSerialsInUse.contains(device.getSerialNumber())) {
-                mDeviceSerialsInUse.add(device.getSerialNumber());
-                return new TestDevice(device, mRecovery);
+    public ITestDevice allocateDevice() throws DeviceNotAvailableException {
+        synchronized (mDeviceSerialsInUse) {
+            for (IDevice device : mAdbBridge.getDevices()) {
+                if (!mDeviceSerialsInUse.contains(device.getSerialNumber())) {
+                    mDeviceSerialsInUse.add(device.getSerialNumber());
+                    return new TestDevice(device, mRecovery);
+                }
             }
         }
         // TODO: move this to a separate method
         IDevice device = waitForDevice((String)null, DEFAULT_MAX_WAIT_DEVICE_TIME);
-        return new TestDevice(device, mRecovery);
+        synchronized (mDeviceSerialsInUse) {
+            mDeviceSerialsInUse.add(device.getSerialNumber());
+        }
+        // TODO: make background logcat capture optional
+        ILogTestDevice testDevice =  new TestDevice(device, mRecovery);
+        testDevice.startLogcat();
+        return testDevice;
     }
 
     /**
@@ -115,17 +123,22 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public synchronized void freeDevice(ITestDevice device) {
-        if (!mDeviceSerialsInUse.remove(device.getSerialNumber())) {
-            Log.w(LOG_TAG, String.format("freeDevice called with unallocated device %s",
-                    device.getSerialNumber()));
+    public void freeDevice(ITestDevice device) {
+        if (device instanceof ILogTestDevice) {
+            ((ILogTestDevice)device).stopLogcat();
+        }
+        synchronized (mDeviceSerialsInUse) {
+            if (!mDeviceSerialsInUse.remove(device.getSerialNumber())) {
+                Log.w(LOG_TAG, String.format("freeDevice called with unallocated device %s",
+                        device.getSerialNumber()));
+            }
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public synchronized void registerListener(IDeviceListener listener) {
+    public void registerListener(IDeviceListener listener) {
         // TODO implement this
         throw new UnsupportedOperationException();
     }
@@ -133,10 +146,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public synchronized void removeListener(IDeviceListener listener) {
+    public void removeListener(IDeviceListener listener) {
         // TODO implement this
         throw new UnsupportedOperationException();
-
     }
 
     /**

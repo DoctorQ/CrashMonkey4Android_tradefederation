@@ -24,9 +24,11 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.StubTestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.LogDataType;
 
 import org.easymock.EasyMock;
 
+import java.io.InputStream;
 import java.util.Collection;
 
 import junit.framework.TestCase;
@@ -170,6 +172,8 @@ public class InstrumentationTestTest extends TestCase {
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
                 (String)EasyMock.anyObject());
         mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
+        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
+                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockListener);
         EasyMock.replay(mMockTestDevice);
@@ -191,6 +195,8 @@ public class InstrumentationTestTest extends TestCase {
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
                 (String)EasyMock.anyObject());
         mMockListener.testRunFailed((String)EasyMock.anyObject());
+        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
+                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockListener);
         EasyMock.replay(mMockTestDevice);

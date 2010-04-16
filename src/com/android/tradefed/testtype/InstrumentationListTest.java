@@ -16,10 +16,10 @@
 
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.Collection;
 
@@ -94,7 +94,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestRunListener listener) throws DeviceNotAvailableException {
+    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }

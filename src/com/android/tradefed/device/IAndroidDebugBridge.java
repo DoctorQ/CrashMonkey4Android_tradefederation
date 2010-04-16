@@ -25,7 +25,7 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
  * <p/>
  * Exposed so use of {@link com.android.ddmlib.AndroidDebugBridge} can be mocked out in unit tests.
  */
-interface IAndroidDebugBridge {
+public interface IAndroidDebugBridge {
 
     /**
      * Wrapper for {@link AndroidDebugBridge#getDevices()}.

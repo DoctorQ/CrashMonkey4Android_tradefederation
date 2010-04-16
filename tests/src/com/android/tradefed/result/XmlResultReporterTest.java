@@ -43,7 +43,7 @@ public class XmlResultReporterTest extends TestCase {
         mOutputStream = new ByteArrayOutputStream();
         mResultReporter = new XmlResultReporter() {
             @Override
-            OutputStream createOutputStream(File reportFile) throws IOException {
+            OutputStream createOutputResultStream(File reportDir) throws IOException {
                 return mOutputStream;
             }
 
@@ -52,8 +52,8 @@ public class XmlResultReporterTest extends TestCase {
                 return "ignore";
             }
         };
-        // TODO: use mock file instead
-        mResultReporter.setReportFile(File.createTempFile("foo", "txt"));
+        // TODO: use mock file dir instead
+        mResultReporter.setReportDir(File.createTempFile("foo", "txt"));
     }
 
     /**

@@ -30,6 +30,8 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
     private static final String LOG_TAG = "WaitDeviceRecovery";
 
+    /** the time in ms to wait before beginning recovery attempts */
+    private static final int INITIAL_PAUSE_TIME = 5*1000;
     private static final int CHECK_PM_ATTEMPTS = 5;
     /** the maximum operation time in ms for a 'poll for package manager' command */
     private static final long MAX_PM_POLL_TIME = 30 * 1000;
@@ -45,8 +47,9 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // device may have just gone offline
         // sleep a small amount to give ddms state a chance to settle
         // TODO - see if there is better way to handle this
-        Log.i(LOG_TAG, String.format("Pausing for %s to recover", device.getSerialNumber()));
-        RunUtil.sleep(5*1000);
+        Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
+                device.getSerialNumber()));
+        RunUtil.sleep(INITIAL_PAUSE_TIME);
 
         // TODO: consider checking if device is in bootloader, and if so, reboot to adb mode
         getDeviceManager().waitForDevice(device, mWaitTime);

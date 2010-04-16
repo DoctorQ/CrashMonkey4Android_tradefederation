@@ -22,6 +22,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 
 import java.io.File;
+import java.io.InputStream;
 import java.util.Collection;
 
 /**
@@ -118,5 +119,10 @@ public interface ITestDevice {
      * recovered.
      */
     public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException;
+
+    /**
+     * Grabs a snapshot stream of the logcat data.
+     */
+    public InputStream getLogcat();
 
 }
