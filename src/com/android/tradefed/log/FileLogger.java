@@ -26,7 +26,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 /**
- * A {@link ILeveledLogOutput} that directs log messages to stdout.
+ * A {@link ILeveledLogOutput} that directs log messages to a file and to stdout.
  */
 public class FileLogger implements ILeveledLogOutput {
 
@@ -37,8 +37,16 @@ public class FileLogger implements ILeveledLogOutput {
     private File mLogFile = null;
     private BufferedWriter mLogWriter = null;
 
-    @Option(name="log-level", description="minimum log level to display")
-    private String mLogLevel = LogLevel.INFO.getStringValue();
+    // TODO: raise this to info level
+    @Option(name="log-level", description="minimum log level to log")
+    private String mLogLevel = LogLevel.DEBUG.getStringValue();
+
+    // TODO: raise this to warning level
+    @Option(name="log-level-display", description="minimum log level to display on stdout")
+    private String mLogLevelStringDisplay = LogLevel.INFO.getStringValue();
+
+    // the enum equivalent of mLogLevelStringDisplay
+    private LogLevel mLogLevelDisplay;
 
     /**
      * Constructor for creating a temporary log file in the system's default temp directory
@@ -48,6 +56,7 @@ public class FileLogger implements ILeveledLogOutput {
         try {
             mLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             mLogWriter = new BufferedWriter(new FileWriter(mLogFile));
+            mLogLevelDisplay = LogLevel.getByString(mLogLevelStringDisplay);
         }
         catch (IOException e) {
             throw new ConfigurationException(String.format("Could not create output log file : %s",
@@ -66,13 +75,18 @@ public class FileLogger implements ILeveledLogOutput {
      * {@inheritDoc}
      */
     public void printLog(LogLevel logLevel, String tag, String message) {
-      String outMessage = Log.getLogFormatString(logLevel, tag, message);
-      try {
-          mLogWriter.write(outMessage);
-      }
-      catch (IOException e) {
-          e.printStackTrace();
-      }
+        String outMessage = Log.getLogFormatString(logLevel, tag, message);
+        if (logLevel.getPriority() >= mLogLevelDisplay.getPriority()) {
+            System.out.println(outMessage);
+        }
+        try {
+            if (mLogWriter != null) {
+                mLogWriter.write(outMessage);
+            }
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
@@ -94,6 +108,7 @@ public class FileLogger implements ILeveledLogOutput {
      *
      */
     public void closeLog() {
+
         try {
             mLogWriter.flush();
             mLogWriter.close();
