@@ -86,4 +86,18 @@ public class RunUtilTest extends TestCase {
         assertTrue(String.format("Expected poll time %d, got %d", expectedPollTime, actualTime),
                 expectedPollTime <= actualTime && actualTime <= (2 * expectedPollTime));
     }
+
+    /**
+     * Test that {@link RunUtil#runTimedCmd(long, String)} fails when given a garbage command.
+     */
+    public void testRunTimedCmd_failed() {
+        assertFalse(RunUtil.runTimedCmd(1000, "blahggggwarggg"));
+    }
+
+    /**
+     * Test that {@link RunUtil#runTimedCmd(long, String)} succeeds when given a simple command.
+     */
+    public void testRunTimedCmd_dir() {
+        assertTrue(RunUtil.runTimedCmd(1000, "dir"));
+    }
 }

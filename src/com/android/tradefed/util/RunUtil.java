@@ -17,6 +17,9 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 
+import java.io.IOException;
+import java.util.Arrays;
+
 /**
  * A collection of helper methods for executing operations.
  */
@@ -40,6 +43,42 @@ public class RunUtil {
          * otherwise
          */
         public boolean run();
+    }
+
+    /**
+     * Helper method to execute a system command, and aborting if it takes longer than a specified
+     * time.
+     *
+     * @param timeout maximum time to wait in ms
+     * @param command the specified system command and optionally arguments to exec
+     * @return <code>true</code> if operation completed successfully before timeout reached.
+     */
+    public static boolean runTimedCmd(final long timeout, final String... command) {
+        IRunnableResult osRunnable = new IRunnableResult() {
+            public boolean run() {
+                final String fullCmd = Arrays.toString(command);
+                Log.d(LOG_TAG, String.format("Running %s", fullCmd));
+                try {
+                    Process process = Runtime.getRuntime().exec(command);
+                    int rc =  process.waitFor();
+                    if (rc != 0) {
+                        Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd,
+                                rc));
+                        // TODO: dump input and error stream
+                        return false;
+                    }
+                    return true;
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, String.format("IOException when running %s", fullCmd));
+                    Log.e(LOG_TAG, e);
+                } catch (InterruptedException e) {
+                    Log.e(LOG_TAG, String.format("InterruptedException when running %s", fullCmd));
+                    Log.e(LOG_TAG, e);
+                }
+                return false;
+            }
+        };
+        return runTimed(timeout, osRunnable);
     }
 
     /**
