@@ -267,7 +267,11 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         }
 
         if (expectedTests != null) {
-            runWithRerun(listener, expectedTests);
+            if (expectedTests.size() != 0) {
+                runWithRerun(listener, expectedTests);
+            } else {
+                Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
+            }
         } else {
             mDevice.runInstrumentationTests(mRunner, mListeners);
         }

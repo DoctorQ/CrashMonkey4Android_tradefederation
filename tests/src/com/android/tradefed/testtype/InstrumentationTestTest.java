@@ -75,7 +75,7 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Test normal run scenario with a single test result.
+     * Test normal run scenario.
      */
     @SuppressWarnings("unchecked")
     public void testRun() throws Exception {
@@ -167,10 +167,13 @@ public class InstrumentationTestTest extends TestCase {
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
+        // expect run to be cancelled
         mMockRemoteRunner.cancel();
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
+        // test should be reported as failed
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
                 (String)EasyMock.anyObject());
+        // run should be reported as a failure
         mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
         mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
@@ -182,26 +185,36 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * Test the rerun mode when test run fails.
+     * Test the rerun mode when test run has no tests.
      */
     @SuppressWarnings("unchecked")
-    public void testRun_rerun() throws Exception {
-        mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
-        // TODO: add verification for TEST_RUNNER_VALUE
-        final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
+    public void testRun_rerunEmpty() throws Exception {
+        mInstrumentationTest.setRerunMode(true);
+        // expect log only mode run first to collect tests
+        mMockRemoteRunner.setLogOnly(true);
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
-        mMockRemoteRunner.cancel();
-        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
-                (String)EasyMock.anyObject());
-        mMockListener.testRunFailed((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+                    Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+                // perform call back on listeners to show empty run
+                for (ITestRunListener listener : listeners) {
+                    listener.testRunStarted(0);
+                    listener.testRunEnded(1);
+                }
+            }
+        });
+        mMockListener.testRunStarted(0);
+        mMockListener.testRunEnded(1);
         mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
+        // expect normal mode to be turned off
+        mMockRemoteRunner.setLogOnly(false);
         EasyMock.replay(mMockRemoteRunner);
-        EasyMock.replay(mMockListener);
         EasyMock.replay(mMockTestDevice);
+        EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
-        mInstrumentationTest.testTimeout(test);
     }
 
     /**
