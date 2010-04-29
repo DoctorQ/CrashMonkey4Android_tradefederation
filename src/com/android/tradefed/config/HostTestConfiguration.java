@@ -17,7 +17,7 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.FileLogger;
-import com.android.tradefed.result.TextResultReporter;
+import com.android.tradefed.result.XmlResultReporter;
 import com.android.tradefed.targetsetup.StubBuildProvider;
 import com.android.tradefed.targetsetup.StubTargetPreparer;
 import com.android.tradefed.testtype.HostTest;
@@ -41,6 +41,6 @@ class HostTestConfiguration extends AbstractConfiguration {
         addObject(TARGET_PREPARER_NAME, new StubTargetPreparer());
         addObject(TEST_NAME, new HostTest());
         addObject(LOGGER_NAME, new FileLogger());
-        addObject(RESULT_REPORTER_NAME, new TextResultReporter());
+        addObject(RESULT_REPORTER_NAME, new XmlResultReporter());
     }
 }

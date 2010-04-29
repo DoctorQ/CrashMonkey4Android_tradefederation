@@ -73,7 +73,7 @@ public class XmlResultReporter extends CollectingTestListener {
     private static final String REPORT_DIR_NAME = "output-file-path";
     @Option(name=REPORT_DIR_NAME, description="file system path to directory to store xml " +
             "test results and associated logs")
-    private File mReportDir = null;
+    private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
     @SuppressWarnings("unused")
     private IBuildInfo mBuildInfo = null;
@@ -170,6 +170,8 @@ public class XmlResultReporter extends CollectingTestListener {
     OutputStream createOutputResultStream(File reportDir) throws IOException {
         File reportFile = File.createTempFile(TEST_RESULT_FILE_PREFIX, TEST_RESULT_FILE_SUFFIX,
                 reportDir);
+        Log.i(LOG_TAG, String.format("Created xml report file at %s",
+                reportFile.getAbsolutePath()));
         return new FileOutputStream(reportFile);
     }
 

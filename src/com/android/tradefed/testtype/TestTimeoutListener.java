@@ -142,7 +142,7 @@ public class TestTimeoutListener implements ITestRunListener {
      * {@inheritDoc}
      */
     public void testRunStarted(int testCount) {
-        //mMonitor.start();
+        mMonitor.start();
     }
 
     /**

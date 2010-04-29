@@ -17,7 +17,10 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.Arrays;
 
 /**
@@ -51,9 +54,11 @@ public class RunUtil {
      *
      * @param timeout maximum time to wait in ms
      * @param command the specified system command and optionally arguments to exec
-     * @return <code>true</code> if operation completed successfully before timeout reached.
+     * @return the stdout output from command, or <code>null</code> if operation did not complete
+     * successfully before timeout reached.
      */
-    public static boolean runTimedCmd(final long timeout, final String... command) {
+    public static String runTimedCmd(final long timeout, final String... command) {
+        final String[] output = new String[1];
         IRunnableResult osRunnable = new IRunnableResult() {
             public boolean run() {
                 final String fullCmd = Arrays.toString(command);
@@ -67,6 +72,13 @@ public class RunUtil {
                         // TODO: dump input and error stream
                         return false;
                     }
+                    Reader ir = new BufferedReader(new InputStreamReader(process.getInputStream()));
+                    int irChar = -1;
+                    StringBuilder builder = new StringBuilder();
+                    while((irChar = ir.read()) != -1) {
+                        builder.append((char)irChar);
+                    }
+                    output[0] = builder.toString();
                     return true;
                 } catch (IOException e) {
                     Log.e(LOG_TAG, String.format("IOException when running %s", fullCmd));
@@ -78,7 +90,11 @@ public class RunUtil {
                 return false;
             }
         };
-        return runTimed(timeout, osRunnable);
+        if (runTimed(timeout, osRunnable)) {
+            return output[0];
+        } else {
+            return null;
+        }
     }
 
     /**

@@ -69,6 +69,31 @@ public interface ITestDevice {
     public String executeShellCommand(String command) throws DeviceNotAvailableException;
 
     /**
+     * Helper method which executes a adb command as a system command.
+     * <p/>
+     * {@link #executeShellCommand(String)} should be used instead wherever possible, as that
+     * method provides better failure detection and performance.
+     *
+     * @param commandArgs the adb command and arguments to run
+     * @return <code>true</code>
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException;
+
+    /**
+     * Helper method which executes a fastboot command as a system command.
+     * <p/>
+     * Assumes device is already in fastboot mode
+     *
+     * @param commandArgs the fastboot command and arguments to run
+     * @return <code>true</code>
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean executeFastbootCommand(String... commandArgs) throws DeviceNotAvailableException;
+
+    /**
      * Runs instrumentation tests, and provides device recovery.
      * <p/>
      * If connection with device is lost before test run completes, and recovery succeeds, this

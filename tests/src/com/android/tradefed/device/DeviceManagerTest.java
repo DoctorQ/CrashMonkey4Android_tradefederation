@@ -17,6 +17,7 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
+import com.android.ddmlib.IDevice.DeviceState;
 
 import org.easymock.EasyMock;
 
@@ -67,6 +68,7 @@ public class DeviceManagerTest extends TestCase {
     private ITestDevice doTestAllocateDevice() throws DeviceNotAvailableException {
         IDevice mockDevice = EasyMock.createNiceMock(IDevice.class);
         EasyMock.expect(mockDevice.getSerialNumber()).andReturn(DEVICE_SERIAL);
+        EasyMock.expect(mockDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mockDevice});
         EasyMock.replay(mockDevice);
         EasyMock.replay(mMockAdbBridge);
@@ -82,6 +84,7 @@ public class DeviceManagerTest extends TestCase {
     public void testAllocateDevice_wait() throws DeviceNotAvailableException {
         final IDevice mockDevice = EasyMock.createNiceMock(IDevice.class);
         EasyMock.expect(mockDevice.getSerialNumber()).andReturn(DEVICE_SERIAL);
+        EasyMock.expect(mockDevice.getState()).andReturn(DeviceState.ONLINE);
         // first call, return nothing
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
         mMockAdbBridge.addDeviceChangeListener((IDeviceChangeListener)EasyMock.anyObject());

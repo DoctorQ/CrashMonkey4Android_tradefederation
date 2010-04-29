@@ -23,6 +23,7 @@ import com.android.ddmlib.SyncService;
 import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.RunUtil;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -201,6 +202,70 @@ class TestDevice implements ILogTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public boolean executeAdbCommand(String... cmdArgs) throws DeviceNotAvailableException {
+        final String[] fullCmd = buildAdbCommand(cmdArgs);
+        IDeviceAction adbAction = new IDeviceAction() {
+            public boolean doAction() throws IOException {
+                String result =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
+                if (result == null) {
+                    throw new IOException();
+                }
+                return true;
+            }
+        };
+        return performDeviceAction(String.format("adb %s", cmdArgs[0]), adbAction,
+                MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean executeFastbootCommand(String... cmdArgs) throws DeviceNotAvailableException {
+        final String[] fullCmd = buildFastbootCommand(cmdArgs);
+        IDeviceAction fastbootAction = new IDeviceAction() {
+            public boolean doAction() throws IOException {
+                String result =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
+                if (result == null) {
+                    throw new IOException();
+                }
+                return true;
+            }
+        };
+        return performDeviceAction(String.format("fastboot %s", cmdArgs[0]), fastbootAction,
+                MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * Builds the OS command for the given adb command and args
+     */
+    private String[] buildAdbCommand(String... commandArgs) {
+        final int numAdbArgs = 3;
+        String[] newCmdArgs = new String[commandArgs.length + numAdbArgs];
+        // TODO: use full adb path
+        newCmdArgs[0] = "adb";
+        newCmdArgs[1] = "-s";
+        newCmdArgs[2] = getSerialNumber();
+        System.arraycopy(commandArgs, 0, newCmdArgs, numAdbArgs, commandArgs.length);
+        return newCmdArgs;
+    }
+
+    /**
+     * Builds the OS command for the given fastboot command and args
+     */
+    private String[] buildFastbootCommand(String... commandArgs) {
+        final int numAdbArgs = 3;
+        String[] newCmdArgs = new String[commandArgs.length + numAdbArgs];
+        // TODO: use full fastboot path
+        newCmdArgs[0] = "fastboot";
+        newCmdArgs[1] = "-s";
+        newCmdArgs[2] = getSerialNumber();
+        System.arraycopy(commandArgs, 0, newCmdArgs, numAdbArgs, commandArgs.length);
+        return newCmdArgs;
+    }
+
+    /**
      * Recursively performs an action on this device. Attempts to recover device and retry command
      * if action fails.
      *
@@ -374,6 +439,7 @@ class TestDevice implements ILogTestDevice {
 
         public void cancel() {
             mIsCancelled = true;
+            interrupt();
             try {
                 if (mOutStream != null) {
                     mOutStream.close();
@@ -418,14 +484,14 @@ class TestDevice implements ILogTestDevice {
             // then comes back online
             while (!isCancelled()) {
                 try {
-                    Log.i(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
+                    Log.d(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
                     getIDevice().executeShellCommand(LOGCAT_CMD, this);
                 } catch (IOException e) {
                     final String msg = String.format(
                             "logcat capture interrupted for %s. Sleeping for %d ms. May see " +
                             "duplicate content in log.",
                             getSerialNumber(), LOGCAT_SLEEP_TIME);
-                    Log.w(LOG_TAG, msg);
+                    Log.d(LOG_TAG, msg);
                     appendDeviceLogMsg(msg);
                 }
                 try {

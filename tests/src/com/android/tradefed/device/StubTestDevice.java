@@ -88,4 +88,20 @@ public class StubTestDevice implements ILogTestDevice {
      */
     public void stopLogcat() {
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException {
+        // ignore
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean executeFastbootCommand(String... commandArgs) throws DeviceNotAvailableException {
+        // ignore
+        return true;
+    }
 }

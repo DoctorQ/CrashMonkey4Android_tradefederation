@@ -91,13 +91,15 @@ public class RunUtilTest extends TestCase {
      * Test that {@link RunUtil#runTimedCmd(long, String)} fails when given a garbage command.
      */
     public void testRunTimedCmd_failed() {
-        assertFalse(RunUtil.runTimedCmd(1000, "blahggggwarggg"));
+        assertNull(RunUtil.runTimedCmd(1000, "blahggggwarggg"));
     }
 
     /**
      * Test that {@link RunUtil#runTimedCmd(long, String)} succeeds when given a simple command.
      */
     public void testRunTimedCmd_dir() {
-        assertTrue(RunUtil.runTimedCmd(1000, "dir"));
+        String output = RunUtil.runTimedCmd(1000, "dir");
+        assertNotNull(output);
+        assertTrue(output.length() > 0);
     }
 }

@@ -33,6 +33,8 @@ import java.io.InputStream;
  */
 public class InstrumentationTestFuncTest extends DeviceTestCase {
 
+    private static final String LOG_TAG = "InstrumentationTestFuncTest";
+
     private static final String TEST_PACKAGE_VALUE = "com.android.tradefed.testapp";
     private static final String TEST_CLASS_VALUE = "com.android.tradefed.testapp.OnDeviceTest";
     private static final int TOTAL_TEST_CLASS_TESTS = 4;
@@ -41,7 +43,6 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     private static final String FAILED_TEST_METHOD = "testFailed";
     private static final String CRASH_TEST_METHOD = "testCrash";
     private static final String TIMEOUT_TEST_METHOD = "testNeverEnding";
-    private static final String LOG_TAG = "InstrumentationTestFuncTest";
 
     /** The {@link InstrumentationTest} under test */
     private InstrumentationTest mInstrumentationTest;
@@ -66,6 +67,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test normal run scenario with a single passed test result.
      */
     public void testRun() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRun");
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, PASSED_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(PASSED_TEST_METHOD);
@@ -83,6 +85,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test normal run scenario with a single failed test result.
      */
     public void testRun_testFailed() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRun_testFailed");
+
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, FAILED_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(FAILED_TEST_METHOD);
@@ -103,6 +107,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test run scenario where test process crashes.
      */
     public void testRun_testCrash() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRun_testCrash");
+
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, CRASH_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setMethodName(CRASH_TEST_METHOD);
@@ -123,6 +129,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test run scenario where test run hangs indefinitely, and times out.
      */
     public void testRun_testTimeout() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRun_testTimeout");
+
         final long timeout = 1000;
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE, TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
@@ -144,6 +152,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * Test run scenario where device reboots during test run.
      */
     public void testRun_deviceReboot() throws Exception {
+        Log.i(LOG_TAG, "testRun_deviceReboot");
+
         TestIdentifier expectedTest = new TestIdentifier(TEST_CLASS_VALUE,
                 TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
@@ -183,6 +193,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
      * recorded for all tests in the suite.
      */
     public void testRun_rerun() throws Exception {
+        Log.i(LOG_TAG, "testRun_rerun");
+
         // run all tests in class
         mInstrumentationTest.setClassName(TEST_CLASS_VALUE);
         mInstrumentationTest.setRerunMode(true);

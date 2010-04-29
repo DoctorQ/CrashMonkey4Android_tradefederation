@@ -18,9 +18,6 @@ package com.android.tradefed.device;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.RunUtil.IRunnableResult;
-
-import java.io.IOException;
 
 /**
  * A simple implementation of a {@link IDeviceRecovery} that waits for device to be online and
@@ -32,9 +29,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
     /** the time in ms to wait before beginning recovery attempts */
     private static final int INITIAL_PAUSE_TIME = 5*1000;
-    private static final int CHECK_PM_ATTEMPTS = 5;
-    /** the maximum operation time in ms for a 'poll for package manager' command */
-    private static final long MAX_PM_POLL_TIME = 30 * 1000;
+
 
     @Option(name="device-wait-time",
             description="maximum time in ms to wait for a single device recovery command")
@@ -52,12 +47,11 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
         // TODO: consider checking if device is in bootloader, and if so, reboot to adb mode
-        getDeviceManager().waitForDevice(device, mWaitTime);
+        getDeviceManager().waitForDeviceAvailable(device, mWaitTime);
 
         // TODO: ensure device running as root here ?
         // device.setRoot();
 
-        checkDevicePmResponsive(device, mWaitTime, CHECK_PM_ATTEMPTS);
     }
 
     /**
@@ -65,44 +59,5 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      */
     IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
-    }
-
-
-    /**
-     * Checks if device is responsive to a adb shell pm command.
-     *
-     * TODO: consider moving this to {@link ITestDevice}
-     *
-     * @param device the {@link ITestDevice} to test
-     * @param time the maximum time in ms to wait
-     */
-    private void checkDevicePmResponsive(final ITestDevice device, final long time, int attempts)
-            throws DeviceNotAvailableException {
-        long pollTime = time / attempts;
-        IRunnableResult pmPollRunnable = new IRunnableResult() {
-            public boolean run() {
-                final String cmd = "pm path android";
-                try {
-                    // TODO move collecting output command to IDevice
-                    CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-                    // assume the 'adb shell pm path android' command will always
-                    // return 'package: something' in the success case
-                    // intentionally calling IDevice directly to avoid an infinite loop of
-                    // recovery logic
-                    device.getIDevice().executeShellCommand(cmd, receiver);
-                    String output = receiver.getOutput();
-                    Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
-                    return output.contains("package:");
-                } catch (IOException e) {
-                    Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
-                    return false;
-                }
-            }
-        };
-        if(!RunUtil.runTimedRetry(MAX_PM_POLL_TIME, pollTime, attempts, pmPollRunnable)) {
-            Log.w(LOG_TAG, String.format("Device %s package manager is not responding.",
-                    device.getSerialNumber()));
-           throw new DeviceNotAvailableException();
-        }
     }
 }

@@ -35,14 +35,6 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     private static final String LOG_TAG = "TestDeviceFuncTest";
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-    }
-
-    /**
      * Simple normal case test for
      * {@link TestDevice#executeShellCommand(String)}.
      * <p/>
@@ -73,7 +65,8 @@ public class TestDeviceFuncTest extends DeviceTestCase {
                     IDevice.MNT_EXTERNAL_STORAGE), "tmp_testPushPull.txt");
             // ensure file does not already exist
             getDevice().executeShellCommand(String.format("rm %s", deviceFilePath));
-            assertFalse(getDevice().doesFileExist(deviceFilePath));
+            assertFalse(String.format("%s exists", deviceFilePath),
+                    getDevice().doesFileExist(deviceFilePath));
 
             assertTrue(getDevice().pushFile(tmpFile, deviceFilePath));
             assertTrue(getDevice().doesFileExist(deviceFilePath));
