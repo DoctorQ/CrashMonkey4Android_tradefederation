@@ -42,7 +42,7 @@ public class DeviceManagerTest extends TestCase {
         super.setUp();
         mMockAdbBridge = EasyMock.createMock(IAndroidDebugBridge.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
-        mDeviceManager = new DeviceManager(mMockRecovery) {
+        mDeviceManager = new DeviceManager() {
             @Override
             void initAdb() {
                 // do nothing
@@ -72,7 +72,7 @@ public class DeviceManagerTest extends TestCase {
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mockDevice});
         EasyMock.replay(mockDevice);
         EasyMock.replay(mMockAdbBridge);
-        ITestDevice testDevice = mDeviceManager.allocateDevice();
+        ITestDevice testDevice = mDeviceManager.allocateDevice(mMockRecovery);
         assertEquals(mockDevice, testDevice.getIDevice());
         return testDevice;
     }
@@ -112,7 +112,7 @@ public class DeviceManagerTest extends TestCase {
 
         EasyMock.replay(mockDevice);
         EasyMock.replay(mMockAdbBridge);
-        ITestDevice testDevice = mDeviceManager.allocateDevice();
+        ITestDevice testDevice = mDeviceManager.allocateDevice(mMockRecovery);
         assertEquals(mockDevice, testDevice.getIDevice());
     }
 

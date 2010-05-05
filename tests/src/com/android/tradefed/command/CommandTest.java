@@ -58,12 +58,12 @@ public class CommandTest extends TestCase {
             }
 
             @Override
-            IDeviceManager getDeviceManager(IDeviceRecovery recovery) {
+            IDeviceManager getDeviceManager() {
                 return mMockDeviceManager;
             }
 
             @Override
-            IConfiguration createConfiguration(String[] args) {
+            protected IConfiguration createConfiguration(String[] args) {
                 return mMockConfiguration;
             }
         };
@@ -77,8 +77,9 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
         mMockDeviceManager.freeDevice(mMockDevice);
+        mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         // switch mock objects to verify mode
@@ -98,8 +99,9 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice()).andThrow(
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andThrow(
                  new DeviceNotAvailableException("no device"));
+        mMockDeviceManager.terminate();
 
         // switch mock objects to verify mode
         EasyMock.replay(mMockConfiguration);
@@ -117,10 +119,11 @@ public class CommandTest extends TestCase {
     public void testRun_configException() {
         Command command = new Command() {
             @Override
-            IConfiguration createConfiguration(String[] args) throws ConfigurationException {
+            protected IConfiguration createConfiguration(String[] args) throws ConfigurationException {
                 throw new ConfigurationException("error");
             }
         };
+        mMockDeviceManager.terminate();
         // switch mock objects to verify mode
         // expect allocateDevices to not be called
         EasyMock.replay(mMockDeviceManager);
@@ -140,8 +143,9 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
         mMockDeviceManager.freeDevice(mMockDevice);
+        mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         EasyMock.expectLastCall().andThrow(new RuntimeException());

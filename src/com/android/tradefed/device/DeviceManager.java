@@ -40,7 +40,6 @@ public class DeviceManager implements IDeviceManager {
     /** Tracks the {@link IDevice#getSerialNumber()} currently allocated for testing. */
     private Set<String> mDeviceSerialsInUse;
     private IAndroidDebugBridge mAdbBridge;
-    private final IDeviceRecovery mRecovery;
 
     /** The default maximum time in ms to wait for a device to be connected. */
     private static final int DEFAULT_MAX_WAIT_DEVICE_TIME = 10 * 1000;
@@ -99,22 +98,21 @@ public class DeviceManager implements IDeviceManager {
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
      */
-    DeviceManager(IDeviceRecovery recovery) {
+    DeviceManager() {
         mDeviceSerialsInUse = new HashSet<String>();
         initAdb();
         mAdbBridge = createAdbBridge();
-        mRecovery = recovery;
     }
 
     /**
-     * Creates the static {@link IDeviceManager} instance to be used.
+     * Creates the static {@link IDeviceManager} instance to be used and initializes DDMS support.
      *
      * @param recovery the {@link IDeviceRecovery} to use.
      * @throws IllegalStateException if init has already been called
      */
-    public synchronized static void init(IDeviceRecovery recovery) {
+    public synchronized static void init() {
         if (sInstance == null) {
-            sInstance = new DeviceManager(recovery);
+            sInstance = new DeviceManager();
         } else {
             throw new IllegalStateException();
         }
@@ -135,7 +133,7 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice() throws DeviceNotAvailableException {
+    public ITestDevice allocateDevice(IDeviceRecovery recovery) throws DeviceNotAvailableException {
         IDevice allocatedDevice = null;
         synchronized (mDeviceSerialsInUse) {
             for (IDevice device : mAdbBridge.getDevices()) {
@@ -154,7 +152,7 @@ public class DeviceManager implements IDeviceManager {
             }
         }
         // TODO: make background logcat capture optional
-        ILogTestDevice testDevice =  new TestDevice(allocatedDevice, mRecovery);
+        ILogTestDevice testDevice =  new TestDevice(allocatedDevice, recovery);
         testDevice.startLogcat();
         return testDevice;
     }
@@ -456,5 +454,12 @@ public class DeviceManager implements IDeviceManager {
             }
             return mDevice;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void terminate() {
+        AndroidDebugBridge.terminate();
     }
 }

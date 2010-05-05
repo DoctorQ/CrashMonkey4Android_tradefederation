@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
+import com.android.tradefed.targetsetup.StubBuildInfo;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -65,7 +66,7 @@ public class XmlResultReporterTest extends TestCase {
             "timestamp=\"ignore\" hostname=\"localhost\"> " +
             "<properties />" +
             "</testsuite>";
-        mResultReporter.invocationStarted(null);
+        mResultReporter.invocationStarted(new StubBuildInfo());
         mResultReporter.invocationEnded();
         assertEquals(expectedOutput, getOutput());
     }
@@ -75,7 +76,7 @@ public class XmlResultReporterTest extends TestCase {
      */
     public void testSinglePass() {
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
-        mResultReporter.invocationStarted(null);
+        mResultReporter.invocationStarted(new StubBuildInfo());
         mResultReporter.testStarted(testId);
         mResultReporter.testEnded(testId);
         mResultReporter.invocationEnded();
@@ -93,7 +94,7 @@ public class XmlResultReporterTest extends TestCase {
     public void testSingleFail() {
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         final String trace = "this is a trace";
-        mResultReporter.invocationStarted(null);
+        mResultReporter.invocationStarted(new StubBuildInfo());
         mResultReporter.testStarted(testId);
         mResultReporter.testFailed(TestFailure.FAILURE, testId, trace);
         mResultReporter.testEnded(testId);

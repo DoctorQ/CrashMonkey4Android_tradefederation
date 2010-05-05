@@ -43,13 +43,15 @@ import java.util.TimeZone;
  * Collects all test info in memory, then dumps to file when invocation is complete.
  * <p/>
  * Ported from dalvik runner XmlReportPrinter.
+ * <p/>
+ * Result files will be stored in path constructed via [--output-file-path]/[build_id]
  */
 public class XmlResultReporter extends CollectingTestListener {
 
     private static final String LOG_TAG = "XmlReportReporter";
 
     private static final String TEST_RESULT_FILE_SUFFIX = ".xml";
-    private static final String TEST_RESULT_FILE_PREFIX = "test_result";
+    private static final String TEST_RESULT_FILE_PREFIX = "test_result_";
 
     private static final String TESTSUITE = "testsuite";
     private static final String TESTCASE = "testcase";
@@ -71,11 +73,10 @@ public class XmlResultReporter extends CollectingTestListener {
     private static final String ns = null;
 
     private static final String REPORT_DIR_NAME = "output-file-path";
-    @Option(name=REPORT_DIR_NAME, description="file system path to directory to store xml " +
+    @Option(name=REPORT_DIR_NAME, description="root file system path to directory to store xml " +
             "test results and associated logs")
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
-    @SuppressWarnings("unused")
     private IBuildInfo mBuildInfo = null;
 
     /**
@@ -107,6 +108,23 @@ public class XmlResultReporter extends CollectingTestListener {
             throw new IllegalArgumentException(String.format("missing %s", REPORT_DIR_NAME));
         }
         mBuildInfo = buildInfo;
+        File buildReportDir = new File(mReportDir, Integer.toString(mBuildInfo.getBuildId()));
+        // if buildReportDir already exists and is a directory - use it.
+        if (buildReportDir.exists()) {
+            if (buildReportDir.isDirectory()) {
+                mReportDir = buildReportDir;
+            } else {
+                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. File " +
+                        "already exists.", buildReportDir.getAbsolutePath()));
+            }
+        } else {
+            if (buildReportDir.mkdir()) {
+                mReportDir = buildReportDir;
+            } else {
+                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +
+                        " to create directory.", buildReportDir.getAbsolutePath()));
+            }
+        }
     }
 
     /**
@@ -250,5 +268,4 @@ public class XmlResultReporter extends CollectingTestListener {
             Log.e(LOG_TAG, e);
         }
     }
-
 }

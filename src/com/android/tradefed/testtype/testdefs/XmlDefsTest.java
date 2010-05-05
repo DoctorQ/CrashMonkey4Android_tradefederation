@@ -163,7 +163,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
         Collection<File> files = new ArrayList<File>();
         for (String remoteFilePath : remoteFilePaths) {
             try {
-                File tmpFile = File.createTempFile("test_defs", ".xml");
+                File tmpFile = File.createTempFile("test_defs_", ".xml");
                 getDevice().pullFile(remoteFilePath, tmpFile);
                 files.add(tmpFile);
                 tmpFile.deleteOnExit();

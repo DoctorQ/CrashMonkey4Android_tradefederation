@@ -32,20 +32,20 @@ import junit.framework.Test;
 /**
  * A {@link IConfiguration} base class that tracks loaded configuration objects.
  */
-abstract class AbstractConfiguration implements IConfiguration {
+public abstract class AbstractConfiguration implements IConfiguration {
 
     // names for built in configuration objects
-    static final String BUILD_PROVIDER_NAME = "build_provider";
-    static final String TARGET_PREPARER_NAME = "target_preparer";
-    static final String TEST_NAME = "test";
-    static final String DEVICE_RECOVERY_NAME = "device_recovery";
-    static final String LOGGER_NAME = "logger";
-    static final String RESULT_REPORTER_NAME = "result_reporter";
+    public static final String BUILD_PROVIDER_NAME = "build_provider";
+    public static final String TARGET_PREPARER_NAME = "target_preparer";
+    public static final String TEST_NAME = "test";
+    public static final String DEVICE_RECOVERY_NAME = "device_recovery";
+    public static final String LOGGER_NAME = "logger";
+    public static final String RESULT_REPORTER_NAME = "result_reporter";
 
     /** Mapping of config object name to config object. */
     private Map<String, Object> mConfigMap;
 
-    AbstractConfiguration() {
+    protected AbstractConfiguration() {
         mConfigMap = new Hashtable<String, Object>();
     }
 
@@ -55,7 +55,7 @@ abstract class AbstractConfiguration implements IConfiguration {
      * @param name the unique name of the configuration object
      * @param configObject the configuration object
      */
-    void addObject(String name, Object configObject) {
+    protected void addObject(String name, Object configObject) {
         mConfigMap.put(name, configObject);
     }
 

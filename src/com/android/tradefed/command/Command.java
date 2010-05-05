@@ -15,20 +15,20 @@
  */
 package com.android.tradefed.command;
 
-import com.android.ddmlib.AndroidDebugBridge;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.util.RunUtil;
 
 /**
  * Command-line launcher for Trade Federation.
@@ -38,31 +38,53 @@ import com.android.tradefed.log.ILeveledLogOutput;
  */
 public class Command {
 
-    /**
-     *  Package private constructor so this can be created by tests.
-     */
-    Command() {
+    private static final String LOG_TAG = "Command";
+    /** the minimum invocation time in ms when in loop mode */
+    private static final long MIN_LOOP_TIME = 2 * 60 * 1000;
+
+    public Command() {
     }
 
     /**
      * The main worker method that will parse the command line arguments, and invoke the test run.
      * <p/>
      * TODO: support "--help"
-     * @param args the command line arguments
+     * @param args the command line arguments. Expected format is:
+     *   [configuration options] [--loop] configuration_name
+     * where:
+     *  <li> configuration_name: unique name of {@link IConfiguration} to use
+     *  <li> configuration options: the {@link Option} names and associated values to provide to
+     *  the {@link IConfiguration}
+     *  <li> --loop: keep running an invocation continuously. Each invocation will be spaced at
+     *  least 2 minutes apart. ie if a prior invocation has nothing to do, the program will sleep
+     *  until 2 minutes has elapsed before starting next invocation.
      */
-    void run(String[] args) {
-        ILeveledLogOutput logger = null;
+    protected void run(String[] args) {
+        // TODO: look at better way of parsing arguments specific to this class
+        boolean loopMode = false;
+        for (String arg : args) {
+            if (arg.equals("--loop")) {
+                loopMode = true;
+            }
+        }
         IDeviceManager manager = null;
-        ITestDevice device = null;
         try {
-            IConfiguration config = createConfiguration(args);
-            logger = config.getLogOutput();
-            Log.setLogOutput(logger);
-            DdmPreferences.setLogLevel(logger.getLogLevel());
-            ITestInvocation instance = createRunInstance();
-            manager = getDeviceManager(config.getDeviceRecovery());
-            device = manager.allocateDevice();
-            instance.invoke(device, config);
+            manager = getDeviceManager();
+            if (loopMode) {
+                while (true) {
+                    long startTime = System.currentTimeMillis();
+                    Log.i(LOG_TAG, "Starting new invocation");
+                    runInvocation(manager, args);
+                    long stopTime = System.currentTimeMillis();
+                    long sleepTime = MIN_LOOP_TIME - (stopTime - startTime);
+                    if (sleepTime > 0) {
+                        Log.i(LOG_TAG, String.format("Sleeping for %d ms", sleepTime));
+                        RunUtil.sleep(sleepTime);
+                    }
+                }
+            } else {
+                runInvocation(manager, args);
+            }
         } catch (DeviceNotAvailableException e) {
             System.out.println("Could not find device to test");
         } catch (ConfigurationException e) {
@@ -71,18 +93,35 @@ public class Command {
             System.out.println("Uncaught exception!");
             e.printStackTrace();
         }
-
-        if (manager != null && device != null) {
-            manager.freeDevice(device);
-        }
-        if (logger != null) {
-            logger.closeLog();
-        }
-        exit();
+        exit(manager);
     }
 
-    private void exit() {
-        AndroidDebugBridge.terminate();
+    protected void runInvocation(IDeviceManager manager, String[] args)
+            throws ConfigurationException, DeviceNotAvailableException {
+        ILeveledLogOutput logger = null;
+        ITestDevice device = null;
+        try {
+            IConfiguration config = createConfiguration(args);
+            logger = config.getLogOutput();
+            Log.setLogOutput(logger);
+            DdmPreferences.setLogLevel(logger.getLogLevel());
+            ITestInvocation instance = createRunInstance();
+            device = manager.allocateDevice(config.getDeviceRecovery());
+            instance.invoke(device, config);
+        } finally {
+            if (manager != null && device != null) {
+                manager.freeDevice(device);
+            }
+            if (logger != null) {
+                logger.closeLog();
+            }
+        }
+    }
+
+    private void exit(IDeviceManager manager) {
+        if (manager != null) {
+            manager.terminate();
+        }
     }
 
     /**
@@ -99,8 +138,8 @@ public class Command {
      *
      * @return the {@link IDeviceManager} to use
      */
-    IDeviceManager getDeviceManager(IDeviceRecovery recovery) {
-        DeviceManager.init(recovery);
+    IDeviceManager getDeviceManager() {
+        DeviceManager.init();
         return DeviceManager.getInstance();
     }
 
@@ -111,7 +150,7 @@ public class Command {
      * @return the {@link IConfiguration} populated with option values supplied in args
      * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
      */
-    IConfiguration createConfiguration(String[] args) throws ConfigurationException {
+    protected IConfiguration createConfiguration(String[] args) throws ConfigurationException {
         return ConfigurationFactory.createConfigurationFromArgs(args);
     }
 

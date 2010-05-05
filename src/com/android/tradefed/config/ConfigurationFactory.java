@@ -30,7 +30,7 @@ public final class ConfigurationFactory {
     }
 
     /**
-     * Gets the built-in {@link IConfiguration} with given name
+     * Gets the built-in {@link IConfiguration} with given name.
      *
      * @param name the unique name of the {@link IConfiguration}
      * @return the {@link IConfiguration}
@@ -81,6 +81,19 @@ public final class ConfigurationFactory {
         final String configName = args[args.length-1];
         IConfiguration config = getConfiguration(configName);
 
+        return populateConfigWithArgs(args, config);
+    }
+
+    /**
+     * Populate given configuration with arg values
+     *
+     * @param args
+     * @param config
+     * @return
+     * @throws ConfigurationException
+     */
+    public static IConfiguration populateConfigWithArgs(String[] args, IConfiguration config)
+            throws ConfigurationException {
         for (Object configObject : config.getConfigurationObjects()) {
             ArgsOptionParser parser = new ArgsOptionParser(configObject);
             parser.parse(args);

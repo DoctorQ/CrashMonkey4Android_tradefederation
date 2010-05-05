@@ -16,6 +16,8 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AndroidDebugBridge;
+
 /**
  * Interface for managing the set of available devices for testing.
  */
@@ -24,10 +26,11 @@ public interface IDeviceManager {
     /**
      * Request a device for testing.
      *
+     * @param recovery the {@link IDeviceRecovery} to use for device
      * @return a {@link ITestDevice} for testing.
      * @throws DeviceNotAvailableException if no device is available.
      */
-    public ITestDevice allocateDevice() throws DeviceNotAvailableException;
+    public ITestDevice allocateDevice(IDeviceRecovery recovery) throws DeviceNotAvailableException;
 
     /**
      * Return a device to the pool, making it available for testing.
@@ -104,4 +107,10 @@ public interface IDeviceManager {
     public void waitForDeviceAvailable(final ITestDevice device)
             throws DeviceNotAvailableException;
 
+    /**
+     * Terminates the ddm library. This must be called upon application termination.
+     *
+     * @see AndroidDebugBridge#terminate()
+     */
+    public void terminate();
 }
