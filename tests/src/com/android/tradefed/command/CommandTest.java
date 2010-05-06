@@ -119,8 +119,19 @@ public class CommandTest extends TestCase {
     public void testRun_configException() {
         Command command = new Command() {
             @Override
-            protected IConfiguration createConfiguration(String[] args) throws ConfigurationException {
+            protected IConfiguration createConfiguration(String[] args)
+                    throws ConfigurationException {
                 throw new ConfigurationException("error");
+            }
+
+            @Override
+            ITestInvocation createRunInstance() {
+                return mMockTestInvoker;
+            }
+
+            @Override
+            IDeviceManager getDeviceManager() {
+                return mMockDeviceManager;
             }
         };
         mMockDeviceManager.terminate();
