@@ -94,6 +94,8 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     private IRemoteAndroidTestRunner mRunner;
     private Collection<ITestRunListener> mListeners;
 
+    private boolean mIsCaptureLog = true;
+
     /**
      * {@inheritDoc}
      */
@@ -193,6 +195,13 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     }
 
     /**
+     * Sets whether the logcat should be captured at end of test run.
+     */
+    void setCaptureLog(boolean captureLog) {
+        mIsCaptureLog = captureLog;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public ITestDevice getDevice() {
@@ -244,8 +253,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         try {
             doTestRun(listener);
         } finally {
-            listener.testRunLog(String.format(DEVICE_LOGCAT_NAME, mPackageName), LogDataType.TEXT,
-                    mDevice.getLogcat());
+            if (mIsCaptureLog) {
+                listener.testRunLog(String.format(DEVICE_LOGCAT_NAME, mPackageName),
+                        LogDataType.TEXT, mDevice.getLogcat());
+            }
         }
     }
 

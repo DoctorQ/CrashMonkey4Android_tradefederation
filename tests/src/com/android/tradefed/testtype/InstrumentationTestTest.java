@@ -218,6 +218,88 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
+     * Test the rerun mode when first test run fails.
+     */
+    @SuppressWarnings("unchecked")
+    public void testRun_rerun() throws Exception {
+        final TestIdentifier test1 = new TestIdentifier("Test", "test1");
+        final TestIdentifier test2 = new TestIdentifier("Test", "test2");
+        final String runErrorMsg = "error";
+
+        mInstrumentationTest.setRerunMode(true);
+        // expect log only mode run first to collect tests
+        mMockRemoteRunner.setLogOnly(true);
+        mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
+                (Collection<ITestRunListener>)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+                    Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+                // perform call back on listeners to show run of two tests
+                for (ITestRunListener listener : listeners) {
+                    listener.testRunStarted(2);
+                    listener.testStarted(test1);
+                    listener.testEnded(test1);
+                    listener.testStarted(test2);
+                    listener.testEnded(test2);
+                    listener.testRunEnded(1);
+                }
+            }
+        });
+        // now expect second run with log only mode off
+        mMockRemoteRunner.setLogOnly(false);
+        mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
+                (Collection<ITestRunListener>)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+                    Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+                // perform call back on listeners to show run failed - only one test
+                for (ITestRunListener listener : listeners) {
+                    listener.testRunStarted(2);
+                    listener.testStarted(test1);
+                    listener.testEnded(test1);
+                    listener.testRunFailed(runErrorMsg);
+                }
+            }
+        });
+        // now expect third run to run remaining test
+        mMockRemoteRunner.setMethodName(test2.getClassName(), test2.getTestName());
+        mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
+                (Collection<ITestRunListener>)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+                    Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+                // perform call back on listeners to show run failed - only one test
+                for (ITestRunListener listener : listeners) {
+                    listener.testRunStarted(1);
+                    listener.testStarted(test2);
+                    listener.testEnded(test2);
+                    listener.testRunEnded(1);
+                }
+            }
+        });
+
+        mMockListener.testRunStarted(2);
+        mMockListener.testStarted(test1);
+        mMockListener.testEnded(test1);
+        mMockListener.testRunFailed(runErrorMsg);
+        mMockListener.testRunStarted(1);
+        mMockListener.testStarted(test2);
+        mMockListener.testEnded(test2);
+        mMockListener.testRunEnded(1);
+        // expect only one "testRunLog" call
+        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
+                (InputStream)EasyMock.anyObject());
+
+        EasyMock.replay(mMockRemoteRunner);
+        EasyMock.replay(mMockTestDevice);
+        EasyMock.replay(mMockListener);
+        mInstrumentationTest.run(mMockListener);
+    }
+
+    /**
      * Test that IllegalArgumentException is thrown if an invalid test size is provided.
      */
     public void testRun_badTestSize() throws Exception {

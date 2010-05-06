@@ -63,6 +63,7 @@ public class InstrumentationListTestTest extends TestCase {
                 return mMockInstrumentationTest;
             }
         };
+        EasyMock.replay(mMockListener, mMockTestDevice);
         mInstrumentationListTest.setDevice(mMockTestDevice);
         mInstrumentationListTest.run(mMockListener);
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
