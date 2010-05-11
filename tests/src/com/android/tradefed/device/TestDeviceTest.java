@@ -43,6 +43,7 @@ public class TestDeviceTest extends TestCase {
     private IShellOutputReceiver mMockReceiver;
     private TestDevice mTestDevice;
     private IDeviceRecovery mMockRecovery;
+    private IDeviceStateMonitor mMockMonitor;
 
     /**
      * {@inheritDoc}
@@ -51,9 +52,11 @@ public class TestDeviceTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockIDevice = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("serial").anyTimes();
         mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
-        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery);
+        mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
+        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor);
     }
 
     /**
@@ -106,8 +109,7 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall().andThrow(new IOException());
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        mMockRecovery.recoverDevice(mTestDevice);
+        mMockRecovery.recoverDevice(mMockIDevice, mMockMonitor);
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
@@ -130,8 +132,7 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall().andThrow(new IOException());
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        mMockRecovery.recoverDevice(mTestDevice);
+        mMockRecovery.recoverDevice(mMockIDevice, mMockMonitor);
         EasyMock.expectLastCall();
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall();
@@ -151,8 +152,7 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall().andThrow(new IOException()).anyTimes();
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        mMockRecovery.recoverDevice(mTestDevice);
+        mMockRecovery.recoverDevice(mMockIDevice, mMockMonitor);
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
@@ -189,9 +189,8 @@ public class TestDeviceTest extends TestCase {
         mockRunner.run(listeners);
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
         listener.testRunFailed((String)EasyMock.anyObject());
-        mMockRecovery.recoverDevice(mTestDevice);
+        mMockRecovery.recoverDevice(mMockIDevice, mMockMonitor);
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(listener);
         EasyMock.replay(mockRunner);
@@ -217,9 +216,8 @@ public class TestDeviceTest extends TestCase {
         mockRunner.run(listeners);
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
         listener.testRunFailed((String)EasyMock.anyObject());
-        mMockRecovery.recoverDevice(mTestDevice);
+        mMockRecovery.recoverDevice(mMockIDevice, mMockMonitor);
         EasyMock.replay(listener);
         EasyMock.replay(mockRunner);
         EasyMock.replay(mMockIDevice);

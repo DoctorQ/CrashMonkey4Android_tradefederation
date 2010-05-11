@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
+
 /**
  * Interface for recovering a device that has gone offline.
  */
@@ -23,9 +25,22 @@ public interface IDeviceRecovery {
     /**
      * Attempt to recover the given device that can no longer be communicated with.
      *
-     * @param device the {@link ITestDevice} to recover.
+     * @param device the {@link IDevice} to recover.
+     * @param monitor the {@link IDeviceStateMonitor} to use.
      * @throws DeviceNotAvailableException if device could not be recovered
      */
-    public void recoverDevice(ITestDevice device) throws DeviceNotAvailableException;
+    public void recoverDevice(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException;
+
+
+    /**
+     * Attempt to recover the given unresponsive device in bootloader mode.
+     *
+     * @param device the {@link IDevice} to recover.
+     * @param monitor the {@link IDeviceStateMonitor} to use.
+     * @throws DeviceNotAvailableException if device could not be recovered
+     */
+    public void recoverDeviceBootloader(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException;
 
 }

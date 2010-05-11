@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
+
 /**
  * Empty implementation of a {@link IDeviceRecovery}.
  */
@@ -23,7 +25,16 @@ public class StubDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
-    public void recoverDevice(ITestDevice device) throws DeviceNotAvailableException {
+    public void recoverDevice(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException("device recovery not implemented");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void recoverDeviceBootloader(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException("device recovery not implemented");
     }
 }

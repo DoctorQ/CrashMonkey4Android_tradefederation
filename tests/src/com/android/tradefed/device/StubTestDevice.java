@@ -92,9 +92,9 @@ public class StubTestDevice implements ILogTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException {
+    public String executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException {
         // ignore
-        return true;
+        return "";
     }
 
     /**
@@ -103,5 +103,60 @@ public class StubTestDevice implements ILogTestDevice {
     public boolean executeFastbootCommand(String... commandArgs) throws DeviceNotAvailableException {
         // ignore
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean enableAdbRoot() throws DeviceNotAvailableException {
+        // ignore
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void postBootSetup() throws DeviceNotAvailableException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void reboot() throws DeviceNotAvailableException {
+        // ignore
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void rebootIntoBootloader() throws DeviceNotAvailableException {
+        // ignore
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDevice(long time) throws DeviceNotAvailableException {
+        // ignore
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
+        // ignore
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceAvailable() throws DeviceNotAvailableException {
+        // ignore
+
     }
 }

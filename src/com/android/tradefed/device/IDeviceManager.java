@@ -60,54 +60,6 @@ public interface IDeviceManager {
     public void removeListener(IDeviceListener listener);
 
     /**
-     * Waits for device to be online.
-     *
-     * @param device the previously allocated {@link ITestDevice}
-     * @param time the maximum time in ms to wait
-     *
-     * @throws DeviceNotAvailableException if time expires and device is still not online.
-     */
-    public void waitForDevice(ITestDevice device, long time) throws DeviceNotAvailableException;
-
-    /**
-     * Reboots the device into bootloader mode.
-     *
-     * @param device the {@link ITestDevice}
-     */
-    public void rebootIntoBootloader(ITestDevice device) throws DeviceNotAvailableException;
-
-    /**
-     * Reboots the device into adb mode.
-     *
-     * @param device the {@link ITestDevice}
-     */
-    public void reboot(ITestDevice device) throws DeviceNotAvailableException;
-
-    /**
-     * Waits for the device to be responsive and available for testing.
-     *
-     * @param device the {@link ITestDevice}
-     * @param waitTime the time in ms to wait
-     *
-     * @throws DeviceNotAvailableException if time expires and device is still not responsive.
-     */
-    public void waitForDeviceAvailable(final ITestDevice device, final long waitTime)
-            throws DeviceNotAvailableException;
-
-    /**
-     * Waits for the device to be responsive and available for testing.
-     * <p/>
-     * Equivalent to {@link #waitForDeviceAvailable(ITestDevice, long)}, but uses default device
-     * boot timeout.
-     *
-     * @param device the {@link ITestDevice}
-     *
-     * @throws DeviceNotAvailableException if time expires and device is still not responsive.
-     */
-    public void waitForDeviceAvailable(final ITestDevice device)
-            throws DeviceNotAvailableException;
-
-    /**
      * Terminates the ddm library. This must be called upon application termination.
      *
      * @see AndroidDebugBridge#terminate()

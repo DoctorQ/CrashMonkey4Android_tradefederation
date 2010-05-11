@@ -140,22 +140,6 @@ public class DeviceManagerTest extends TestCase {
         mDeviceManager.freeDevice(testDevice);
     }
 
-    /**
-     * Test {@link DeviceManager#waitForDevice(ITestDevice, long)} when device is online.
-     */
-    public void testWaitForDevice() throws DeviceNotAvailableException {
-        IDevice mockIDevice = EasyMock.createMock(IDevice.class);
-        EasyMock.expect(mockIDevice.isOnline()).andReturn(Boolean.TRUE);
-        ITestDevice testDevice = EasyMock.createMock(ITestDevice.class);
-        EasyMock.expect(testDevice.getIDevice()).andReturn(mockIDevice).anyTimes();
-        EasyMock.expect(testDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        EasyMock.expect(mockIDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mockIDevice});
-        EasyMock.replay(testDevice);
-        EasyMock.replay(mockIDevice);
-        EasyMock.replay(mMockAdbBridge);
-        mDeviceManager.waitForDevice(testDevice, 1*1000);
-    }
 
     /**
      * Test method for {@link DeviceManager#registerListener(DeviceListener)}.

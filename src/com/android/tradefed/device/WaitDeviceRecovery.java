@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.util.RunUtil;
@@ -30,15 +31,17 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /** the time in ms to wait before beginning recovery attempts */
     private static final int INITIAL_PAUSE_TIME = 5*1000;
 
-
     @Option(name="device-wait-time",
             description="maximum time in ms to wait for a single device recovery command")
     private long mWaitTime = 4 * 60 * 1000;
 
+
+
     /**
      * {@inheritDoc}
      */
-    public void recoverDevice(ITestDevice device) throws DeviceNotAvailableException {
+    public void recoverDevice(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
         // device may have just gone offline
         // sleep a small amount to give ddms state a chance to settle
         // TODO - see if there is better way to handle this
@@ -46,18 +49,28 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
                 device.getSerialNumber()));
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
-        // TODO: consider checking if device is in bootloader, and if so, reboot to adb mode
-        getDeviceManager().waitForDeviceAvailable(device, mWaitTime);
-
-        // TODO: ensure device running as root here ?
-        // device.setRoot();
-
+        // wait for device online
+        if (!monitor.waitForDevice(mWaitTime)) {
+            throw new DeviceNotAvailableException(String.format("Could not find device %s",
+                    device.getSerialNumber()));
+        }
+        if (!monitor.waitForDeviceAvailable(mWaitTime)) {
+            // device is online but not responsive, consider trying a reboot?
+            throw new DeviceNotAvailableException(String.format(
+                    "Device %s is online but unresponsive", device.getSerialNumber()));
+        }
     }
 
     /**
-     * Gets the IDeviceManager to be used. Exposed so this can be mocked by unit tests.
+     * {@inheritDoc}
      */
-    IDeviceManager getDeviceManager() {
-        return DeviceManager.getInstance();
+    public void recoverDeviceBootloader(IDevice device, IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        // TODO: check if device is on adb and reboot ?
+        // wait for device in bootloader
+        if (!monitor.waitForDeviceBootloader(mWaitTime)) {
+            throw new DeviceNotAvailableException(String.format("Could not find device %s in" +
+            		"bootloader", device.getSerialNumber()));
+        }
     }
 }

@@ -54,8 +54,19 @@ class TestDevice implements ILogTestDevice {
      */
     private static final int LOGCAT_MAX_DATA = 512 * 1024;
 
+    /** The  time in ms to wait for a device to be back online after a adb root. */
+    private static final int ROOT_TIMEOUT = 1 * 60 * 1000;
+
+    /** The  time in ms to wait for a device to boot into fastboot. */
+    private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
+
     private final IDevice mIDevice;
     private final IDeviceRecovery mRecovery;
+    private final IDeviceStateMonitor mMonitor;
+
+    // TODO: make this an Option - consider moving postBootSetup elsewhere
+    private boolean mEnableAdbRoot = true;
+
     private LogCatReceiver mLogcatReceiver;
 
     /**
@@ -77,9 +88,10 @@ class TestDevice implements ILogTestDevice {
      * @param device the associated {@link IDevice}
      * @param recovery the {@link IDeviceRecovery} mechanism to use
      */
-    TestDevice(IDevice device, IDeviceRecovery recovery) {
+    TestDevice(IDevice device, IDeviceRecovery recovery, IDeviceStateMonitor monitor) {
         mIDevice = device;
         mRecovery = recovery;
+        mMonitor = monitor;
     }
 
     /**
@@ -116,7 +128,9 @@ class TestDevice implements ILogTestDevice {
     public String executeShellCommand(String command) throws DeviceNotAvailableException {
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         executeShellCommand(command, receiver);
-        return receiver.getOutput();
+        String output = receiver.getOutput();
+        Log.d(LOG_TAG, String.format("%s on %s returned %s", command, getSerialNumber(), output));
+        return output;
     }
 
     /**
@@ -204,19 +218,20 @@ class TestDevice implements ILogTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean executeAdbCommand(String... cmdArgs) throws DeviceNotAvailableException {
+    public String executeAdbCommand(String... cmdArgs) throws DeviceNotAvailableException {
         final String[] fullCmd = buildAdbCommand(cmdArgs);
+        final String[] output = new String[1];
         IDeviceAction adbAction = new IDeviceAction() {
             public boolean doAction() throws IOException {
-                String result =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
-                if (result == null) {
+                output[0] =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
+                if (output[0] == null) {
                     throw new IOException();
                 }
                 return true;
             }
         };
-        return performDeviceAction(String.format("adb %s", cmdArgs[0]), adbAction,
-                MAX_RETRY_ATTEMPTS);
+        performDeviceAction(String.format("adb %s", cmdArgs[0]), adbAction, MAX_RETRY_ATTEMPTS);
+        return output[0];
     }
 
     /**
@@ -233,6 +248,7 @@ class TestDevice implements ILogTestDevice {
                 return true;
             }
         };
+        // TODO: change to do fastboot recovery
         return performDeviceAction(String.format("fastboot %s", cmdArgs[0]), fastbootAction,
                 MAX_RETRY_ATTEMPTS);
     }
@@ -309,7 +325,7 @@ class TestDevice implements ILogTestDevice {
      */
     private void recoverDevice() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
-        mRecovery.recoverDevice(this);
+        mRecovery.recoverDevice(getIDevice(), mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
     }
 
@@ -517,5 +533,118 @@ class TestDevice implements ILogTestDevice {
                         "failed to write logcat data for %s.", getSerialNumber()));
             }
         }
+    }
+
+    IDeviceStateMonitor getDeviceStateMonitor() {
+        return mMonitor;
+    }
+
+    /**
+     * Perform instructions to configure device for testing that must be done after every boot.
+     * <p/>
+     * TODO: move this to another configurable interface
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void postBootSetup() throws DeviceNotAvailableException {
+        if (mEnableAdbRoot) {
+            enableAdbRoot();
+        }
+        // turn off keyguard
+        executeShellCommand("input keyevent 82");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void rebootIntoBootloader() throws DeviceNotAvailableException {
+
+        if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
+            Log.i(LOG_TAG, String.format("device %s already in fastboot. Rebooting anyway",
+                    getSerialNumber()));
+            executeFastbootCommand("reboot", "bootloader");
+        } else {
+            Log.i(LOG_TAG, String.format("Booting device %s into bootloader",
+                    getSerialNumber()));
+            executeAdbCommand("reboot", "bootloader");
+        }
+        if (!mMonitor.waitForDeviceBootloader(FASTBOOT_TIMEOUT)) {
+            // TODO: add recoverBootloader method
+            mRecovery.recoverDeviceBootloader(getIDevice(), mMonitor);
+        }
+        // TODO: check for fastboot responsiveness ?
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void reboot() throws DeviceNotAvailableException {
+        if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
+            Log.i(LOG_TAG, String.format("device %s in fastboot. Rebooting to userspace.",
+                    getSerialNumber()));
+            executeFastbootCommand("reboot");
+        } else {
+            Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
+            executeAdbCommand("reboot");
+            waitForDeviceNotAvailable("reboot", 2*60*1000);
+
+        }
+        if (!mMonitor.waitForDeviceAvailable()) {
+            recoverDevice();
+        }
+        postBootSetup();
+    }
+
+    private void waitForDeviceNotAvailable(String operationDesc, long time) {
+        // TODO: a bit of a race condition here. Would be better to start a device listener
+        // before the operation
+        if (!mMonitor.waitForDeviceNotAvailable(time)) {
+            // above check is flaky, ignore till better solution is found
+            Log.w(LOG_TAG, String.format(
+                    "Did not detect device %s becoming unavailable after %s",
+                    getSerialNumber(), operationDesc));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean enableAdbRoot() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("adb root on device %s", getSerialNumber()));
+
+        String output = executeAdbCommand("root");
+        boolean success = (output.contains("restarting adbd as root") ||
+                           output.contains("adbd is already running as root"));
+        if (!success) {
+            return false;
+        }
+        // wait for device to disappear from adb
+        waitForDeviceNotAvailable("root", 20*1000);
+        // wait for device to be back online
+        waitForDeviceAvailable(ROOT_TIMEOUT);
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
+        if (!mMonitor.waitForDeviceAvailable(waitTime)) {
+            recoverDevice();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceAvailable() throws DeviceNotAvailableException {
+        if (!mMonitor.waitForDeviceAvailable()) {
+            recoverDevice();
+        }
+    }
+
+    void setEnableAdbRoot(boolean enable) {
+        mEnableAdbRoot = enable;
     }
 }
