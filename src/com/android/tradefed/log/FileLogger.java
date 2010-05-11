@@ -31,7 +31,7 @@ import java.io.IOException;
 public class FileLogger implements ILeveledLogOutput {
 
     private static final String TEMP_FILE_PREFIX = "tradefed_log_";
-    private static final String TEMP_FILE_SUFFIX = ".tmp";
+    private static final String TEMP_FILE_SUFFIX = ".txt";
 
     // TODO: For now, just log to a test file
     private File mLogFile = null;
@@ -45,9 +45,6 @@ public class FileLogger implements ILeveledLogOutput {
     @Option(name="log-level-display", description="minimum log level to display on stdout")
     private String mLogLevelStringDisplay = LogLevel.INFO.getStringValue();
 
-    // the enum equivalent of mLogLevelStringDisplay
-    private LogLevel mLogLevelDisplay;
-
     /**
      * Constructor for creating a temporary log file in the system's default temp directory
      * @throws ConfigurationException if unable to create log file
@@ -56,7 +53,6 @@ public class FileLogger implements ILeveledLogOutput {
         try {
             mLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             mLogWriter = new BufferedWriter(new FileWriter(mLogFile));
-            mLogLevelDisplay = LogLevel.getByString(mLogLevelStringDisplay);
         }
         catch (IOException e) {
             throw new ConfigurationException(String.format("Could not create output log file : %s",
@@ -76,7 +72,8 @@ public class FileLogger implements ILeveledLogOutput {
      */
     public void printLog(LogLevel logLevel, String tag, String message) {
         String outMessage = Log.getLogFormatString(logLevel, tag, message);
-        if (logLevel.getPriority() >= mLogLevelDisplay.getPriority()) {
+        LogLevel displayLevel = LogLevel.getByString(mLogLevelStringDisplay);
+        if (logLevel.getPriority() >= displayLevel.getPriority()) {
             System.out.print(outMessage);
         }
         try {
@@ -108,7 +105,6 @@ public class FileLogger implements ILeveledLogOutput {
      *
      */
     public void closeLog() {
-
         try {
             mLogWriter.flush();
             mLogWriter.close();
