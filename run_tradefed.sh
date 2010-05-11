@@ -20,4 +20,28 @@
 # Currently fixed to linux
 lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
+# Help folks get TF up and running.  Can be removed when TF has a real "-h"
+getopts h help_opt
+
+if [ "x$help_opt" = "xh" ]; then
+    # Print out help message
+    dir=`dirname $0`
+
+    echo "Usage: $0 [OPTIONS] CONFIG"
+    echo
+    echo "CONFIG is a configuration.  Use 'instrument' or dig around in"
+    echo "${dir}/src/com/android/tradefed/config/ to find other configs."
+    echo
+    echo "The options are many and only self-documenting at this point.  To see"
+    echo "a list, run the script ${dir}/get_options.sh"
+    echo
+    echo "To get started, if you used the following command to run tests by hand:"
+    echo "adb -s DEVICE -e class CLASS#METHOD -w PACKAGE/RUNNER"
+    echo
+    echo "You can try to run the same test in Trade Federation with:"
+    echo "$0 -s DEVICE --package PACKAGE --runner RUNNER --class CLASS --method METHOD instrument"
+    exit 1
+fi
+
 java -cp $lib_path/TradeFed.jar com.android.tradefed.command.Command "$@"
+
