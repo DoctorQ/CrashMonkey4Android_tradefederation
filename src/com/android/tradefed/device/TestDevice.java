@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Default implementation of a {@link ITestDevice}
@@ -204,15 +206,33 @@ class TestDevice implements ILogTestDevice {
     }
 
     /**
-     * Helper method to determine if file on device exists.
-     *
-     * @param destPath the absolute path of file on device to check
-     * @return <code>true</code> if file exists, <code>false</code> otherwise.
-     * @throws DeviceNotAvailableException if device communication is lost
+     * {@inheritDoc}
      */
     public boolean doesFileExist(String destPath) throws DeviceNotAvailableException {
         String lsGrep = executeShellCommand(String.format("ls \"%s\"", destPath));
         return !lsGrep.contains("No such file or directory");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
+        String externalStorePath = getIDevice().getMountPoint(
+                IDevice.MNT_EXTERNAL_STORAGE);
+        String output = executeShellCommand(String.format("df %s", externalStorePath));
+        final Pattern freeSpacePattern = Pattern.compile("(\\d+)K available");
+        Matcher patternMatcher = freeSpacePattern.matcher(output);
+        if (patternMatcher.find()) {
+            String freeSpaceString = patternMatcher.group(1);
+            try {
+                return Long.parseLong(freeSpaceString);
+            } catch (NumberFormatException e) {
+                // fall through
+            }
+        }
+        Log.e(LOG_TAG, String.format(
+                "free space command output \"%s\" did not match expected pattern ", output));
+        return 0;
     }
 
     /**
@@ -624,6 +644,16 @@ class TestDevice implements ILogTestDevice {
         // wait for device to be back online
         waitForDeviceAvailable(ROOT_TIMEOUT);
         return true;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceOnline() throws DeviceNotAvailableException {
+        if (!mMonitor.waitForDeviceOnline()) {
+            recoverDevice();
+        }
     }
 
     /**

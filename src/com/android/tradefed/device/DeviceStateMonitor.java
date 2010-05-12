@@ -41,7 +41,6 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
 
     private static final int FASTBOOT_POLL_ATTEMPTS = 5;
 
-
     /** the ratio of time to wait for device to be online vs responsive in
      * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
      */
@@ -49,7 +48,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
 
     /** The  time in ms to wait for a device to boot. */
     // TODO: make this configurable - or auto-scale according to device performance ?
-    private static final int DEFAULT_BOOT_TIMEOUT = 4 * 60 * 1000;
+    private static final long DEFAULT_BOOT_TIMEOUT = 4 * 60 * 1000;
 
     DeviceStateMonitor(IDevice device, IAndroidDebugBridge adbBridge) {
         mDevice = device;
@@ -59,22 +58,29 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDevice(long time) {
-        return waitForDeviceState(TestDeviceState.ONLINE, time);
+    public boolean waitForDeviceOnline(long waitTime) {
+        return waitForDeviceState(TestDeviceState.ONLINE, waitTime);
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDeviceNotAvailable(long time) {
-        return waitForDeviceState(TestDeviceState.NOT_AVAILABLE, time);
+    public boolean waitForDeviceOnline() {
+        return waitForDeviceOnline((long)(DEFAULT_BOOT_TIMEOUT*WAIT_DEVICE_RATIO));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean waitForDeviceNotAvailable(long waitTime) {
+        return waitForDeviceState(TestDeviceState.NOT_AVAILABLE, waitTime);
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean waitForDeviceAvailable(final long waitTime) {
-        if (waitForDevice((long)(waitTime*WAIT_DEVICE_RATIO))) {
+        if (waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_RATIO))) {
             return waitForPmResponsive((long)(waitTime*(1-WAIT_DEVICE_RATIO)));
         }
         return false;

@@ -165,6 +165,62 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
+     * Unit test for {@link TestDevice#getExternalStoreFreeSpace()}.
+     * <p/>
+     * Verify that output of 'adb shell df' command is parsed correctly.
+     */
+    public void testGetExternalStoreFreeSpace() throws Exception {
+        final String mntPoint = "/mnt/sdcard";
+        final String expectedCmd = "df " + mntPoint;
+        final String dfOutput =
+            "/mnt/sdcard: 3864064K total, 1282880K used, 2581184K available (block size 32768)";
+
+        EasyMock.expect(mMockIDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
+                mntPoint);
+        // expect shell command to be called, and return the test df output
+        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
+                EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(
+              new MockDevice() {
+                  @Override
+                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                      byte[] inputData = dfOutput.getBytes();
+                      receiver.addOutput(inputData, 0, inputData.length);
+                  }
+              });
+        EasyMock.replay(mMockIDevice);
+        assertEquals(2581184, mTestDevice.getExternalStoreFreeSpace());
+    }
+
+    /**
+     * Unit test for {@link TestDevice#getExternalStoreFreeSpace()}.
+     * <p/>
+     * Verify behavior
+     */
+    public void testGetExternalStoreFreeSpace_badOutput() throws Exception {
+        final String mntPoint = "/mnt/sdcard";
+        final String expectedCmd = "df " + mntPoint;
+        final String dfOutput =
+            "/mnt/sdcard: blaH";
+
+        EasyMock.expect(mMockIDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
+                mntPoint);
+        // expect shell command to be called, and return the test df output
+        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
+                EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(
+              new MockDevice() {
+                  @Override
+                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                      byte[] inputData = dfOutput.getBytes();
+                      receiver.addOutput(inputData, 0, inputData.length);
+                  }
+              });
+        EasyMock.replay(mMockIDevice);
+        assertEquals(0, mTestDevice.getExternalStoreFreeSpace());
+    }
+
+    /**
      * Test {@link TestDevice#runInstrumentationTests(IRemoteAndroidTestRunner, Collection)}
      * success case.
      */
