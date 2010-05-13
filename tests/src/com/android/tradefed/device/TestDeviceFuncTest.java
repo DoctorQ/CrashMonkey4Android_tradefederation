@@ -33,6 +33,15 @@ import java.io.IOException;
 public class TestDeviceFuncTest extends DeviceTestCase {
 
     private static final String LOG_TAG = "TestDeviceFuncTest";
+    private TestDevice mTestDevice;
+    private IDeviceStateMonitor mMonitor;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mTestDevice = (TestDevice)getDevice();
+        mMonitor = mTestDevice.getDeviceStateMonitor();
+    }
 
     /**
      * Simple normal case test for
@@ -42,10 +51,11 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      */
     public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException {
         Log.i(LOG_TAG, "testExecuteShellCommand");
-        final String output = getDevice().executeShellCommand("ls");
+        final String output = mTestDevice.executeShellCommand("ls");
         assertTrue(output.contains("data"));
         assertTrue(output.contains("system"));
     }
+
 
     /**
      * Push and then pull a file from device, and verify contents are as expected.
@@ -61,17 +71,17 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             tmpFile = File.createTempFile("tmp", "txt");
             FileOutputStream stream = new FileOutputStream(tmpFile);
             stream.write(fileContents.getBytes());
-            deviceFilePath = String.format("%s/%s", getDevice().getIDevice().getMountPoint(
+            deviceFilePath = String.format("%s/%s", mTestDevice.getIDevice().getMountPoint(
                     IDevice.MNT_EXTERNAL_STORAGE), "tmp_testPushPull.txt");
             // ensure file does not already exist
-            getDevice().executeShellCommand(String.format("rm %s", deviceFilePath));
+            mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
             assertFalse(String.format("%s exists", deviceFilePath),
-                    getDevice().doesFileExist(deviceFilePath));
+                    mTestDevice.doesFileExist(deviceFilePath));
 
-            assertTrue(getDevice().pushFile(tmpFile, deviceFilePath));
-            assertTrue(getDevice().doesFileExist(deviceFilePath));
+            assertTrue(mTestDevice.pushFile(tmpFile, deviceFilePath));
+            assertTrue(mTestDevice.doesFileExist(deviceFilePath));
             tmpDestFile = File.createTempFile("tmp", "txt");
-            assertTrue(getDevice().pullFile(deviceFilePath, tmpDestFile));
+            assertTrue(mTestDevice.pullFile(deviceFilePath, tmpDestFile));
             assertTrue(compareFiles(tmpFile, tmpDestFile));
         } finally {
             if (tmpFile != null) {
@@ -81,7 +91,7 @@ public class TestDeviceFuncTest extends DeviceTestCase {
                 tmpDestFile.delete();
             }
             if (deviceFilePath != null) {
-                getDevice().executeShellCommand(String.format("rm %s", deviceFilePath));
+                mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
             }
         }
     }
@@ -114,5 +124,48 @@ public class TestDeviceFuncTest extends DeviceTestCase {
                 stream2.close();
             }
         }
+    }
+
+    /**
+     * Verify device can be rebooted into bootloader and back to adb.
+     */
+    public void testRebootIntoBootloader() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRebootIntoBootloader");
+        try {
+            mTestDevice.rebootIntoBootloader();
+            assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
+        } finally {
+            mTestDevice.reboot();
+            assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+        }
+    }
+
+    /**
+     * Verify device can be rebooted into adb.
+     */
+    public void testReboot() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testReboot");
+        mTestDevice.reboot();
+        assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+    }
+
+
+    /**
+     * Simple normal case test for {@link DeviceManager#enableAdbRoot(ITestDevice)}.
+     * <p/>
+     * This test assumes adb build on device under test a) doesn't have root by default, and
+     * b) is allowed to get root. ie running userdebug build.
+     * <p/>
+     * Verifies adb root works initially and after a reboot.
+     */
+    public void testEnableAdbRoot() throws DeviceNotAvailableException, InterruptedException {
+        mTestDevice.setEnableAdbRoot(false);
+        assertTrue(mTestDevice.enableAdbRoot());
+        // if adb is running as root, adb shell id should return "uid=0(root)"
+        assertTrue(mTestDevice.executeShellCommand("id").contains("root"));
+        mTestDevice.reboot();
+        assertFalse(mTestDevice.executeShellCommand("id").contains("root"));
+        assertTrue(mTestDevice.enableAdbRoot());
+        assertTrue(mTestDevice.executeShellCommand("id").contains("root"));
     }
 }

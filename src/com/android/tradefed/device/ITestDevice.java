@@ -26,10 +26,10 @@ import java.io.InputStream;
 import java.util.Collection;
 
 /**
- *  Provides an reliable and slightly higher level API to a ddmlib {@link IDevice}.
- *
- *  Retries device commands for a configurable amount, and provides an optional device recovery
- *  interface for devices which have gone offline.
+ * Provides an reliable and slightly higher level API to a ddmlib {@link IDevice}.
+ * <p/>
+ * Retries device commands for a configurable amount, and provides a device recovery
+ * interface for devices which are unresponsive.
  */
 public interface ITestDevice {
 
@@ -75,11 +75,11 @@ public interface ITestDevice {
      * method provides better failure detection and performance.
      *
      * @param commandArgs the adb command and arguments to run
-     * @return <code>true</code>
+     * @return the stdout from command. <code>null</code> if command failed to execute.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
      */
-    public boolean executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException;
+    public String executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException;
 
     /**
      * Helper method which executes a fastboot command as a system command.
@@ -150,4 +150,45 @@ public interface ITestDevice {
      */
     public InputStream getLogcat();
 
+    /**
+     * Reboots the device into bootloader mode.
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void rebootIntoBootloader() throws DeviceNotAvailableException;
+
+    /**
+     * Reboots the device into adb mode.
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void reboot() throws DeviceNotAvailableException;
+
+    /**
+     * Turns on adb root .
+     *
+     * @return <code>true</code> if successful.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean enableAdbRoot() throws DeviceNotAvailableException;
+
+    /**
+     * Waits for the device to be responsive and available for testing.
+     *
+     * @param waitTime the time in ms to wait
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void waitForDeviceAvailable(final long waitTime) throws DeviceNotAvailableException;
+
+    /**
+     * Waits for the device to be responsive and available for testing. Uses default boot timeout.
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void waitForDeviceAvailable() throws DeviceNotAvailableException;
 }
