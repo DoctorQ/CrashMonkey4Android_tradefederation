@@ -31,7 +31,7 @@ public class DeviceFatalError extends Exception {
      *
      * @param msg a descriptive error message of the error
      */
-    DeviceFatalError(String msg) {
+    public DeviceFatalError(String msg) {
         super(msg);
     }
 }

@@ -146,6 +146,15 @@ public interface ITestDevice {
     public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException;
 
     /**
+     * Helper method to determine amount of free space on device external storage.
+     *
+     * @return the amount of free space in KB
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public long getExternalStoreFreeSpace() throws DeviceNotAvailableException;
+
+    /**
      * Grabs a snapshot stream of the logcat data.
      */
     public InputStream getLogcat();
@@ -191,4 +200,13 @@ public interface ITestDevice {
      * recovered.
      */
     public void waitForDeviceAvailable() throws DeviceNotAvailableException;
+
+    /**
+     * Waits for the device to be visible via adb. Note the device may not necessarily be
+     * responsive to commands.
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void waitForDeviceOnline() throws DeviceNotAvailableException;
 }

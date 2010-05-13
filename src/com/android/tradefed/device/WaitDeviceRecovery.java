@@ -35,8 +35,6 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
             description="maximum time in ms to wait for a single device recovery command")
     private long mWaitTime = 4 * 60 * 1000;
 
-
-
     /**
      * {@inheritDoc}
      */
@@ -50,7 +48,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
         // wait for device online
-        if (!monitor.waitForDevice(mWaitTime)) {
+        if (!monitor.waitForDeviceOnline(mWaitTime)) {
             throw new DeviceNotAvailableException(String.format("Could not find device %s",
                     device.getSerialNumber()));
         }
@@ -70,7 +68,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // wait for device in bootloader
         if (!monitor.waitForDeviceBootloader(mWaitTime)) {
             throw new DeviceNotAvailableException(String.format("Could not find device %s in" +
-            		"bootloader", device.getSerialNumber()));
+                    "bootloader", device.getSerialNumber()));
         }
     }
 }

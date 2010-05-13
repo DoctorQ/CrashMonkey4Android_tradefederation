@@ -33,7 +33,18 @@ interface IDeviceStateMonitor {
      *
      * @return <code>true</code> if device becomes online before time expires
      */
-    public boolean waitForDevice(long time);
+    public boolean waitForDeviceOnline(long time);
+
+    /**
+     * Waits for device to be online using standard boot timeout.
+     * <p/>
+     * Note: this method will return once device is visible via DDMS. It does not guarantee that the
+     * device is actually responsive to adb commands - use {@link #waitForDeviceAvailable()}
+     * instead.
+     *
+     * @return <code>true</code> if device becomes online before time expires
+     */
+    public boolean waitForDeviceOnline();
 
     /**
      * Waits for the device to be responsive and available for testing.
@@ -56,20 +67,20 @@ interface IDeviceStateMonitor {
     /**
      * Waits for the device to be in bootloader.
      *
-     * @param time the maximum time in ms to wait
+     * @param waitTime the maximum time in ms to wait
      *
      * @return <code>true</code> if device is in bootloader before time expires
      */
-    public boolean waitForDeviceBootloader(long time);
+    public boolean waitForDeviceBootloader(long waitTime);
 
     /**
      * Waits for the device to be not available
      *
-     * @param time the maximum time in ms to wait
+     * @param waitTime the maximum time in ms to wait
      *
      * @return <code>true</code> if device becomes unavailable
      */
-    public boolean waitForDeviceNotAvailable(long time);
+    public boolean waitForDeviceNotAvailable(long waitTime);
 
 
     /**

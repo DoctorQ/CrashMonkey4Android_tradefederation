@@ -157,6 +157,19 @@ public class StubTestDevice implements ILogTestDevice {
      */
     public void waitForDeviceAvailable() throws DeviceNotAvailableException {
         // ignore
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceOnline() throws DeviceNotAvailableException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
+        return 0;
     }
 }
