@@ -27,6 +27,7 @@ import com.android.ddmlib.testrunner.ITestRunListener;
 
 import org.easymock.EasyMock;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,7 +196,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Unit test for {@link TestDevice#getExternalStoreFreeSpace()}.
      * <p/>
-     * Verify behavior
+     * Verify behavior when 'df' command returns unexpected content
      */
     public void testGetExternalStoreFreeSpace_badOutput() throws Exception {
         final String mntPoint = "/mnt/sdcard";
@@ -218,6 +219,16 @@ public class TestDeviceTest extends TestCase {
               });
         EasyMock.replay(mMockIDevice);
         assertEquals(0, mTestDevice.getExternalStoreFreeSpace());
+    }
+
+    /**
+     * Unit test for {@link TestDevice#syncFiles)}.
+     * <p/>
+     * Verify behavior when given local file does not exist
+     */
+    public void testSyncFiles_missingLocal() throws Exception {
+        EasyMock.replay(mMockIDevice);
+        assertFalse(mTestDevice.syncFiles(new File("idontexist"), "/sdcard"));
     }
 
     /**

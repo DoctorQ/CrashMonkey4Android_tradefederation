@@ -172,4 +172,13 @@ public class StubTestDevice implements ILogTestDevice {
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
         return 0;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean syncFiles(File localFileDir, String deviceFilePath)
+            throws DeviceNotAvailableException {
+        // TODO implement this
+        return false;
+    }
 }

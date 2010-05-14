@@ -16,10 +16,12 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.SyncService;
+import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
@@ -30,10 +32,15 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -233,6 +240,144 @@ class TestDevice implements ILogTestDevice {
         Log.e(LOG_TAG, String.format(
                 "free space command output \"%s\" did not match expected pattern ", output));
         return 0;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean syncFiles(File localFileDir, String deviceFilePath)
+            throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Syncing %s to %s on device %s",
+                localFileDir.getAbsolutePath(), deviceFilePath, getSerialNumber()));
+        if (!localFileDir.isDirectory()) {
+            Log.e(LOG_TAG, String.format("file %s is not a directory",
+                    localFileDir.getAbsolutePath()));
+            return false;
+        }
+        // get the real destination path. This is done because underlying syncService.push
+        // implementation will add localFileDir.getName() to destination path
+        deviceFilePath = String.format("%s/%s", deviceFilePath, localFileDir.getName());
+        if (!doesFileExist(deviceFilePath)) {
+            executeShellCommand(String.format("mkdir %s", deviceFilePath));
+        }
+        FileEntry remoteFileEntry = getFileEntryFromPath(deviceFilePath);
+        if (remoteFileEntry == null) {
+            Log.e(LOG_TAG, String.format("Could not find remote file entry %s ",
+                    deviceFilePath));
+            return false;
+        }
+
+        return syncFiles(localFileDir, remoteFileEntry);
+    }
+
+    /**
+     * Finds a {@link FileEntry} corresponding to a remote device file path.
+     *
+     * @param deviceFilePath the absolute remote file path to find
+     * @return the {@link FileEntry} or <code>null</code>
+     */
+    private FileEntry getFileEntryFromPath(String deviceFilePath) {
+        FileListingService service = getIDevice().getFileListingService();
+        FileEntry entry = service.getRoot();
+        String[] segs = deviceFilePath.split("/");
+        for (String seg : segs) {
+            if (seg.length() > 0) {
+                // build children cache so findChild works
+                service.getChildren(entry, true, null);
+                entry = entry.findChild(seg);
+                if (entry == null) {
+                    return null;
+                }
+            }
+        }
+        return entry;
+    }
+
+    /**
+     * Recursively sync newer files.
+     *
+     * @param localFileDir the local {@link File} directory to sync
+     * @param remoteFileEntry the remote destination {@link FileEntry}
+     * @return <code>true</code> if files were synced successfully
+     */
+    private boolean syncFiles(File localFileDir, FileEntry remoteFileEntry) {
+        Log.d(LOG_TAG, String.format("Syncing %s to %s on %s", localFileDir.getAbsolutePath(),
+                remoteFileEntry.getFullPath(), getSerialNumber()));
+        // find newer files to sync
+        File[] localFiles = localFileDir.listFiles(new NoHiddenFilesFilter());
+        ArrayList<String> filePathsToSync = new ArrayList<String>();
+        FileListingService service = getIDevice().getFileListingService();
+        // build file cache
+        service.getChildren(remoteFileEntry, true, null);
+        for (File localFile : localFiles) {
+            FileEntry entry = remoteFileEntry.findChild(localFile.getName());
+            if (entry == null) {
+                Log.d(LOG_TAG, String.format("Detected missing file path %s",
+                        localFile.getAbsolutePath()));
+                filePathsToSync.add(localFile.getAbsolutePath());
+            } else if (localFile.isDirectory()) {
+                // This directory exists remotely. recursively sync it to sync only its newer files
+                // contents
+                if (!syncFiles(localFile, entry)) {
+                    return false;
+                }
+            } else if (isNewer(localFile, entry)) {
+                Log.d(LOG_TAG, String.format("Detected newer file %s",
+                        localFile.getAbsolutePath()));
+                filePathsToSync.add(localFile.getAbsolutePath());
+            }
+        }
+
+        if (filePathsToSync.size() == 0) {
+            Log.d(LOG_TAG, "No files to sync");
+            return true;
+        }
+        try {
+            String files[] = filePathsToSync.toArray(new String[filePathsToSync.size()]);
+            Log.d(LOG_TAG, String.format("Syncing files to %s", remoteFileEntry.getFullPath()));
+            SyncResult result = getIDevice().getSyncService().push(files, remoteFileEntry,
+                    SyncService.getNullProgressMonitor());
+            Log.i(LOG_TAG, String.format("Sync complete. Result %d", result.getCode()));
+            return result.getCode() == SyncService.RESULT_OK;
+        } catch (IOException e) {
+            Log.e(LOG_TAG, e);
+        }
+        return false;
+    }
+
+    /**
+     * A {@link FilenameFilter} that rejects hidden (ie starts with ".") files.
+     */
+    private static class NoHiddenFilesFilter implements FilenameFilter {
+        /**
+         * {@inheritDoc}
+         */
+        public boolean accept(File dir, String name) {
+            return !name.startsWith(".");
+        }
+    }
+
+    /**
+     * Return <code>true</code> if local file is newer than remote file.
+     */
+    private boolean isNewer(File localFile, FileEntry entry) {
+        // remote times are in GMT timezone
+        final String entryTimeString = String.format("%s %s GMT", entry.getDate(), entry.getTime());
+        try {
+            // expected format of a FileEntry's date and time
+            SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm zzz");
+            Date remoteDate = format.parse(entryTimeString);
+            // localFile.lastModified has granularity of ms, but remoteDate.getTime only has
+            // granularity of minutes. Shift remoteDate.getTime() backward by one minute so newly
+            // modified files get synced
+            return localFile.lastModified() > (remoteDate.getTime() - 60*1000);
+        } catch (ParseException e) {
+            Log.e(LOG_TAG, String.format(
+                    "Error converting remote time stamp %s for %s on device %s",
+                    entryTimeString, entry.getFullPath(), getSerialNumber()));
+        }
+        // sync file by default
+        return true;
     }
 
     /**

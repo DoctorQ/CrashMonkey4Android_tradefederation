@@ -136,6 +136,27 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Incrementally syncs the contents of a local file directory to device.
+     * <p/>
+     * Decides which files to push by comparing timestamps of local files with their remote
+     * equivalents. Only 'newer' or non-existent files will be pushed to device. Thus overhead
+     * should be relatively small if file set on device is already up to date.
+     * <p/>
+     * Hidden files (with names starting with ".") will be ignored.
+     * <p/>
+     * Example usage: syncFiles("/tmp/files", "/sdcard") will created a /sdcard/files directory
+     * if it doesn't already exist, and recursively push the /tmp/files contents to /sdcard/files.
+     *
+     * @param localFileDir the local file directory containing files to recursively push.
+     * @param deviceFilePath the remote destination absolute file path root.
+     * @return <code>true</code> if files were synced successfully. <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean syncFiles(File localFileDir, String deviceFilePath)
+            throws DeviceNotAvailableException;
+
+    /**
      * Helper method to determine if file on device exists.
      *
      * @param deviceFilePath the absolute path of file on device to check

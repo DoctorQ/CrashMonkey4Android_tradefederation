@@ -22,6 +22,7 @@ import com.android.tradefed.testtype.DeviceTestCase;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -56,7 +57,6 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         assertTrue(output.contains("system"));
     }
 
-
     /**
      * Push and then pull a file from device, and verify contents are as expected.
      */
@@ -67,10 +67,7 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         String deviceFilePath = null;
 
         try {
-            final String fileContents = "this is the test file contents";
-            tmpFile = File.createTempFile("tmp", "txt");
-            FileOutputStream stream = new FileOutputStream(tmpFile);
-            stream.write(fileContents.getBytes());
+            tmpFile = createTempTestFile(null);
             deviceFilePath = String.format("%s/%s", mTestDevice.getIDevice().getMountPoint(
                     IDevice.MNT_EXTERNAL_STORAGE), "tmp_testPushPull.txt");
             // ensure file does not already exist
@@ -84,9 +81,6 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             assertTrue(mTestDevice.pullFile(deviceFilePath, tmpDestFile));
             assertTrue(compareFiles(tmpFile, tmpDestFile));
         } finally {
-            if (tmpFile != null) {
-                tmpFile.delete();
-            }
             if (tmpDestFile != null) {
                 tmpDestFile.delete();
             }
@@ -94,6 +88,17 @@ public class TestDeviceFuncTest extends DeviceTestCase {
                 mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
             }
         }
+    }
+
+    private File createTempTestFile(File dir) throws IOException, FileNotFoundException {
+        File tmpFile;
+        final String fileContents = "this is the test file contents";
+        tmpFile = File.createTempFile("tmp", ".txt", dir);
+        FileOutputStream stream = new FileOutputStream(tmpFile);
+        stream.write(fileContents.getBytes());
+        stream.close();
+        tmpFile.deleteOnExit();
+        return tmpFile;
     }
 
     /**
@@ -127,6 +132,59 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
+     */
+    public void testSyncFiles() throws IOException, DeviceNotAvailableException {
+        // create temp dir with one temp file
+        File tmpDir = File.createTempFile("tmp", null);
+        tmpDir.delete();
+        tmpDir.mkdir();
+        File tmpFile = createTempTestFile(tmpDir);
+        // set last modified to 10 minutes ago
+        tmpFile.setLastModified(System.currentTimeMillis() - 10*60*1000);
+        String externalStorePath = mTestDevice.getIDevice().getMountPoint(
+                IDevice.MNT_EXTERNAL_STORAGE);
+        String expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
+                tmpDir.getName(), tmpFile.getName());
+        try {
+            assertTrue(mTestDevice.syncFiles(tmpDir, externalStorePath));
+            assertTrue(mTestDevice.doesFileExist(expectedDeviceFilePath));
+
+            // get 'ls -l' attributes of file which includes timestamp
+            String origTmpFileStamp = mTestDevice.executeShellCommand(String.format("ls -l %s",
+                    expectedDeviceFilePath));
+            // now create another file and verify that is synced
+            File tmpFile2 = createTempTestFile(tmpDir);
+            tmpFile2.setLastModified(System.currentTimeMillis() - 10*60*1000);
+            assertTrue(mTestDevice.syncFiles(tmpDir, externalStorePath));
+            String expectedDeviceFilePath2 = String.format("%s/%s/%s", externalStorePath,
+                    tmpDir.getName(), tmpFile2.getName());
+            assertTrue(mTestDevice.doesFileExist(expectedDeviceFilePath2));
+
+            // verify 1st file timestamp did not change
+            String unchangedTmpFileStamp = mTestDevice.executeShellCommand(String.format("ls -l %s",
+                    expectedDeviceFilePath));
+            assertEquals(origTmpFileStamp, unchangedTmpFileStamp);
+
+            // now modify 1st file and verify it does change remotely
+            String testString = "blah";
+            FileOutputStream stream = new FileOutputStream(tmpFile);
+            stream.write(testString.getBytes());
+            stream.close();
+
+            assertTrue(mTestDevice.syncFiles(tmpDir, externalStorePath));
+            String tmpFileContents = mTestDevice.executeShellCommand(String.format("cat %s",
+                    expectedDeviceFilePath));
+            assertTrue(tmpFileContents.contains(testString));
+        } finally {
+            mTestDevice.executeShellCommand(String.format("rm -r %s/%s", externalStorePath,
+                    expectedDeviceFilePath));
+        }
+    }
+
+
+
+    /**
      * Verify device can be rebooted into bootloader and back to adb.
      */
     public void testRebootIntoBootloader() throws DeviceNotAvailableException {
@@ -148,7 +206,6 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         mTestDevice.reboot();
         assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
     }
-
 
     /**
      * Simple normal case test for {@link DeviceManager#enableAdbRoot(ITestDevice)}.
