@@ -18,6 +18,8 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
 
+import java.io.InputStream;
+
 /**
  * Classes which implement this interface provides methods that deal with outputting log
  * messages.
@@ -32,8 +34,20 @@ public interface ILeveledLogOutput extends ILogOutput {
     public String getLogLevel();
 
     /**
-     * Closes the log and performs any cleanup before closing, as necessary.
+     * Grabs a snapshot stream of the log data.
+     * <p/>
+     * Must not be called after {@link closeLog}.
+     * <p/>
+     * The returned stream is not guaranteed to have optimal performance. Callers may wish to
+     * wrap result in a {@link BufferedInputStream}.
      *
+     * @return a {@link InputStream} of the log data
+     * @throws IllegalStateException if called when log has been closed.
+     */
+    public InputStream getLog();
+
+    /**
+     * Closes the log and performs any cleanup before closing, as necessary.
      */
     public void closeLog();
 

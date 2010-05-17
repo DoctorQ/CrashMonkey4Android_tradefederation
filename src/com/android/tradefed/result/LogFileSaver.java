@@ -31,7 +31,7 @@ import java.io.OutputStream;
  */
 public class LogFileSaver {
 
-    private static final String LOG_TAG = "FileLogger";;
+    private static final String LOG_TAG = "LogFileSaver";
     private final File mRootDir;
 
     public LogFileSaver(File rootDir) {

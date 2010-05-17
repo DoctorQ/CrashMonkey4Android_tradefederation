@@ -21,8 +21,8 @@ import com.android.tradefed.config.ConfigurationException;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 
 import junit.framework.TestCase;
 
@@ -75,12 +75,8 @@ public class FileLoggerTest extends TestCase {
             logger.printLog(LogLevel.ASSERT, LOG_TAG, Text3);
             String expectedText3 = Log.getLogFormatString(LogLevel.ASSERT, LOG_TAG, Text3).trim();
 
-            String tempFile = logger.getFilename();
-            logger.closeLog();
-
-            // Verify the 3 lines we logged to the file
-            logFile = new File(tempFile);
-            logFileReader = new BufferedReader(new FileReader(logFile));
+            // Verify the 3 lines we logged
+            logFileReader = new BufferedReader(new InputStreamReader(logger.getLog()));
 
             String actualLogString = logFileReader.readLine().trim();
             assertTrue(actualLogString.equals(expectedText1));
@@ -90,9 +86,9 @@ public class FileLoggerTest extends TestCase {
 
             actualLogString = logFileReader.readLine().trim();
             assertTrue(actualLogString.equals(expectedText3));
+            logger.closeLog();
         }
-        finally
-        {
+        finally {
             if (logFileReader != null) {
                 logFileReader.close();
             }
@@ -100,5 +96,32 @@ public class FileLoggerTest extends TestCase {
                 logFile.delete();
             }
         }
+    }
+
+    /**
+     * Test that an {@link IllegalStateException} is thrown if {@link FileLogger#getLog()} is
+     * called after {@link FileLogger#closeLog()}.
+     */
+    public void testGetLog_afterClose() throws ConfigurationException {
+        FileLogger logger = new FileLogger();
+        logger.closeLog();
+        try {
+            logger.getLog();
+            fail("IllegalStateException not thrown");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that no unexpected Exceptions occur if
+     * {@link FileLogger#printLog(LogLevel, String, String)} is called after
+     * {@link FileLogger#closeLog()}
+     */
+    public void testCloseLog() throws ConfigurationException, IOException {
+        FileLogger logger = new FileLogger();
+        // test the package-private methods to capture any exceptions that occur
+        logger.doCloseLog();
+        logger.writeToLog("test2");
     }
 }

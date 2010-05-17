@@ -21,9 +21,12 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
 
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A {@link ILeveledLogOutput} that directs log messages to a file and to stdout.
@@ -33,8 +36,7 @@ public class FileLogger implements ILeveledLogOutput {
     private static final String TEMP_FILE_PREFIX = "tradefed_log_";
     private static final String TEMP_FILE_SUFFIX = ".txt";
 
-    // TODO: For now, just log to a test file
-    private File mLogFile = null;
+    private File mTempLogFile = null;
     private BufferedWriter mLogWriter = null;
 
     // TODO: raise this to info level
@@ -51,8 +53,11 @@ public class FileLogger implements ILeveledLogOutput {
      */
     public FileLogger() throws ConfigurationException  {
         try {
-            mLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
-            mLogWriter = new BufferedWriter(new FileWriter(mLogFile));
+            mTempLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
+            // delete the temp file on exit rather than on close, so log is available in case
+            // program fails before logs are collected
+            mTempLogFile.deleteOnExit();
+            mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
         }
         catch (IOException e) {
             throw new ConfigurationException(String.format("Could not create output log file : %s",
@@ -77,12 +82,24 @@ public class FileLogger implements ILeveledLogOutput {
             System.out.print(outMessage);
         }
         try {
-            if (mLogWriter != null) {
-                mLogWriter.write(outMessage);
-            }
+            writeToLog(outMessage);
         }
         catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Writes given message to log.
+     * <p/>
+     * Exposed for unit testing.
+     *
+     * @param outMessage the entry to write to log
+     * @throws IOException
+     */
+    void writeToLog(String outMessage) throws IOException {
+        if (mLogWriter != null) {
+            mLogWriter.write(outMessage);
         }
     }
 
@@ -96,23 +113,51 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * Returns the path representation of the file being logged to by this file logger
      */
-    public String getFilename() throws SecurityException {
-        return mLogFile.getAbsolutePath();
+    String getFilename() throws SecurityException {
+        return mTempLogFile.getAbsolutePath();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public InputStream getLog() {
+        if (mLogWriter == null) {
+            throw new IllegalStateException();
+        }
+        try {
+            // create a InputStream from log file
+            mLogWriter.flush();
+            return new FileInputStream(mTempLogFile);
+        } catch (IOException e) {
+            System.err.println("Failed to get log");
+            e.printStackTrace();
+        }
+        return new ByteArrayInputStream(new byte[0]);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void closeLog() {
+        try {
+            doCloseLog();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
      * Flushes stream and closes log file.
+     * <p/>
+     * Exposed for unit testing.
      *
+     * @throws IOException
      */
-    public void closeLog() {
-        try {
-            mLogWriter.flush();
-            mLogWriter.close();
-            mLogWriter = null;
-            System.out.println(String.format(
-                    "Your log file for this run is at: %s", mLogFile.getPath()));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    void doCloseLog() throws IOException {
+        // set mLogWriter to null first before closing, to prevent "write" calls after "close"
+        BufferedWriter writer = mLogWriter;
+        mLogWriter = null;
+        writer.flush();
+        writer.close();
     }
 }

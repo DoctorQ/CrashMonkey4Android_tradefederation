@@ -16,11 +16,13 @@
 package com.android.tradefed.invoker;
 
 import com.android.ddmlib.IDevice;
-import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
@@ -29,6 +31,9 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
 import org.easymock.EasyMock;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -41,13 +46,14 @@ public class TestInvocationTest extends TestCase {
     /** The {@link TestInvocation} under test, with all dependencies mocked out */
     private TestInvocation mTestInvocation;
 
-    // The mock objects. Holy mockery Batman, thats a lot of mocks
+    // The mock objects.
     private IConfiguration mMockConfiguration;
     private ITestDevice mMockDevice;
     private ITargetPreparer mMockPreparer;
     private IBuildProvider mMockBuildRetriever;
     private IBuildInfo mMockBuildInfo;
     private ITestInvocationListener mMockTestListener;
+    private ILeveledLogOutput mMockLogger;
 
     @Override
     protected void setUp() throws Exception {
@@ -59,11 +65,18 @@ public class TestInvocationTest extends TestCase {
         mMockBuildRetriever = EasyMock.createMock(IBuildProvider.class);
         mMockTestListener = EasyMock.createMock(ITestInvocationListener.class);
         mMockBuildInfo = EasyMock.createMock(IBuildInfo.class);
+        mMockLogger = EasyMock.createMock(ILeveledLogOutput.class);
 
         EasyMock.expect(mMockConfiguration.getBuildProvider()).andReturn(mMockBuildRetriever);
         EasyMock.expect(mMockConfiguration.getTargetPreparer()).andReturn(mMockPreparer);
         EasyMock.expect(mMockConfiguration.getTestInvocationListener()).andReturn(
                 mMockTestListener);
+        EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(
+                mMockLogger);
+        // return an empty stream
+        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
+        mMockTestListener.testRunLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
+                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation();
@@ -76,9 +89,10 @@ public class TestInvocationTest extends TestCase {
      */
     public void testInvoke_RemoteTest() throws Exception {
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
-        setupNormalInvoke(test);
+        mMockTestListener.invocationStarted(mMockBuildInfo);
+        mMockTestListener.invocationEnded();
         test.run(mMockTestListener);
-        EasyMock.replay(test);
+        setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
     }
 
@@ -86,15 +100,14 @@ public class TestInvocationTest extends TestCase {
      * Test the invoke scenario where build retrieve fails.
      */
     public void testInvoke_buildFailed() throws TargetSetupError, ConfigurationException  {
-        EasyMock.expect(mMockBuildRetriever.getBuild()).andThrow(
-                new TargetSetupError("error"));
+        TargetSetupError exception = new TargetSetupError("error");
+        EasyMock.expect(mMockBuildRetriever.getBuild()).andThrow(exception);
         Test test = EasyMock.createMock(Test.class);
         EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
+        mMockTestListener.invocationFailed((String)EasyMock.anyObject(), EasyMock.eq(exception));
         // expect no other methods to be called
-        EasyMock.replay(mMockBuildRetriever);
-        EasyMock.replay(mMockPreparer);
-        EasyMock.replay(test);
-        EasyMock.replay(mMockConfiguration);
+        EasyMock.replay(test, mMockTestListener, mMockConfiguration, mMockPreparer,
+                mMockBuildRetriever);
         // TODO: add verification for sending an error/logging error ?
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
     }
@@ -105,14 +118,11 @@ public class TestInvocationTest extends TestCase {
     public void testInvoke_configFailed() throws ConfigurationException  {
         EasyMock.expect(mMockConfiguration.getTest()).andThrow(new ConfigurationException("fail"));
         // expect no other methods to be called
-        EasyMock.replay(mMockBuildRetriever);
-        EasyMock.replay(mMockPreparer);
-        EasyMock.replay(mMockConfiguration);
+        EasyMock.replay(mMockTestListener, mMockConfiguration, mMockPreparer,
+                mMockBuildRetriever);
         // TODO: add verification for sending an error/logging error ?
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
     }
-
-
 
     /**
      * Test the {@link TestInvocation#invoke(IDevice, IConfiguration)} scenario where the
@@ -124,7 +134,8 @@ public class TestInvocationTest extends TestCase {
          mockDeviceConfigTest.setDevice(mMockDevice);
          mockDeviceConfigTest.setConfiguration(mMockConfiguration);
          mockDeviceConfigTest.run(mMockTestListener);
-         EasyMock.replay(mockDeviceConfigTest);
+         mMockTestListener.invocationStarted(mMockBuildInfo);
+         mMockTestListener.invocationEnded();
          setupNormalInvoke(mockDeviceConfigTest);
          mTestInvocation.invoke(mMockDevice, mMockConfiguration);
     }
@@ -135,11 +146,13 @@ public class TestInvocationTest extends TestCase {
      * @throws Exception if unexpected error occurs
      */
     public void testInvoke_testFail() throws Exception {
+        IllegalArgumentException exception = new IllegalArgumentException();
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
-        setupNormalInvoke(test);
         test.run(mMockTestListener);
-        EasyMock.expectLastCall().andThrow(new IllegalArgumentException());
-        EasyMock.replay(test);
+        EasyMock.expectLastCall().andThrow(exception);
+        mMockTestListener.invocationStarted(mMockBuildInfo);
+        mMockTestListener.invocationFailed((String)EasyMock.anyObject(), EasyMock.eq(exception));
+        setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
     }
 
@@ -152,9 +165,8 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
         EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(mMockBuildInfo);
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
-        EasyMock.replay(mMockConfiguration);
-        EasyMock.replay(mMockBuildRetriever);
-        EasyMock.replay(mMockPreparer);
+        EasyMock.replay(test, mMockTestListener, mMockConfiguration, mMockPreparer,
+                mMockBuildRetriever, mMockLogger);
     }
 
     /**

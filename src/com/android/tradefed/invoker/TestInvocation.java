@@ -20,8 +20,10 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
@@ -44,6 +46,7 @@ import junit.framework.TestResult;
 public class TestInvocation implements ITestInvocation {
 
     private static final String LOG_TAG = "TestInvocation";
+    static final String TRADEFED_LOG_NAME = "tradefed_log_";
 
     /**
      * Constructs a {@link TestInvocation}
@@ -56,7 +59,9 @@ public class TestInvocation implements ITestInvocation {
      */
     public void invoke(ITestDevice device, IConfiguration config) {
         ITestInvocationListener listener = null;
+        ILeveledLogOutput logger = null;
         try {
+            logger = config.getLogOutput();
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
             Test test = config.getTest();
@@ -75,6 +80,9 @@ public class TestInvocation implements ITestInvocation {
         } catch (Throwable e) {
             Log.e(LOG_TAG, "Uncaught exception!");
             handleError(listener, e);
+        }
+        if (logger != null && listener != null) {
+            listener.testRunLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
         }
     }
 

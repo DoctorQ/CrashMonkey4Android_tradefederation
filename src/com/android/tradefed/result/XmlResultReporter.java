@@ -262,7 +262,6 @@ public class XmlResultReporter extends CollectingTestListener {
         File logFile;
         try {
             logFile = new LogFileSaver(mReportDir).saveLogData(dataName, dataType, dataStream);
-            Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to save log data");
             Log.e(LOG_TAG, e);
