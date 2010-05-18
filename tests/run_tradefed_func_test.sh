@@ -14,7 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A simpler helper script that runs the Trade Federation functional tests
+# A simpler helper script that run a Trade Federation functional test
+#
+# Usage:
+# run_tradefed_func_test.sh --class <full name of test class to run> [options]
 
-# run the functional test suite that contains all the functional tests
-$ANDROID_BUILD_TOP/vendor/google_tradefederation/tests/run_tradefed_func_test.sh --class com.android.tradefed.FuncTests "$@"
+lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
+
+java -cp $lib_path/TradeFed.jar:$lib_path/TradeFedTests.jar com.android.tradefed.command.Command "$@" host
