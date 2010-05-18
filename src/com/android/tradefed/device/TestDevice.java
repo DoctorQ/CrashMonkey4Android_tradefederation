@@ -587,7 +587,7 @@ class TestDevice implements ILogTestDevice {
         } else {
             Log.i(LOG_TAG, String.format("Booting device %s into bootloader",
                     getSerialNumber()));
-            executeAdbCommand("reboot", "bootloader");
+            doAdbReboot("bootloader");
         }
         if (!mMonitor.waitForDeviceBootloader(FASTBOOT_TIMEOUT)) {
             // TODO: add recoverBootloader method
@@ -606,14 +606,30 @@ class TestDevice implements ILogTestDevice {
             executeFastbootCommand("reboot");
         } else {
             Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
-            executeAdbCommand("reboot");
+            doAdbReboot(null);
             waitForDeviceNotAvailable("reboot", 2*60*1000);
-
         }
         if (!mMonitor.waitForDeviceAvailable()) {
             recoverDevice();
         }
         postBootSetup();
+    }
+
+    /**
+     * Perform a adb reboot.
+     *
+     * @param into the bootloader name to reboot into, or <code>null</code> to just reboot the
+     * device.
+     * @throws DeviceNotAvailableException
+     */
+    private void doAdbReboot(final String into) throws DeviceNotAvailableException {
+        IDeviceAction rebootAction = new IDeviceAction() {
+            public boolean doAction() throws IOException {
+                getIDevice().reboot(into);
+                return true;
+            }
+        };
+        performDeviceAction("reboot", rebootAction, MAX_RETRY_ATTEMPTS);
     }
 
     private void waitForDeviceNotAvailable(String operationDesc, long time) {
