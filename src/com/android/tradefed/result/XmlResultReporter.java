@@ -259,9 +259,8 @@ public class XmlResultReporter extends CollectingTestListener {
      */
     @Override
     public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream) {
-        File logFile;
         try {
-            logFile = new LogFileSaver(mReportDir).saveLogData(dataName, dataType, dataStream);
+            new LogFileSaver(mReportDir).saveLogData(dataName, dataType, dataStream);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to save log data");
             Log.e(LOG_TAG, e);
