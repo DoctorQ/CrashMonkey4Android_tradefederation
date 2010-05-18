@@ -398,7 +398,6 @@ public class TestDeviceTest extends TestCase {
             return null;
         }
         public void reboot(String into) throws IOException {
-            return null;
         }
     }
 }
