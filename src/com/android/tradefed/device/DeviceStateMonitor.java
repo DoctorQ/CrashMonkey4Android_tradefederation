@@ -31,24 +31,34 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private final IDevice mDevice;
     private final IAndroidDebugBridge mAdbBridge;
 
-    /** the time in ms to wait between 'poll for package manager' attempts */
-    private static final int CHECK_PM_POLL_TIME = 5 * 1000;
-    /** the maximum operation time in ms for a 'poll for package manager' command */
-    private static final long MAX_PM_POLL_TIME = 30 * 1000;
+    /** the time in ms to wait between 'poll for responsiveness' attempts */
+    private static final int CHECK_POLL_TIME = 5 * 1000;
+    /** the maximum operation time in ms for a 'poll for responsiveness' command */
+    private static final long MAX_OP_TIME = 30 * 1000;
 
     /** The default time in ms to wait for a device command to complete. */
     private static final int DEFAULT_CMD_TIMEOUT = 2 * 60 * 1000;
 
     private static final int FASTBOOT_POLL_ATTEMPTS = 5;
 
-    /** the ratio of time to wait for device to be online vs responsive in
+    /** the ratio of time to wait for device to be online vs other tasks in
      * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
      */
-    private static final float WAIT_DEVICE_RATIO = 0.4f;
+    private static final float WAIT_DEVICE_ONLINE_RATIO = 0.2f;
+
+    /** the ratio of time to wait for device to be online vs other tasks in
+     * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
+     */
+    private static final float WAIT_DEVICE_PM_RATIO = 0.6f;
+
+    /** the ratio of time to wait for device's external store to be mounted vs other tasks in
+     * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
+     */
+    private static final float WAIT_DEVICE_STORE_RATIO = 0.2f;
 
     /** The  time in ms to wait for a device to boot. */
-    // TODO: make this configurable - or auto-scale according to device performance ?
-    private static final long DEFAULT_BOOT_TIMEOUT = 4 * 60 * 1000;
+    // TODO: make this configurable
+    private static final long DEFAULT_BOOT_TIMEOUT = 6 * 60 * 1000;
 
     DeviceStateMonitor(IDevice device, IAndroidDebugBridge adbBridge) {
         mDevice = device;
@@ -66,7 +76,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceOnline() {
-        return waitForDeviceOnline((long)(DEFAULT_BOOT_TIMEOUT*WAIT_DEVICE_RATIO));
+        return waitForDeviceOnline((long)(DEFAULT_BOOT_TIMEOUT*WAIT_DEVICE_ONLINE_RATIO));
     }
 
     /**
@@ -80,8 +90,26 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceAvailable(final long waitTime) {
-        if (waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_RATIO))) {
-            return waitForPmResponsive((long)(waitTime*(1-WAIT_DEVICE_RATIO)));
+        // A device is currently considered "available" if and only if three events are true:
+        // 1. Device is online aka visible via DDMS/adb
+        // 2. Device's package manager is responsive
+        // 3. Device's external storage is mounted
+        //
+        // The current implementation waits for each event to occur in sequence.
+        //
+        // Each wait for event call is allocated a certain percentage of the total waitTime.
+        // These percentages are given by the constants WAIT_DEVICE_*_RATIO, whose values must add
+        // up to 1.
+        //
+        // Note that this algorithm is somewhat limiting, because this method can return before
+        // the total waitTime has actually expired. A potential future enhancement would be to add
+        // logic to adjust for the time expired. ie if waitForDeviceOnline returns immediately,
+        // give waitForPmResponsive more time to complete
+
+        if (waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_ONLINE_RATIO))) {
+             if (waitForPmResponsive((long)(waitTime*WAIT_DEVICE_PM_RATIO))) {
+                 return waitForStoreMount((long)(waitTime*WAIT_DEVICE_STORE_RATIO));
+             }
         }
         return false;
     }
@@ -100,7 +128,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * @return <code>true</code> if package manage becomes responsive before waitTime expires.
      * <code>false</code> otherwise
      */
-    boolean waitForPmResponsive(final long waitTime) {
+    private boolean waitForPmResponsive(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting for device %s package manager",
                 mDevice.getSerialNumber()));
         IRunnableResult pmPollRunnable = new IRunnableResult() {
@@ -121,9 +149,41 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                 }
             }
         };
-        int numAttempts = (int)(waitTime / CHECK_PM_POLL_TIME);
-        return RunUtil.runTimedRetry(MAX_PM_POLL_TIME, CHECK_PM_POLL_TIME, numAttempts,
+        int numAttempts = (int)(waitTime / CHECK_POLL_TIME);
+        return RunUtil.runTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, numAttempts,
                 pmPollRunnable);
+    }
+
+    /**
+     * Waits for the device's external store to be mounted.
+     *
+     * @param waitTime time in ms to wait before giving up
+     * @return <code>true</code> if external store is mounted before waitTime expires.
+     * <code>false</code> otherwise
+     */
+    private boolean waitForStoreMount(final long waitTime) {
+        Log.i(LOG_TAG, String.format("Waiting for device %s external store",
+                mDevice.getSerialNumber()));
+        final String externalStore = mDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        IRunnableResult storePollRunnable = new IRunnableResult() {
+            public boolean run() {
+                final String cmd = "cat /proc/mounts";
+                try {
+                    // TODO move collecting output command to IDevice
+                    CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+                    mDevice.executeShellCommand(cmd, receiver);
+                    String output = receiver.getOutput();
+                    Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
+                    return output.contains(externalStore + " ");
+                } catch (IOException e) {
+                    Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
+                    return false;
+                }
+            }
+        };
+        int numAttempts = (int)(waitTime / CHECK_POLL_TIME);
+        return RunUtil.runTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, numAttempts,
+                storePollRunnable);
     }
 
     /**
