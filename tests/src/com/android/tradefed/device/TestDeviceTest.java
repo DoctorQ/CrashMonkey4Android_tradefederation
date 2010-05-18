@@ -397,5 +397,8 @@ public class TestDeviceTest extends TestCase {
         public String uninstallPackage(String packageName) throws IOException {
             return null;
         }
+        public void reboot(String into) throws IOException {
+            return null;
+        }
     }
 }
