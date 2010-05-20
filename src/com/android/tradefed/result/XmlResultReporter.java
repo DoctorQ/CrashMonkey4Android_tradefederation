@@ -48,7 +48,7 @@ import java.util.TimeZone;
  */
 public class XmlResultReporter extends CollectingTestListener {
 
-    private static final String LOG_TAG = "XmlReportReporter";
+    private static final String LOG_TAG = "XmlResultReporter";
 
     private static final String TEST_RESULT_FILE_SUFFIX = ".xml";
     private static final String TEST_RESULT_FILE_PREFIX = "test_result_";
