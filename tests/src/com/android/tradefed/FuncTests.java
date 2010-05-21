@@ -18,13 +18,14 @@ package com.android.tradefed;
 import com.android.tradefed.device.TestDeviceFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;
+import com.android.tradefed.util.RunUtilFuncTest;
 
 import junit.framework.Test;
 
 /**
  * A test suite for all Trade Federation functional tests.
  * <p/>
- * These tests require a device.
+ * This suite requires a device.
  */
 public class FuncTests extends DeviceTestSuite {
 
@@ -32,6 +33,7 @@ public class FuncTests extends DeviceTestSuite {
         super();
         this.addTestSuite(TestDeviceFuncTest.class);
         this.addTestSuite(InstrumentationTestFuncTest.class);
+        this.addTestSuite(RunUtilFuncTest.class);
     }
 
     public static Test suite() {

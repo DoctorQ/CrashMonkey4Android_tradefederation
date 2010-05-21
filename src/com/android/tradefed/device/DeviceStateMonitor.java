@@ -164,7 +164,15 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private boolean waitForStoreMount(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting for device %s external store",
                 mDevice.getSerialNumber()));
-        final String externalStore = mDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        // TODO: temp, change to rely on mDevice.getMountPoint()
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        try {
+            mDevice.executeShellCommand("echo $" + IDevice.MNT_EXTERNAL_STORAGE, receiver);
+        } catch (IOException e1) {
+            Log.i(LOG_TAG, String.format("failed to get mount point: %s", e1.getMessage()));
+        }
+        final String externalStore = receiver.getOutput().trim();
+
         IRunnableResult storePollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "cat /proc/mounts";
@@ -220,7 +228,8 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     }
 
     private boolean isDeviceOnFastboot() {
-        String fastbootOut = RunUtil.runTimedCmd(DEFAULT_CMD_TIMEOUT, "fastboot", "devices");
+        String fastbootOut = RunUtil.runTimedCmd(DEFAULT_CMD_TIMEOUT, "fastboot", "devices")
+                .getStdout();
         Log.d(LOG_TAG, String.format("fastboot devices returned %s", fastbootOut));
         return fastbootOut != null && fastbootOut.contains(getSerialNumber());
     }

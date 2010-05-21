@@ -25,7 +25,9 @@ import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.CommandResult.CommandStatus;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -68,9 +70,11 @@ class TestDevice implements ILogTestDevice {
 
     /** The  time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
+    /** The  time in ms to wait for a command to complete. */
+    private static final int CMD_TIMEOUT = 2*60*1000;
 
     private final IDevice mIDevice;
-    private final IDeviceRecovery mRecovery;
+    private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
 
     // TODO: make this an Option - consider moving postBootSetup elsewhere
@@ -115,6 +119,13 @@ class TestDevice implements ILogTestDevice {
      */
     public String getSerialNumber() {
         return getIDevice().getSerialNumber();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getProductType() {
+        return getIDevice().getProperty("ro.product.board");
     }
 
     /**
@@ -388,10 +399,13 @@ class TestDevice implements ILogTestDevice {
         final String[] output = new String[1];
         IDeviceAction adbAction = new IDeviceAction() {
             public boolean doAction() throws IOException {
-                output[0] =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
-                if (output[0] == null) {
+                CommandResult result = RunUtil.runTimedCmd(CMD_TIMEOUT, fullCmd);
+                // TODO: how to determine device not present with command failing for other reasons
+                if (result.getStatus() != CommandStatus.SUCCESS) {
+                    // interpret this as device offline??
                     throw new IOException();
                 }
+                output[0] = result.getStdout();
                 return true;
             }
         };
@@ -402,20 +416,20 @@ class TestDevice implements ILogTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean executeFastbootCommand(String... cmdArgs) throws DeviceNotAvailableException {
+    public CommandResult executeFastbootCommand(String... cmdArgs)
+            throws DeviceNotAvailableException {
         final String[] fullCmd = buildFastbootCommand(cmdArgs);
-        IDeviceAction fastbootAction = new IDeviceAction() {
-            public boolean doAction() throws IOException {
-                String result =  RunUtil.runTimedCmd(2*60*1000, fullCmd);
-                if (result == null) {
-                    throw new IOException();
-                }
-                return true;
+        for (int i=0; i < MAX_RETRY_ATTEMPTS; i++) {
+            CommandResult result =  RunUtil.runTimedCmd(CMD_TIMEOUT, fullCmd);
+            // a fastboot command will always time out if device not available
+            if (result.getStatus() != CommandStatus.TIMED_OUT) {
+                return result;
             }
-        };
-        // TODO: change to do fastboot recovery
-        return performDeviceAction(String.format("fastboot %s", cmdArgs[0]), fastbootAction,
-                MAX_RETRY_ATTEMPTS);
+            recoverDeviceFromBootloader();
+        }
+        throw new DeviceNotAvailableException(String.format("Attempted fastboot %s multiple " +
+                "times on device %s without communication success. Aborting.", cmdArgs[0],
+                getSerialNumber()));
     }
 
     /**
@@ -492,6 +506,17 @@ class TestDevice implements ILogTestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(getIDevice(), mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
+    }
+
+    /**
+     * Attempts to recover device fastboot communication.
+     *
+     * @throws DeviceNotAvailableException if device is not longer available
+     */
+    private void recoverDeviceFromBootloader() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Attempting recovery on %s in bootloader", getSerialNumber()));
+        mRecovery.recoverDeviceBootloader(getIDevice(), mMonitor);
+        Log.i(LOG_TAG, String.format("Bootloader recovery successful for %s", getSerialNumber()));
     }
 
     /**
@@ -728,17 +753,15 @@ class TestDevice implements ILogTestDevice {
         if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s already in fastboot. Rebooting anyway",
                     getSerialNumber()));
-            executeFastbootCommand("reboot", "bootloader");
+            executeFastbootCommand("reboot-bootloader");
         } else {
             Log.i(LOG_TAG, String.format("Booting device %s into bootloader",
                     getSerialNumber()));
             doAdbReboot("bootloader");
         }
         if (!mMonitor.waitForDeviceBootloader(FASTBOOT_TIMEOUT)) {
-            // TODO: add recoverBootloader method
-            mRecovery.recoverDeviceBootloader(getIDevice(), mMonitor);
+            recoverDeviceFromBootloader();
         }
-        // TODO: check for fastboot responsiveness ?
     }
 
     /**
@@ -752,7 +775,7 @@ class TestDevice implements ILogTestDevice {
         } else {
             Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
             doAdbReboot(null);
-            waitForDeviceNotAvailable("reboot", 2*60*1000);
+            waitForDeviceNotAvailable("reboot", CMD_TIMEOUT);
         }
         if (!mMonitor.waitForDeviceAvailable()) {
             recoverDevice();
@@ -837,5 +860,23 @@ class TestDevice implements ILogTestDevice {
 
     void setEnableAdbRoot(boolean enable) {
         mEnableAdbRoot = enable;
+    }
+
+    /**
+     * Retrieve this device's recovery mechanism.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IDeviceRecovery getRecovery() {
+        return mRecovery;
+    }
+
+    /**
+     * Set this device's recovery mechanism.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    void setRecovery(IDeviceRecovery recovery) {
+        mRecovery = recovery;
     }
 }

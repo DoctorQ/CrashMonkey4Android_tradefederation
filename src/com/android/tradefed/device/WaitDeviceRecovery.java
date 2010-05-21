@@ -20,6 +20,8 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.util.RunUtil;
 
+import java.io.IOException;
+
 /**
  * A simple implementation of a {@link IDeviceRecovery} that waits for device to be online and
  * respond to simple commands.
@@ -47,6 +49,14 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
                 device.getSerialNumber()));
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
+        if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
+            Log.i(LOG_TAG, String.format(
+                    "Found device %s in fastboot but expected online. Rebooting...",
+                    device.getSerialNumber()));
+            // TODO: retry if failed
+            RunUtil.runTimedCmd(20*1000, "fastboot", "-s", device.getSerialNumber(), "reboot");
+        }
+
         // wait for device online
         if (!monitor.waitForDeviceOnline(mWaitTime)) {
             throw new DeviceNotAvailableException(String.format("Could not find device %s",
@@ -64,11 +74,28 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      */
     public void recoverDeviceBootloader(IDevice device, IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
-        // TODO: check if device is on adb and reboot ?
-        // wait for device in bootloader
+        // device may have just gone offline
+        // sleep a small amount to give device state a chance to settle
+        // TODO - see if there is better way to handle this
+        Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
+                device.getSerialNumber()));
+        RunUtil.sleep(INITIAL_PAUSE_TIME);
+
+        if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
+            Log.i(LOG_TAG, String.format(
+                    "Found device %s online but expected fastboot. Rebooting...",
+                    device.getSerialNumber()));
+            // TODO: retry if failed
+            try {
+                device.reboot("bootloader");
+            } catch (IOException e) {
+                Log.w(LOG_TAG, String.format("failed to reboot %s", device.getSerialNumber()));
+            }
+        }
+
         if (!monitor.waitForDeviceBootloader(mWaitTime)) {
-            throw new DeviceNotAvailableException(String.format("Could not find device %s in" +
-                    "bootloader", device.getSerialNumber()));
+            throw new DeviceNotAvailableException(String.format(
+                    "Could not find device %s in bootloader", device.getSerialNumber()));
         }
     }
 }

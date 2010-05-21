@@ -35,6 +35,7 @@ import com.android.tradefed.testtype.InstrumentationTestTest;
 import com.android.tradefed.testtype.TestTimeoutListenerTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
+import com.android.tradefed.util.RunUtilTest;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -68,6 +69,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(TestTimeoutListenerTest.class);
         addTestSuite(XmlDefsParserTest.class);
         addTestSuite(XmlDefsTestTest.class);
+        addTestSuite(RunUtilTest.class);
     }
 
     public static Test suite() {

@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util;
 
+import com.android.tradefed.util.CommandResult.CommandStatus;
 import com.android.tradefed.util.RunUtil.IRunnableResult;
 
 import org.easymock.EasyMock;
@@ -47,59 +48,33 @@ public class RunUtilTest extends TestCase {
     }
 
     /**
-     * Test timeout case for {@link RunUtil#runTimed(long, IRunnableResult)}.
-     */
-    public void testRunTimed_timeout() {
-        final long timeout = 200;
-        IRunnableResult mockRunnable = new IRunnableResult() {
-            public boolean run() {
-                try {
-                    Thread.sleep(timeout*5);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
-                return true;
-            }
-        };
-        assertFalse(RunUtil.runTimed(timeout, mockRunnable));
-    }
-
-    /**
-     * Test method for {@link RunUtil#runTimedRetry(long, long, , int, IRunnableResult)}.
-     * Verify that multiple attempts are made.
-     */
-    public void testRunTimedRetry() {
-        final int maxAttempts = 5;
-        final long pollTime = 200;
-        IRunnableResult mockRunnable = new IRunnableResult() {
-            int attempts = 0;
-            public boolean run() {
-                attempts++;
-                return attempts == maxAttempts;
-            }
-        };
-        final long startTime = System.currentTimeMillis();
-        assertTrue(RunUtil.runTimedRetry(100, pollTime, maxAttempts, mockRunnable));
-        final long actualTime = System.currentTimeMillis() - startTime;
-        // assert that time actually taken is at least, and no more than twice expected
-        final long expectedPollTime = pollTime * maxAttempts;
-        assertTrue(String.format("Expected poll time %d, got %d", expectedPollTime, actualTime),
-                expectedPollTime <= actualTime && actualTime <= (2 * expectedPollTime));
-    }
-
-    /**
      * Test that {@link RunUtil#runTimedCmd(long, String)} fails when given a garbage command.
      */
     public void testRunTimedCmd_failed() {
-        assertNull(RunUtil.runTimedCmd(1000, "blahggggwarggg"));
+        CommandResult result = RunUtil.runTimedCmd(1000, "blahggggwarggg");
+        assertEquals(CommandStatus.FAILED, result.getStatus());
+        assertNull(result.getStdout());
+        assertNull(result.getStderr());
     }
 
     /**
      * Test that {@link RunUtil#runTimedCmd(long, String)} succeeds when given a simple command.
      */
     public void testRunTimedCmd_dir() {
-        String output = RunUtil.runTimedCmd(1000, "dir");
-        assertNotNull(output);
-        assertTrue(output.length() > 0);
+        CommandResult result = RunUtil.runTimedCmd(1000, "dir");
+        assertEquals(CommandStatus.SUCCESS, result.getStatus());
+        assertTrue(result.getStdout().length() > 0);
+        assertEquals(0, result.getStderr().length());
+    }
+
+    /**
+     * Test that {@link RunUtil#runTimedCmd(long, String)} fails when garbage times out.
+     */
+    public void testRunTimedCmd_timeout() {
+        // pick an arbitrary long running command
+        CommandResult result = RunUtil.runTimedCmd(100, "find",  "/", "-name", "foo");
+        assertEquals(CommandStatus.TIMED_OUT, result.getStatus());
+        assertNull(result.getStdout());
+        assertNull(result.getStderr());
     }
 }

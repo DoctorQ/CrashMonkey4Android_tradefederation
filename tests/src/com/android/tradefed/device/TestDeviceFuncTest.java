@@ -18,6 +18,9 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.testtype.DeviceTestCase;
+import com.android.tradefed.util.CommandResult.CommandStatus;
+
+import org.easymock.EasyMock;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -182,7 +185,49 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         }
     }
 
+    /**
+     * Test {@link TestDevice#executeFastbootCommand(String...)} when device is in adb mode.
+     * <p/>
+     * Expect fastboot recovery to be invoked, which will boot device back to fastboot mode and
+     * command will succeed.
+     */
+    public void testExecuteFastbootCommand_deviceInAdb() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testExecuteFastbootCommand_deviceInAdb");
+        try {
+            assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+            assertEquals(CommandStatus.SUCCESS,
+                    mTestDevice.executeFastbootCommand("getvar", "product").getStatus());
+            assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
+        } finally {
+            mTestDevice.reboot();
+            assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+        }
+    }
 
+    /**
+     * Test {@link TestDevice#executeFastbootCommand(String...)} when an invalid command is passed.
+     * <p/>
+     * Expect the result indicate failure, and recovery not to be invoked.
+     */
+    public void testExecuteFastbootCommand_badCommand() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testExecuteFastbootCommand_badCommand");
+        IDeviceRecovery origRecovery = mTestDevice.getRecovery();
+        try {
+            mTestDevice.rebootIntoBootloader();
+            assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
+            // substitute recovery mechanism to ensure recovery is not called when bad command is
+            // passed
+            IDeviceRecovery mockRecovery = EasyMock.createStrictMock(IDeviceRecovery.class);
+            mTestDevice.setRecovery(mockRecovery);
+            EasyMock.replay(mockRecovery);
+            assertEquals(CommandStatus.FAILED,
+                    mTestDevice.executeFastbootCommand("badcommand").getStatus());
+        } finally {
+            mTestDevice.setRecovery(origRecovery);
+            mTestDevice.reboot();
+            assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+        }
+    }
 
     /**
      * Verify device can be rebooted into bootloader and back to adb.

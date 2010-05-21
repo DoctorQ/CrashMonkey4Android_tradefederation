@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
 import java.io.InputStream;
@@ -46,6 +47,13 @@ public interface ITestDevice {
      * @return the {@link String} serial number
      */
     public String getSerialNumber();
+
+    /**
+     * Convenience method to get the product type of this device.
+     *
+     * @return the {@link String} product type name
+     */
+    public String getProductType();
 
     /**
      * Executes the given adb shell command.
@@ -84,14 +92,15 @@ public interface ITestDevice {
     /**
      * Helper method which executes a fastboot command as a system command.
      * <p/>
-     * Assumes device is already in fastboot mode
+     * Expected to be used when device is already in fastboot mode.
      *
      * @param commandArgs the fastboot command and arguments to run
-     * @return <code>true</code>
+     * @return the CommandResult containing output of command
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
      */
-    public boolean executeFastbootCommand(String... commandArgs) throws DeviceNotAvailableException;
+    public CommandResult executeFastbootCommand(String... commandArgs)
+            throws DeviceNotAvailableException;
 
     /**
      * Runs instrumentation tests, and provides device recovery.

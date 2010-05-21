@@ -16,9 +16,11 @@
 package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.CommandResult.CommandStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
@@ -54,11 +56,10 @@ public class RunUtil {
      *
      * @param timeout maximum time to wait in ms
      * @param command the specified system command and optionally arguments to exec
-     * @return the stdout output from command, or <code>null</code> if operation did not complete
-     * successfully before timeout reached.
+     * @return a {@link CommandResult} containing result from command run
      */
-    public static String runTimedCmd(final long timeout, final String... command) {
-        final String[] output = new String[1];
+    public static CommandResult runTimedCmd(final long timeout, final String... command) {
+        final CommandResult result = new CommandResult();
         IRunnableResult osRunnable = new IRunnableResult() {
             public boolean run() {
                 final String fullCmd = Arrays.toString(command);
@@ -66,20 +67,16 @@ public class RunUtil {
                 try {
                     Process process = Runtime.getRuntime().exec(command);
                     int rc =  process.waitFor();
-                    if (rc != 0) {
+                    result.setStdout(getStringFromStream(process.getInputStream()));
+                    result.setStderr(getStringFromStream(process.getErrorStream()));
+
+                    if (rc == 0) {
+                        result.setStatus(CommandStatus.SUCCESS);
+                        return true;
+                    } else {
                         Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd,
                                 rc));
-                        // TODO: dump input and error stream
-                        return false;
                     }
-                    Reader ir = new BufferedReader(new InputStreamReader(process.getInputStream()));
-                    int irChar = -1;
-                    StringBuilder builder = new StringBuilder();
-                    while((irChar = ir.read()) != -1) {
-                        builder.append((char)irChar);
-                    }
-                    output[0] = builder.toString();
-                    return true;
                 } catch (IOException e) {
                     Log.e(LOG_TAG, String.format("IOException when running %s", fullCmd));
                     Log.e(LOG_TAG, e);
@@ -87,14 +84,12 @@ public class RunUtil {
                     Log.e(LOG_TAG, String.format("InterruptedException when running %s", fullCmd));
                     Log.e(LOG_TAG, e);
                 }
+                result.setStatus(CommandStatus.FAILED);
                 return false;
             }
         };
-        if (runTimed(timeout, osRunnable)) {
-            return output[0];
-        } else {
-            return null;
-        }
+        runTimed(timeout, osRunnable);
+        return result;
     }
 
     /**
@@ -112,6 +107,9 @@ public class RunUtil {
                 runThread.wait(timeout);
             } catch (InterruptedException e) {
                 Log.i(LOG_TAG, "runnable interrupted");
+            }
+            if (runThread.isAlive()) {
+                runThread.interrupt();
             }
         }
         return runThread.isComplete();
@@ -212,5 +210,15 @@ public class RunUtil {
         synchronized boolean isComplete() {
             return mIsComplete;
         }
+    }
+
+    private static String getStringFromStream(InputStream stream) throws IOException {
+        Reader ir = new BufferedReader(new InputStreamReader(stream));
+        int irChar = -1;
+        StringBuilder builder = new StringBuilder();
+        while((irChar = ir.read()) != -1) {
+            builder.append((char)irChar);
+        }
+        return builder.toString();
     }
 }

@@ -19,6 +19,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
 import java.io.InputStream;
@@ -100,9 +101,10 @@ public class StubTestDevice implements ILogTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean executeFastbootCommand(String... commandArgs) throws DeviceNotAvailableException {
+    public CommandResult executeFastbootCommand(String... commandArgs)
+            throws DeviceNotAvailableException {
         // ignore
-        return true;
+        return new CommandResult();
     }
 
     /**
@@ -178,7 +180,15 @@ public class StubTestDevice implements ILogTestDevice {
      */
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
-        // TODO implement this
+        // ignore
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getProductType() {
+        // ignore
+        return "";
     }
 }
