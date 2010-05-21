@@ -29,7 +29,7 @@ import java.util.Set;
  */
 public class CollectingTestListener implements ITestInvocationListener {
 
-    enum TestStatus {
+    public enum TestStatus {
         /** Test error */
         ERROR,
         /** Test failed. */
