@@ -28,6 +28,7 @@ import com.android.tradefed.device.TestDeviceTest;
 import com.android.tradefed.device.WifiHelperTest;
 import com.android.tradefed.invoker.TestInvocationTest;
 import com.android.tradefed.log.FileLoggerTest;
+import com.android.tradefed.log.LogRegistryTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
@@ -66,6 +67,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(TestInvocationTest.class);
         addTestSuite(WifiHelperTest.class);
         addTestSuite(FileLoggerTest.class);
+        addTestSuite(LogRegistryTest.class);
         addTestSuite(CollectingTestListenerTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(LogFileSaverTest.class);

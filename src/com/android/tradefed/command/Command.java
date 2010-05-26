@@ -17,6 +17,7 @@ package com.android.tradefed.command;
 
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
@@ -29,6 +30,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.RunUtil;
 
 /**
@@ -66,6 +68,8 @@ public class Command {
         // TODO: look at better way of parsing arguments specific to this class
         boolean loopMode = false;
         boolean helpMode = false;
+        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
+        Log.setLogOutput(LogRegistry.getLogRegistry());
         for (String arg : args) {
             if (arg.equals("--loop")) {
                 loopMode = true;
@@ -108,22 +112,16 @@ public class Command {
 
     protected void runInvocation(IDeviceManager manager, String[] args)
             throws ConfigurationException, DeviceNotAvailableException {
-        ILeveledLogOutput logger = null;
         ITestDevice device = null;
         try {
             IConfiguration config = createConfiguration(args);
-            logger = config.getLogOutput();
-            Log.setLogOutput(logger);
-            DdmPreferences.setLogLevel(logger.getLogLevel());
+
             ITestInvocation instance = createRunInstance();
             device = manager.allocateDevice(config.getDeviceRecovery(), WAIT_DEVICE_TIME);
             instance.invoke(device, config);
         } finally {
             if (manager != null && device != null) {
                 manager.freeDevice(device);
-            }
-            if (logger != null) {
-                logger.closeLog();
             }
         }
     }

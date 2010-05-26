@@ -21,6 +21,7 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
@@ -60,8 +61,10 @@ public class TestInvocation implements ITestInvocation {
     public void invoke(ITestDevice device, IConfiguration config) {
         ITestInvocationListener listener = null;
         ILeveledLogOutput logger = null;
+        LogRegistry logRegistry = LogRegistry.getLogRegistry();
         try {
             logger = config.getLogOutput();
+            logRegistry.registerLogger(logger);
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
             Test test = config.getTest();
@@ -88,6 +91,10 @@ public class TestInvocation implements ITestInvocation {
         if (logger != null && listener != null) {
             listener.testRunLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
         }
+        if (logger != null) {
+          logger.closeLog();
+        }
+        logRegistry.unregisterLogger();
     }
 
     /**

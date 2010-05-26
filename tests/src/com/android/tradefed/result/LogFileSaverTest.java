@@ -30,7 +30,8 @@ import junit.framework.TestCase;
 public class LogFileSaverTest extends TestCase {
 
     /**
-     * Simple normal case test for {@link LogFileSaver#saveLogData(String, String, InputStream)}.
+     * Simple normal case test for
+     * {@link LogFileSaver#saveLogData(String, LogDataType, InputStream)}.
      */
     public void testSaveLogData() throws IOException {
         File logFile = null;
