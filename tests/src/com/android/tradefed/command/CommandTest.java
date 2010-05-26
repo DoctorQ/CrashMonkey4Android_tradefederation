@@ -99,8 +99,8 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andThrow(
-                 new DeviceNotAvailableException("no device"));
+        EasyMock.expect(mMockDeviceManager.allocateDevice(EasyMock.eq(mMockRecovery),
+                EasyMock.anyLong())).andReturn(null);
         mMockDeviceManager.terminate();
 
         // switch mock objects to verify mode

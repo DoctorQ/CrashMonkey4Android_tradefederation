@@ -42,4 +42,14 @@ public interface IAndroidDebugBridge {
      */
     void removeDeviceChangeListener(IDeviceChangeListener listener);
 
+    /**
+     * Wrapper for {@link AndroidDebugBridge#init(boolean)}
+     */
+    void init(boolean clientSupport);
+
+    /**
+     * Wrapper for {@link AndroidDebugBridge#terminate()}
+     */
+    void terminate();
+
 }

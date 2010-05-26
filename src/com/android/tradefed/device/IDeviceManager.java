@@ -24,13 +24,22 @@ import com.android.ddmlib.AndroidDebugBridge;
 public interface IDeviceManager {
 
     /**
-     * Request a device for testing.
+     * Request a device for testing, waiting indefinitely until one becomes available.
      *
      * @param recovery the {@link IDeviceRecovery} to use for device
-     * @return a {@link ITestDevice} for testing.
-     * @throws DeviceNotAvailableException if no device is available.
+     * @return a {@link ITestDevice} for testing, or <code>null</code> if interrupted
      */
-    public ITestDevice allocateDevice(IDeviceRecovery recovery) throws DeviceNotAvailableException;
+    public ITestDevice allocateDevice(IDeviceRecovery recovery);
+
+    /**
+     * Request a device for testing, waiting for timeout ms until one becomes available.
+     *
+     * @param recovery the {@link IDeviceRecovery} to use for device
+     * @param timeout
+     * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before
+     * one became available
+     */
+    public ITestDevice allocateDevice(IDeviceRecovery recovery, long timeout);
 
     /**
      * Return a device to the pool, making it available for testing.
@@ -40,24 +49,6 @@ public interface IDeviceManager {
      * @param device the {@link ITestDevice} to return to the pool.
      */
     public void freeDevice(ITestDevice device);
-
-    /**
-     * Register a listener for devices becoming available for testing.
-     * <p/>
-     * Only one active listener at at time is supported.
-     *
-     * @throw IllegalStateException if a listener has already been registered
-     */
-    public void registerListener(IDeviceListener listener) throws IllegalStateException;
-
-    /**
-     * Removes a previously registered {@link IDeviceListener}.
-     * <p/>
-     * Attempts to remove a listener that hasn't been previously registered will be ignored.
-     *
-     * @param listener the listener previously added.
-     */
-    public void removeListener(IDeviceListener listener);
 
     /**
      * Terminates the ddm library. This must be called upon application termination.

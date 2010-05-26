@@ -49,13 +49,11 @@ import java.util.regex.Pattern;
 /**
  * Default implementation of a {@link ITestDevice}
  */
-class TestDevice implements ILogTestDevice {
+class TestDevice implements IManagedTestDevice {
 
     private static final String LOG_TAG = "TestDevice";
     /** the default number of command retry attempts to perform */
     private static final int MAX_RETRY_ATTEMPTS = 3;
-    /** time in ms to wait before retrying a logcat operation if interrupted */
-    private static final int LOGCAT_SLEEP_TIME = 10*1000;
     /** the max number of bytes to store in logcat tmp buffer */
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
@@ -73,9 +71,10 @@ class TestDevice implements ILogTestDevice {
     /** The  time in ms to wait for a command to complete. */
     private static final int CMD_TIMEOUT = 2*60*1000;
 
-    private final IDevice mIDevice;
+    private IDevice mIDevice;
     private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
+    private TestDeviceState mState = TestDeviceState.ONLINE;
 
     // TODO: make this an Option - consider moving postBootSetup elsewhere
     private boolean mEnableAdbRoot = true;
@@ -111,7 +110,21 @@ class TestDevice implements ILogTestDevice {
      * {@inheritDoc}
      */
     public IDevice getIDevice() {
-        return mIDevice;
+        synchronized (mIDevice) {
+            return mIDevice;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setIDevice(IDevice newDevice) {
+        IDevice currentDevice = mIDevice;
+        if (!getIDevice().equals(newDevice)) {
+            synchronized (currentDevice) {
+                mIDevice = newDevice;
+            }
+        }
     }
 
     /**
@@ -504,7 +517,7 @@ class TestDevice implements ILogTestDevice {
      */
     private void recoverDevice() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
-        mRecovery.recoverDevice(getIDevice(), mMonitor);
+        mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
     }
 
@@ -515,7 +528,7 @@ class TestDevice implements ILogTestDevice {
      */
     private void recoverDeviceFromBootloader() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s in bootloader", getSerialNumber()));
-        mRecovery.recoverDeviceBootloader(getIDevice(), mMonitor);
+        mRecovery.recoverDeviceBootloader(mMonitor);
         Log.i(LOG_TAG, String.format("Bootloader recovery successful for %s", getSerialNumber()));
     }
 
@@ -680,8 +693,9 @@ class TestDevice implements ILogTestDevice {
                         LOGCAT_BUFF_SIZE);
 
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format(
+                Log.e(LOG_TAG, String.format(
                         "failed to create tmp logcat file for %s.", getSerialNumber()));
+                Log.e(LOG_TAG, e);
                 return;
             }
 
@@ -694,17 +708,16 @@ class TestDevice implements ILogTestDevice {
                     getIDevice().executeShellCommand(LOGCAT_CMD, this);
                 } catch (IOException e) {
                     final String msg = String.format(
-                            "logcat capture interrupted for %s. Sleeping for %d ms. May see " +
-                            "duplicate content in log.",
-                            getSerialNumber(), LOGCAT_SLEEP_TIME);
+                            "logcat capture interrupted for %s. Waiting for device to be back " +
+                            "online. May see duplicate content in log.",
+                            getSerialNumber());
                     Log.d(LOG_TAG, msg);
                     appendDeviceLogMsg(msg);
                 }
-                try {
-                    sleep(LOGCAT_SLEEP_TIME);
-                } catch (InterruptedException e) {
-                    // ignore
-                }
+                // sleep a small amount for device to settle
+                RunUtil.sleep(5*1000);
+                // wait a long time for device to be online
+                mMonitor.waitForDeviceOnline(10*60*1000);
             }
         }
 
@@ -777,7 +790,7 @@ class TestDevice implements ILogTestDevice {
             doAdbReboot(null);
             waitForDeviceNotAvailable("reboot", CMD_TIMEOUT);
         }
-        if (!mMonitor.waitForDeviceAvailable()) {
+        if (mMonitor.waitForDeviceAvailable() == null) {
             recoverDevice();
         }
         postBootSetup();
@@ -835,7 +848,7 @@ class TestDevice implements ILogTestDevice {
      * {@inheritDoc}
      */
     public void waitForDeviceOnline() throws DeviceNotAvailableException {
-        if (!mMonitor.waitForDeviceOnline()) {
+        if (mMonitor.waitForDeviceOnline() == null) {
             recoverDevice();
         }
     }
@@ -844,7 +857,7 @@ class TestDevice implements ILogTestDevice {
      * {@inheritDoc}
      */
     public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
-        if (!mMonitor.waitForDeviceAvailable(waitTime)) {
+        if (mMonitor.waitForDeviceAvailable(waitTime) == null) {
             recoverDevice();
         }
     }
@@ -853,7 +866,7 @@ class TestDevice implements ILogTestDevice {
      * {@inheritDoc}
      */
     public void waitForDeviceAvailable() throws DeviceNotAvailableException {
-        if (!mMonitor.waitForDeviceAvailable()) {
+        if (mMonitor.waitForDeviceAvailable() == null) {
             recoverDevice();
         }
     }
@@ -878,5 +891,21 @@ class TestDevice implements ILogTestDevice {
      */
     void setRecovery(IDeviceRecovery recovery) {
         mRecovery = recovery;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setDeviceState(TestDeviceState deviceState) {
+        Log.d(LOG_TAG, String.format("Device %s state is now %s", getSerialNumber(), deviceState));
+        mState = deviceState;
+        mMonitor.setState(deviceState);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public TestDeviceState getDeviceState() {
+        return mState;
     }
 }

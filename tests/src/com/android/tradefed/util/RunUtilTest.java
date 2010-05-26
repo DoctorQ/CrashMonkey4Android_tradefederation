@@ -71,8 +71,8 @@ public class RunUtilTest extends TestCase {
      * Test that {@link RunUtil#runTimedCmd(long, String)} fails when garbage times out.
      */
     public void testRunTimedCmd_timeout() {
-        // pick an arbitrary long running command
-        CommandResult result = RunUtil.runTimedCmd(100, "find",  "/", "-name", "foo");
+        // "yes" will never complete
+        CommandResult result = RunUtil.runTimedCmd(100, "yes");
         assertEquals(CommandStatus.TIMED_OUT, result.getStatus());
         assertNull(result.getStdout());
         assertNull(result.getStderr());

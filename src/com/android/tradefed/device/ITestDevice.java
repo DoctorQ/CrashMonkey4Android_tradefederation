@@ -36,6 +36,10 @@ public interface ITestDevice {
 
     /**
      * Returns a reference to the associated ddmlib {@link IDevice}.
+     * <p/>
+     * A new {@link IDevice} may be allocated by DDMS each time the device disconnects and
+     * reconnects from adb. Thus callers should not keep a reference to the {@link IDevice},
+     * because that reference may become stale.
      *
      * @return the {@link IDevice}
      */

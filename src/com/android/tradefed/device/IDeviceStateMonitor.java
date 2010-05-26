@@ -31,9 +31,10 @@ interface IDeviceStateMonitor {
      *
      * @param time the maximum time in ms to wait
      *
-     * @return <code>true</code> if device becomes online before time expires
+     * @return the {@link IDevice} if device becomes online before time expires. <code>null</code>
+     * otherwise.
      */
-    public boolean waitForDeviceOnline(long time);
+    public IDevice waitForDeviceOnline(long time);
 
     /**
      * Waits for device to be online using standard boot timeout.
@@ -42,17 +43,19 @@ interface IDeviceStateMonitor {
      * device is actually responsive to adb commands - use {@link #waitForDeviceAvailable()}
      * instead.
      *
-     * @return <code>true</code> if device becomes online before time expires
+     * @return the {@link IDevice} if device becomes online before time expires. <code>null</code>
+     * otherwise.
      */
-    public boolean waitForDeviceOnline();
+    public IDevice waitForDeviceOnline();
 
     /**
      * Waits for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait
-     * @return <code>true</code> if device becomes responsive before time expires
+     * @return the {@link IDevice} if device becomes online before time expires. <code>null</code>
+     * otherwise.
      */
-    public boolean waitForDeviceAvailable(final long waitTime);
+    public IDevice waitForDeviceAvailable(final long waitTime);
 
     /**
      * Waits for the device to be responsive and available for testing.
@@ -60,9 +63,10 @@ interface IDeviceStateMonitor {
      * Equivalent to {@link #waitForDeviceAvailable(long)}, but uses default device
      * boot timeout.
      *
-     * @return <code>true</code> if device becomes responsive before time expires
+     * @return the {@link IDevice} if device becomes online before time expires. <code>null</code>
+     * otherwise.
      */
-    public boolean waitForDeviceAvailable();
+    public IDevice waitForDeviceAvailable();
 
     /**
      * Waits for the device to be in bootloader.
@@ -82,6 +86,10 @@ interface IDeviceStateMonitor {
      */
     public boolean waitForDeviceNotAvailable(long waitTime);
 
+    /**
+     * Gets the serial number of the device.
+     */
+    public String getSerialNumber();
 
     /**
      * Gets the device state.
@@ -89,4 +97,9 @@ interface IDeviceStateMonitor {
      * @return the {@link TestDeviceState} of device
      */
     public TestDeviceState getDeviceState();
+
+    /**
+     * @param deviceState
+     */
+    public void setState(TestDeviceState deviceState);
 }

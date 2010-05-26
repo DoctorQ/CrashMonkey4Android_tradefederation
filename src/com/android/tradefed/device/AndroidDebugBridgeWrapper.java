@@ -25,21 +25,21 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
  */
 class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
 
-    private AndroidDebugBridge mAdbBridge;
+    private AndroidDebugBridge mAdbBridge = null;
 
     /**
      * Creates a {@link AndroidDebugBridgeWrapper}.
-     * <p/>
-     * {@link AndroidDebugBridge#init(boolean)} must be called before this.
      */
     AndroidDebugBridgeWrapper() {
-        mAdbBridge = AndroidDebugBridge.createBridge();
     }
 
     /**
      * {@inheritDoc}
      */
     public IDevice[] getDevices() {
+        if (mAdbBridge == null) {
+            throw new IllegalStateException("getDevices called before init");
+        }
         return mAdbBridge.getDevices();
     }
 
@@ -57,4 +57,18 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
         AndroidDebugBridge.removeDeviceChangeListener(listener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void init(boolean clientSupport) {
+        AndroidDebugBridge.init(clientSupport);
+        mAdbBridge = AndroidDebugBridge.createBridge();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void terminate() {
+        AndroidDebugBridge.terminate();
+    }
 }

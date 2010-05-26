@@ -30,7 +30,7 @@ import java.util.Collection;
  * <p/>
  * Needed in order to handle the EasyMock andDelegateTo operation.
  */
-public class StubTestDevice implements ILogTestDevice {
+public class StubTestDevice implements IManagedTestDevice {
 
     public void executeShellCommand(String command, IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
@@ -190,5 +190,27 @@ public class StubTestDevice implements ILogTestDevice {
     public String getProductType() {
         // ignore
         return "";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setIDevice(IDevice device) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setDeviceState(TestDeviceState deviceState) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public TestDeviceState getDeviceState() {
+        // TODO implement this
+        return null;
     }
 }

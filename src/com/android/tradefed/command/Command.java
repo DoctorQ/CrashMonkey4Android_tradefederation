@@ -41,6 +41,8 @@ public class Command {
     private static final String LOG_TAG = "Command";
     /** the minimum invocation time in ms when in loop mode */
     private static final long MIN_LOOP_TIME = 2 * 60 * 1000;
+    /** the time in ms to wait for a device */
+    private static final long WAIT_DEVICE_TIME = 10 * 1000;
 
     public Command() {
     }
@@ -106,7 +108,7 @@ public class Command {
             Log.setLogOutput(logger);
             DdmPreferences.setLogLevel(logger.getLogLevel());
             ITestInvocation instance = createRunInstance();
-            device = manager.allocateDevice(config.getDeviceRecovery());
+            device = manager.allocateDevice(config.getDeviceRecovery(), WAIT_DEVICE_TIME);
             instance.invoke(device, config);
         } finally {
             if (manager != null && device != null) {
@@ -139,7 +141,6 @@ public class Command {
      * @return the {@link IDeviceManager} to use
      */
     IDeviceManager getDeviceManager() {
-        DeviceManager.init();
         return DeviceManager.getInstance();
     }
 

@@ -40,52 +40,54 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
-    public void recoverDevice(IDevice device, IDeviceStateMonitor monitor)
+    public void recoverDevice(IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
         // device may have just gone offline
         // sleep a small amount to give ddms state a chance to settle
         // TODO - see if there is better way to handle this
         Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
-                device.getSerialNumber()));
+                monitor.getSerialNumber()));
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
         if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
             Log.i(LOG_TAG, String.format(
                     "Found device %s in fastboot but expected online. Rebooting...",
-                    device.getSerialNumber()));
+                    monitor.getSerialNumber()));
             // TODO: retry if failed
-            RunUtil.runTimedCmd(20*1000, "fastboot", "-s", device.getSerialNumber(), "reboot");
+            RunUtil.runTimedCmd(20*1000, "fastboot", "-s", monitor.getSerialNumber(), "reboot");
         }
 
         // wait for device online
-        if (!monitor.waitForDeviceOnline(mWaitTime)) {
+        IDevice device = monitor.waitForDeviceOnline(mWaitTime);
+        if (device == null) {
             throw new DeviceNotAvailableException(String.format("Could not find device %s",
-                    device.getSerialNumber()));
+                    monitor.getSerialNumber()));
         }
-        if (!monitor.waitForDeviceAvailable(mWaitTime)) {
+        if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
             // device is online but not responsive, consider trying a reboot?
             throw new DeviceNotAvailableException(String.format(
-                    "Device %s is online but unresponsive", device.getSerialNumber()));
+                    "Device %s is online but unresponsive", monitor.getSerialNumber()));
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void recoverDeviceBootloader(IDevice device, IDeviceStateMonitor monitor)
+    public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
         // device may have just gone offline
         // sleep a small amount to give device state a chance to settle
         // TODO - see if there is better way to handle this
         Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
-                device.getSerialNumber()));
+                monitor.getSerialNumber()));
         RunUtil.sleep(INITIAL_PAUSE_TIME);
 
         if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
             Log.i(LOG_TAG, String.format(
                     "Found device %s online but expected fastboot. Rebooting...",
-                    device.getSerialNumber()));
+                    monitor.getSerialNumber()));
             // TODO: retry if failed
+            IDevice device = monitor.waitForDeviceAvailable();
             try {
                 device.reboot("bootloader");
             } catch (IOException e) {
@@ -95,7 +97,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
         if (!monitor.waitForDeviceBootloader(mWaitTime)) {
             throw new DeviceNotAvailableException(String.format(
-                    "Could not find device %s in bootloader", device.getSerialNumber()));
+                    "Could not find device %s in bootloader", monitor.getSerialNumber()));
         }
     }
 }

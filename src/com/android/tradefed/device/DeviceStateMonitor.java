@@ -21,6 +21,9 @@ import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.RunUtil.IRunnableResult;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * Helper class for monitoring the state of a {@link IDevice}.
@@ -28,18 +31,13 @@ import java.io.IOException;
 class DeviceStateMonitor implements IDeviceStateMonitor {
 
     private static final String LOG_TAG = "DeviceStateMonitor";
-    private final IDevice mDevice;
-    private final IAndroidDebugBridge mAdbBridge;
+    private IDevice mDevice;
+    private TestDeviceState mDeviceState;
 
     /** the time in ms to wait between 'poll for responsiveness' attempts */
     private static final int CHECK_POLL_TIME = 5 * 1000;
     /** the maximum operation time in ms for a 'poll for responsiveness' command */
     private static final long MAX_OP_TIME = 30 * 1000;
-
-    /** The default time in ms to wait for a device command to complete. */
-    private static final int DEFAULT_CMD_TIMEOUT = 2 * 60 * 1000;
-
-    private static final int FASTBOOT_POLL_ATTEMPTS = 5;
 
     /** the ratio of time to wait for device to be online vs other tasks in
      * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
@@ -60,22 +58,35 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     // TODO: make this configurable
     private static final long DEFAULT_BOOT_TIMEOUT = 6 * 60 * 1000;
 
-    DeviceStateMonitor(IDevice device, IAndroidDebugBridge adbBridge) {
+    private List<DeviceStateListener> mStateListeners;
+
+    DeviceStateMonitor(IDevice device) {
         mDevice = device;
-        mAdbBridge = adbBridge;
+        mStateListeners = new ArrayList<DeviceStateListener>();
+        mDeviceState = TestDeviceState.getStateByDdms(device.getState());
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDeviceOnline(long waitTime) {
-        return waitForDeviceState(TestDeviceState.ONLINE, waitTime);
+    public IDevice waitForDeviceOnline(long waitTime) {
+        if (waitForDeviceState(TestDeviceState.ONLINE, waitTime)) {
+            return getIDevice();
+        }
+        return null;
+    }
+
+    /**
+     * @return
+     */
+    private IDevice getIDevice() {
+        return mDevice;
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDeviceOnline() {
+    public IDevice waitForDeviceOnline() {
         return waitForDeviceOnline((long)(DEFAULT_BOOT_TIMEOUT*WAIT_DEVICE_ONLINE_RATIO));
     }
 
@@ -89,7 +100,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDeviceAvailable(final long waitTime) {
+    public IDevice waitForDeviceAvailable(final long waitTime) {
         // A device is currently considered "available" if and only if three events are true:
         // 1. Device is online aka visible via DDMS/adb
         // 2. Device's package manager is responsive
@@ -106,18 +117,20 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         // logic to adjust for the time expired. ie if waitForDeviceOnline returns immediately,
         // give waitForPmResponsive more time to complete
 
-        if (waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_ONLINE_RATIO))) {
-             if (waitForPmResponsive((long)(waitTime*WAIT_DEVICE_PM_RATIO))) {
-                 return waitForStoreMount((long)(waitTime*WAIT_DEVICE_STORE_RATIO));
+        IDevice device = waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_ONLINE_RATIO));
+        if (device != null) {
+             if (waitForPmResponsive((long)(waitTime*WAIT_DEVICE_PM_RATIO)) &&
+                     waitForStoreMount((long)(waitTime*WAIT_DEVICE_STORE_RATIO))) {
+                 return device;
              }
         }
-        return false;
+        return null;
     }
 
     /**
      * {@inheritDoc}
      */
-    public boolean waitForDeviceAvailable() {
+    public IDevice waitForDeviceAvailable() {
         return waitForDeviceAvailable(DEFAULT_BOOT_TIMEOUT);
     }
 
@@ -130,7 +143,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     private boolean waitForPmResponsive(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting for device %s package manager",
-                mDevice.getSerialNumber()));
+                getSerialNumber()));
         IRunnableResult pmPollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "pm path android";
@@ -139,7 +152,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     CollectingOutputReceiver receiver = new CollectingOutputReceiver();
                     // assume the 'adb shell pm path android' command will always
                     // return 'package: something' in the success case
-                    mDevice.executeShellCommand(cmd, receiver);
+                    getIDevice().executeShellCommand(cmd, receiver);
                     String output = receiver.getOutput();
                     Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
                     return output.contains("package:");
@@ -163,26 +176,25 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     private boolean waitForStoreMount(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting for device %s external store",
-                mDevice.getSerialNumber()));
-        // TODO: temp, change to rely on mDevice.getMountPoint()
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-        try {
-            mDevice.executeShellCommand("echo $" + IDevice.MNT_EXTERNAL_STORAGE, receiver);
-        } catch (IOException e1) {
-            Log.i(LOG_TAG, String.format("failed to get mount point: %s", e1.getMessage()));
-        }
-        final String externalStore = receiver.getOutput().trim();
+                getSerialNumber()));
 
         IRunnableResult storePollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "cat /proc/mounts";
                 try {
+                    String externalStore = getIDevice().getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+                    if (externalStore == null) {
+                        Log.i(LOG_TAG, String.format(
+                                "Failed to get external store mount point for %s",
+                                getSerialNumber()));
+                        return false;
+                    }
                     // TODO move collecting output command to IDevice
                     CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-                    mDevice.executeShellCommand(cmd, receiver);
+                    getIDevice().executeShellCommand(cmd, receiver);
                     String output = receiver.getOutput();
                     Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
-                    return output.contains(externalStore + " ");
+                    return output.contains(externalStore);
                 } catch (IOException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
                     return false;
@@ -198,58 +210,14 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public TestDeviceState getDeviceState() {
-        if (mDevice.isOnline() && isDeviceOnAdb()) {
-            return TestDeviceState.ONLINE;
-        } else if (mDevice.isOffline() && isDeviceOnAdb()) {
-            return TestDeviceState.OFFLINE;
-        } else if (isDeviceOnFastboot()) {
-            return TestDeviceState.FASTBOOT;
-        } else {
-            return TestDeviceState.NOT_AVAILABLE;
-        }
-    }
-
-    private boolean isDeviceOnAdb() {
-        // if device has just disappeared from adb entirely, it may still be marked as online
-        // ensure its active on adb bridge
-        for (IDevice device : mAdbBridge.getDevices()) {
-            if (device.getSerialNumber().equals(getSerialNumber())) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Helper method for retrieving device serial number.
-     */
-    String getSerialNumber() {
-        return mDevice.getSerialNumber();
-    }
-
-    private boolean isDeviceOnFastboot() {
-        String fastbootOut = RunUtil.runTimedCmd(DEFAULT_CMD_TIMEOUT, "fastboot", "devices")
-                .getStdout();
-        Log.d(LOG_TAG, String.format("fastboot devices returned %s", fastbootOut));
-        return fastbootOut != null && fastbootOut.contains(getSerialNumber());
+        return mDeviceState;
     }
 
     /**
      * {@inheritDoc}
      */
     public boolean waitForDeviceBootloader(long time) {
-        long pollTime = time / FASTBOOT_POLL_ATTEMPTS;
-        for (int i=0; i < FASTBOOT_POLL_ATTEMPTS; i++) {
-            if (isDeviceOnFastboot()) {
-                return true;
-            }
-            try {
-                Thread.sleep(pollTime);
-            } catch (InterruptedException e) {
-                // ignore
-            }
-        }
-        return false;
+        return waitForDeviceState(TestDeviceState.FASTBOOT, time);
     }
 
     private boolean waitForDeviceState(TestDeviceState state, long time) {
@@ -259,17 +227,74 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             return true;
         }
         Log.i(LOG_TAG, String.format("Waiting for device %s to be %s...", deviceSerial, state));
-        AdbDeviceListener listener = new AdbDeviceListener(deviceSerial, state);
-        mAdbBridge.addDeviceChangeListener(listener);
-        IDevice device = listener.waitForDevice(time);
-        mAdbBridge.removeDeviceChangeListener(listener);
-        if (device == null) {
-            Log.i(LOG_TAG, String.format("Device %s could not be found in state %s", deviceSerial,
-                    state));
-            return false;
-        } else {
-            Log.i(LOG_TAG, String.format("Found device %s %s", device.getSerialNumber(), state));
-            return true;
+        DeviceStateListener listener = new DeviceStateListener(state);
+        addDeviceStateListener(listener);
+        synchronized (listener) {
+            try {
+                listener.wait(time);
+            } catch (InterruptedException e) {
+                Log.w(LOG_TAG, "wait for device state interrupted");
+            }
         }
+        removeDeviceStateListener(listener);
+        return getDeviceState().equals(state);
+    }
+
+    /**
+     * @param listener
+     */
+    private void removeDeviceStateListener(DeviceStateListener listener) {
+        synchronized (mStateListeners) {
+            mStateListeners.remove(listener);
+        }
+    }
+
+    /**
+     * @param listener
+     */
+    private void addDeviceStateListener(DeviceStateListener listener) {
+        synchronized (mStateListeners) {
+            mStateListeners.add(listener);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setState(TestDeviceState deviceState) {
+        mDeviceState = deviceState;
+        // create a copy of listeners to prevent holding mStateListeners lock when notifying
+        // and to protect from list modification when iterating
+        Collection<DeviceStateListener> listenerCopy = new ArrayList<DeviceStateListener>(
+                mStateListeners.size());
+        synchronized (mStateListeners) {
+            listenerCopy.addAll(mStateListeners);
+        }
+        for (DeviceStateListener listener: listenerCopy) {
+            listener.stateChanged(deviceState);
+        }
+    }
+
+    private static class DeviceStateListener {
+        private final TestDeviceState mExpectedState;
+
+        public DeviceStateListener(TestDeviceState expectedState) {
+            mExpectedState = expectedState;
+        }
+
+        public void stateChanged(TestDeviceState newState) {
+            if (mExpectedState.equals(newState)) {
+                synchronized (this) {
+                    notify();
+                }
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getSerialNumber() {
+        return getIDevice().getSerialNumber();
     }
 }

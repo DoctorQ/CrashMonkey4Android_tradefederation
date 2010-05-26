@@ -81,8 +81,7 @@ public class RunUtil {
                     Log.e(LOG_TAG, String.format("IOException when running %s", fullCmd));
                     Log.e(LOG_TAG, e);
                 } catch (InterruptedException e) {
-                    Log.e(LOG_TAG, String.format("InterruptedException when running %s", fullCmd));
-                    Log.e(LOG_TAG, e);
+                    Log.i(LOG_TAG, String.format("InterruptedException when running %s", fullCmd));
                 }
                 result.setStatus(CommandStatus.FAILED);
                 return false;
