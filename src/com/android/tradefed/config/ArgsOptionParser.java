@@ -15,28 +15,124 @@
  */
 package com.android.tradefed.config;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 
 /**
- * An option parser that parses options from command line arguments.
+ * Populates {@link Option} fields from parsed command line arguments.
+ * <p/>
+ * Strings in the passed-in String[] are parsed left-to-right. Each String is classified as a short
+ * option (such as "-v"), a long option (such as "--verbose"), an argument to an option (such as
+ * "out.txt" in "-f out.txt"), or a non-option positional argument.
+ * <p/>
+ * Each option argument must map to exactly one {@link Option} field. A long option maps to the
+ * {@link Option#name()}, and a short option maps to {@link Option#shortName()}. Each
+ * {@link Option#name()} and {@link Option@shortName()} must be unique with respect to all other
+ * {@link Option} fields.
+ * <p/>
+ * A simple short option is a "-" followed by a short option character. If the option requires an
+ * argument (which is true of any non-boolean option), it may be written as a separate parameter,
+ * but need not be. That is, "-f out.txt" and "-fout.txt" are both acceptable.
+ * <p/>
+ * It is possible to specify multiple short options after a single "-" as long as all (except
+ * possibly the last) do not require arguments.
+ * <p/>
+ * A long option begins with "--" followed by several characters. If the option requires an
+ * argument, it may be written directly after the option name, separated by "=", or as the next
+ * argument. (That is, "--file=out.txt" or "--file out.txt".)
+ * <p/>
+ * A boolean long option '--name' automatically gets a '--no-name' companion. Given an option
+ * "--flag", then, "--flag", "--no-flag", "--flag=true" and "--flag=false" are all valid, though
+ * neither "--flag true" nor "--flag false" are allowed (since "--flag" by itself is sufficient,
+ * the following "true" or "false" is interpreted separately). You can use "yes" and "no" as
+ * synonyms for "true" and "false".
+ * <p/>
+ * Each String not starting with a "-" and not a required argument of a previous option is a
+ * non-option positional argument, as are all successive Strings. Each String after a "--" is a
+ * non-option positional argument.
+ * <p/>
+ * The fields corresponding to options are updated as their options are processed. Any remaining
+ * positional arguments are returned as a List<String>.
+ * <p/>
+ * Here's a simple example:
+ * <p/>
+ * <pre>
+ * // Non-@Option fields will be ignored.
+ * class Options {
+ *     @Option(name = "quiet", shortName = 'q')
+ *     boolean quiet = false;
+ *
+ *     // Here the user can use --no-color.
+ *     @Option(name = "color")
+ *     boolean color = true;
+ *
+ *     @Option(name = "mode", shortName = 'm')
+ *     String mode = "standard; // Supply a default just by setting the field.
+ *
+ *     @Option(name = "port", shortName = 'p')
+ *     int portNumber = 8888;
+ *
+ *     // There's no need to offer a short name for rarely-used options.
+ *     @Option(name = "timeout" )
+ *     double timeout = 1.0;
+ *
+ *     @Option(name = "output-file", shortName = 'o' })
+ *     File output;
+ *
+ *     // Multiple options are added to the collection.
+ *     // The collection field itself must be non-null.
+ *     @Option(name = "input-file", shortName = 'i')
+ *     List<File> inputs = new ArrayList<File>();
+ *
+ * }
+ *
+ * Options options = new Options();
+ * List<String> posArgs = new OptionParser(options).parse("--input-file", "/tmp/file1.txt");
+ * for (File inputFile : options.inputs) {
+ *     if (!options.quiet) {
+ *        ...
+ *     }
+ *     ...
+ *
+ * }
+ *
+ * </pre>
+ * See also:
+ * <ul>
+ *   <li>the getopt(1) man page
+ *   <li>Python's "optparse" module (http://docs.python.org/library/optparse.html)
+ *   <li>the POSIX "Utility Syntax Guidelines" (http://www.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap12.html#tag_12_02)
+ *   <li>the GNU "Standards for Command Line Interfaces" (http://www.gnu.org/prep/standards/standards.html#Command_002dLine-Interfaces)
+ * </ul>
+ *
+ * @see {@link OptionSetter}
  */
-class ArgsOptionParser extends OptionParser {
+class ArgsOptionParser extends OptionSetter {
 
     static final String SHORT_NAME_PREFIX = "-";
     static final String OPTION_NAME_PREFIX = "--";
 
     /**
-     * Creates a {@link ArgsOptionParser} for a single object.
+     * Creates a {@link ArgsOptionParser} for a collection of objects.
      *
-     * @param optionSource the config object.
-     * @throws ConfigurationException if config object is improperly configured.
+     * @param optionSource the config objects.
+     * @throws ConfigurationException if config objects is improperly configured.
      */
-    public ArgsOptionParser(Object optionSource) throws ConfigurationException {
-        super(optionSource);
+    public ArgsOptionParser(Collection<Object> optionSources) throws ConfigurationException {
+        super(optionSources);
+    }
+
+    /**
+     * Creates a {@link ArgsOptionParser} for one or more objects.
+     *
+     * @param optionSource the config objects.
+     * @throws ConfigurationException if config objects is improperly configured.
+     */
+    public ArgsOptionParser(Object... optionSources) throws ConfigurationException {
+        super(optionSources);
     }
 
     /**
@@ -92,21 +188,14 @@ class ArgsOptionParser extends OptionParser {
             name = name.substring(0, equalsIndex);
         }
 
-        final Field field = fieldForArg(name);
-        if (field == null) {
-            // not an option for this source - discard the value associated with this arg
-            discardNextValue(args);
-            return;
-        }
-        final Handler handler = getHandler(field.getGenericType());
         if (value == null) {
-            if (handler.isBoolean()) {
+            if (isBooleanOption(name)) {
                 value = name.startsWith(BOOL_FALSE_PREFIX) ? "false" : "true";
             } else {
-                value = grabNextValue(args, name, field);
+                value = grabNextValue(args, name);
             }
         }
-        setValue(field, arg, handler, value);
+        setOptionValue(name, value);
     }
 
     // Given boolean options a and b, and non-boolean option f, we want to allow:
@@ -119,15 +208,8 @@ class ArgsOptionParser extends OptionParser {
             throws ConfigurationException {
         for (int i = 1; i < arg.length(); ++i) {
             final String name = String.valueOf(arg.charAt(i));
-            final Field field = fieldForArg(name);
-            if (field == null) {
-                // not an option for this source
-                discardNextValue(args);
-                continue;
-            }
-            final Handler handler = getHandler(field.getGenericType());
             String value;
-            if (handler.isBoolean()) {
+            if (isBooleanOption(name)) {
                 value = "true";
             } else {
                 // We need a value. If there's anything left, we take the rest of this
@@ -136,45 +218,30 @@ class ArgsOptionParser extends OptionParser {
                     value = arg.substring(i + 1);
                     i = arg.length() - 1;
                 } else {
-                    value = grabNextValue(args, name, field);
+                    value = grabNextValue(args, name);
                 }
             }
-            setValue(field, arg, handler, value);
+            setOptionValue(name, value);
         }
     }
 
     /**
-     * Returns the next element of 'args' if there is one. Uses 'name' and 'field' to
-     * construct a helpful error message.
+     * Returns the next element of 'args' if there is one. Uses 'name' to construct a helpful error
+     * message.
      *
-     * @param args
-     * @param name
-     * @param field
-     * @throws ConfigurationException
+     * @param args the arg iterator
+     * @param name the name of current argument
+     * @throws ConfigurationException if no argument is present
      *
-     * @returns
+     * @returns the next element
      */
-    private String grabNextValue(ListIterator<String> args, String name, Field field)
+    private String grabNextValue(ListIterator<String> args, String name)
             throws ConfigurationException {
         if (!args.hasNext()) {
-            final String type = field.getType().getSimpleName().toLowerCase();
-            throw new ConfigurationException(String.format("option '%s' requires a %s argument",
+            String type = getTypeForOption(name);
+            throw new ConfigurationException(String.format("option '%s' requires a '%s' argument",
                     name, type));
         }
         return args.next();
-    }
-
-    /**
-     * Removes the next element of args if it is a value for previous option argument. (ie is a
-     * non-option).
-     */
-    private void discardNextValue(ListIterator<String> args) {
-        if (args.hasNext()) {
-            String value = args.next();
-            if (value.startsWith(OPTION_NAME_PREFIX) || value.startsWith(SHORT_NAME_PREFIX)) {
-                // this is an option, put it back
-                args.previous();
-            }
-        }
     }
 }

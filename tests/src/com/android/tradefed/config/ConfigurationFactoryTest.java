@@ -15,7 +15,12 @@
  */
 package com.android.tradefed.config;
 
+import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.log.ILeveledLogOutput;
+
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 
 import junit.framework.TestCase;
 
@@ -24,42 +29,46 @@ import junit.framework.TestCase;
  */
 public class ConfigurationFactoryTest extends TestCase {
 
+    private IConfigurationFactory mFactory;
+
     /**
      * {@inheritDoc}
      */
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        mFactory = ConfigurationFactory.getInstance();
     }
 
     /**
-     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} with
-     * {@link ConfigurationFactory#INSTRUMENT_CONFIG} returns a valid config.
+     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} return a
+     * valid configuration for all the default configs
      */
-    public void testGetConfiguration_instrument() throws ConfigurationException {
-        assertNotNull(ConfigurationFactory.getConfiguration(
-                ConfigurationFactory.INSTRUMENT_CONFIG));
-        // TODO: check that returned config is valid
+    public void testGetConfiguration_defaults() throws ConfigurationException {
+        for (String config : ConfigurationFactory.sDefaultConfigs) {
+            assertConfigValid(config);
+        }
     }
 
     /**
-     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} with
-     * {@link ConfigurationFactory#HOST_TEST_CONFIG} returns a valid config.
+     * Test that a config xml defined in this test jar can be read
      */
-    public void testGetConfiguration_host() throws ConfigurationException {
-        assertNotNull(ConfigurationFactory.getConfiguration(
-                ConfigurationFactory.HOST_TEST_CONFIG));
-        // TODO: check that returned config is valid
+    public void testGetConfiguration_extension() throws ConfigurationException {
+        assertConfigValid("test-config");
     }
 
     /**
-     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} with
-     * {@link ConfigurationFactory#TEST_DEF_CONFIG} returns a valid config.
+     * Checks all config attributes are non-null
      */
-    public void testGetConfiguration_testdef() throws ConfigurationException {
-        assertNotNull(ConfigurationFactory.getConfiguration(
-                ConfigurationFactory.TEST_DEF_CONFIG));
-        // TODO: check that returned config is valid
+    private void assertConfigValid(String name) throws ConfigurationException {
+        IConfiguration config = mFactory.getConfiguration(name);
+        assertNotNull(config);
+        assertNotNull(config.getBuildProvider());
+        assertNotNull(config.getDeviceRecovery());
+        assertNotNull(config.getLogOutput());
+        assertNotNull(config.getTargetPreparer());
+        assertNotNull(config.getTest());
+        assertNotNull(config.getTestInvocationListener());
     }
 
     /**
@@ -68,7 +77,7 @@ public class ConfigurationFactoryTest extends TestCase {
      */
     public void testGetConfiguration_missing()  {
         try {
-            ConfigurationFactory.getConfiguration("non existent");
+            mFactory.getConfiguration("non existent");
             fail("did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
@@ -81,7 +90,7 @@ public class ConfigurationFactoryTest extends TestCase {
     public void testCreateConfigurationFromXML() throws ConfigurationException {
         try {
             // TODO: use a mock File
-            ConfigurationFactory.createConfigurationFromXML(new File("mockFile"));
+            mFactory.createConfigurationFromXML(new File("mockFile"));
             fail("did not throw UnsupportedOperationException");
         } catch (UnsupportedOperationException e) {
             // expected
@@ -94,10 +103,35 @@ public class ConfigurationFactoryTest extends TestCase {
      */
     public void testCreateConfigurationFromArgs_empty() {
         try {
-            ConfigurationFactory.createConfigurationFromArgs(new String[] {});
+            mFactory.createConfigurationFromArgs(new String[] {});
             fail("did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
+        }
+    }
+
+    /**
+     * Test {@link ConfigurationFactory#createConfigurationFromArgs(String[])} using host
+     */
+    public void testCreateConfigurationFromArgs() throws ConfigurationException {
+        // pick an arbitrary option to test to ensure it gets populated
+        IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {"--log-level",
+                LogLevel.VERBOSE.getStringValue(), ConfigurationFactory.HOST_TEST_CONFIG});
+        ILeveledLogOutput logger = config.getLogOutput();
+        assertEquals(LogLevel.VERBOSE.getStringValue(), logger.getLogLevel());
+    }
+
+    /**
+     * Test {@link ConfigurationFactory#printHelp(String[], PrintStream))} with no args specified
+     */
+    public void testPrintHelp() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream mockPrintStream = new PrintStream(outputStream);
+        mFactory.printHelp(new String[] {"--help"}, mockPrintStream);
+        // verify all the default configs names are present
+        final String usageString = outputStream.toString();
+        for (String config : ConfigurationFactory.sDefaultConfigs) {
+            assertTrue(usageString.contains(config));
         }
     }
 }

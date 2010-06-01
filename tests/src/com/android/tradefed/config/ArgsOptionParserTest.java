@@ -85,39 +85,6 @@ public class ArgsOptionParserTest extends TestCase {
    }
 
    /**
-    * Test passing an unused argument before a used argument.
-    */
-   public void testParse_argUnused() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {"--unused", "val", "--my_option", expectedValue});
-       assertEquals(expectedValue, object.mMyOption);
-   }
-
-   /**
-    * Test passing an unused boolean argument before a used argument.
-    */
-   public void testParse_argUnusedBool() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {"--unused", "--my_option", expectedValue});
-       assertEquals(expectedValue, object.mMyOption);
-   }
-
-   /**
-    * Test passing an unused argument after a used argument.
-    */
-   public void testParse_argUnusedLast() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {"--my_option", expectedValue, "--unused", "val"});
-       assertEquals(expectedValue, object.mMyOption);
-   }
-
-   /**
     * Test passing an single argument for an object that has one option specified, using the
     * option=value notation.
     */
@@ -139,55 +106,6 @@ public class ArgsOptionParserTest extends TestCase {
        final String expectedValue = "set";
        parser.parse(new String[] {"-o", expectedValue});
        assertEquals(expectedValue, object.mMyOption);
-   }
-
-   /**
-    * Test passing a short args with an unused argument before a used argument.
-    */
-   public void testParse_shortArgUnused() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       final String unusedPosArg = "unused2";
-       List<String> leftOver = parser.parse(new String[] {"-u", "unused", "-o", expectedValue,
-               unusedPosArg});
-       assertEquals(expectedValue, object.mMyOption);
-       assertTrue(leftOver.contains(unusedPosArg));
-   }
-
-   /**
-    * Test passing a short args with an unused boolean argument before a used argument.
-    */
-   public void testParse_shortArgUnusedBool() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       final String unusedPosArg = "unused2";
-       List<String> leftOver = parser.parse(new String[] {"-u", "-o", expectedValue,
-               unusedPosArg});
-       assertEquals(expectedValue, object.mMyOption);
-       assertTrue(leftOver.contains(unusedPosArg));
-   }
-
-   /**
-    * Test passing a short args with an unused argument after a used argument.
-    *
-    * TODO: this scenario fails. Should consider refactoring ArgsOptionParser to parse arguments
-    * for all objects.
-    */
-   public void testParse_shortArgUnusedLast() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       final String unusedPosArg = "unused";
-       final String unusedPosArg2 = "unused2";
-       List<String> leftOver = parser.parse(new String[]  {"-o", expectedValue, "-u", unusedPosArg,
-               unusedPosArg2});
-       assertEquals(expectedValue, object.mMyOption);
-       // TODO: unusedPosArg should be present in leftOver, but its not due to bug
-       // leave this as assertFalse to avoid distracting unit test failure
-       assertFalse(leftOver.contains(unusedPosArg));
-       assertTrue(leftOver.contains(unusedPosArg2));
    }
 
    /**
@@ -279,9 +197,11 @@ public class ArgsOptionParserTest extends TestCase {
    public void testParse_optionNotPresent() throws ConfigurationException {
        OneOptionSource object = new OneOptionSource();
        ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       // extra option should be ignored
-       parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
-       assertEquals(expectedValue, object.mMyOption);
+       try {
+           parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
+           fail("ConfigurationException not thrown");
+       } catch (ConfigurationException e) {
+           // expected
+       }
    }
 }

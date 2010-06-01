@@ -6,5 +6,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/ddmlib"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/google_tradefederation"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/easymock"/>
+	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

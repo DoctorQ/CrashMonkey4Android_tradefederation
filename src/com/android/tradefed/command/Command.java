@@ -20,6 +20,7 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -64,10 +65,17 @@ public class Command {
     protected void run(String[] args) {
         // TODO: look at better way of parsing arguments specific to this class
         boolean loopMode = false;
+        boolean helpMode = false;
         for (String arg : args) {
             if (arg.equals("--loop")) {
                 loopMode = true;
+            } else if (arg.equals("--help")) {
+                helpMode = true;
             }
+        }
+        if (helpMode) {
+            getConfigFactory().printHelp(args, System.out);
+            return;
         }
         IDeviceManager manager = null;
         try {
@@ -152,17 +160,11 @@ public class Command {
      * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
      */
     protected IConfiguration createConfiguration(String[] args) throws ConfigurationException {
-        return ConfigurationFactory.createConfigurationFromArgs(args);
+        return getConfigFactory().createConfigurationFromArgs(args);
     }
 
-    /**
-     * Output the command line usage of this program to stdout.
-     *
-     * @param config the {@link IConfiguration} in use.
-     */
-    void printUsage(IConfiguration config) throws ConfigurationException {
-        // TODO: Also print out list of configs from ConfigurationFactory?
-        config.printCommandUsage(System.out);
+    protected IConfigurationFactory getConfigFactory() {
+        return ConfigurationFactory.getInstance();
     }
 
     /**
