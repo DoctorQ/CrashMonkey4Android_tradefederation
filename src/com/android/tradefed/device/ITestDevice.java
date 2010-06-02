@@ -195,6 +195,8 @@ public interface ITestDevice {
 
     /**
      * Reboots the device into bootloader mode.
+     * <p/>
+     * Blocks until device is in bootloader mode.
      *
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
@@ -203,14 +205,18 @@ public interface ITestDevice {
 
     /**
      * Reboots the device into adb mode.
+     * <p/>
+     * Blocks until device becomes available.
      *
-     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     * @throws DeviceNotAvailableException if device is not available after reboot
      */
     public void reboot() throws DeviceNotAvailableException;
 
     /**
-     * Turns on adb root .
+     * Turns on adb root.
+     * <p/>
+     * Enabling adb root may cause device to disconnect from adb. This method will block until
+     * device is available.
      *
      * @return <code>true</code> if successful.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
@@ -219,11 +225,10 @@ public interface ITestDevice {
     public boolean enableAdbRoot() throws DeviceNotAvailableException;
 
     /**
-     * Waits for the device to be responsive and available for testing.
+     * Blocks for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait
-     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     * @throws DeviceNotAvailableException if device is still unresponsive after waitTime expires.
      */
     public void waitForDeviceAvailable(final long waitTime) throws DeviceNotAvailableException;
 
@@ -236,8 +241,10 @@ public interface ITestDevice {
     public void waitForDeviceAvailable() throws DeviceNotAvailableException;
 
     /**
-     * Waits for the device to be visible via adb. Note the device may not necessarily be
-     * responsive to commands.
+     * Blocks until device is visible via adb.
+     * <p/>
+     * Note the device may not necessarily be responsive to commands on completion. Use
+     * {@link #waitForDeviceAvailable()} instead.
      *
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
