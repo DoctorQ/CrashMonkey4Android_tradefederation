@@ -194,6 +194,19 @@ public interface ITestDevice {
     public InputStream getLogcat();
 
     /**
+     * Connects to a wifi network.
+     * <p/>
+     * Blocks until a successful connection is made to the wifi network.
+     *
+     * @param wifiSsid the wifi ssid to connect to
+     * @return <code>true</code> if connected to wifi network successfully. <code>false</code>
+     * otherwise
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException;
+
+    /**
      * Reboots the device into bootloader mode.
      * <p/>
      * Blocks until device is in bootloader mode.

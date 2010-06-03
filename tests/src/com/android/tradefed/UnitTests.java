@@ -25,6 +25,7 @@ import com.android.tradefed.config.OptionParserTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
 import com.android.tradefed.device.TestDeviceTest;
+import com.android.tradefed.device.WifiHelperTest;
 import com.android.tradefed.invoker.TestInvocationTest;
 import com.android.tradefed.log.FileLoggerTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
@@ -63,6 +64,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(DeviceStateMonitorTest.class);
         addTestSuite(TestDeviceTest.class);
         addTestSuite(TestInvocationTest.class);
+        addTestSuite(WifiHelperTest.class);
         addTestSuite(FileLoggerTest.class);
         addTestSuite(CollectingTestListenerTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);

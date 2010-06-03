@@ -210,7 +210,11 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public TestDeviceState getDeviceState() {
-        // TODO implement this
         return null;
+    }
+
+    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException {
+        // ignore
+        return false;
     }
 }

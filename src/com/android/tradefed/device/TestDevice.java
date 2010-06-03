@@ -25,6 +25,7 @@ import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.CommandResult.CommandStatus;
@@ -738,6 +739,39 @@ class TestDevice implements IManagedTestDevice {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException {
+        WifiHelper wifi = new WifiHelper(this);
+        wifi.enableWifi();
+        // TODO: return false here if failed?
+        wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
+        Integer networkId = wifi.addOpenNetwork(wifiSsid);
+        if (networkId == null) {
+            Log.e(LOG_TAG, String.format("Failed to add wifi network %s on %s", wifiSsid,
+                    getSerialNumber()));
+            return false;
+        }
+        if (!wifi.associateNetwork(networkId)) {
+            Log.e(LOG_TAG, String.format("Failed to enable wifi network %s on %s", wifiSsid,
+                    getSerialNumber()));
+            return false;
+        }
+        if (!wifi.waitForWifiState(WifiState.COMPLETED)) {
+            Log.e(LOG_TAG, String.format("wifi network %s failed to associate on %s", wifiSsid,
+                    getSerialNumber()));
+            return false;
+        }
+        // TODO: make timeout configurable
+        if (!wifi.waitForDhcp(30*1000)) {
+            Log.e(LOG_TAG, String.format("dhcp timeout when connecting to wifi network %s on %s",
+                    wifiSsid, getSerialNumber()));
+            return false;
+        }
+        return true;
+    }
+
     IDeviceStateMonitor getDeviceStateMonitor() {
         return mMonitor;
     }
@@ -831,16 +865,19 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("adb root on device %s", getSerialNumber()));
 
         String output = executeAdbCommand("root");
-        boolean success = (output.contains("restarting adbd as root") ||
-                           output.contains("adbd is already running as root"));
-        if (!success) {
+        if (output.contains("adbd is already running as root")) {
+            return true;
+        } else if (output.contains("restarting adbd as root")) {
+            // wait for device to disappear from adb
+            waitForDeviceNotAvailable("root", 20*1000);
+            // wait for device to be back online
+            waitForDeviceAvailable(ROOT_TIMEOUT);
+            return true;
+
+        } else {
+            Log.e(LOG_TAG, String.format("Unrecognized output from adb root: %s", output));
             return false;
         }
-        // wait for device to disappear from adb
-        waitForDeviceNotAvailable("root", 20*1000);
-        // wait for device to be back online
-        waitForDeviceAvailable(ROOT_TIMEOUT);
-        return true;
     }
 
 
