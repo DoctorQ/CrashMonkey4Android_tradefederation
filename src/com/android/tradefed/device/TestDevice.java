@@ -772,6 +772,16 @@ class TestDevice implements IManagedTestDevice {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean disconnectFromWifi() throws DeviceNotAvailableException {
+        WifiHelper wifi = new WifiHelper(this);
+        wifi.removeAllNetworks();
+        wifi.disableWifi();
+        return true;
+    }
+
     IDeviceStateMonitor getDeviceStateMonitor() {
         return mMonitor;
     }

@@ -108,7 +108,7 @@ public class WifiHelperTest extends TestCase {
     }
 
     /**
-     * Test {@link WifiHelper#)} success case.
+     * Test {@link WifiHelper#addOpenNetwork(String))} success case.
      */
     public void testAddOpenNetwork() throws DeviceNotAvailableException {
         final String addNetworkResponse = String.format(
@@ -122,6 +122,40 @@ public class WifiHelperTest extends TestCase {
         injectWpaCliOKResponse();
         EasyMock.replay(mMockDevice);
         assertEquals(Integer.valueOf(0), mWifi.addOpenNetwork("foo"));
+    }
+
+    /**
+     * Test {@link WifiHelper#removeAllNetworks()} success case.
+     */
+    public void testRemoveAllNetworks() throws DeviceNotAvailableException {
+        // expect a list network command followed by a remove network
+        final String listNetworkResponse = String.format(
+                "Using interface 'eth0'\r\n" +
+                "0       MyNetwork     any    [CURRENT]\r\n" +
+                "1       MyNetwork2     any\r\n" +
+                "%s\r\n", WifiHelper.SUCCESS_MARKER);
+        injectShellResponse(listNetworkResponse);
+
+        mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
+                (IShellOutputReceiver)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                assertTrue(cmd.contains("remove_network 0"));
+            }
+        });
+
+        mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
+                (IShellOutputReceiver)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                assertTrue(cmd.contains("remove_network 1"));
+            }
+        });
+
+        EasyMock.replay(mMockDevice);
+        mWifi.removeAllNetworks();
     }
 
     private void injectStatusResult(WifiState state) throws DeviceNotAvailableException {

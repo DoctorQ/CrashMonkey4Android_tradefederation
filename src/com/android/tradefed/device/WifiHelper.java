@@ -279,6 +279,29 @@ class WifiHelper {
     }
 
     /**
+     * Removes all known networks.
+     *
+     * @throws DeviceNotAvailableException
+     */
+    void removeAllNetworks() throws DeviceNotAvailableException {
+        WpaCliOutput output = callWpaCli("list_networks");
+        if (!output.isSuccess()) {
+            return;
+        }
+        // expected format is
+        // networkId   SSID
+        Pattern networkPattern = Pattern.compile("^(\\d+)\\s+\\w+");
+        for (String line : output.mOutputLines) {
+            Matcher matcher = networkPattern.matcher(line);
+            if (matcher.find()) {
+                // network id is first group
+                Integer networkId = Integer.parseInt(matcher.group(1));
+                removeNetwork(networkId);
+            }
+        }
+    }
+
+    /**
      * Calls wpa_cli and does initial parsing.
      *
      * @param cmd the wpa_cli command to run

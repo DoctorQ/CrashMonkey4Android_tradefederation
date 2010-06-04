@@ -217,4 +217,12 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return false;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean disconnectFromWifi() throws DeviceNotAvailableException {
+        // ignore
+        return false;
+    }
 }
