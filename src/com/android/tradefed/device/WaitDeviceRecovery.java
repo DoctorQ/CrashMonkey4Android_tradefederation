@@ -36,15 +36,22 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
     @Option(name="device-wait-time",
             description="maximum time in ms to wait for a single device recovery command")
-    private long mWaitTime = 4 * 60 * 1000;
+    protected long mWaitTime = 4 * 60 * 1000;
 
     /**
      * Get the {@link RunUtil} instance to use.
      * <p/>
      * Exposed for unit testing.
      */
-    IRunUtil getRunUtil() {
+    protected IRunUtil getRunUtil() {
         return RunUtil.getInstance();
+    }
+
+    /**
+     * Sets the maximum time in ms to wait for a single device recovery command.
+     */
+    void setWaitTime(long waitTime) {
+        mWaitTime = waitTime;
     }
 
     /**
@@ -72,14 +79,37 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // wait for device online
         IDevice device = monitor.waitForDeviceOnline(mWaitTime);
         if (device == null) {
-            throw new DeviceNotAvailableException(String.format("Could not find device %s",
-                    monitor.getSerialNumber()));
+            handleDeviceNotAvailable(monitor);
+            return;
         }
         if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
-            // device is online but not responsive, consider trying a reboot?
-            throw new DeviceNotAvailableException(String.format(
-                    "Device %s is online but unresponsive", monitor.getSerialNumber()));
+            // device is online but not responsive
+            handleDeviceUnresponsive(monitor);
         }
+    }
+
+    /**
+     * Handle situation where device is online but unresponsive.
+     * @param monitor
+     * @throws DeviceNotAvailableException
+     */
+    protected void handleDeviceUnresponsive(IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        // consider trying a reboot?
+        throw new DeviceNotAvailableException(String.format(
+                "Device %s is online but unresponsive", monitor.getSerialNumber()));
+    }
+
+    /**
+     * Handle situation where device is not available.
+     *
+     * @param monitor the {@link IDeviceStateMonitor}
+     * @throws DeviceNotAvailableException
+     */
+    protected void handleDeviceNotAvailable(IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException(String.format("Could not find device %s",
+                monitor.getSerialNumber()));
     }
 
     /**
@@ -100,11 +130,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
                     monitor.getSerialNumber()));
             // TODO: retry if failed
             IDevice device = monitor.waitForDeviceAvailable();
-            try {
-                device.reboot("bootloader");
-            } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("failed to reboot %s", device.getSerialNumber()));
-            }
+            rebootDeviceIntoBootloader(device);
         } else if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
             Log.i(LOG_TAG, String.format(
                     "Found device %s in fastboot but unresponsive. Rebooting...",
@@ -115,8 +141,32 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         }
 
         if (!monitor.waitForDeviceBootloader(mWaitTime)) {
-            throw new DeviceNotAvailableException(String.format(
-                    "Could not find device %s in bootloader", monitor.getSerialNumber()));
+            handleDeviceBootloaderNotAvailable(monitor);
         }
+    }
+
+    /**
+     * Reboot device into bootloader.
+     *
+     * @param device the {@link IDevice} to reboot.
+     */
+    protected void rebootDeviceIntoBootloader(IDevice device) {
+        try {
+            device.reboot("bootloader");
+        } catch (IOException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s", device.getSerialNumber()));
+        }
+    }
+
+    /**
+     * Handle situation where device is not available when expected to be in bootloader.
+     *
+     * @param monitor the {@link IDeviceStateMonitor}
+     * @throws DeviceNotAvailableException
+     */
+    protected void handleDeviceBootloaderNotAvailable(final IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException(String.format(
+                "Could not find device %s in bootloader", monitor.getSerialNumber()));
     }
 }

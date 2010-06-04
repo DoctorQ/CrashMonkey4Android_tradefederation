@@ -245,4 +245,12 @@ public class StubTestDevice implements IManagedTestDevice {
     public void preBootSetup() {
        // ignore
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean waitForDeviceNotAvailable(long waitTime) {
+        // ignore
+        return false;
+    }
 }

@@ -20,7 +20,7 @@ import com.android.ddmlib.IDevice;
 /**
  * Provides facilities for monitoring the state of a {@link IDevice}.
  */
-interface IDeviceStateMonitor {
+public interface IDeviceStateMonitor {
 
     /**
      * Waits for device to be online.

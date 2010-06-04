@@ -302,6 +302,15 @@ public interface ITestDevice {
     public void waitForDeviceOnline() throws DeviceNotAvailableException;
 
     /**
+     * Blocks for the device to be not available ie missing from adb
+     *
+     * @param waitTime the time in ms to wait
+     * @return <code>true</code> if device becomes not available before time expires.
+     *         <code>false</code> otherwise
+     */
+    public boolean waitForDeviceNotAvailable(final long waitTime);
+
+    /**
      * Perform instructions to configure device for testing that must be done after every boot.
      * <p/>
      * Should be called once device is online, but before device is fully booted/available

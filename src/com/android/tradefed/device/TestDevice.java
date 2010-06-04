@@ -1180,6 +1180,13 @@ class TestDevice implements IManagedTestDevice {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean waitForDeviceNotAvailable(long waitTime) {
+        return mMonitor.waitForDeviceNotAvailable(waitTime);
+    }
+
     void setEnableAdbRoot(boolean enable) {
         mEnableAdbRoot = enable;
     }

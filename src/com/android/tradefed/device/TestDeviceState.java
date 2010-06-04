@@ -23,7 +23,7 @@ import com.android.ddmlib.IDevice.DeviceState;
  * Logically this should extend  {@link DeviceState} to just add the FASTBOOT and NOT_AVAILABLE
  * states, but extending enums is not allowed.
  */
-enum TestDeviceState {
+public enum TestDeviceState {
     FASTBOOT,
     ONLINE,
     OFFLINE,
