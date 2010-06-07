@@ -28,7 +28,8 @@ import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.CommandResult.CommandStatus;
+import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.RunUtil.IRunnableResult;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -44,6 +45,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -60,39 +62,44 @@ class TestDevice implements IManagedTestDevice {
     private static final String LOGCAT_CMD = "logcat -v threadtime";
     /**
      * The maximum number of bytes returned by {@link TestDevice#getLogcat()}.
+     * <p/>
      * TODO: make this configurable
      */
     private static final int LOGCAT_MAX_DATA = 512 * 1024;
-
-    /** The  time in ms to wait for a device to be back online after a adb root. */
-    private static final int ROOT_TIMEOUT = 1 * 60 * 1000;
-
-    /** The  time in ms to wait for a device to boot into fastboot. */
+    /** The time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
-    /** The  time in ms to wait for a command to complete. */
-    private static final int CMD_TIMEOUT = 2*60*1000;
-
+    /** The time in ms to wait for a command to complete. */
+    private long mCmdTimeout = 2 * 60 * 1000;
     private IDevice mIDevice;
     private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
-
+    private Semaphore mFastbootLock = new Semaphore(1);
     // TODO: make this an Option - consider moving postBootSetup elsewhere
     private boolean mEnableAdbRoot = true;
-
     private LogCatReceiver mLogcatReceiver;
 
     /**
      * Interface for a generic device communication attempt.
      */
-    private static interface IDeviceAction {
+    private abstract class DeviceAction implements IRunnableResult {
+
+        private long mTimeout;
+
+        DeviceAction() {
+            this(getCommandTimeout());
+        }
+
+        DeviceAction(long timeout) {
+            mTimeout = timeout;
+        }
 
         /**
-         * Perform action that requires device communication
-         * @return <code>true</code> if command succeeded. <code>false</code> otherwise.
-         * @throws IOException if device communication failed
+         * Optional method to be implemented by subclasses, to do when command times out
          */
-        boolean doAction() throws IOException;
+        void cleanup() {
+
+        }
     }
 
     /**
@@ -145,12 +152,17 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void executeShellCommand(final String command, final IShellOutputReceiver receiver)
+    public void executeShellCommand(final String command, final ICancelableReceiver receiver)
             throws DeviceNotAvailableException {
-        IDeviceAction action = new IDeviceAction() {
-            public boolean doAction() throws IOException {
+        DeviceAction action = new DeviceAction() {
+            public boolean run() throws IOException {
                 getIDevice().executeShellCommand(command, receiver);
                 return true;
+            }
+
+            @Override
+            void cleanup() {
+                receiver.cancel();
             }
         };
         performDeviceAction(String.format("shell %s", command), action, MAX_RETRY_ATTEMPTS);
@@ -192,8 +204,8 @@ class TestDevice implements IManagedTestDevice {
      */
     public boolean pullFile(final String remoteFilePath, final File localFile)
             throws DeviceNotAvailableException {
-        IDeviceAction pullAction = new IDeviceAction() {
-            public boolean doAction() throws IOException {
+        DeviceAction pullAction = new DeviceAction() {
+            public boolean run() throws IOException {
                 SyncService syncService = getIDevice().getSyncService();
                 SyncResult result = syncService.pullFile(remoteFilePath,
                         localFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
@@ -201,8 +213,8 @@ class TestDevice implements IManagedTestDevice {
                     return true;
                 } else {
                     // assume that repeated attempts won't help, just return immediately
-                    Log.w(LOG_TAG, String.format("Failed to pull %s from %s. Reason code: %d, " +
-                            "message %s", remoteFilePath, getSerialNumber(), result.getCode(),
+                    Log.w(LOG_TAG, String.format("Failed to pull %s from %s. Reason code: %d, "
+                            + "message %s", remoteFilePath, getSerialNumber(), result.getCode(),
                             result.getMessage()));
                     return false;
                 }
@@ -217,8 +229,8 @@ class TestDevice implements IManagedTestDevice {
      */
     public boolean pushFile(final File localFile, final String remoteFilePath)
             throws DeviceNotAvailableException {
-        IDeviceAction pushAction = new IDeviceAction() {
-            public boolean doAction() throws IOException {
+        DeviceAction pushAction = new DeviceAction() {
+            public boolean run() throws IOException {
                 SyncService syncService = getIDevice().getSyncService();
                 SyncResult result = syncService.pushFile(localFile.getAbsolutePath(),
                         remoteFilePath, SyncService.getNullProgressMonitor());
@@ -226,8 +238,8 @@ class TestDevice implements IManagedTestDevice {
                     return true;
                 } else {
                     // assume that repeated attempts won't help, just return immediately
-                    Log.w(LOG_TAG, String.format("Failed to push to %s on device %s. Reason " +
-                            " code: %d, message %s", remoteFilePath, getSerialNumber(),
+                    Log.w(LOG_TAG, String.format("Failed to push to %s on device %s. Reason "
+                            + " code: %d, message %s", remoteFilePath, getSerialNumber(),
                             result.getCode(), result.getMessage()));
                     return false;
                 }
@@ -249,8 +261,8 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
-        String externalStorePath = getIDevice().getMountPoint(
-                IDevice.MNT_EXTERNAL_STORAGE);
+        Log.i(LOG_TAG, String.format("Checking free space for %s", getSerialNumber()));
+        String externalStorePath = getIDevice().getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         String output = executeShellCommand(String.format("df %s", externalStorePath));
         final Pattern freeSpacePattern = Pattern.compile("(\\d+)K available");
         Matcher patternMatcher = freeSpacePattern.matcher(output);
@@ -287,8 +299,7 @@ class TestDevice implements IManagedTestDevice {
         }
         FileEntry remoteFileEntry = getFileEntryFromPath(deviceFilePath);
         if (remoteFileEntry == null) {
-            Log.e(LOG_TAG, String.format("Could not find remote file entry %s ",
-                    deviceFilePath));
+            Log.e(LOG_TAG, String.format("Could not find remote file entry %s ", deviceFilePath));
             return false;
         }
 
@@ -300,15 +311,16 @@ class TestDevice implements IManagedTestDevice {
      *
      * @param deviceFilePath the absolute remote file path to find
      * @return the {@link FileEntry} or <code>null</code>
+     * @throws DeviceNotAvailableException
      */
-    private FileEntry getFileEntryFromPath(String deviceFilePath) {
+    private FileEntry getFileEntryFromPath(String deviceFilePath)
+            throws DeviceNotAvailableException {
         FileListingService service = getIDevice().getFileListingService();
         FileEntry entry = service.getRoot();
         String[] segs = deviceFilePath.split("/");
         for (String seg : segs) {
             if (seg.length() > 0) {
-                // build children cache so findChild works
-                service.getChildren(entry, true, null);
+                buildFileCache(entry, service);
                 entry = entry.findChild(seg);
                 if (entry == null) {
                     return null;
@@ -324,16 +336,17 @@ class TestDevice implements IManagedTestDevice {
      * @param localFileDir the local {@link File} directory to sync
      * @param remoteFileEntry the remote destination {@link FileEntry}
      * @return <code>true</code> if files were synced successfully
+     * @throws DeviceNotAvailableException
      */
-    private boolean syncFiles(File localFileDir, FileEntry remoteFileEntry) {
+    private boolean syncFiles(File localFileDir, FileEntry remoteFileEntry)
+            throws DeviceNotAvailableException {
         Log.d(LOG_TAG, String.format("Syncing %s to %s on %s", localFileDir.getAbsolutePath(),
                 remoteFileEntry.getFullPath(), getSerialNumber()));
         // find newer files to sync
         File[] localFiles = localFileDir.listFiles(new NoHiddenFilesFilter());
         ArrayList<String> filePathsToSync = new ArrayList<String>();
         FileListingService service = getIDevice().getFileListingService();
-        // build file cache
-        service.getChildren(remoteFileEntry, true, null);
+        buildFileCache(remoteFileEntry, service);
         for (File localFile : localFiles) {
             FileEntry entry = remoteFileEntry.findChild(localFile.getName());
             if (entry == null) {
@@ -371,6 +384,27 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Queries the file listing service for a given directory, to ensure listing service has up to
+     * date children entries for remoteFileEntry
+     *
+     * @param remoteFileEntry
+     * @param service
+     * @throws DeviceNotAvailableException
+     */
+    private void buildFileCache(final FileEntry remoteFileEntry, final FileListingService service)
+            throws DeviceNotAvailableException {
+        // build file cache
+        // time this operation because its known to hang
+        DeviceAction action = new DeviceAction() {
+            public boolean run() throws Exception {
+                service.getChildren(remoteFileEntry, true, null);
+                return true;
+            }
+        };
+        performDeviceAction("buildFileCache", action, MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
      * A {@link FilenameFilter} that rejects hidden (ie starts with ".") files.
      */
     private static class NoHiddenFilesFilter implements FilenameFilter {
@@ -395,11 +429,11 @@ class TestDevice implements IManagedTestDevice {
             // localFile.lastModified has granularity of ms, but remoteDate.getTime only has
             // granularity of minutes. Shift remoteDate.getTime() backward by one minute so newly
             // modified files get synced
-            return localFile.lastModified() > (remoteDate.getTime() - 60*1000);
+            return localFile.lastModified() > (remoteDate.getTime() - 60 * 1000);
         } catch (ParseException e) {
             Log.e(LOG_TAG, String.format(
-                    "Error converting remote time stamp %s for %s on device %s",
-                    entryTimeString, entry.getFullPath(), getSerialNumber()));
+                    "Error converting remote time stamp %s for %s on device %s", entryTimeString,
+                    entry.getFullPath(), getSerialNumber()));
         }
         // sync file by default
         return true;
@@ -411,9 +445,9 @@ class TestDevice implements IManagedTestDevice {
     public String executeAdbCommand(String... cmdArgs) throws DeviceNotAvailableException {
         final String[] fullCmd = buildAdbCommand(cmdArgs);
         final String[] output = new String[1];
-        IDeviceAction adbAction = new IDeviceAction() {
-            public boolean doAction() throws IOException {
-                CommandResult result = RunUtil.runTimedCmd(CMD_TIMEOUT, fullCmd);
+        DeviceAction adbAction = new DeviceAction() {
+            public boolean run() throws IOException {
+                CommandResult result = RunUtil.runTimedCmd(getCommandTimeout(), fullCmd);
                 // TODO: how to determine device not present with command failing for other reasons
                 if (result.getStatus() != CommandStatus.SUCCESS) {
                     // interpret this as device offline??
@@ -433,17 +467,39 @@ class TestDevice implements IManagedTestDevice {
     public CommandResult executeFastbootCommand(String... cmdArgs)
             throws DeviceNotAvailableException {
         final String[] fullCmd = buildFastbootCommand(cmdArgs);
-        for (int i=0; i < MAX_RETRY_ATTEMPTS; i++) {
-            CommandResult result =  RunUtil.runTimedCmd(CMD_TIMEOUT, fullCmd);
+        for (int i = 0; i < MAX_RETRY_ATTEMPTS; i++) {
+            // block state changes while executing a fastboot command, since
+            // device will disappear from fastboot devices while command is being executed
+            try {
+                mFastbootLock.acquire();
+            } catch (InterruptedException e) {
+                // ignore
+            }
+            CommandResult result = RunUtil.runTimedCmd(getCommandTimeout(), fullCmd);
+            mFastbootLock.release();
             // a fastboot command will always time out if device not available
             if (result.getStatus() != CommandStatus.TIMED_OUT) {
                 return result;
             }
             recoverDeviceFromBootloader();
         }
-        throw new DeviceNotAvailableException(String.format("Attempted fastboot %s multiple " +
-                "times on device %s without communication success. Aborting.", cmdArgs[0],
+        throw new DeviceNotAvailableException(String.format("Attempted fastboot %s multiple "
+                + "times on device %s without communication success. Aborting.", cmdArgs[0],
                 getSerialNumber()));
+    }
+
+    /**
+     * Get the max time allowed in ms for commands.
+     */
+    long getCommandTimeout() {
+        return mCmdTimeout;
+    }
+
+    /**
+     * Set the max time allowed in ms for commands.
+     */
+    void setCommandTimeout(long timeout) {
+        mCmdTimeout = timeout;
     }
 
     /**
@@ -479,35 +535,46 @@ class TestDevice implements IManagedTestDevice {
      * if action fails.
      *
      * @param actionDescription a short description of action to be performed. Used for logging
-     * purposes only.
+     *            purposes only.
      * @param action the action to be performed
-     * @param callback optional action to perform if action fails but recovery succeeds. If no
-     * post recovery action needs to be taken pass in <code>null</code>
+     * @param callback optional action to perform if action fails but recovery succeeds. If no post
+     *            recovery action needs to be taken pass in <code>null</code>
      * @param remainingAttempts the remaining retry attempts to make for action if it fails but
-     * recovery succeeds
-     *
+     *            recovery succeeds
      * @returns <code>true</code> if action was performed successfully
-     *
      * @throws DeviceNotAvailableException if recovery attempt fails or max attempts done without
-     * success
+     *             success
      */
-    private boolean performDeviceAction(String actionDescription, IDeviceAction action,
+    private boolean performDeviceAction(String actionDescription, final DeviceAction action,
             int remainingAttempts) throws DeviceNotAvailableException {
-        try {
-            return action.doAction();
-        } catch (IOException e) {
-            Log.w(LOG_TAG, String.format("IOException %s when attempting %s on device %s",
-                    e.getMessage(), actionDescription, getSerialNumber()));
 
-            recoverDevice();
+        CommandStatus result = RunUtil.runTimed(action.mTimeout, action);
 
-            if (remainingAttempts > 0) {
-                return performDeviceAction(actionDescription, action, remainingAttempts - 1);
-            } else {
-                throw new DeviceNotAvailableException(String.format("Attempted %s multiple times " +
-                        "on device %s without communication success. Aborting.", actionDescription,
-                        getSerialNumber()));
+        switch (result) {
+            case SUCCESS: {
+                return true;
             }
+            case FAILED: {
+                return false;
+            }
+            case EXCEPTION: {
+                Log.w(LOG_TAG, String.format("Exception when attempting %s on device %s",
+                        actionDescription, getSerialNumber()));
+            }
+            case TIMED_OUT: {
+                Log.w(LOG_TAG, String.format("'%s' did not complete after %d ms on device %s",
+                        actionDescription, action.mTimeout, getSerialNumber()));
+            }
+        }
+        action.cleanup();
+        recoverDevice();
+
+        if (remainingAttempts > 0) {
+            return performDeviceAction(actionDescription, action, remainingAttempts - 1);
+        } else {
+            throw new DeviceNotAvailableException(String.format("Attempted %s multiple times "
+                    + "on device %s without communication success. Aborting.", actionDescription,
+                    getSerialNumber()));
         }
     }
 
@@ -550,9 +617,9 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      * <p/>
      * Works in two modes:
-     * <li>If the logcat is currently being captured in the background (i.e. the
-     * manager of this device is calling startLogcat and stopLogcat as appropriate), will return
-     * the current contents of the background logcat capture, up to {@link #LOGCAT_MAX_DATA}.
+     * <li>If the logcat is currently being captured in the background (i.e. the manager of this
+     * device is calling startLogcat and stopLogcat as appropriate), will return the current
+     * contents of the background logcat capture, up to {@link #LOGCAT_MAX_DATA}.
      * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
     public InputStream getLogcat() {
@@ -569,7 +636,7 @@ class TestDevice implements IManagedTestDevice {
      * Get a dump of the current logcat for device, up to a max of {@link #LOGCAT_MAX_DATA}.
      *
      * @return a {@link InputStream} of the logcat data. An empty stream is returned if fail to
-     * capture logcat data.
+     *         capture logcat data.
      */
     private InputStream getLogcatDump() {
         String output = "";
@@ -622,8 +689,8 @@ class TestDevice implements IManagedTestDevice {
             try {
                 mOutStream.write(data, offset, length);
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format(
-                        "failed to write logcat data for %s.", getSerialNumber()));
+                Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
+                        getSerialNumber()));
             }
         }
 
@@ -637,8 +704,8 @@ class TestDevice implements IManagedTestDevice {
                 }
                 return fileStream;
             } catch (IOException e) {
-                Log.e(LOG_TAG, String.format(
-                        "failed to get logcat data for %s.", getSerialNumber()));
+                Log.e(LOG_TAG,
+                        String.format("failed to get logcat data for %s.", getSerialNumber()));
                 Log.e(LOG_TAG, e);
                 // return an empty input stream
                 return new ByteArrayInputStream(new byte[0]);
@@ -652,8 +719,8 @@ class TestDevice implements IManagedTestDevice {
             try {
                 mOutStream.flush();
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format(
-                        "failed to flush logcat data for %s.", getSerialNumber()));
+                Log.w(LOG_TAG, String.format("failed to flush logcat data for %s.",
+                        getSerialNumber()));
             }
         }
 
@@ -667,8 +734,8 @@ class TestDevice implements IManagedTestDevice {
                 }
 
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format(
-                        "failed to close logcat stream for %s.", getSerialNumber()));
+                Log.w(LOG_TAG, String.format("failed to close logcat stream for %s.",
+                        getSerialNumber()));
             }
             if (mTmpFile != null) {
                 mTmpFile.delete();
@@ -694,8 +761,8 @@ class TestDevice implements IManagedTestDevice {
                         LOGCAT_BUFF_SIZE);
 
             } catch (IOException e) {
-                Log.e(LOG_TAG, String.format(
-                        "failed to create tmp logcat file for %s.", getSerialNumber()));
+                Log.e(LOG_TAG, String.format("failed to create tmp logcat file for %s.",
+                        getSerialNumber()));
                 Log.e(LOG_TAG, e);
                 return;
             }
@@ -708,22 +775,22 @@ class TestDevice implements IManagedTestDevice {
                     Log.d(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
                     getIDevice().executeShellCommand(LOGCAT_CMD, this);
                 } catch (IOException e) {
-                    final String msg = String.format(
-                            "logcat capture interrupted for %s. Waiting for device to be back " +
-                            "online. May see duplicate content in log.",
+                    final String msg = String.format("logcat capture interrupted for %s. Waiting"
+                            + " for device to be back online. May see duplicate content in log.",
                             getSerialNumber());
                     Log.d(LOG_TAG, msg);
                     appendDeviceLogMsg(msg);
                 }
                 // sleep a small amount for device to settle
-                RunUtil.sleep(5*1000);
+                RunUtil.sleep(5 * 1000);
                 // wait a long time for device to be online
-                mMonitor.waitForDeviceOnline(10*60*1000);
+                mMonitor.waitForDeviceOnline(10 * 60 * 1000);
             }
         }
 
         /**
          * Adds a message to the captured device log.
+         *
          * @param msg
          */
         private void appendDeviceLogMsg(String msg) {
@@ -733,8 +800,8 @@ class TestDevice implements IManagedTestDevice {
                 mOutStream.write(msg.getBytes());
                 mOutStream.write("\n*******************\n".getBytes());
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format(
-                        "failed to write logcat data for %s.", getSerialNumber()));
+                Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
+                        getSerialNumber()));
             }
         }
     }
@@ -743,6 +810,8 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Connecting to wifi network %s on %s", wifiSsid,
+                getSerialNumber()));
         WifiHelper wifi = new WifiHelper(this);
         wifi.enableWifi();
         // TODO: return false here if failed?
@@ -764,12 +833,22 @@ class TestDevice implements IManagedTestDevice {
             return false;
         }
         // TODO: make timeout configurable
-        if (!wifi.waitForDhcp(30*1000)) {
+        if (!wifi.waitForDhcp(30 * 1000)) {
             Log.e(LOG_TAG, String.format("dhcp timeout when connecting to wifi network %s on %s",
                     wifiSsid, getSerialNumber()));
             return false;
         }
-        return true;
+        // wait for ping success
+        for (int i = 0; i < 10; i++) {
+            String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
+            if (pingOutput.contains("1 packets transmitted, 1 received")) {
+                return true;
+            }
+            RunUtil.sleep(1 * 1000);
+        }
+        Log.e(LOG_TAG, String.format("ping unsuccessful after connecting to wifi network %s on %s",
+                wifiSsid, getSerialNumber()));
+        return false;
     }
 
     /**
@@ -792,7 +871,7 @@ class TestDevice implements IManagedTestDevice {
      * TODO: move this to another configurable interface
      *
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     *             recovered.
      */
     public void postBootSetup() throws DeviceNotAvailableException {
         if (mEnableAdbRoot) {
@@ -806,19 +885,30 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void rebootIntoBootloader() throws DeviceNotAvailableException {
-
         if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s already in fastboot. Rebooting anyway",
                     getSerialNumber()));
             executeFastbootCommand("reboot-bootloader");
         } else {
-            Log.i(LOG_TAG, String.format("Booting device %s into bootloader",
-                    getSerialNumber()));
-            doAdbReboot("bootloader");
+            Log.i(LOG_TAG, String.format("Booting device %s into bootloader", getSerialNumber()));
+            doAdbRebootBootloader();
         }
         if (!mMonitor.waitForDeviceBootloader(FASTBOOT_TIMEOUT)) {
             recoverDeviceFromBootloader();
         }
+    }
+
+    private void doAdbRebootBootloader() throws DeviceNotAvailableException {
+        try {
+            getIDevice().reboot("bootloader");
+            return;
+        } catch (IOException e) {
+            Log.w(LOG_TAG, String.format("IOException '%s' when rebooting %s into bootloader",
+                    e.getMessage(), getSerialNumber()));
+            recoverDeviceFromBootloader();
+        }
+        // no need to try multiple times - if recoverDeviceFromBootloader() succeeds device is
+        // successfully in bootloader mode
     }
 
     /**
@@ -832,7 +922,7 @@ class TestDevice implements IManagedTestDevice {
         } else {
             Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
             doAdbReboot(null);
-            waitForDeviceNotAvailable("reboot", CMD_TIMEOUT);
+            waitForDeviceNotAvailable("reboot", getCommandTimeout());
         }
         if (mMonitor.waitForDeviceAvailable() == null) {
             recoverDevice();
@@ -844,12 +934,12 @@ class TestDevice implements IManagedTestDevice {
      * Perform a adb reboot.
      *
      * @param into the bootloader name to reboot into, or <code>null</code> to just reboot the
-     * device.
+     *            device.
      * @throws DeviceNotAvailableException
      */
     private void doAdbReboot(final String into) throws DeviceNotAvailableException {
-        IDeviceAction rebootAction = new IDeviceAction() {
-            public boolean doAction() throws IOException {
+        DeviceAction rebootAction = new DeviceAction() {
+            public boolean run() throws IOException {
                 getIDevice().reboot(into);
                 return true;
             }
@@ -862,8 +952,7 @@ class TestDevice implements IManagedTestDevice {
         // before the operation
         if (!mMonitor.waitForDeviceNotAvailable(time)) {
             // above check is flaky, ignore till better solution is found
-            Log.w(LOG_TAG, String.format(
-                    "Did not detect device %s becoming unavailable after %s",
+            Log.w(LOG_TAG, String.format("Did not detect device %s becoming unavailable after %s",
                     getSerialNumber(), operationDesc));
         }
     }
@@ -879,9 +968,9 @@ class TestDevice implements IManagedTestDevice {
             return true;
         } else if (output.contains("restarting adbd as root")) {
             // wait for device to disappear from adb
-            waitForDeviceNotAvailable("root", 20*1000);
+            waitForDeviceNotAvailable("root", 20 * 1000);
             // wait for device to be back online
-            waitForDeviceAvailable(ROOT_TIMEOUT);
+            waitForDeviceOnline();
             return true;
 
         } else {
@@ -889,7 +978,6 @@ class TestDevice implements IManagedTestDevice {
             return false;
         }
     }
-
 
     /**
      * {@inheritDoc}
@@ -944,9 +1032,15 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void setDeviceState(TestDeviceState deviceState) {
-        Log.d(LOG_TAG, String.format("Device %s state is now %s", getSerialNumber(), deviceState));
-        mState = deviceState;
-        mMonitor.setState(deviceState);
+        // disable state changes while fastboot lock is held, because issuing fastboot command
+        // will disrupt state
+        if (mFastbootLock.tryAcquire()) {
+            Log.d(LOG_TAG, String.format("Device %s state is now %s", getSerialNumber(),
+                    deviceState));
+            mState = deviceState;
+            mFastbootLock.release();
+            mMonitor.setState(deviceState);
+        }
     }
 
     /**

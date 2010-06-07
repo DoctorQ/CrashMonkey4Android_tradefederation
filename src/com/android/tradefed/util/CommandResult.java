@@ -21,15 +21,6 @@ package com.android.tradefed.util;
  */
 public class CommandResult {
 
-    public static enum CommandStatus {
-        /** command terminated successfully */
-        SUCCESS,
-        /** command terminated with error code */
-        FAILED,
-        /** command did not terminate within specified time */
-        TIMED_OUT
-    }
-
     private CommandStatus mCmdStatus = CommandStatus.TIMED_OUT;
     private String mStdout = null;
     private String mStderr = null;

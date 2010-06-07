@@ -17,7 +17,9 @@ package com.android.tradefed.config;
 
 import java.io.PrintStream;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -27,8 +29,18 @@ public class ConfigurationDef {
 
     /** a map of names to config object class names. */
     private final Map<String, String> mObjectClassMap;
-    /** a map of option names to values. */
-    private final Map<String, String> mOptionMap;
+    /** a list of option name/value pairs. */
+    private final List<OptionDef> mOptionList;
+
+    static class OptionDef {
+        final String name;
+        final String value;
+
+        OptionDef(String optionName, String optionValue) {
+            this.name = optionName;
+            this.value = optionValue;
+        }
+    }
 
     /** the unique name of the configuration definition */
     private final String mName;
@@ -39,7 +51,7 @@ public class ConfigurationDef {
     public ConfigurationDef(String name) {
         mName = name;
         mObjectClassMap = new HashMap<String, String>();
-        mOptionMap = new HashMap<String, String>();
+        mOptionList = new ArrayList<OptionDef>();
     }
 
     /**
@@ -71,7 +83,7 @@ public class ConfigurationDef {
      * @param optionValue the option value
      */
     void addOptionDef(String optionName, String optionValue) {
-        mOptionMap.put(optionName, optionValue);
+        mOptionList.add(new OptionDef(optionName, optionValue));
     }
 
     /**
@@ -88,8 +100,8 @@ public class ConfigurationDef {
      * <p/>
      * Exposed for unit testing
      */
-    Map<String, String> getOptionMap() {
-        return mOptionMap;
+    List<OptionDef> getOptionList() {
+        return mOptionList;
     }
 
     /**
@@ -104,8 +116,8 @@ public class ConfigurationDef {
             configObjectMap.put(objClassEntry.getKey(), configObject);
         }
         OptionSetter setter = new OptionSetter(configObjectMap.values());
-        for (Map.Entry<String, String> optionEntry : mOptionMap.entrySet()) {
-            setter.setOptionValue(optionEntry.getKey(), optionEntry.getValue());
+        for (OptionDef optionEntry : mOptionList) {
+            setter.setOptionValue(optionEntry.name, optionEntry.value);
         }
 
         return new Configuration(configObjectMap);

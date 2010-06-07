@@ -39,7 +39,7 @@ public class RunUtilFuncTest extends TestCase {
                 return true;
             }
         };
-        assertFalse(RunUtil.runTimed(timeout, mockRunnable));
+        assertEquals(CommandStatus.TIMED_OUT, RunUtil.runTimed(timeout, mockRunnable));
     }
 
     /**

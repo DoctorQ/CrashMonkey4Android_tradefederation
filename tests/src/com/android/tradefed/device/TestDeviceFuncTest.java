@@ -18,7 +18,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.testtype.DeviceTestCase;
-import com.android.tradefed.util.CommandResult.CommandStatus;
+import com.android.tradefed.util.CommandStatus;
 
 import org.easymock.EasyMock;
 
@@ -193,12 +193,16 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      */
     public void testExecuteFastbootCommand_deviceInAdb() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testExecuteFastbootCommand_deviceInAdb");
+        long origTimeout = mTestDevice.getCommandTimeout();
         try {
             assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+            // reset operation timeout to small value to make test run quicker
+            mTestDevice.setCommandTimeout(5*1000);
             assertEquals(CommandStatus.SUCCESS,
                     mTestDevice.executeFastbootCommand("getvar", "product").getStatus());
             assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
         } finally {
+            mTestDevice.setCommandTimeout(origTimeout);
             mTestDevice.reboot();
             assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
         }

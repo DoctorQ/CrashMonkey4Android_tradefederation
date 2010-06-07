@@ -113,6 +113,17 @@ public class TestInvocationTest extends TestCase {
     }
 
     /**
+     * Test the invoke scenario where there is no build to test.
+     */
+    public void testInvoke_noBuild() throws TargetSetupError, ConfigurationException  {
+        EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(null);
+        // expect no other methods to be called
+        EasyMock.replay(mMockTestListener, mMockConfiguration, mMockPreparer,
+                mMockBuildRetriever);
+        mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+    }
+
+    /**
      * Test the invoke scenario where config retrieve fails.
      */
     public void testInvoke_configFailed() throws ConfigurationException  {

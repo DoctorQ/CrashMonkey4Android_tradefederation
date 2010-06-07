@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.util.CommandResult;
@@ -32,7 +32,10 @@ import java.util.Collection;
  */
 public class StubTestDevice implements IManagedTestDevice {
 
-    public void executeShellCommand(String command, IShellOutputReceiver receiver)
+    /**
+     * {@inheritDoc}
+     */
+    public void executeShellCommand(String command, ICancelableReceiver receiver)
             throws DeviceNotAvailableException {
         // ignore
     }
@@ -43,7 +46,7 @@ public class StubTestDevice implements IManagedTestDevice {
     }
 
     public IDevice getIDevice() {
-         // ignore
+        // ignore
         return null;
     }
 

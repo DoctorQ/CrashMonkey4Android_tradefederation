@@ -17,7 +17,6 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.util.CommandResult;
@@ -63,11 +62,11 @@ public interface ITestDevice {
      * Executes the given adb shell command.
      *
      * @param command the adb shell command to run
-     * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
+     * @param receiver the {@link ICancelableReceiver} to direct shell output to.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
      */
-    public void executeShellCommand(String command, IShellOutputReceiver receiver)
+    public void executeShellCommand(String command, ICancelableReceiver receiver)
         throws DeviceNotAvailableException;
 
     /**
@@ -197,6 +196,7 @@ public interface ITestDevice {
      * Connects to a wifi network.
      * <p/>
      * Turns on wifi and blocks until a successful connection is made to the specified wifi network.
+     * adb needs to be running as root.
      *
      * @param wifiSsid the wifi ssid to connect to
      * @return <code>true</code> if connected to wifi network successfully. <code>false</code>

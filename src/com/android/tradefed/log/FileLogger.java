@@ -56,6 +56,8 @@ public class FileLogger implements ILeveledLogOutput {
             mTempLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             // delete the temp file on exit rather than on close, so log is available in case
             // program fails before logs are collected
+            System.out.println(String.format("Created tmp tradefed log at %s",
+                    mTempLogFile.getAbsolutePath()));
             mTempLogFile.deleteOnExit();
             mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
         }

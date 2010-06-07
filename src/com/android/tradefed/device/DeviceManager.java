@@ -21,7 +21,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.CommandResult.CommandStatus;
+import com.android.tradefed.util.CommandStatus;
 
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -162,6 +162,7 @@ public class DeviceManager implements IDeviceManager {
                 new DeviceStateMonitor(allocatedDevice));
         testDevice.startLogcat();
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
+        Log.i(LOG_TAG, String.format("Allocated device %s", testDevice.getSerialNumber()));
         return testDevice;
     }
 
@@ -268,7 +269,8 @@ public class DeviceManager implements IDeviceManager {
                             fastbootResult.getStdout());
                     for (String serial: serials) {
                         IManagedTestDevice testDevice = mAllocatedDeviceMap.get(serial);
-                        if (testDevice != null) {
+                        if (testDevice != null &&
+                                !testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
                             testDevice.setDeviceState(TestDeviceState.FASTBOOT);
                         }
                     }

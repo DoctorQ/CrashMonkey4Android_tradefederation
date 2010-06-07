@@ -110,7 +110,7 @@ import java.util.ListIterator;
  *
  * @see {@link OptionSetter}
  */
-class ArgsOptionParser extends OptionSetter {
+public class ArgsOptionParser extends OptionSetter {
 
     static final String SHORT_NAME_PREFIX = "-";
     static final String OPTION_NAME_PREFIX = "--";

@@ -67,6 +67,10 @@ public class TestInvocation implements ITestInvocation {
             Test test = config.getTest();
             listener = config.getTestInvocationListener();
             IBuildInfo info = buildProvider.getBuild();
+            if (info == null) {
+                Log.i(LOG_TAG, "No build to test");
+                return;
+            }
             preparer.setUp(device, info);
             runTests(device, info, test, listener);
         } catch (TargetSetupError e) {

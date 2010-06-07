@@ -35,7 +35,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private TestDeviceState mDeviceState;
 
     /** the time in ms to wait between 'poll for responsiveness' attempts */
-    private static final int CHECK_POLL_TIME = 5 * 1000;
+    private static final long CHECK_POLL_TIME = 5 * 1000;
     /** the maximum operation time in ms for a 'poll for responsiveness' command */
     private static final long MAX_OP_TIME = 30 * 1000;
 
@@ -56,7 +56,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
 
     /** The  time in ms to wait for a device to boot. */
     // TODO: make this configurable
-    private static final long DEFAULT_BOOT_TIMEOUT = 6 * 60 * 1000;
+    private static final long DEFAULT_BOOT_TIMEOUT = 8 * 60 * 1000;
 
     private List<DeviceStateListener> mStateListeners;
 
@@ -117,12 +117,13 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         // logic to adjust for the time expired. ie if waitForDeviceOnline returns immediately,
         // give waitForPmResponsive more time to complete
 
-        IDevice device = waitForDeviceOnline((long)(waitTime*WAIT_DEVICE_ONLINE_RATIO));
+        IDevice device = waitForDeviceOnline((long)(waitTime * WAIT_DEVICE_ONLINE_RATIO));
         if (device != null) {
-             if (waitForPmResponsive((long)(waitTime*WAIT_DEVICE_PM_RATIO)) &&
-                     waitForStoreMount((long)(waitTime*WAIT_DEVICE_STORE_RATIO))) {
-                 return device;
-             }
+            if (waitForPmResponsive((long)(waitTime * WAIT_DEVICE_PM_RATIO))) {
+                if (waitForStoreMount((long)(waitTime * WAIT_DEVICE_STORE_RATIO))) {
+                    return device;
+                }
+            }
         }
         return null;
     }
@@ -142,8 +143,8 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * <code>false</code> otherwise
      */
     private boolean waitForPmResponsive(final long waitTime) {
-        Log.i(LOG_TAG, String.format("Waiting for device %s package manager",
-                getSerialNumber()));
+        Log.i(LOG_TAG, String.format("Waiting %d ms for device %s package manager",
+                waitTime, getSerialNumber()));
         IRunnableResult pmPollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "pm path android";
@@ -162,8 +163,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                 }
             }
         };
-        int numAttempts = (int)(waitTime / CHECK_POLL_TIME);
-        return RunUtil.runTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, numAttempts,
+        return RunUtil.runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
                 pmPollRunnable);
     }
 
@@ -175,8 +175,8 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * <code>false</code> otherwise
      */
     private boolean waitForStoreMount(final long waitTime) {
-        Log.i(LOG_TAG, String.format("Waiting for device %s external store",
-                getSerialNumber()));
+        Log.i(LOG_TAG, String.format("Waiting %d ms for device %s external store",
+                waitTime, getSerialNumber()));
 
         IRunnableResult storePollRunnable = new IRunnableResult() {
             public boolean run() {
@@ -201,8 +201,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                 }
             }
         };
-        int numAttempts = (int)(waitTime / CHECK_POLL_TIME);
-        return RunUtil.runTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, numAttempts,
+        return RunUtil.runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
                 storePollRunnable);
     }
 

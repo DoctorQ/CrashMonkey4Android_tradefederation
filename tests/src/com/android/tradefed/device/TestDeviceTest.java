@@ -24,6 +24,7 @@ import com.android.ddmlib.SyncService;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.RunUtil;
 
 import org.easymock.EasyMock;
 
@@ -41,7 +42,7 @@ import junit.framework.TestCase;
 public class TestDeviceTest extends TestCase {
 
     private IDevice mMockIDevice;
-    private IShellOutputReceiver mMockReceiver;
+    private ICancelableReceiver mMockReceiver;
     private TestDevice mTestDevice;
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
@@ -54,10 +55,11 @@ public class TestDeviceTest extends TestCase {
         super.setUp();
         mMockIDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("serial").anyTimes();
-        mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
+        mMockReceiver = EasyMock.createMock(ICancelableReceiver.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor);
+        mTestDevice.setCommandTimeout(100);
     }
 
     /**
@@ -139,6 +141,33 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall();
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
+        mTestDevice.executeShellCommand(testCommand, mMockReceiver);
+    }
+
+    /**
+     * Test {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)} behavior when
+     * command times out and recovery succeeds.
+     * <p/>
+     * Verify that command is re-tried.
+     */
+    public void testExecuteShellCommand_recoveryTimeoutRetry() throws Exception {
+        final String testCommand = "simple command";
+        // expect shell command to be called - and never return from that call
+        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                RunUtil.sleep(1000);
+            }
+        });
+        mMockReceiver.cancel();
+        EasyMock.expectLastCall();
+        mMockRecovery.recoverDevice(mMockMonitor);
+        EasyMock.expectLastCall();
+        // now expect shellCommand to be executed again, and succeed
+        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        EasyMock.expectLastCall();
+        EasyMock.replay(mMockIDevice, mMockRecovery, mMockReceiver);
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
 
@@ -259,10 +288,7 @@ public class TestDeviceTest extends TestCase {
         listener.testRunFailed((String)EasyMock.anyObject());
         mMockRecovery.recoverDevice(mMockMonitor);
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
-        EasyMock.replay(listener);
-        EasyMock.replay(mockRunner);
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRecovery);
+        EasyMock.replay(listener, mockRunner, mMockIDevice, mMockRecovery);
         try {
             mTestDevice.runInstrumentationTests(mockRunner, listeners);
             fail("DeviceNotAvailableException not thrown");
@@ -285,11 +311,16 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
         listener.testRunFailed((String)EasyMock.anyObject());
         mMockRecovery.recoverDevice(mMockMonitor);
-        EasyMock.replay(listener);
-        EasyMock.replay(mockRunner);
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRecovery);
+        EasyMock.replay(listener, mockRunner, mMockIDevice, mMockRecovery);
         mTestDevice.runInstrumentationTests(mockRunner, listeners);
+    }
+
+    /**
+     * Test that state changes are ignore while {@link TestDevice#executeFastbootCommand(String...)}
+     * is active.
+     */
+    public void testExecuteFastbootCommand_state() {
+        // TODO: implement this when RunUtil.runTimedCommand can be mocked
     }
 
     /**

@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.CommandResult.CommandStatus;
+import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.RunUtil.IRunnableResult;
 
 import org.easymock.EasyMock;
@@ -30,21 +30,31 @@ public class RunUtilTest extends TestCase {
     /**
      * Test success case for {@link RunUtil#runTimed(long, IRunnableResult)}.
      */
-    public void testRunTimed() {
+    public void testRunTimed() throws Exception {
         IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.TRUE);
         EasyMock.replay(mockRunnable);
-        assertTrue(RunUtil.runTimed(100, mockRunnable));
+        assertEquals(CommandStatus.SUCCESS, RunUtil.runTimed(100, mockRunnable));
     }
 
     /**
      * Test failure case for {@link RunUtil#runTimed(long, IRunnableResult)}.
      */
-    public void testRunTimed_failed() {
+    public void testRunTimed_failed() throws Exception {
         IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.FALSE);
         EasyMock.replay(mockRunnable);
-        assertFalse(RunUtil.runTimed(100, mockRunnable));
+        assertEquals(CommandStatus.FAILED, RunUtil.runTimed(100, mockRunnable));
+    }
+
+    /**
+     * Test exception case for {@link RunUtil#runTimed(long, IRunnableResult)}.
+     */
+    public void testRunTimed_exception() throws Exception {
+        IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunnableResult.class);
+        EasyMock.expect(mockRunnable.run()).andThrow(new RuntimeException());
+        EasyMock.replay(mockRunnable);
+        assertEquals(CommandStatus.EXCEPTION, RunUtil.runTimed(100, mockRunnable));
     }
 
     /**
@@ -52,7 +62,7 @@ public class RunUtilTest extends TestCase {
      */
     public void testRunTimedCmd_failed() {
         CommandResult result = RunUtil.runTimedCmd(1000, "blahggggwarggg");
-        assertEquals(CommandStatus.FAILED, result.getStatus());
+        assertEquals(CommandStatus.EXCEPTION, result.getStatus());
         assertNull(result.getStdout());
         assertNull(result.getStderr());
     }

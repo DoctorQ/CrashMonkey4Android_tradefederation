@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
-import com.android.tradefed.util.CommandResult.CommandStatus;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,6 +31,7 @@ import java.util.Arrays;
 public class RunUtil {
 
     private static final String LOG_TAG = "RunUtil";
+
     private static final int POLL_TIME_INCREASE_FACTOR = 4;
 
     private RunUtil() {
@@ -45,9 +46,10 @@ public class RunUtil {
          * Execute the operation.
          *
          * @return <code>true</code> if operation is performed successfully, <code>false</code>
-         * otherwise
+         *         otherwise
+         * @throws Exception if operation terminated abnormally
          */
-        public boolean run();
+        public boolean run() throws Exception;
     }
 
     /**
@@ -61,33 +63,24 @@ public class RunUtil {
     public static CommandResult runTimedCmd(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
         IRunnableResult osRunnable = new IRunnableResult() {
-            public boolean run() {
+            public boolean run() throws Exception {
                 final String fullCmd = Arrays.toString(command);
-                Log.d(LOG_TAG, String.format("Running %s", fullCmd));
-                try {
-                    Process process = Runtime.getRuntime().exec(command);
-                    int rc =  process.waitFor();
-                    result.setStdout(getStringFromStream(process.getInputStream()));
-                    result.setStderr(getStringFromStream(process.getErrorStream()));
+                Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+                Process process = Runtime.getRuntime().exec(command);
+                int rc = process.waitFor();
+                result.setStdout(getStringFromStream(process.getInputStream()));
+                result.setStderr(getStringFromStream(process.getErrorStream()));
 
-                    if (rc == 0) {
-                        result.setStatus(CommandStatus.SUCCESS);
-                        return true;
-                    } else {
-                        Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd,
-                                rc));
-                    }
-                } catch (IOException e) {
-                    Log.e(LOG_TAG, String.format("IOException when running %s", fullCmd));
-                    Log.e(LOG_TAG, e);
-                } catch (InterruptedException e) {
-                    Log.i(LOG_TAG, String.format("InterruptedException when running %s", fullCmd));
+                if (rc == 0) {
+                    return true;
+                } else {
+                    Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd, rc));
                 }
-                result.setStatus(CommandStatus.FAILED);
                 return false;
             }
         };
-        runTimed(timeout, osRunnable);
+        CommandStatus status = runTimed(timeout, osRunnable);
+        result.setStatus(status);
         return result;
     }
 
@@ -96,9 +89,9 @@ public class RunUtil {
      *
      * @param timeout maximum time to wait in ms
      * @param runnable {@link IRunnableResult} to execute
-     * @return <code>true</code> if operation completed successfully before timeout reached.
+     * @return the {@link CommandStatus} result of operation.
      */
-    public static boolean runTimed(long timeout, IRunnableResult runnable) {
+    public static CommandStatus runTimed(long timeout, IRunnableResult runnable) {
         RunnableNotifier runThread = new RunnableNotifier(runnable);
         runThread.start();
         synchronized (runThread) {
@@ -111,7 +104,7 @@ public class RunUtil {
                 runThread.interrupt();
             }
         }
-        return runThread.isComplete();
+        return runThread.getStatus();
     }
 
     /**
@@ -126,7 +119,29 @@ public class RunUtil {
     public static boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
             IRunnableResult runnable) {
         for (int i = 0; i < attempts; i++) {
-            if (runTimed(opTimeout, runnable)) {
+            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
+                return true;
+            }
+            Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
+            sleep(pollInterval);
+        }
+        return false;
+    }
+
+    /**
+     * Block and executes an operation multiple times until it is successful.
+     *
+     * @param opTimeout maximum time to wait in ms for a single operation attempt
+     * @param pollInterval initial time to wait between operation attempts
+     * @param maxTime the total approximate maximum time to keep trying the operation
+     * @param runnable {@link IRunnableResult} to execute
+     * @return <code>true</code> if operation completed successfully before maxTime expired
+     */
+    public static boolean runFixedTimedRetry(final long opTimeout, final long pollInterval,
+            final long maxTime, final IRunnableResult runnable) {
+        final long initialTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() < (initialTime + maxTime)) {
+            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
                 return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
@@ -138,9 +153,9 @@ public class RunUtil {
     /**
      * Block and executes an operation multiple times until it is successful.
      * <p/>
-     * Exponentially increase the wait time between operation attempts. This is intended to be
-     * used when performing an operation such as polling a server, to give it time to recover
-     * in case it is temporarily down.
+     * Exponentially increase the wait time between operation attempts. This is intended to be used
+     * when performing an operation such as polling a server, to give it time to recover in case it
+     * is temporarily down.
      *
      * @param opTimeout maximum time to wait in ms for a single operation attempt
      * @param initialPollInterval initial time to wait between operation attempts
@@ -156,7 +171,7 @@ public class RunUtil {
         long pollInterval = initialPollInterval;
         final long initialTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (initialTime + maxTime)) {
-            if (runTimed(opTimeout, runnable)) {
+            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
                 return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
@@ -191,7 +206,7 @@ public class RunUtil {
     private static class RunnableNotifier extends Thread {
 
         private final IRunnableResult mRunnable;
-        private boolean mIsComplete = false;
+        private CommandStatus mStatus = CommandStatus.TIMED_OUT;
 
         RunnableNotifier(IRunnableResult runnable) {
             mRunnable = runnable;
@@ -199,15 +214,22 @@ public class RunUtil {
 
         @Override
         public void run() {
-            boolean complete = mRunnable.run();
+            CommandStatus status;
+            try {
+                status = mRunnable.run() ? CommandStatus.SUCCESS : CommandStatus.FAILED;
+            } catch (Exception e) {
+                // TODO: add more meaningful error message
+                Log.e(LOG_TAG, e);
+                status = CommandStatus.EXCEPTION;
+            }
             synchronized (this) {
-                mIsComplete = complete;
+                mStatus = status;
                 notify();
             }
         }
 
-        synchronized boolean isComplete() {
-            return mIsComplete;
+        synchronized CommandStatus getStatus() {
+            return mStatus;
         }
     }
 
@@ -215,7 +237,7 @@ public class RunUtil {
         Reader ir = new BufferedReader(new InputStreamReader(stream));
         int irChar = -1;
         StringBuilder builder = new StringBuilder();
-        while((irChar = ir.read()) != -1) {
+        while ((irChar = ir.read()) != -1) {
             builder.append((char)irChar);
         }
         return builder.toString();

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.command;
 
 import com.android.tradefed.config.ConfigurationException;
@@ -35,7 +36,6 @@ public class CommandTest extends TestCase {
 
     /** the {@link Command} under test, with all dependencies mocked out */
     private Command mCommand;
-
     private ITestInvocation mMockTestInvoker;
     private IDeviceManager mMockDeviceManager;
     private IConfiguration mMockConfiguration;
@@ -77,7 +77,8 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
+                .andReturn(mMockDevice);
         mMockDeviceManager.freeDevice(mMockDevice);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
@@ -99,8 +100,9 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice(EasyMock.eq(mMockRecovery),
-                EasyMock.anyLong())).andReturn(null);
+        EasyMock.expect(
+                mMockDeviceManager.allocateDevice(EasyMock.eq(mMockRecovery), EasyMock.anyLong()))
+                .andReturn(null);
         mMockDeviceManager.terminate();
 
         // switch mock objects to verify mode
@@ -154,7 +156,8 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(new StdoutLogger());
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
         // expect to be asked for device to connect to and return the mock device
-        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
+                .andReturn(mMockDevice);
         mMockDeviceManager.freeDevice(mMockDevice);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device

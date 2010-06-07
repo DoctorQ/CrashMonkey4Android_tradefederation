@@ -43,7 +43,7 @@ public class Command {
     /** the minimum invocation time in ms when in loop mode */
     private static final long MIN_LOOP_TIME = 2 * 60 * 1000;
     /** the time in ms to wait for a device */
-    private static final long WAIT_DEVICE_TIME = 10 * 1000;
+    static final long WAIT_DEVICE_TIME = 10 * 1000;
 
     public Command() {
     }

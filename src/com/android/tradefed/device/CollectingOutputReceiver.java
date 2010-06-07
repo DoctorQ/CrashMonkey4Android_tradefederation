@@ -23,7 +23,7 @@ import java.io.UnsupportedEncodingException;
  * A {@link IShellOutputReceiver} which collects the whole shell output into one
  * {@link String}.
  */
-class CollectingOutputReceiver implements IShellOutputReceiver {
+class CollectingOutputReceiver implements ICancelableReceiver {
 
     private StringBuffer mOutputBuffer = new StringBuffer();
     private boolean mIsCanceled = false;

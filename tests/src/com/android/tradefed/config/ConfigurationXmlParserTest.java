@@ -41,7 +41,8 @@ public class ConfigurationXmlParserTest extends TestCase {
         assertEquals(configName, configDef.getName());
         assertEquals("desc", configDef.getDescription());
         assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test"));
-        assertEquals("val", configDef.getOptionMap().get("opName"));
+        assertEquals("opName", configDef.getOptionList().get(0).name);
+        assertEquals("val", configDef.getOptionList().get(0).value);
     }
 
     /**
