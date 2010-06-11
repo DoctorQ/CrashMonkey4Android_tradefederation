@@ -25,11 +25,13 @@ import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.CommandStatus;
-import com.android.tradefed.util.RunUtil.IRunnableResult;
+import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -43,6 +45,7 @@ import java.io.OutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.concurrent.Semaphore;
@@ -68,16 +71,38 @@ class TestDevice implements IManagedTestDevice {
     private static final int LOGCAT_MAX_DATA = 512 * 1024;
     /** The time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
+    /** number of attempts made to clear dialogs */
+    private static final int NUM_CLEAR_ATTEMPTS = 5;
+    /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
+    static final String DISMISS_DIALOG_CMD = "input keyevent 23";
     /** The time in ms to wait for a command to complete. */
-    private long mCmdTimeout = 2 * 60 * 1000;
+    private long mCmdTimeout = 3 * 60 * 1000;
     private IDevice mIDevice;
     private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
     private Semaphore mFastbootLock = new Semaphore(1);
-    // TODO: make this an Option - consider moving postBootSetup elsewhere
-    private boolean mEnableAdbRoot = true;
     private LogCatReceiver mLogcatReceiver;
+
+    // TODO: TestDevice is not loaded from configuration yet, so these options are currently fixed
+
+    @Option(name="enable-root", description="enable adb root on boot")
+    private boolean mEnableAdbRoot = true;
+
+    @Option(name="disable-dialing", description="set disable dialing property on boot")
+    private boolean mDisableDialing = true;
+
+    @Option(name="set-monkey", description="set ro.monkey on boot")
+    private boolean mSetMonkey = true;
+
+    @Option(name="audio-silent", description="set ro.audio.silent on boot")
+    private boolean mSetAudioSilent = true;
+
+    @Option(name="disable-keyguard", description="attempt to disable keyguard once complete")
+    private boolean mDisableKeyguard = true;
+
+    @Option(name="disable-keyguard-cmd", description="shell command to disable keyguard")
+    private String mDisableKeyguardCmd = "input keyevent 82";
 
     /**
      * Interface for a generic device communication attempt.
@@ -93,13 +118,6 @@ class TestDevice implements IManagedTestDevice {
         DeviceAction(long timeout) {
             mTimeout = timeout;
         }
-
-        /**
-         * Optional method to be implemented by subclasses, to do when command times out
-         */
-        void cleanup() {
-
-        }
     }
 
     /**
@@ -112,6 +130,15 @@ class TestDevice implements IManagedTestDevice {
         mIDevice = device;
         mRecovery = recovery;
         mMonitor = monitor;
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 
     /**
@@ -145,8 +172,33 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public String getProductType() {
-        return getIDevice().getProperty("ro.product.board");
+    public String getProductType() throws DeviceNotAvailableException {
+        String productType = getIDevice().getProperty("ro.product.board");
+        if (productType == null) {
+            // this is likely because ddms hasn't processed all the properties yet, query this
+            // property directly
+            Log.w(LOG_TAG, String.format("Product type for device %s is null, re-querying",
+                    getSerialNumber()));
+            if (getDeviceState() == TestDeviceState.FASTBOOT) {
+                return getFastbootProduct();
+            } else {
+                return executeShellCommand("getprop ro.product.board");
+            }
+        }
+        return productType;
+    }
+
+    private String getFastbootProduct() throws DeviceNotAvailableException {
+        // TODO: will fastboot product be same as ro.product.board ?
+        CommandResult result = executeFastbootCommand("getvar", "product");
+        if (result.getStatus() == CommandStatus.SUCCESS) {
+            Pattern fastbootProductPattern = Pattern.compile("product:\\s+(\\w+)");
+            Matcher matcher = fastbootProductPattern.matcher(result.getStdout());
+            if (matcher.find()) {
+                return matcher.group(1);
+            }
+        }
+        return null;
     }
 
     /**
@@ -160,8 +212,7 @@ class TestDevice implements IManagedTestDevice {
                 return true;
             }
 
-            @Override
-            void cleanup() {
+            public void cancel() {
                 receiver.cancel();
             }
         };
@@ -175,7 +226,7 @@ class TestDevice implements IManagedTestDevice {
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         executeShellCommand(command, receiver);
         String output = receiver.getOutput();
-        Log.d(LOG_TAG, String.format("%s on %s returned %s", command, getSerialNumber(), output));
+        Log.v(LOG_TAG, String.format("%s on %s returned %s", command, getSerialNumber(), output));
         return output;
     }
 
@@ -202,21 +253,40 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+            ITestRunListener... listeners) throws DeviceNotAvailableException {
+        runInstrumentationTests(runner, Arrays.asList(listeners));
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean pullFile(final String remoteFilePath, final File localFile)
             throws DeviceNotAvailableException {
+
         DeviceAction pullAction = new DeviceAction() {
+            private SyncService mSyncService;
             public boolean run() throws IOException {
-                SyncService syncService = getIDevice().getSyncService();
-                SyncResult result = syncService.pullFile(remoteFilePath,
+                mSyncService = getIDevice().getSyncService();
+                SyncResult result = mSyncService.pullFile(remoteFilePath,
                         localFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
-                if (result.getCode() == SyncService.RESULT_OK) {
-                    return true;
-                } else {
+                boolean status = true;
+                if (result.getCode() != SyncService.RESULT_OK) {
                     // assume that repeated attempts won't help, just return immediately
                     Log.w(LOG_TAG, String.format("Failed to pull %s from %s. Reason code: %d, "
                             + "message %s", remoteFilePath, getSerialNumber(), result.getCode(),
                             result.getMessage()));
-                    return false;
+                    status = false;
+                }
+                mSyncService.close();
+                mSyncService = null;
+                return status;
+            }
+
+            public void cancel() {
+                if (mSyncService != null) {
+                    mSyncService.close();
                 }
             }
         };
@@ -230,18 +300,27 @@ class TestDevice implements IManagedTestDevice {
     public boolean pushFile(final File localFile, final String remoteFilePath)
             throws DeviceNotAvailableException {
         DeviceAction pushAction = new DeviceAction() {
+            private SyncService mSyncService;
+
             public boolean run() throws IOException {
-                SyncService syncService = getIDevice().getSyncService();
-                SyncResult result = syncService.pushFile(localFile.getAbsolutePath(),
+                mSyncService = getIDevice().getSyncService();
+                SyncResult result = mSyncService.pushFile(localFile.getAbsolutePath(),
                         remoteFilePath, SyncService.getNullProgressMonitor());
-                if (result.getCode() == SyncService.RESULT_OK) {
-                    return true;
-                } else {
+                boolean status = true;
+                if (result.getCode() != SyncService.RESULT_OK) {
                     // assume that repeated attempts won't help, just return immediately
                     Log.w(LOG_TAG, String.format("Failed to push to %s on device %s. Reason "
                             + " code: %d, message %s", remoteFilePath, getSerialNumber(),
                             result.getCode(), result.getMessage()));
-                    return false;
+                    status = false;
+                }
+                mSyncService.close();
+                return status;
+            }
+
+            public void cancel() {
+                if (mSyncService != null) {
+                    mSyncService.close();
                 }
             }
         };
@@ -400,6 +479,10 @@ class TestDevice implements IManagedTestDevice {
                 service.getChildren(remoteFileEntry, true, null);
                 return true;
             }
+
+            public void cancel() {
+                // ignore
+            }
         };
         performDeviceAction("buildFileCache", action, MAX_RETRY_ATTEMPTS);
     }
@@ -447,7 +530,7 @@ class TestDevice implements IManagedTestDevice {
         final String[] output = new String[1];
         DeviceAction adbAction = new DeviceAction() {
             public boolean run() throws IOException {
-                CommandResult result = RunUtil.runTimedCmd(getCommandTimeout(), fullCmd);
+                CommandResult result = getRunUtil().runTimedCmd(getCommandTimeout(), fullCmd);
                 // TODO: how to determine device not present with command failing for other reasons
                 if (result.getStatus() != CommandStatus.SUCCESS) {
                     // interpret this as device offline??
@@ -455,6 +538,10 @@ class TestDevice implements IManagedTestDevice {
                 }
                 output[0] = result.getStdout();
                 return true;
+            }
+
+            public void cancel() {
+                // ignore
             }
         };
         performDeviceAction(String.format("adb %s", cmdArgs[0]), adbAction, MAX_RETRY_ATTEMPTS);
@@ -475,7 +562,7 @@ class TestDevice implements IManagedTestDevice {
             } catch (InterruptedException e) {
                 // ignore
             }
-            CommandResult result = RunUtil.runTimedCmd(getCommandTimeout(), fullCmd);
+            CommandResult result = getRunUtil().runTimedCmd(getCommandTimeout(), fullCmd);
             mFastbootLock.release();
             // a fastboot command will always time out if device not available
             if (result.getStatus() != CommandStatus.TIMED_OUT) {
@@ -548,7 +635,7 @@ class TestDevice implements IManagedTestDevice {
     private boolean performDeviceAction(String actionDescription, final DeviceAction action,
             int remainingAttempts) throws DeviceNotAvailableException {
 
-        CommandStatus result = RunUtil.runTimed(action.mTimeout, action);
+        CommandStatus result = getRunUtil().runTimed(action.mTimeout, action);
 
         switch (result) {
             case SUCCESS: {
@@ -566,7 +653,6 @@ class TestDevice implements IManagedTestDevice {
                         actionDescription, action.mTimeout, getSerialNumber()));
             }
         }
-        action.cleanup();
         recoverDevice();
 
         if (remainingAttempts > 0) {
@@ -780,11 +866,11 @@ class TestDevice implements IManagedTestDevice {
                             getSerialNumber());
                     Log.d(LOG_TAG, msg);
                     appendDeviceLogMsg(msg);
+                    // sleep a small amount for device to settle
+                    getRunUtil().sleep(5 * 1000);
+                    // wait a long time for device to be online
+                    mMonitor.waitForDeviceOnline(10 * 60 * 1000);
                 }
-                // sleep a small amount for device to settle
-                RunUtil.sleep(5 * 1000);
-                // wait a long time for device to be online
-                mMonitor.waitForDeviceOnline(10 * 60 * 1000);
             }
         }
 
@@ -844,7 +930,7 @@ class TestDevice implements IManagedTestDevice {
             if (pingOutput.contains("1 packets transmitted, 1 received")) {
                 return true;
             }
-            RunUtil.sleep(1 * 1000);
+            getRunUtil().sleep(1 * 1000);
         }
         Log.e(LOG_TAG, String.format("ping unsuccessful after connecting to wifi network %s on %s",
                 wifiSsid, getSerialNumber()));
@@ -861,24 +947,99 @@ class TestDevice implements IManagedTestDevice {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public boolean clearErrorDialogs() throws DeviceNotAvailableException {
+        // attempt to clear error dialogs multiple times
+        for (int i = 0; i < NUM_CLEAR_ATTEMPTS; i++) {
+            int numErrorDialogs = getErrorDialogCount();
+            if (numErrorDialogs == 0) {
+                return true;
+            }
+            doClearDialogs(numErrorDialogs);
+        }
+        if (getErrorDialogCount() > 0) {
+            // at this point, all attempts to clear error dialogs completely have failed
+            // it might be the case that the process keeps showing new dialogs immediately after
+            // clearing. There's really no workaround, but to dump an error
+            Log.e(LOG_TAG, String.format("error dialogs still exist on %s.", getSerialNumber()));
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Detects the number of crash or ANR dialogs currently displayed.
+     * <p/>
+     * Parses output of 'dump activity processes'
+     *
+     * @return count of dialogs displayed
+     * @throws DeviceNotAvailableException
+     */
+    private int getErrorDialogCount() throws DeviceNotAvailableException {
+        int errorDialogCount = 0;
+        Pattern crashPattern = Pattern.compile(".*crashing=true.*AppErrorDialog.*");
+        Pattern anrPattern = Pattern.compile(".*notResponding=true.*AppNotRespondingDialog.*");
+        String systemStatusOutput = executeShellCommand("dumpsys activity processes");
+        Matcher crashMatcher = crashPattern.matcher(systemStatusOutput);
+        while (crashMatcher.find()) {
+            errorDialogCount++;
+        }
+        Matcher anrMatcher = anrPattern.matcher(systemStatusOutput);
+        while (anrMatcher.find()) {
+            errorDialogCount++;
+        }
+
+        return errorDialogCount;
+    }
+
+    private void doClearDialogs(int numDialogs) throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Attempted to clear %d dialogs on %s", numDialogs,
+                getSerialNumber()));
+        for (int i=0; i < numDialogs; i++) {
+            // send DPAD_CENTER
+            executeShellCommand(DISMISS_DIALOG_CMD);
+        }
+    }
+
     IDeviceStateMonitor getDeviceStateMonitor() {
         return mMonitor;
     }
 
     /**
-     * Perform instructions to configure device for testing that must be done after every boot.
-     * <p/>
-     * TODO: move this to another configurable interface
-     *
-     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     *             recovered.
+     * {@inheritDoc}
      */
-    public void postBootSetup() throws DeviceNotAvailableException {
+    public void preBootSetup() throws DeviceNotAvailableException  {
+        Log.i(LOG_TAG, String.format("Performing prebootsetup on %s", getSerialNumber()));
+        // TODO: it may be a problem if any of these commands cause device to enter recovery,
+        // Recovery mode will wait until device is fully booted, and some of these properties can
+        // only be set before device is fully booted.
+        // May need to have an alternate recovery mode for only waiting till device is online
         if (mEnableAdbRoot) {
             enableAdbRoot();
         }
-        // turn off keyguard
-        executeShellCommand("input keyevent 82");
+        if (mSetAudioSilent) {
+            // mute the master volume--this has to be done as early as possible
+            executeShellCommand("setprop ro.audio.silent 1");
+        }
+        if (mSetMonkey) {
+            executeShellCommand("setprop ro.monkey 1");
+        }
+        if (mDisableDialing) {
+            executeShellCommand("setprop ro.telephony.disable-call true");
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void postBootSetup() throws DeviceNotAvailableException  {
+        if (mDisableKeyguard) {
+            Log.i(LOG_TAG, String.format("Attempting to disable keyguard on %s using %s",
+                    getSerialNumber(), mDisableKeyguardCmd));
+            executeShellCommand(mDisableKeyguardCmd);
+        }
     }
 
     /**
@@ -924,10 +1085,19 @@ class TestDevice implements IManagedTestDevice {
             doAdbReboot(null);
             waitForDeviceNotAvailable("reboot", getCommandTimeout());
         }
-        if (mMonitor.waitForDeviceAvailable() == null) {
-            recoverDevice();
+        if (mMonitor.waitForDeviceOnline() != null) {
+            preBootSetup();
+            if (mMonitor.waitForDeviceAvailable() != null) {
+                postBootSetup();
+                return;
+            }
         }
-        postBootSetup();
+        // TODO: wrap reboot in a deviceAction to prevent this
+        Log.e(LOG_TAG, String.format(
+                "Device not available after reboot. Setup steps might be skipped",
+                getSerialNumber()));
+
+        recoverDevice();
     }
 
     /**
@@ -942,6 +1112,10 @@ class TestDevice implements IManagedTestDevice {
             public boolean run() throws IOException {
                 getIDevice().reboot(into);
                 return true;
+            }
+
+            public void cancel() {
+                // ignore
             }
         };
         performDeviceAction("reboot", rebootAction, MAX_RETRY_ATTEMPTS);
@@ -1031,12 +1205,15 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void setDeviceState(TestDeviceState deviceState) {
-        // disable state changes while fastboot lock is held, because issuing fastboot command
-        // will disrupt state
-        if (mFastbootLock.tryAcquire()) {
+    public void setDeviceState(final TestDeviceState deviceState) {
+        if (!deviceState.equals(getDeviceState())) {
+            // disable state changes while fastboot lock is held, because issuing fastboot command
+            // will disrupt state
+            if (getDeviceState().equals(TestDeviceState.FASTBOOT) && !mFastbootLock.tryAcquire()) {
+                return;
+            }
             Log.d(LOG_TAG, String.format("Device %s state is now %s", getSerialNumber(),
-                    deviceState));
+                        deviceState));
             mState = deviceState;
             mFastbootLock.release();
             mMonitor.setState(deviceState);

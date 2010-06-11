@@ -58,24 +58,26 @@ public class TestInvocation implements ITestInvocation {
     /**
      * {@inheritDoc}
      */
-    public void invoke(ITestDevice device, IConfiguration config) {
+    public void invoke(ITestDevice device, IConfiguration config)
+            throws DeviceNotAvailableException {
         ITestInvocationListener listener = null;
         ILeveledLogOutput logger = null;
-        LogRegistry logRegistry = LogRegistry.getLogRegistry();
+        LogRegistry logRegistry = getLogRegistry();
         try {
             logger = config.getLogOutput();
             logRegistry.registerLogger(logger);
+            Log.i(LOG_TAG, "Starting invocation");
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
             Test test = config.getTest();
-            listener = config.getTestInvocationListener();
             IBuildInfo info = buildProvider.getBuild();
-            if (info == null) {
+            if (info != null) {
+                listener = config.getTestInvocationListener();
+                preparer.setUp(device, info);
+                runTests(device, info, test, listener);
+            } else {
                 Log.i(LOG_TAG, "No build to test");
-                return;
             }
-            preparer.setUp(device, info);
-            runTests(device, info, test, listener);
         } catch (TargetSetupError e) {
             handleError(listener, e);
         } catch (IllegalArgumentException e) {
@@ -84,17 +86,30 @@ public class TestInvocation implements ITestInvocation {
             handleError(listener, e);
         } catch (DeviceNotAvailableException e) {
             handleError(listener, e);
+            // rethrow this so device is marked as unavailable
+            throw e;
         } catch (Throwable e) {
             Log.e(LOG_TAG, "Uncaught exception!");
             handleError(listener, e);
+            // TODO: consider re-throwing ?
+        } finally {
+            if (logger != null && listener != null) {
+                listener.testRunLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
+            }
+            if (logger != null) {
+              logger.closeLog();
+            }
+            logRegistry.unregisterLogger();
         }
-        if (logger != null && listener != null) {
-            listener.testRunLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-        }
-        if (logger != null) {
-          logger.closeLog();
-        }
-        logRegistry.unregisterLogger();
+    }
+
+    /**
+     * Gets the {@link LogRegistry} to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    LogRegistry getLogRegistry() {
+        return LogRegistry.getLogRegistry();
     }
 
     /**

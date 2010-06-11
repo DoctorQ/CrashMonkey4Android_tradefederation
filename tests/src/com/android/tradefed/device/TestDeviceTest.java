@@ -24,6 +24,9 @@ import com.android.ddmlib.SyncService;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import org.easymock.EasyMock;
@@ -46,6 +49,7 @@ public class TestDeviceTest extends TestCase {
     private TestDevice mTestDevice;
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
+    private IRunUtil mMockRunUtil;
 
     /**
      * {@inheritDoc}
@@ -58,8 +62,89 @@ public class TestDeviceTest extends TestCase {
         mMockReceiver = EasyMock.createMock(ICancelableReceiver.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
+        mMockRunUtil = EasyMock.createMock(IRunUtil.class);
         mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor);
         mTestDevice.setCommandTimeout(100);
+    }
+
+    /**
+     * Test {@link TestDevice#getProductType()} when device is in fastboot and IDevice has not
+     * cached product type property
+     */
+    public void testGetProductType_fastboot() throws DeviceNotAvailableException {
+        mMockIDevice.getProperty((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andReturn((String)null);
+        CommandResult fastbootResult = new CommandResult();
+        fastbootResult.setStatus(CommandStatus.SUCCESS);
+        fastbootResult.setStdout("product: nexusone\n" + "finished. total time: 0.001s");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject())).andReturn(
+                fastbootResult);
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRunUtil);
+        TestDevice testDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor) {
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
+            }
+        };
+        testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        assertEquals("nexusone", testDevice.getProductType());
+    }
+
+    /**
+     * Test {@link TestDevice#getProductType()} when device is in adb and IDevice has not cached
+     * product type property
+     */
+    public void testGetProductType_adb() throws DeviceNotAvailableException, IOException {
+        mMockIDevice.getProperty((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andReturn((String)null);
+        final String expectedOutput = "nexusone";
+        mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
+                (IShellOutputReceiver)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                byte[] inputData = expectedOutput.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRunUtil);
+        assertEquals(expectedOutput, mTestDevice.getProductType());
+    }
+
+    /**
+     * Test {@link TestDevice#clearErrorDialogs()} when both a error and anr dialog are present.
+     */
+    public void testClearErrorDialogs() throws IOException, DeviceNotAvailableException {
+        final String anrOutput = "debugging=false crashing=false null notResponding=true "
+                + "com.android.server.am.AppNotRespondingDialog@4534aaa0 bad=false\n blah\n";
+        final String crashOutput = "debugging=false crashing=true "
+                + "com.android.server.am.AppErrorDialog@45388a60 notResponding=false null bad=false"
+                + "blah \n";
+        // construct a string with 2 error dialogs of each type to ensure proper detection
+        final String fourErrors = anrOutput + anrOutput + crashOutput + crashOutput;
+        mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
+                (IShellOutputReceiver)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                byte[] inputData = fourErrors.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
+
+        mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
+                (IShellOutputReceiver)EasyMock.anyObject());
+        // expect 4 key events to be sent - one for each dialog
+        // and expect another dialog query - but return nothing
+        EasyMock.expectLastCall().times(5);
+
+        EasyMock.replay(mMockIDevice);
+        mTestDevice.clearErrorDialogs();
     }
 
     /**
@@ -157,7 +242,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
             @Override
             public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                RunUtil.sleep(1000);
+                RunUtil.getInstance().sleep(1000);
             }
         });
         mMockReceiver.cancel();

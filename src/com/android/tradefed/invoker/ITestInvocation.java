@@ -17,6 +17,7 @@
 package com.android.tradefed.invoker;
 
 import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
 /**
@@ -28,9 +29,11 @@ public interface ITestInvocation {
      * Instantiate objects and perform the test invocation.
      *
      * @param device the {@link ITestDevice} to perform tests. May be <code>null</code> if tests to
-     * run are not dependent on a device
+     *            run are not dependent on a device
      * @param config the {@link IConfiguration} of this test run.
+     * @throws DeviceNotAvailableException if communication with device was lost
      */
-    public void invoke(ITestDevice device, IConfiguration config);
+    public void invoke(ITestDevice device, IConfiguration config)
+            throws DeviceNotAvailableException;
 
 }

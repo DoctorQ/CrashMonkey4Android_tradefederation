@@ -31,8 +31,9 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.RunUtil.IRunnableResult;
+import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +60,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     private static final String DEVICE_LOGCAT_NAME = "%s_logcat_";
 
     static final String TIMED_OUT_MSG = "timed out: test did not complete in %d ms";
+    static final String DELAY_MSEC_ARG = "delay_msec";
 
     @Option(name = "package", shortName = 'p',
             description="The manifest package name of the Android test application to run")
@@ -88,6 +90,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     @Option(name = "rerun",
             description="Rerun non-executed tests individually if test run fails to complete")
     private boolean mIsRerunMode = true;
+
+    @Option(name = "log-delay",
+            description="Delay in msec between each test when collecting test information")
+    private int mTestDelay = 10;
 
     private ITestDevice mDevice = null;
 
@@ -195,10 +201,26 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     }
 
     /**
+     * Get the delay in ms between each test when collecting test info.
+     */
+    long getTestDelay() {
+        return mTestDelay;
+    }
+
+    /**
      * Sets whether the logcat should be captured at end of test run.
      */
     void setCaptureLog(boolean captureLog) {
         mIsCaptureLog = captureLog;
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 
     /**
@@ -249,11 +271,11 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-
+        boolean didTestsRun = true;
         try {
-            doTestRun(listener);
+            didTestsRun = doTestRun(listener);
         } finally {
-            if (mIsCaptureLog) {
+            if (mIsCaptureLog && didTestsRun) {
                 listener.testRunLog(String.format(DEVICE_LOGCAT_NAME, mPackageName),
                         LogDataType.TEXT, mDevice.getLogcat());
             }
@@ -264,9 +286,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      * Execute test run.
      *
      * @param listener the test result listener
+     * @returns true if tests were run. false if test run was skipped
      * @throws DeviceNotAvailableException if device stops communicating
      */
-    private void doTestRun(final ITestInvocationListener listener)
+    private boolean doTestRun(final ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
@@ -282,10 +305,12 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
                 runWithRerun(listener, expectedTests);
             } else {
                 Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
+                return false;
             }
         } else {
             mDevice.runInstrumentationTests(mRunner, mListeners);
         }
+        return true;
     }
 
     /**
@@ -327,13 +352,19 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             Log.d(LOG_TAG, String.format("Collecting test info for %s on device %s",
                     mPackageName, mDevice.getSerialNumber()));
             runner.setLogOnly(true);
+            // the collecting test command can fail for large volumes of test bug 1750602. insert a
+            // small delay between each test to prevent this
+            if (mTestDelay > 0) {
+                runner.addInstrumentationArg(DELAY_MSEC_ARG, Integer.toString(mTestDelay));
+            }
             // try to collect tests multiple times, in case device is temporarily not available
             // on first attempt
             CollectingTestsRunnable collectRunnable = new CollectingTestsRunnable(mDevice,
                     mRunner);
-            boolean result = RunUtil.runTimedRetry(COLLECT_TESTS_OP_TIMEOUT,
+            boolean result = getRunUtil().runTimedRetry(COLLECT_TESTS_OP_TIMEOUT,
                     COLLECT_TESTS_POLL_INTERVAL, COLLECT_TESTS_ATTEMPTS, collectRunnable);
             runner.setLogOnly(false);
+            mRunner.removeInstrumentationArg(DELAY_MSEC_ARG);
             if (result) {
                 return collectRunnable.getTests();
             } else if (collectRunnable.getException() != null) {
@@ -388,6 +419,13 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
 
         public DeviceNotAvailableException getException() {
             return mException;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public void cancel() {
+            mRunner.cancel();
         }
     }
 

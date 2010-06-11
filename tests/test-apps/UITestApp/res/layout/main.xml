@@ -13,19 +13,12 @@
      See the License for the specific language governing permissions and
      limitations under the License.
 -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.tradefed.testapp">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="fill_parent"
+    android:layout_height="fill_parent" android:gravity="center">
 
-    <application>
-        <uses-library android:name="android.test.runner" />
-
-        <activity android:name="CrashMeActivity" android:exported="true" />
-    </application>
-
-    <instrumentation android:name="android.test.InstrumentationTestRunner"
-        android:targetPackage="com.android.tradefed.testapp"
-        android:label="test app for tradefed" />
-
-    <uses-sdk android:targetSdkVersion="4" android:minSdkVersion="4" />
-
-</manifest>
+    <EditText android:text="this is the text"
+        android:id="@+id/EditText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"/>
+</LinearLayout>

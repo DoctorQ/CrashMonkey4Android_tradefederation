@@ -20,6 +20,7 @@ import com.android.ddmlib.Log;
 import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -96,11 +97,25 @@ public class ConfigurationFactory implements IConfigurationFactory {
      */
     public IConfiguration createConfigurationFromArgs(String[] args)
             throws ConfigurationException {
+        return createConfigurationFromArgs(args, new Object[] {});
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public IConfiguration createConfigurationFromArgs(String[] args,
+            Object... additionalOptionSources) throws ConfigurationException {
         if (args.length == 0) {
             throw new ConfigurationException("Configuration to run was not specified");
         }
         IConfiguration config = getConfiguration(getConfigNameFromArgs(args));
-        return populateConfigWithArgs(args, config);
+        Collection<Object> optionObjects = config.getConfigurationObjects();
+        for (Object optionObj : additionalOptionSources) {
+            optionObjects.add(optionObj);
+        }
+        ArgsOptionParser parser = new ArgsOptionParser(optionObjects);
+        parser.parse(args);
+        return config;
     }
 
     /**
@@ -114,15 +129,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
         return args[args.length-1];
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public IConfiguration populateConfigWithArgs(String[] args, IConfiguration config)
-            throws ConfigurationException {
-        ArgsOptionParser parser = new ArgsOptionParser(config.getConfigurationObjects());
-        parser.parse(args);
-        return config;
-    }
+
 
     /**
      * {@inheritDoc}

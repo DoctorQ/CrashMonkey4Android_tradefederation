@@ -17,6 +17,9 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.tradefed.TestAppConstants;
+import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.CommandStatus;
 
@@ -254,24 +257,48 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testReboot");
         mTestDevice.reboot();
         assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
+        // check that device has root
+        assertTrue(mTestDevice.executeShellCommand("id").contains("root"));
     }
 
     /**
-     * Simple normal case test for {@link DeviceManager#enableAdbRoot(ITestDevice)}.
+     * Verify that {@link TestDevice#clearErrorDialogs()} can successfully clear an error dialog
+     * from screen.
      * <p/>
-     * This test assumes adb build on device under test a) doesn't have root by default, and
-     * b) is allowed to get root. ie running userdebug build.
+     * This is done by running a test app which will crash, then running another app that
+     * does UI based tests.
      * <p/>
-     * Verifies adb root works initially and after a reboot.
+     * Assumes DevTools and TradeFedUiApp are currently installed.
      */
-    public void testEnableAdbRoot() throws DeviceNotAvailableException, InterruptedException {
-        mTestDevice.setEnableAdbRoot(false);
-        assertTrue(mTestDevice.enableAdbRoot());
-        // if adb is running as root, adb shell id should return "uid=0(root)"
-        assertTrue(mTestDevice.executeShellCommand("id").contains("root"));
-        mTestDevice.reboot();
-        assertFalse(mTestDevice.executeShellCommand("id").contains("root"));
-        assertTrue(mTestDevice.enableAdbRoot());
-        assertTrue(mTestDevice.executeShellCommand("id").contains("root"));
+    public void testClearErrorDialogs_crash() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testClearErrorDialogs_crash");
+        // now cause a crash dialog to appear
+        getDevice().executeShellCommand("am start -w -n " + TestAppConstants.CRASH_ACTIVITY);
+        getDevice().clearErrorDialogs();
+        assertTrue(runUITests());
+    }
+
+    /**
+     * Verify the steps taken to disable keyguard after reboot are successfully
+     * <p/>
+     * This is done by rebooting then run a app that does UI based tests.
+     * <p/>
+     * Assumes DevTools and TradeFedUiApp are currently installed.
+     */
+    public void testDisableKeyguard() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testDisableKeyguard");
+        getDevice().reboot();
+        assertTrue(runUITests());
+    }
+
+    /**
+     * Run the test app UI tests and return true if they all pass.
+     */
+    private boolean runUITests() throws DeviceNotAvailableException {
+        RemoteAndroidTestRunner uirunner = new RemoteAndroidTestRunner(
+                TestAppConstants.UITESTAPP_PACKAGE, getDevice().getIDevice());
+        CollectingTestListener uilistener = new CollectingTestListener();
+        getDevice().runInstrumentationTests(uirunner, uilistener);
+        return TestAppConstants.UI_TOTAL_TESTS == uilistener.getNumPassedTests();
     }
 }

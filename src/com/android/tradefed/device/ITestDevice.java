@@ -54,9 +54,11 @@ public interface ITestDevice {
     /**
      * Convenience method to get the product type of this device.
      *
-     * @return the {@link String} product type name
+     * @return the {@link String} product type name or <code>null</code> if it cannot be determined
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
      */
-    public String getProductType();
+    public String getProductType() throws DeviceNotAvailableException;
 
     /**
      * Executes the given adb shell command.
@@ -64,7 +66,7 @@ public interface ITestDevice {
      * @param command the adb shell command to run
      * @param receiver the {@link ICancelableReceiver} to direct shell output to.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     *             recovered.
      */
     public void executeShellCommand(String command, ICancelableReceiver receiver)
         throws DeviceNotAvailableException;
@@ -121,6 +123,19 @@ public interface ITestDevice {
      */
     public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException;
+
+    /**
+     * Convenience method for performing
+     * {@link #runInstrumentationTests(IRemoteAndroidTestRunner, Collection)} with one or
+     * listeners passed as parameters.
+     *
+     * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
+     * @param listener the test result listener
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+            ITestRunListener... listeners) throws DeviceNotAvailableException;
 
     /**
      * Retrieves a file off device.
@@ -219,6 +234,16 @@ public interface ITestDevice {
     public boolean disconnectFromWifi() throws DeviceNotAvailableException;
 
     /**
+     * Attempt to dismiss any error dialogs currently displayed on device UI.
+     *
+     * @return <code>true</code> if no dialogs were present or dialogs were successfully cleared.
+     *         <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public boolean clearErrorDialogs() throws DeviceNotAvailableException;
+
+    /**
      * Reboots the device into bootloader mode.
      * <p/>
      * Blocks until device is in bootloader mode.
@@ -275,4 +300,38 @@ public interface ITestDevice {
      * recovered.
      */
     public void waitForDeviceOnline() throws DeviceNotAvailableException;
+
+    /**
+     * Perform instructions to configure device for testing that must be done after every boot.
+     * <p/>
+     * Should be called once device is online, but before device is fully booted/available
+     * <p/>
+     * In normal circumstances this method doesn't need to be called explicitly, as
+     * implementations should perform these steps automatically when performing a reboot.
+     * <p/>
+     * Where it may need to be called is when device reboots due to other events (eg when a
+     * fastboot update command has completed)
+     * <p/>
+     * TODO: consider hiding this method and handle fastboot update case automagically
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void preBootSetup() throws DeviceNotAvailableException;
+
+    /**
+     * Perform instructions to configure device for testing that after every boot.
+     * <p/>
+     * Should be called after device is fully booted/available
+     * <p/>
+     * In normal circumstances this method doesn't need to be called explicitly, as
+     * implementations should perform these steps automatically when performing a reboot.
+     * <p/>
+     * Where it may need to be called is when device reboots due to other events (eg when a
+     * fastboot update command has completed)
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void postBootSetup() throws DeviceNotAvailableException;
 }

@@ -60,6 +60,11 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
     }
 
+    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+            ITestRunListener... listeners) throws DeviceNotAvailableException {
+        // ignore
+    }
+
     public boolean pullFile(String remoteFilePath, File localFile)
             throws DeviceNotAvailableException {
         return false;
@@ -227,5 +232,17 @@ public class StubTestDevice implements IManagedTestDevice {
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
         // ignore
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean clearErrorDialogs() throws DeviceNotAvailableException {
+        // ignore
+        return false;
+    }
+
+    public void preBootSetup() {
+       // ignore
     }
 }

@@ -17,8 +17,9 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.RunUtil.IRunnableResult;
+import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -39,31 +40,31 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /** the maximum operation time in ms for a 'poll for responsiveness' command */
     private static final long MAX_OP_TIME = 30 * 1000;
 
-    /** the ratio of time to wait for device to be online vs other tasks in
-     * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
-     */
-    private static final float WAIT_DEVICE_ONLINE_RATIO = 0.2f;
-
-    /** the ratio of time to wait for device to be online vs other tasks in
-     * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
-     */
-    private static final float WAIT_DEVICE_PM_RATIO = 0.6f;
-
-    /** the ratio of time to wait for device's external store to be mounted vs other tasks in
-     * {@link DeviceManager#waitForDeviceAvailable(ITestDevice, long)}.
-     */
-    private static final float WAIT_DEVICE_STORE_RATIO = 0.2f;
-
-    /** The  time in ms to wait for a device to boot. */
+    /** The  time in ms to wait for a device to be online. */
     // TODO: make this configurable
-    private static final long DEFAULT_BOOT_TIMEOUT = 8 * 60 * 1000;
+    private static final long DEFAULT_ONLINE_TIMEOUT = 1 * 60 * 1000;
+
+    /** The  time in ms to wait for a device to available. */
+    // TODO: make this configurable
+    private static final long DEFAULT_AVAILABLE_TIMEOUT = 6 * 60 * 1000;
 
     private List<DeviceStateListener> mStateListeners;
+    private IDeviceManager mMgr;
 
-    DeviceStateMonitor(IDevice device) {
+    DeviceStateMonitor(IDeviceManager mgr, IDevice device) {
+        mMgr = mgr;
         mDevice = device;
         mStateListeners = new ArrayList<DeviceStateListener>();
         mDeviceState = TestDeviceState.getStateByDdms(device.getState());
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 
     /**
@@ -87,7 +88,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public IDevice waitForDeviceOnline() {
-        return waitForDeviceOnline((long)(DEFAULT_BOOT_TIMEOUT*WAIT_DEVICE_ONLINE_RATIO));
+        return waitForDeviceOnline(DEFAULT_ONLINE_TIMEOUT);
     }
 
     /**
@@ -108,31 +109,35 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         //
         // The current implementation waits for each event to occur in sequence.
         //
-        // Each wait for event call is allocated a certain percentage of the total waitTime.
-        // These percentages are given by the constants WAIT_DEVICE_*_RATIO, whose values must add
-        // up to 1.
-        //
-        // Note that this algorithm is somewhat limiting, because this method can return before
-        // the total waitTime has actually expired. A potential future enhancement would be to add
-        // logic to adjust for the time expired. ie if waitForDeviceOnline returns immediately,
-        // give waitForPmResponsive more time to complete
-
-        IDevice device = waitForDeviceOnline((long)(waitTime * WAIT_DEVICE_ONLINE_RATIO));
-        if (device != null) {
-            if (waitForPmResponsive((long)(waitTime * WAIT_DEVICE_PM_RATIO))) {
-                if (waitForStoreMount((long)(waitTime * WAIT_DEVICE_STORE_RATIO))) {
-                    return device;
-                }
-            }
+        // This method will always wait at least DEFAULT_ONLINE_TIMEOUT for device to be online.
+        // Then for the remaining events, it will track the currently elapsed time and fail if it is
+        // greater than waitTime
+        if (waitTime < DEFAULT_ONLINE_TIMEOUT) {
+            Log.w(LOG_TAG, String.format("Wait time %d ms provided to waitForDeviceAvailable" +
+                    " is less than the DEFAULT_ONLINE_TIMEOUT. Waiting for %d instead", waitTime,
+                    DEFAULT_ONLINE_TIMEOUT));
         }
-        return null;
+        long startTime = System.currentTimeMillis();
+        IDevice device = waitForDeviceOnline();
+        if (device == null) {
+            return null;
+        }
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        if (!waitForPmResponsive(waitTime - elapsedTime)) {
+            return null;
+        }
+        elapsedTime = System.currentTimeMillis() - startTime;
+        if (!waitForStoreMount(waitTime - elapsedTime)) {
+            return null;
+        }
+        return device;
     }
 
     /**
      * {@inheritDoc}
      */
     public IDevice waitForDeviceAvailable() {
-        return waitForDeviceAvailable(DEFAULT_BOOT_TIMEOUT);
+        return waitForDeviceAvailable(DEFAULT_AVAILABLE_TIMEOUT);
     }
 
     /**
@@ -145,12 +150,11 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private boolean waitForPmResponsive(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting %d ms for device %s package manager",
                 waitTime, getSerialNumber()));
+        final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         IRunnableResult pmPollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "pm path android";
                 try {
-                    // TODO move collecting output command to IDevice
-                    CollectingOutputReceiver receiver = new CollectingOutputReceiver();
                     // assume the 'adb shell pm path android' command will always
                     // return 'package: something' in the success case
                     getIDevice().executeShellCommand(cmd, receiver);
@@ -162,8 +166,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     return false;
                 }
             }
+
+            public void cancel() {
+                receiver.cancel();
+            }
         };
-        return RunUtil.runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
+        return getRunUtil().runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
                 pmPollRunnable);
     }
 
@@ -177,7 +185,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private boolean waitForStoreMount(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting %d ms for device %s external store",
                 waitTime, getSerialNumber()));
-
+        final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         IRunnableResult storePollRunnable = new IRunnableResult() {
             public boolean run() {
                 final String cmd = "cat /proc/mounts";
@@ -189,8 +197,6 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                                 getSerialNumber()));
                         return false;
                     }
-                    // TODO move collecting output command to IDevice
-                    CollectingOutputReceiver receiver = new CollectingOutputReceiver();
                     getIDevice().executeShellCommand(cmd, receiver);
                     String output = receiver.getOutput();
                     Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
@@ -200,8 +206,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     return false;
                 }
             }
+
+            public void cancel() {
+                receiver.cancel();
+            }
         };
-        return RunUtil.runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
+        return getRunUtil().runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
                 storePollRunnable);
     }
 
@@ -216,7 +226,10 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceBootloader(long time) {
-        return waitForDeviceState(TestDeviceState.FASTBOOT, time);
+        mMgr.addFastbootListener(this);
+        boolean result =  waitForDeviceState(TestDeviceState.FASTBOOT, time);
+        mMgr.removeFastbootListener(this);
+        return result;
     }
 
     private boolean waitForDeviceState(TestDeviceState state, long time) {

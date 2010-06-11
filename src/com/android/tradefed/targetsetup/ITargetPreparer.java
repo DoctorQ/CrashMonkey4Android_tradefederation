@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.targetsetup;
 
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
 /**
@@ -31,7 +32,9 @@ public interface ITargetPreparer {
      *
      * @param device the {@link ITestDevice} to prepare
      * @param buildInfo data about the build under test.
-     * @throws TargetSetupError if fatal error occurred setting up device
+     * @throws TargetSetupError if fatal error occurred setting up environment
+     * @throws DeviceNotAvailableException if device became unresponsive
      */
-    public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError;
+    public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
+            DeviceNotAvailableException;
 }

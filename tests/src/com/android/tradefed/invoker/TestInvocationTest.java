@@ -20,8 +20,11 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.log.StubLogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.targetsetup.IBuildInfo;
@@ -66,7 +69,7 @@ public class TestInvocationTest extends TestCase {
         mMockBuildRetriever = EasyMock.createMock(IBuildProvider.class);
         mMockTestListener = EasyMock.createMock(ITestInvocationListener.class);
         mMockBuildInfo = EasyMock.createMock(IBuildInfo.class);
-        mMockLogger = EasyMock.createMock(ILeveledLogOutput.class);
+        mMockLogger = EasyMock.createNiceMock(ILeveledLogOutput.class);
 
         EasyMock.expect(mMockConfiguration.getBuildProvider()).andReturn(mMockBuildRetriever);
         EasyMock.expect(mMockConfiguration.getTargetPreparer()).andReturn(mMockPreparer);
@@ -78,7 +81,13 @@ public class TestInvocationTest extends TestCase {
                 EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
 
         // create the BaseTestInvocation to test
-        mTestInvocation = new TestInvocation();
+        mTestInvocation = new TestInvocation() {
+            @Override
+            LogRegistry getLogRegistry() {
+                // use a StubLogRegistry to prevent registration of mock loggers
+                return new StubLogRegistry();
+            }
+        };
     }
 
     @Override
@@ -105,7 +114,8 @@ public class TestInvocationTest extends TestCase {
     /**
      * Test the invoke scenario where build retrieve fails.
      */
-    public void testInvoke_buildFailed() throws TargetSetupError, ConfigurationException  {
+    public void testInvoke_buildFailed() throws TargetSetupError, ConfigurationException,
+            DeviceNotAvailableException  {
         TargetSetupError exception = new TargetSetupError("error");
         EasyMock.expect(mMockBuildRetriever.getBuild()).andThrow(exception);
         Test test = EasyMock.createMock(Test.class);
@@ -126,7 +136,8 @@ public class TestInvocationTest extends TestCase {
     /**
      * Test the invoke scenario where there is no build to test.
      */
-    public void testInvoke_noBuild() throws TargetSetupError, ConfigurationException  {
+    public void testInvoke_noBuild() throws TargetSetupError, ConfigurationException,
+            DeviceNotAvailableException  {
         EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(null);
         // expect no other methods to be called
         EasyMock.replay(mMockTestListener, mMockConfiguration, mMockPreparer,
@@ -137,7 +148,8 @@ public class TestInvocationTest extends TestCase {
     /**
      * Test the invoke scenario where config retrieve fails.
      */
-    public void testInvoke_configFailed() throws ConfigurationException  {
+    public void testInvoke_configFailed() throws ConfigurationException,
+            DeviceNotAvailableException  {
         EasyMock.expect(mMockConfiguration.getTest()).andThrow(new ConfigurationException("fail"));
         // expect no other methods to be called
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
@@ -190,7 +202,8 @@ public class TestInvocationTest extends TestCase {
      *
      * @param test the {@link Test} to use.
      */
-    private void setupNormalInvoke(Test test) throws TargetSetupError, ConfigurationException {
+    private void setupNormalInvoke(Test test) throws TargetSetupError, ConfigurationException,
+            DeviceNotAvailableException {
         EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
         EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(mMockBuildInfo);
         EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));

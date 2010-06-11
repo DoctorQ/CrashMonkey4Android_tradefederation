@@ -29,8 +29,8 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
-import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 /**
@@ -46,6 +46,15 @@ public class Command {
     private static final long MIN_LOOP_TIME = 2 * 60 * 1000;
     /** the time in ms to wait for a device */
     static final long WAIT_DEVICE_TIME = 10 * 1000;
+
+    @Option(name="loop", description="keep running continuously")
+    private boolean mLoopMode = false;
+
+    @Option(name="help", description="get command line usage info")
+    private boolean mHelpMode = false;
+
+    @Option(name="serial", shortName='s', description="serial number of device to run tests on")
+    private String mSerial = null;
 
     public Command() {
     }
@@ -65,42 +74,40 @@ public class Command {
      *  until 2 minutes has elapsed before starting next invocation.
      */
     protected void run(String[] args) {
-        // TODO: look at better way of parsing arguments specific to this class
-        boolean loopMode = false;
-        boolean helpMode = false;
         DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
         Log.setLogOutput(LogRegistry.getLogRegistry());
-        for (String arg : args) {
-            if (arg.equals("--loop")) {
-                loopMode = true;
-            } else if (arg.equals("--help")) {
-                helpMode = true;
-            }
-        }
-        if (helpMode) {
-            getConfigFactory().printHelp(args, System.out);
-            return;
-        }
+
         IDeviceManager manager = null;
+
         try {
+            IConfiguration config = createConfigurationAndParseArgs(args);
+
+            if (mHelpMode) {
+                getConfigFactory().printHelp(args, System.out);
+                return;
+            }
+            if (mSerial != null) {
+                throw new ConfigurationException("serial not supported yet");
+            }
+
             manager = getDeviceManager();
-            if (loopMode) {
+            if (mLoopMode) {
                 while (true) {
                     long startTime = System.currentTimeMillis();
                     Log.i(LOG_TAG, "Starting new invocation");
-                    runInvocation(manager, args);
+                    runInvocation(manager, config);
                     long stopTime = System.currentTimeMillis();
                     long sleepTime = MIN_LOOP_TIME - (stopTime - startTime);
                     if (sleepTime > 0) {
                         Log.i(LOG_TAG, String.format("Sleeping for %d ms", sleepTime));
-                        RunUtil.sleep(sleepTime);
+                        getRunUtil().sleep(sleepTime);
                     }
+                    // recreate config otherwise state can accumlate
+                    config = createConfigurationAndParseArgs(args);
                 }
             } else {
-                runInvocation(manager, args);
+                runInvocation(manager, config);
             }
-        } catch (DeviceNotAvailableException e) {
-            System.out.println("Could not find device to test");
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
         } catch (Throwable e) {
@@ -110,23 +117,37 @@ public class Command {
         exit(manager);
     }
 
-    protected void runInvocation(IDeviceManager manager, String[] args)
-            throws ConfigurationException, DeviceNotAvailableException {
-        ITestDevice device = null;
-        try {
-            IConfiguration config = createConfiguration(args);
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    protected IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
+    }
 
+    protected void runInvocation(IDeviceManager manager, IConfiguration config)
+            throws ConfigurationException {
+        ITestDevice device = null;
+        boolean deviceAvailable = true;
+        try {
             ITestInvocation instance = createRunInstance();
             device = manager.allocateDevice(config.getDeviceRecovery(), WAIT_DEVICE_TIME);
+            if (device == null) {
+                System.out.println("Could not find device to test");
+                throw new DeviceNotAvailableException();
+            }
             instance.invoke(device, config);
+        } catch (DeviceNotAvailableException e) {
+            deviceAvailable = false;
         } finally {
             if (manager != null && device != null) {
-                manager.freeDevice(device);
+                manager.freeDevice(device, deviceAvailable);
             }
         }
     }
 
-    private void exit(IDeviceManager manager) {
+    protected void exit(IDeviceManager manager) {
         if (manager != null) {
             manager.terminate();
         }
@@ -137,7 +158,7 @@ public class Command {
      *
      * @return the {@link ITestInvocation} to use
      */
-    ITestInvocation createRunInstance() {
+    protected ITestInvocation createRunInstance() {
         return new TestInvocation();
     }
 
@@ -146,7 +167,7 @@ public class Command {
      *
      * @return the {@link IDeviceManager} to use
      */
-    IDeviceManager getDeviceManager() {
+    protected IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
     }
 
@@ -157,8 +178,9 @@ public class Command {
      * @return the {@link IConfiguration} populated with option values supplied in args
      * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
      */
-    protected IConfiguration createConfiguration(String[] args) throws ConfigurationException {
-        return getConfigFactory().createConfigurationFromArgs(args);
+    protected IConfiguration createConfigurationAndParseArgs(String[] args)
+            throws ConfigurationException {
+        return getConfigFactory().createConfigurationFromArgs(args, this);
     }
 
     protected IConfigurationFactory getConfigFactory() {
