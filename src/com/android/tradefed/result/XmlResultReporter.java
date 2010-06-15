@@ -118,7 +118,7 @@ public class XmlResultReporter extends CollectingTestListener {
                         "already exists.", buildReportDir.getAbsolutePath()));
             }
         } else {
-            if (buildReportDir.mkdir()) {
+            if (buildReportDir.mkdirs()) {
                 mReportDir = buildReportDir;
             } else {
                 Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +

@@ -54,7 +54,9 @@ public class XmlResultReporterTest extends TestCase {
             }
         };
         // TODO: use mock file dir instead
-        mResultReporter.setReportDir(File.createTempFile("foo", "txt"));
+        File reportDir = File.createTempFile("foo", "txt");
+        reportDir.delete();
+        mResultReporter.setReportDir(reportDir);
     }
 
     /**
