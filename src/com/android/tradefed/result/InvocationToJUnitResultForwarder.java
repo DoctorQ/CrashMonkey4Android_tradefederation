@@ -73,7 +73,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
+    public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
        // TODO: no run ended method on TestListener - would be good to propagate the elaspedTime
        // info up
        Log.i(LOG_TAG, String.format("run ended %d ms", elapsedTime));

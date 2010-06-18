@@ -15,6 +15,9 @@
  */
 package com.android.tradefed.invoker;
 
+import java.util.Collections;
+import java.util.Map;
+
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
@@ -206,7 +209,8 @@ public class TestInvocation implements ITestInvocation {
             TestResult result = new TestResult();
             result.addListener(resultForwarder);
             test.run(result);
-            listener.testRunEnded(System.currentTimeMillis() - startTime, null);
+            Map<String, String> emptyMap = Collections.emptyMap();
+            listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
         }
     }
 }

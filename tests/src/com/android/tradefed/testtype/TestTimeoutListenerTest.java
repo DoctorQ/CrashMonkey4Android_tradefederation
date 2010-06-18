@@ -20,6 +20,9 @@ import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 
 import org.easymock.EasyMock;
 
+import java.util.Collections;
+import java.util.Map;
+
 import junit.framework.TestCase;
 
 /**
@@ -37,7 +40,8 @@ public class TestTimeoutListenerTest extends TestCase {
         listener.testRunStarted(1);
         listener.testStarted(test);
         listener.testEnded(test);
-        listener.testRunEnded(0, null);
+        Map<String, String> map = Collections.emptyMap();
+        listener.testRunEnded(0, map);
     }
 
     /**

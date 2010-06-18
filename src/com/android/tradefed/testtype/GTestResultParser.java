@@ -23,6 +23,8 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -338,8 +340,9 @@ public class GTestResultParser extends MultiLineReceiver {
      * Reports the end of a test run, and resets that test
      */
     private void reportTestRunEnded() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         for (ITestRunListener listener : mTestListeners) {
-            listener.testRunEnded(mTotalRunTime, null);
+            listener.testRunEnded(mTotalRunTime, emptyMap);
         }
         mTestRunStartReported = false;
     }
@@ -592,10 +595,11 @@ public class GTestResultParser extends MultiLineReceiver {
             }
             clearCurrentTestResult();
         }
+        Map<String, String> emptyMap = Collections.emptyMap();
         // Report the test run failed
         for (ITestRunListener listener : mTestListeners) {
             listener.testRunFailed(errorMsg);
-            listener.testRunEnded(mTotalRunTime, null);
+            listener.testRunEnded(mTotalRunTime, emptyMap);
         }
     }
 

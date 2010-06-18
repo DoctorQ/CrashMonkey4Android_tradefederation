@@ -20,6 +20,9 @@ import com.android.tradefed.result.CollectingTestListener.TestStatus;
 
 import junit.framework.TestCase;
 
+import java.util.Collections;
+import java.util.Map;
+
 /**
  *
  */
@@ -44,7 +47,8 @@ public class CollectingTestListenerTest extends TestCase {
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
         mCollectingTestListener.testStarted(test);
         mCollectingTestListener.testEnded(test);
-        mCollectingTestListener.testRunEnded(0, null);
+        Map<String, String> map = Collections.emptyMap();
+        mCollectingTestListener.testRunEnded(0, map);
         assertTrue(mCollectingTestListener.isRunComplete());
         assertFalse(mCollectingTestListener.isRunFailure());
         assertEquals(1, mCollectingTestListener.getTestResults().size());
