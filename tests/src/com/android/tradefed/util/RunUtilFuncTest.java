@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.RunUtil.IRunnableResult;
+import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import junit.framework.TestCase;
 
@@ -24,12 +24,20 @@ import junit.framework.TestCase;
  */
 public class RunUtilFuncTest extends TestCase {
 
+    private abstract class MyRunnable implements IRunUtil.IRunnableResult {
+        boolean mCanceled = false;
+
+        public void cancel() {
+            mCanceled = true;
+        }
+    }
+
     /**
      * Test timeout case for {@link RunUtil#runTimed(long, IRunnableResult)}.
      */
     public void testRunTimed_timeout() {
         final long timeout = 200;
-        IRunnableResult mockRunnable = new IRunnableResult() {
+        MyRunnable mockRunnable = new MyRunnable() {
             public boolean run() {
                 try {
                     Thread.sleep(timeout*5);
@@ -39,7 +47,9 @@ public class RunUtilFuncTest extends TestCase {
                 return true;
             }
         };
-        assertEquals(CommandStatus.TIMED_OUT, RunUtil.runTimed(timeout, mockRunnable));
+        assertEquals(CommandStatus.TIMED_OUT, RunUtil.getInstance().runTimed(timeout,
+                mockRunnable));
+        assertTrue(mockRunnable.mCanceled);
     }
 
     /**
@@ -49,15 +59,18 @@ public class RunUtilFuncTest extends TestCase {
     public void testRunTimedRetry() {
         final int maxAttempts = 5;
         final long pollTime = 200;
-        IRunnableResult mockRunnable = new IRunnableResult() {
+        IRunUtil.IRunnableResult mockRunnable = new IRunUtil.IRunnableResult() {
             int attempts = 0;
             public boolean run() {
                 attempts++;
                 return attempts == maxAttempts;
             }
+            public void cancel() {
+                // ignore
+            }
         };
         final long startTime = System.currentTimeMillis();
-        assertTrue(RunUtil.runTimedRetry(100, pollTime, maxAttempts, mockRunnable));
+        assertTrue(RunUtil.getInstance().runTimedRetry(100, pollTime, maxAttempts, mockRunnable));
         final long actualTime = System.currentTimeMillis() - startTime;
         // assert that time actually taken is at least, and no more than twice expected
         final long expectedPollTime = pollTime * (maxAttempts-1);

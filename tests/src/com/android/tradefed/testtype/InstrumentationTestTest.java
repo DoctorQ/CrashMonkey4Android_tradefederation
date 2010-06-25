@@ -192,6 +192,8 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.setRerunMode(true);
         // expect log only mode run first to collect tests
         mMockRemoteRunner.setLogOnly(true);
+        mMockRemoteRunner.addInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG,
+                Long.toString(mInstrumentationTest.getTestDelay()));
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
@@ -211,6 +213,7 @@ public class InstrumentationTestTest extends TestCase {
                 (InputStream)EasyMock.anyObject());
         // expect normal mode to be turned off
         mMockRemoteRunner.setLogOnly(false);
+        mMockRemoteRunner.removeInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG);
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockTestDevice);
         EasyMock.replay(mMockListener);
@@ -229,6 +232,8 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.setRerunMode(true);
         // expect log only mode run first to collect tests
         mMockRemoteRunner.setLogOnly(true);
+        mMockRemoteRunner.addInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG,
+                Long.toString(mInstrumentationTest.getTestDelay()));
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
@@ -248,6 +253,7 @@ public class InstrumentationTestTest extends TestCase {
         });
         // now expect second run with log only mode off
         mMockRemoteRunner.setLogOnly(false);
+        mMockRemoteRunner.removeInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG);
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {

@@ -41,10 +41,15 @@ public class LogRegistry implements ILogOutput {
     private static Map<ThreadGroup, ILeveledLogOutput> mLogTable =
             new Hashtable<ThreadGroup, ILeveledLogOutput>();
 
+    /** the log level to use for log messages occurring on a unregistered thread */
+    private static final LogLevel DEFAULT_LOG_LEVEL = LogLevel.INFO;
+
     /**
-     * Private constructor; callers should use getLogRegistry to get an instance of the LogRegistry
+     * Package-private constructor; callers should use {@link #getLogRegistry} to get an instance of
+     * the {@link LogRegistry}.
      */
-    private LogRegistry() {}
+    LogRegistry() {
+    }
 
     /**
      * Get the {@link LogRegistry} instance
@@ -107,9 +112,12 @@ public class LogRegistry implements ILogOutput {
             }
         }
         else {
+
             // If there's no logger set for this thread yet, just print to console
-            // @TODO: Change to use a FileLogger as the default, instead of printing to console
-            Log.printLog(logLevel, tag, message);
+            if (logLevel.compareTo(DEFAULT_LOG_LEVEL) >= 0) {
+                // @TODO: Change to use a FileLogger as the default, instead of printing to console
+                Log.printLog(logLevel, tag, message);
+            }
         }
     }
 
@@ -125,7 +133,7 @@ public class LogRegistry implements ILogOutput {
      *
      * @return the logger for this thread, or null if one has not been registered.
      */
-    public ILeveledLogOutput getLogger() {
+    ILeveledLogOutput getLogger() {
         return mLogTable.get(getCurrentThreadGroup());
     }
 

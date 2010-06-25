@@ -92,7 +92,6 @@ public class LogRegistryTest extends TestCase {
      * Tests that {@link LogRegistry#closeLog} calls into the underlying logger's closeLog method.
      */
     public void testCloseLog() {
-      String testMessage = "This is a test message.";
       ILeveledLogOutput mockLogger = EasyMock.createMock(ILeveledLogOutput.class);
       LogRegistry logRegistry = LogRegistry.getLogRegistry();
       logRegistry.registerLogger(mockLogger);

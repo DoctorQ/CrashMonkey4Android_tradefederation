@@ -42,13 +42,15 @@ public interface IDeviceManager {
     public ITestDevice allocateDevice(IDeviceRecovery recovery, long timeout);
 
     /**
-     * Return a device to the pool, making it available for testing.
+     * Return a device to the pool
      * <p/>
      * Attempts to return a device that hasn't been previously allocated will be ignored.
      *
-     * @param device the {@link ITestDevice} to return to the pool.
+     * @param device the {@link ITestDevice} to free
+     * @param isAvailable <code>true</code> if device is currently operational and can be returned
+     *            to device pool. <code>false</code> otherwise.
      */
-    public void freeDevice(ITestDevice device);
+    public void freeDevice(ITestDevice device, boolean isAvailable);
 
     /**
      * Terminates the ddm library. This must be called upon application termination.
@@ -56,4 +58,22 @@ public interface IDeviceManager {
      * @see AndroidDebugBridge#terminate()
      */
     public void terminate();
+
+    /**
+     * Informs the manager that a listener is interested in fastboot state changes.
+     * <p/>
+     * Currently a {@link IDeviceManager} will only monitor devices in fastboot if there are one or
+     * more active listeners.
+     * <p/>
+     * TODO: this is a bit of a hack - find a better solution
+     *
+     * @param listener
+     */
+    public void addFastbootListener(Object listener);
+
+    /**
+     * Informs the manager that a listener is no longer interested in fastboot state changes.
+     * @param listener
+     */
+    public void removeFastbootListener(Object listener);
 }

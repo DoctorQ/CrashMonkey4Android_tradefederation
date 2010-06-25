@@ -110,7 +110,7 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
-     * Gets a list of all configuration objects.
+     * Gets a copy of the list of all configuration objects.
      *
      * @return a {@link Collection} of all configuration objects
      * @throws {@link ConfigurationException} if the config objects could not be fully loaded

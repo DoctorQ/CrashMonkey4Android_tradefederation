@@ -15,11 +15,12 @@
  */
 package com.android.tradefed;
 
+import com.android.tradefed.command.CommandFileTest;
 import com.android.tradefed.command.CommandTest;
-import com.android.tradefed.config.ConfigurationTest;
 import com.android.tradefed.config.ArgsOptionParserTest;
 import com.android.tradefed.config.ConfigurationDefTest;
 import com.android.tradefed.config.ConfigurationFactoryTest;
+import com.android.tradefed.config.ConfigurationTest;
 import com.android.tradefed.config.ConfigurationXmlParserTest;
 import com.android.tradefed.config.OptionParserTest;
 import com.android.tradefed.device.DeviceManagerTest;
@@ -55,6 +56,7 @@ public class UnitTests extends TestSuite {
     public UnitTests() {
         super();
         addTestSuite(CommandTest.class);
+        addTestSuite(CommandFileTest.class);
         addTestSuite(ConfigurationTest.class);
         addTestSuite(ArgsOptionParserTest.class);
         addTestSuite(OptionParserTest.class);

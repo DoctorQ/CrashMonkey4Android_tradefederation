@@ -21,6 +21,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -152,6 +153,8 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     public Collection<Object> getConfigurationObjects() {
-        return mConfigMap.values();
+        Collection<Object> objectsCopy = new ArrayList<Object>(mConfigMap.size());
+        objectsCopy.addAll(mConfigMap.values());
+        return objectsCopy;
     }
 }

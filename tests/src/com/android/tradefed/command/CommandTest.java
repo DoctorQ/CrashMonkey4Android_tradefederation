@@ -53,17 +53,17 @@ public class CommandTest extends TestCase {
 
         mCommand = new Command() {
             @Override
-            ITestInvocation createRunInstance() {
+            protected ITestInvocation createRunInstance() {
                 return mMockTestInvoker;
             }
 
             @Override
-            IDeviceManager getDeviceManager() {
+            protected IDeviceManager getDeviceManager() {
                 return mMockDeviceManager;
             }
 
             @Override
-            protected IConfiguration createConfiguration(String[] args) {
+            protected IConfiguration createConfigurationAndParseArgs(String[] args) {
                 return mMockConfiguration;
             }
         };
@@ -79,7 +79,7 @@ public class CommandTest extends TestCase {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
                 .andReturn(mMockDevice);
-        mMockDeviceManager.freeDevice(mMockDevice);
+        mMockDeviceManager.freeDevice(mMockDevice, true);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
@@ -121,18 +121,18 @@ public class CommandTest extends TestCase {
     public void testRun_configException() {
         Command command = new Command() {
             @Override
-            protected IConfiguration createConfiguration(String[] args)
+            protected IConfiguration createConfigurationAndParseArgs(String[] args)
                     throws ConfigurationException {
                 throw new ConfigurationException("error");
             }
 
             @Override
-            ITestInvocation createRunInstance() {
+            protected ITestInvocation createRunInstance() {
                 return mMockTestInvoker;
             }
 
             @Override
-            IDeviceManager getDeviceManager() {
+            protected IDeviceManager getDeviceManager() {
                 return mMockDeviceManager;
             }
         };
@@ -158,7 +158,7 @@ public class CommandTest extends TestCase {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
                 .andReturn(mMockDevice);
-        mMockDeviceManager.freeDevice(mMockDevice);
+        mMockDeviceManager.freeDevice(mMockDevice, true);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);

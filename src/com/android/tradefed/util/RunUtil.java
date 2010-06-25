@@ -28,41 +28,28 @@ import java.util.Arrays;
 /**
  * A collection of helper methods for executing operations.
  */
-public class RunUtil {
+public class RunUtil implements IRunUtil {
 
     private static final String LOG_TAG = "RunUtil";
-
     private static final int POLL_TIME_INCREASE_FACTOR = 4;
+    private static IRunUtil sInstance = null;
 
     private RunUtil() {
     }
 
-    /**
-     * An interface for asynchronously executing an operation that returns a boolean status.
-     */
-    public static interface IRunnableResult {
-
-        /**
-         * Execute the operation.
-         *
-         * @return <code>true</code> if operation is performed successfully, <code>false</code>
-         *         otherwise
-         * @throws Exception if operation terminated abnormally
-         */
-        public boolean run() throws Exception;
+    public static IRunUtil getInstance() {
+        if (sInstance == null) {
+            sInstance  = new RunUtil();
+        }
+        return sInstance;
     }
 
     /**
-     * Helper method to execute a system command, and aborting if it takes longer than a specified
-     * time.
-     *
-     * @param timeout maximum time to wait in ms
-     * @param command the specified system command and optionally arguments to exec
-     * @return a {@link CommandResult} containing result from command run
+     * {@inheritDoc}
      */
-    public static CommandResult runTimedCmd(final long timeout, final String... command) {
+    public CommandResult runTimedCmd(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunnableResult osRunnable = new IRunnableResult() {
+        IRunUtil.IRunnableResult osRunnable = new IRunUtil.IRunnableResult() {
             public boolean run() throws Exception {
                 final String fullCmd = Arrays.toString(command);
                 Log.v(LOG_TAG, String.format("Running %s", fullCmd));
@@ -78,6 +65,9 @@ public class RunUtil {
                 }
                 return false;
             }
+
+            public void cancel() {
+            }
         };
         CommandStatus status = runTimed(timeout, osRunnable);
         result.setStatus(status);
@@ -85,22 +75,23 @@ public class RunUtil {
     }
 
     /**
-     * Block and executes an operation, aborting if it takes longer than a specified time.
-     *
-     * @param timeout maximum time to wait in ms
-     * @param runnable {@link IRunnableResult} to execute
-     * @return the {@link CommandStatus} result of operation.
+     * {@inheritDoc}
      */
-    public static CommandStatus runTimed(long timeout, IRunnableResult runnable) {
+    public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable) {
         RunnableNotifier runThread = new RunnableNotifier(runnable);
         runThread.start();
         synchronized (runThread) {
             try {
-                runThread.wait(timeout);
+                // if runnable finishes super quick, might be done already. Only wait if
+                // current status == NOT DONE which == TIMEOUT
+                if (runThread.getStatus() == CommandStatus.TIMED_OUT) {
+                    runThread.wait(timeout);
+                }
             } catch (InterruptedException e) {
                 Log.i(LOG_TAG, "runnable interrupted");
             }
-            if (runThread.isAlive()) {
+            if (runThread.getStatus() == CommandStatus.TIMED_OUT ||
+                    runThread.getStatus() == CommandStatus.EXCEPTION) {
                 runThread.interrupt();
             }
         }
@@ -108,16 +99,10 @@ public class RunUtil {
     }
 
     /**
-     * Block and executes an operation multiple times until it is successful.
-     *
-     * @param opTimeout maximum time to wait in ms for one operation attempt
-     * @param pollInterval time to wait between command retries
-     * @param attempts the maximum number of attempts to try
-     * @param runnable {@link IRunnableResult} to execute
-     * @return <code>true</code> if operation completed successfully before attempts reached.
+     * {@inheritDoc}
      */
-    public static boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
-            IRunnableResult runnable) {
+    public boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
+            IRunUtil.IRunnableResult runnable) {
         for (int i = 0; i < attempts; i++) {
             if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
                 return true;
@@ -129,16 +114,10 @@ public class RunUtil {
     }
 
     /**
-     * Block and executes an operation multiple times until it is successful.
-     *
-     * @param opTimeout maximum time to wait in ms for a single operation attempt
-     * @param pollInterval initial time to wait between operation attempts
-     * @param maxTime the total approximate maximum time to keep trying the operation
-     * @param runnable {@link IRunnableResult} to execute
-     * @return <code>true</code> if operation completed successfully before maxTime expired
+     * {@inheritDoc}
      */
-    public static boolean runFixedTimedRetry(final long opTimeout, final long pollInterval,
-            final long maxTime, final IRunnableResult runnable) {
+    public boolean runFixedTimedRetry(final long opTimeout, final long pollInterval,
+            final long maxTime, final IRunUtil.IRunnableResult runnable) {
         final long initialTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (initialTime + maxTime)) {
             if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
@@ -151,22 +130,11 @@ public class RunUtil {
     }
 
     /**
-     * Block and executes an operation multiple times until it is successful.
-     * <p/>
-     * Exponentially increase the wait time between operation attempts. This is intended to be used
-     * when performing an operation such as polling a server, to give it time to recover in case it
-     * is temporarily down.
-     *
-     * @param opTimeout maximum time to wait in ms for a single operation attempt
-     * @param initialPollInterval initial time to wait between operation attempts
-     * @param maxPollInterval the max time to wait between operation attempts
-     * @param maxTime the total approximate maximum time to keep trying the operation
-     * @param runnable {@link IRunnableResult} to execute
-     * @return <code>true</code> if operation completed successfully before maxTime expired
+     * {@inheritDoc}
      */
-    public static boolean runEscalatingTimedRetry(final long opTimeout,
+    public boolean runEscalatingTimedRetry(final long opTimeout,
             final long initialPollInterval, final long maxPollInterval, final long maxTime,
-            final IRunnableResult runnable) {
+            final IRunUtil.IRunnableResult runnable) {
         // wait an initial time provided
         long pollInterval = initialPollInterval;
         final long initialTime = System.currentTimeMillis();
@@ -187,11 +155,9 @@ public class RunUtil {
     }
 
     /**
-     * Helper method to sleep for given time, ignoring any exceptions.
-     *
-     * @param time ms to sleep
+     * {@inheritDoc}
      */
-    public static void sleep(long time) {
+    public void sleep(long time) {
         try {
             Thread.sleep(time);
         } catch (InterruptedException e) {
@@ -205,10 +171,10 @@ public class RunUtil {
      */
     private static class RunnableNotifier extends Thread {
 
-        private final IRunnableResult mRunnable;
+        private final IRunUtil.IRunnableResult mRunnable;
         private CommandStatus mStatus = CommandStatus.TIMED_OUT;
 
-        RunnableNotifier(IRunnableResult runnable) {
+        RunnableNotifier(IRunUtil.IRunnableResult runnable) {
             mRunnable = runnable;
         }
 
@@ -228,12 +194,18 @@ public class RunUtil {
             }
         }
 
+        @Override
+        public void interrupt() {
+            mRunnable.cancel();
+            super.interrupt();
+        }
+
         synchronized CommandStatus getStatus() {
             return mStatus;
         }
     }
 
-    private static String getStringFromStream(InputStream stream) throws IOException {
+    private String getStringFromStream(InputStream stream) throws IOException {
         Reader ir = new BufferedReader(new InputStreamReader(stream));
         int irChar = -1;
         StringBuilder builder = new StringBuilder();

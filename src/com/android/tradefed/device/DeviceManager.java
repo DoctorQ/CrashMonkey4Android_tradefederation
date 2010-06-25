@@ -20,9 +20,11 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.tradefed.util.CommandResult;
-import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
@@ -41,8 +43,8 @@ public class DeviceManager implements IDeviceManager {
 
     /** max wait time in ms for fastboot devices command to complete */
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
-    /**  time to wait in ms between  fastboot devices requests */
-    private static final long FASTBOOT_POLL_WAIT_TIME = 10*1000;
+    /**  time to wait in ms between fastboot devices requests */
+    private static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
 
     private static DeviceManager sInstance;
 
@@ -53,6 +55,10 @@ public class DeviceManager implements IDeviceManager {
     private IAndroidDebugBridge mAdbBridge;
     private final ManagedDeviceListener mManagedDeviceListener;
     private final FastbootMonitor mFastbootMonitor;
+
+    private boolean mEnableLogcat = true;
+
+    private Set<Object> mFastbootListeners;
 
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
@@ -66,10 +72,11 @@ public class DeviceManager implements IDeviceManager {
         mAdbBridge = createAdbBridge();
         mAdbBridge.init(false /* client support */);
         for (IDevice device : mAdbBridge.getDevices()) {
-            addAvailableDevice(device);
+            checkAndAddAvailableDevice(device);
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
+        mFastbootListeners = Collections.synchronizedSet(new HashSet<Object>());
         mFastbootMonitor = new FastbootMonitor();
         startFastbootMonitor();
     }
@@ -81,6 +88,53 @@ public class DeviceManager implements IDeviceManager {
      */
     void startFastbootMonitor() {
         mFastbootMonitor.start();
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
+    }
+
+    /**
+     * Toggle whether allocated devices should capture logcat in background
+     */
+    public void setEnableLogcat(boolean enableLogcat) {
+        mEnableLogcat = enableLogcat;
+    }
+
+    /**
+     * Asynchronously checks if device is available, and adds to queue
+     * @param device
+     */
+    private void checkAndAddAvailableDevice(final IDevice device) {
+        final String threadName = String.format("Check device %s", device.getSerialNumber());
+        Thread checkThread = new Thread(threadName) {
+            @Override
+            public void run() {
+                IDeviceStateMonitor monitor = createStateMonitor(device);
+                if (monitor.waitForDeviceAvailable(2*60*1000) != null) {
+                    addAvailableDevice(device);
+                } else {
+                    Log.e(LOG_TAG, String.format(
+                            "Device %s is not responding, skip adding to available pool",
+                            device.getSerialNumber()));
+                }
+            }
+        };
+        checkThread.start();
+    }
+
+    /**
+     * Creates a {@link IDeviceStateMonitor} to use.
+     * <p/>
+     * Exposed so unit tests can mock
+     */
+    IDeviceStateMonitor createStateMonitor(IDevice device) {
+        return new DeviceStateMonitor(this, device);
     }
 
     private void addAvailableDevice(IDevice device) {
@@ -157,10 +211,11 @@ public class DeviceManager implements IDeviceManager {
     }
 
     private ITestDevice createTestDevice(IDevice allocatedDevice, IDeviceRecovery recovery) {
-        // TODO: make background logcat capture optional
         IManagedTestDevice testDevice =  new TestDevice(allocatedDevice, recovery,
-                new DeviceStateMonitor(allocatedDevice));
-        testDevice.startLogcat();
+                new DeviceStateMonitor(this, allocatedDevice));
+        if (mEnableLogcat) {
+            testDevice.startLogcat();
+        }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
         Log.i(LOG_TAG, String.format("Allocated device %s", testDevice.getSerialNumber()));
         return testDevice;
@@ -179,17 +234,17 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public void freeDevice(ITestDevice device) {
+    public void freeDevice(ITestDevice device, boolean isAvailable) {
         if (device instanceof IManagedTestDevice) {
-            ((IManagedTestDevice)device).stopLogcat();
+            final IManagedTestDevice managedDevice = (IManagedTestDevice)device;
+            managedDevice.stopLogcat();
         }
         if (mAllocatedDeviceMap.remove(device.getSerialNumber()) == null) {
-            Log.w(LOG_TAG, String.format("freeDevice called with unallocated device %s",
+            Log.e(LOG_TAG, String.format("freeDevice called with unallocated device %s",
                         device.getSerialNumber()));
-        } else {
+        } else if (isAvailable) {
             addAvailableDevice(device.getIDevice());
         }
-
     }
 
     /**
@@ -221,7 +276,7 @@ public class DeviceManager implements IDeviceManager {
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
             if (testDevice == null) {
                 Log.i(LOG_TAG, String.format("Detected new device %s", device.getSerialNumber()));
-                addAvailableDevice(device);
+                checkAndAddAvailableDevice(device);
             } else {
                 // this device is known already. However DDMS will allocate a new IDevice, so need
                 // to update the TestDevice record with the new device
@@ -249,42 +304,65 @@ public class DeviceManager implements IDeviceManager {
 
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void addFastbootListener(Object listener) {
+        mFastbootListeners.add(listener);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void removeFastbootListener(Object listener) {
+        mFastbootListeners.remove(listener);
+    }
+
     private class FastbootMonitor extends Thread {
 
         private boolean mQuit = false;
 
+        FastbootMonitor() {
+            super("FastbootMonitor");
+        }
+
         public void terminate() {
             mQuit = true;
+            interrupt();
         }
 
         @Override
         public void run() {
             while (!mQuit) {
-                CommandResult fastbootResult = RunUtil.runTimedCmd(FASTBOOT_CMD_TIMEOUT, "fastboot",
-                        "devices");
-                if (fastbootResult.getStatus() == CommandStatus.SUCCESS) {
-                    Log.v(LOG_TAG, String.format("fastboot devices returned %s",
-                            fastbootResult.getStdout()));
-                    Set<String> serials = DeviceManager.getDevicesOnFastboot(
-                            fastbootResult.getStdout());
-                    for (String serial: serials) {
-                        IManagedTestDevice testDevice = mAllocatedDeviceMap.get(serial);
-                        if (testDevice != null &&
-                                !testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
-                            testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+                // only poll fastboot devices if there are listeners, as polling it
+                // indiscriminiately can cause fastboot commands to hang
+                if (!mFastbootListeners.isEmpty()) {
+                    CommandResult fastbootResult = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT,
+                            "fastboot", "devices");
+                    if (fastbootResult.getStatus() == CommandStatus.SUCCESS) {
+                        Log.v(LOG_TAG, String.format("fastboot devices returned %s",
+                                fastbootResult.getStdout()));
+                        Set<String> serials = DeviceManager.getDevicesOnFastboot(
+                                fastbootResult.getStdout());
+                        for (String serial: serials) {
+                            IManagedTestDevice testDevice = mAllocatedDeviceMap.get(serial);
+                            if (testDevice != null &&
+                                    !testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
+                                testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+                            }
                         }
-                    }
-                    // now update devices that are no longer on fastboot
-                    synchronized (mAllocatedDeviceMap) {
-                        for (IManagedTestDevice testDevice : mAllocatedDeviceMap.values()) {
-                            if (!serials.contains(testDevice.getSerialNumber()) &&
-                                    testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
-                                testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+                        // now update devices that are no longer on fastboot
+                        synchronized (mAllocatedDeviceMap) {
+                            for (IManagedTestDevice testDevice : mAllocatedDeviceMap.values()) {
+                                if (!serials.contains(testDevice.getSerialNumber()) &&
+                                        testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
+                                    testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+                                }
                             }
                         }
                     }
                 }
-                RunUtil.sleep(FASTBOOT_POLL_WAIT_TIME);
+                getRunUtil().sleep(FASTBOOT_POLL_WAIT_TIME);
             }
         }
     }

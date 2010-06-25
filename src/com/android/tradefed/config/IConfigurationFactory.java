@@ -49,21 +49,25 @@ public interface IConfigurationFactory {
      *
      * @param args the command line arguments
      * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have
-     * been populated with values in args.
+     *         been populated with values in args.
      * @throws {@link ConfigurationException} if configuration could not be loaded
      */
     public IConfiguration createConfigurationFromArgs(String[] args) throws ConfigurationException;
 
     /**
-     * Populate given configuration with arg values
+     * Create the {@link IConfiguration} and populate additional {@link Option} objects from command
+     * line arguments.
+     * <p/>
+     * Expected format is [options] <configuration name>.
      *
-     * @param args
-     * @param config
-     * @return
-     * @throws ConfigurationException
+     * @param args the command line arguments
+     * @param additionalOptionSources additional objects with {@link Option} fields to set
+     * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have
+     *         been populated with values in args.
+     * @throws {@link ConfigurationException} if configuration could not be loaded
      */
-    public IConfiguration populateConfigWithArgs(String[] args, IConfiguration config)
-            throws ConfigurationException;
+    public IConfiguration createConfigurationFromArgs(String[] args,
+            Object... additionalOptionSources) throws ConfigurationException;
 
     /**
      * Prints help output.

@@ -31,14 +31,16 @@ public class DeviceStateMonitorTest extends TestCase {
     private static final String SERIAL_NUMBER = "1";
     private IDevice mMockDevice;
     private DeviceStateMonitor mMonitor;
+    private IDeviceManager mMockMgr;
 
     @Override
     protected void setUp() {
+        mMockMgr = EasyMock.createMock(IDeviceManager.class);
         mMockDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.expect(mMockDevice.getSerialNumber()).andReturn(SERIAL_NUMBER).anyTimes();
         EasyMock.replay(mMockDevice);
-        mMonitor = new DeviceStateMonitor(mMockDevice);
+        mMonitor = new DeviceStateMonitor(mMockMgr, mMockDevice);
     }
 
     /**
@@ -56,7 +58,7 @@ public class DeviceStateMonitorTest extends TestCase {
         new Thread() {
             @Override
             public void run() {
-                RunUtil.sleep(100);
+                RunUtil.getInstance().sleep(100);
                 mMonitor.setState(TestDeviceState.ONLINE);
             }
         }.start();
@@ -72,7 +74,7 @@ public class DeviceStateMonitorTest extends TestCase {
         new Thread() {
             @Override
             public void run() {
-                RunUtil.sleep(500);
+                RunUtil.getInstance().sleep(500);
                 mMonitor.setState(TestDeviceState.ONLINE);
             }
         }.start();

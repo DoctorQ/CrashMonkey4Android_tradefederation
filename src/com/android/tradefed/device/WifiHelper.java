@@ -16,6 +16,7 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.MultiLineReceiver;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import java.util.ArrayList;
@@ -48,6 +49,15 @@ class WifiHelper {
 
     WifiHelper(ITestDevice device) {
         mDevice = device;
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 
     /**
@@ -113,7 +123,7 @@ class WifiHelper {
                     }
                 }
             }
-            RunUtil.sleep(getPollTime());
+            getRunUtil().sleep(getPollTime());
         }
         return false;
     }
@@ -273,7 +283,7 @@ class WifiHelper {
             if (output.mDhcpSuccess) {
                 return true;
             }
-            RunUtil.sleep(getPollTime());
+            getRunUtil().sleep(getPollTime());
         }
         return false;
     }

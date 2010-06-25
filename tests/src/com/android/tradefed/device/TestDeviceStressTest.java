@@ -16,6 +16,9 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.Log;
+import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.tradefed.TestAppConstants;
+import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 
 /**
@@ -47,7 +50,7 @@ public class TestDeviceStressTest extends DeviceTestCase {
 
     public void testManyRebootBootloaders() throws DeviceNotAvailableException {
         for (int i=0; i < 10; i++) {
-            Log.i(LOG_TAG, String.format("testReboot attempt %d", i));
+            Log.i(LOG_TAG, String.format("testRebootBootloader attempt %d", i));
             mTestDevice.rebootIntoBootloader();
             assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
             mTestDevice.reboot();
@@ -55,4 +58,22 @@ public class TestDeviceStressTest extends DeviceTestCase {
         }
     }
 
+    public void testManyDisableKeyguard() throws DeviceNotAvailableException {
+        for (int i=0; i < 10; i++) {
+            Log.i(LOG_TAG, String.format("testDisableKeyguard attempt %d", i));
+            mTestDevice.reboot();
+            assertTrue(runUITests());
+        }
+    }
+
+    /**
+     * Run the test app UI tests and return true if they all pass.
+     */
+    private boolean runUITests() throws DeviceNotAvailableException {
+        RemoteAndroidTestRunner uirunner = new RemoteAndroidTestRunner(
+                TestAppConstants.UITESTAPP_PACKAGE, getDevice().getIDevice());
+        CollectingTestListener uilistener = new CollectingTestListener();
+        getDevice().runInstrumentationTests(uirunner, uilistener);
+        return TestAppConstants.UI_TOTAL_TESTS == uilistener.getNumPassedTests();
+    }
 }

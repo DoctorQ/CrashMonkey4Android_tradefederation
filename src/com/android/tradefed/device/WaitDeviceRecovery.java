@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import java.io.IOException;
@@ -38,6 +39,15 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     private long mWaitTime = 4 * 60 * 1000;
 
     /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void recoverDevice(IDeviceStateMonitor monitor)
@@ -47,14 +57,16 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // TODO - see if there is better way to handle this
         Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
                 monitor.getSerialNumber()));
-        RunUtil.sleep(INITIAL_PAUSE_TIME);
+        getRunUtil().sleep(INITIAL_PAUSE_TIME);
 
+        // TODO: consider changing this to waitForDeviceBootloader so state is refreshed
         if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
             Log.i(LOG_TAG, String.format(
                     "Found device %s in fastboot but expected online. Rebooting...",
                     monitor.getSerialNumber()));
             // TODO: retry if failed
-            RunUtil.runTimedCmd(20*1000, "fastboot", "-s", monitor.getSerialNumber(), "reboot");
+            getRunUtil().runTimedCmd(20*1000, "fastboot", "-s", monitor.getSerialNumber(),
+                    "reboot");
         }
 
         // wait for device online
@@ -73,14 +85,14 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
-    public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
+    public void recoverDeviceBootloader(final IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
         // device may have just gone offline
         // sleep a small amount to give device state a chance to settle
         // TODO - see if there is better way to handle this
         Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover", INITIAL_PAUSE_TIME,
                 monitor.getSerialNumber()));
-        RunUtil.sleep(INITIAL_PAUSE_TIME);
+        getRunUtil().sleep(INITIAL_PAUSE_TIME);
 
         if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
             Log.i(LOG_TAG, String.format(
@@ -93,6 +105,13 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
             } catch (IOException e) {
                 Log.w(LOG_TAG, String.format("failed to reboot %s", device.getSerialNumber()));
             }
+        } else if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
+            Log.i(LOG_TAG, String.format(
+                    "Found device %s in fastboot but unresponsive. Rebooting...",
+                    monitor.getSerialNumber()));
+            // TODO: retry
+            getRunUtil().runTimedCmd(20*1000, "fastboot", "-s", monitor.getSerialNumber(),
+                    "reboot-bootloader");
         }
 
         if (!monitor.waitForDeviceBootloader(mWaitTime)) {
