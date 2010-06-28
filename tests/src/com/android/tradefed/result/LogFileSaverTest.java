@@ -15,6 +15,11 @@
  */
 package com.android.tradefed.result;
 
+import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.targetsetup.StubBuildInfo;
+
+import org.easymock.EasyMock;
+
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -30,6 +35,33 @@ import junit.framework.TestCase;
 public class LogFileSaverTest extends TestCase {
 
     /**
+     * Test that a unique directory is created
+     */
+    public void testGetFileDir() throws IOException {
+        final int buildId = 88888;
+        IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
+        EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.replay(mockBuild);
+        File rootDir = createUniqueTmpDir();
+        ILogFileSaver saver = new LogFileSaver(mockBuild, rootDir);
+        File generatedDir = saver.getFileDir();
+        File buildDir = generatedDir.getParentFile();
+        // ensure a directory with name == build number is parent of generated directory
+        assertEquals(Integer.toString(buildId), buildDir.getName());
+        // ensure parent directory is rootDir
+        assertEquals(0, rootDir.compareTo(buildDir.getParentFile()));
+
+        // now create a new log saver,
+        ILogFileSaver newsaver = new LogFileSaver(mockBuild, rootDir);
+        File newgeneratedDir = newsaver.getFileDir();
+        // ensure a new dir is created
+        assertTrue(generatedDir.compareTo(newgeneratedDir) != 0);
+        // verify buildDir is reused
+        File newbuildDir = newgeneratedDir.getParentFile();
+        assertEquals(0, buildDir.compareTo(newbuildDir));
+    }
+
+    /**
      * Simple normal case test for
      * {@link LogFileSaver#saveLogData(String, LogDataType, InputStream)}.
      */
@@ -39,7 +71,7 @@ public class LogFileSaverTest extends TestCase {
         try {
             // TODO: would be nice to create a mock file output to make this test not use disk I/O
             File tmpDir = createUniqueTmpDir();
-            LogFileSaver saver = new LogFileSaver(tmpDir);
+            ILogFileSaver saver = new LogFileSaver(new StubBuildInfo(), tmpDir);
             final String testData = "Here's some test data, blah";
             ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
             logFile = saver.saveLogData("testSaveLogData", LogDataType.TEXT, mockInput);
@@ -67,5 +99,4 @@ public class LogFileSaverTest extends TestCase {
         tmpDir.deleteOnExit();
         return tmpDir;
     }
-
 }

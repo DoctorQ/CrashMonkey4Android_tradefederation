@@ -15,6 +15,9 @@
  */
 package com.android.tradefed.targetsetup;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * No-op empty implementation of a {@link IBuildInfo}.
  */
@@ -27,4 +30,21 @@ public class StubBuildInfo implements IBuildInfo {
         return 0;
     }
 
+    public String getTestTarget() {
+        return "stub";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Map<String, String> getBuildAttributes() {
+        return new HashMap<String, String>();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getBuildName() {
+        return "stub";
+    }
 }

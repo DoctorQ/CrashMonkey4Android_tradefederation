@@ -159,7 +159,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     // return 'package: something' in the success case
                     getIDevice().executeShellCommand(cmd, receiver);
                     String output = receiver.getOutput();
-                    Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
+                    Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
                     return output.contains("package:");
                 } catch (IOException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
@@ -199,7 +199,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     }
                     getIDevice().executeShellCommand(cmd, receiver);
                     String output = receiver.getOutput();
-                    Log.d(LOG_TAG, String.format("%s returned %s", cmd, output));
+                    Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
                     return output.contains(externalStore);
                 } catch (IOException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));

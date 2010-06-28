@@ -44,7 +44,7 @@ public class DeviceManager implements IDeviceManager {
     /** max wait time in ms for fastboot devices command to complete */
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
-    private static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
+    static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
 
     private static DeviceManager sInstance;
 

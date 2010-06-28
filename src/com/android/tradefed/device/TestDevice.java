@@ -63,12 +63,7 @@ class TestDevice implements IManagedTestDevice {
     /** the max number of bytes to store in logcat tmp buffer */
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
-    /**
-     * The maximum number of bytes returned by {@link TestDevice#getLogcat()}.
-     * <p/>
-     * TODO: make this configurable
-     */
-    private static final int LOGCAT_MAX_DATA = 512 * 1024;
+
     /** The time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
     /** number of attempts made to clear dialogs */
@@ -705,7 +700,7 @@ class TestDevice implements IManagedTestDevice {
      * Works in two modes:
      * <li>If the logcat is currently being captured in the background (i.e. the manager of this
      * device is calling startLogcat and stopLogcat as appropriate), will return the current
-     * contents of the background logcat capture, up to {@link #LOGCAT_MAX_DATA}.
+     * contents of the background logcat capture.
      * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
     public InputStream getLogcat() {
@@ -719,7 +714,7 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Get a dump of the current logcat for device, up to a max of {@link #LOGCAT_MAX_DATA}.
+     * Get a dump of the current logcat for device.
      *
      * @return a {@link InputStream} of the logcat data. An empty stream is returned if fail to
      *         capture logcat data.
@@ -733,9 +728,6 @@ class TestDevice implements IManagedTestDevice {
             // add -d parameter to make this a non blocking call
             getIDevice().executeShellCommand(LOGCAT_CMD + " -d", receiver);
             output = receiver.getOutput();
-            if (output.length() > LOGCAT_MAX_DATA) {
-                output = output.substring(LOGCAT_MAX_DATA - output.length(), output.length());
-            }
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("Failed to get logcat dump %s", getSerialNumber()));
         }
@@ -761,6 +753,8 @@ class TestDevice implements IManagedTestDevice {
      * This is done so:
      * <li>if device goes permanently offline during a test, the log data is retained.
      * <li>to capture more data than may fit in device's circular log.
+     * <p/>
+     * TODO: consider placing a maximum cap on data stored to host file
      */
     private class LogCatReceiver extends Thread implements IShellOutputReceiver {
 
@@ -784,10 +778,6 @@ class TestDevice implements IManagedTestDevice {
             flush();
             try {
                 FileInputStream fileStream = new FileInputStream(mTmpFile);
-                // adjust stream position to so only up to LOGCAT_MAX_DATA bytes can be read
-                if (mTmpFile.length() > LOGCAT_MAX_DATA) {
-                    fileStream.skip(mTmpFile.length() - LOGCAT_MAX_DATA);
-                }
                 return fileStream;
             } catch (IOException e) {
                 Log.e(LOG_TAG,

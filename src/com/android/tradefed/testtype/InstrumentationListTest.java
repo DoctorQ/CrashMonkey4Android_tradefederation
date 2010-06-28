@@ -109,8 +109,6 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             runner.setTestTimeout(mTestTimeout);
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
-            // no need to capture a log per test
-            runner.setCaptureLog(false);
             runner.run(listener);
         }
         // TODO: capture log here ?

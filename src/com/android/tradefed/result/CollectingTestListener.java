@@ -184,6 +184,10 @@ public class CollectingTestListener implements ITestInvocationListener {
         return getNumTestsWithStatus(TestStatus.ERROR);
     }
 
+    public boolean hasFailedTests() {
+        return getNumErrorTests() > 0 || getNumFailedTests() > 0;
+    }
+
     private int getNumTestsWithStatus(TestStatus status) {
         // TODO: consider caching these values
         int count = 0;
@@ -219,7 +223,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
         // ignore
     }
 

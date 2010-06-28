@@ -69,8 +69,6 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunEnded(EasyMock.anyLong());
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -92,8 +90,6 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 (String)EasyMock.anyObject());
         mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunEnded(EasyMock.anyLong());
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -115,8 +111,6 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong());
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -138,7 +132,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
         mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
+        mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong());
         EasyMock.replay(mMockListener);
@@ -161,8 +155,6 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 (String)EasyMock.anyObject());
         mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         // fork off a thread to do the reboot
         Thread rebootThread = new Thread() {

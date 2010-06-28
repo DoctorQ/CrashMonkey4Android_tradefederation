@@ -77,7 +77,7 @@ public class XmlResultReporter extends CollectingTestListener {
             "test results and associated logs")
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
-    private IBuildInfo mBuildInfo = null;
+    private ILogFileSaver mLogFileSaver;
 
     /**
      * {@inheritDoc}
@@ -85,7 +85,7 @@ public class XmlResultReporter extends CollectingTestListener {
     @Override
     public void invocationEnded() {
         if (mReportDir != null) {
-            generateReport(mReportDir);
+            generateReport(mLogFileSaver.getFileDir());
         }
     }
 
@@ -95,7 +95,7 @@ public class XmlResultReporter extends CollectingTestListener {
     @Override
     public void invocationFailed(String message, Throwable e) {
         if (mReportDir != null) {
-            generateReport(mReportDir);
+            generateReport(mLogFileSaver.getFileDir());
         }
     }
 
@@ -107,24 +107,7 @@ public class XmlResultReporter extends CollectingTestListener {
         if (mReportDir == null) {
             throw new IllegalArgumentException(String.format("missing %s", REPORT_DIR_NAME));
         }
-        mBuildInfo = buildInfo;
-        File buildReportDir = new File(mReportDir, Integer.toString(mBuildInfo.getBuildId()));
-        // if buildReportDir already exists and is a directory - use it.
-        if (buildReportDir.exists()) {
-            if (buildReportDir.isDirectory()) {
-                mReportDir = buildReportDir;
-            } else {
-                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. File " +
-                        "already exists.", buildReportDir.getAbsolutePath()));
-            }
-        } else {
-            if (buildReportDir.mkdirs()) {
-                mReportDir = buildReportDir;
-            } else {
-                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +
-                        " to create directory.", buildReportDir.getAbsolutePath()));
-            }
-        }
+        mLogFileSaver = new LogFileSaver(buildInfo, mReportDir);
     }
 
     /**
@@ -258,9 +241,9 @@ public class XmlResultReporter extends CollectingTestListener {
      * {@inheritDoc}
      */
     @Override
-    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
         try {
-            new LogFileSaver(mReportDir).saveLogData(dataName, dataType, dataStream);
+            mLogFileSaver.saveLogData(dataName, dataType, dataStream);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to save log data");
             Log.e(LOG_TAG, e);

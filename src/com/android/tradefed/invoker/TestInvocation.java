@@ -18,6 +18,7 @@ package com.android.tradefed.invoker;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
+import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
@@ -47,7 +48,8 @@ import junit.framework.TestResult;
 public class TestInvocation implements ITestInvocation {
 
     private static final String LOG_TAG = "TestInvocation";
-    static final String TRADEFED_LOG_NAME = "tradefed_log_";
+    static final String TRADEFED_LOG_NAME = "tradefed_log";
+    static final String DEVICE_LOG_NAME = "device_logcat";
 
     /**
      * Constructs a {@link TestInvocation}
@@ -66,15 +68,15 @@ public class TestInvocation implements ITestInvocation {
         try {
             logger = config.getLogOutput();
             logRegistry.registerLogger(logger);
-            Log.i(LOG_TAG, "Starting invocation");
+
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
             Test test = config.getTest();
             IBuildInfo info = buildProvider.getBuild();
             if (info != null) {
+                Log.i(LOG_TAG, "Starting invocation");
                 listener = config.getTestInvocationListener();
-                preparer.setUp(device, info);
-                runTests(device, info, test, listener);
+                performInvocation(config, device, listener, preparer, test, info, logger);
             } else {
                 Log.i(LOG_TAG, "No build to test");
             }
@@ -93,14 +95,46 @@ public class TestInvocation implements ITestInvocation {
             handleError(listener, e);
             // TODO: consider re-throwing ?
         } finally {
-            if (logger != null && listener != null) {
-                listener.testRunLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-            }
             if (logger != null) {
               logger.closeLog();
             }
             logRegistry.unregisterLogger();
         }
+    }
+
+    private void performInvocation(IConfiguration config, ITestDevice device, ITestInvocationListener listener,
+            ITargetPreparer preparer, Test test, IBuildInfo info, ILeveledLogOutput logger) throws
+            DeviceNotAvailableException {
+        Throwable error = null;
+        listener.invocationStarted(info);
+        try {
+            preparer.setUp(device, info);
+            runTests(config, device, info, test, listener);
+        } catch (TargetSetupError e) {
+            error = e;
+            Log.e(LOG_TAG, e);
+        } catch (DeviceNotAvailableException e) {
+            error = e;
+            Log.e(LOG_TAG, e);
+            throw e;
+        } catch (Throwable e) {
+            error = e;
+            Log.e(LOG_TAG, "Unexpected exception!");
+            Log.e(LOG_TAG, e);
+            // TODO: consider re-throwing
+            // throw e;
+        } finally {
+            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
+            if (device != null) {
+                listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
+            }
+            if (error == null) {
+                listener.invocationEnded();
+            } else {
+                listener.invocationFailed(error.getMessage(), error);
+            }
+        }
+
     }
 
     /**
@@ -133,12 +167,14 @@ public class TestInvocation implements ITestInvocation {
      * time
      * @throws DeviceNotAvailableException
      */
-    private void runTests(ITestDevice device, IBuildInfo buildInfo, Test test,
+    private void runTests(IConfiguration config, ITestDevice device, IBuildInfo buildInfo, Test test,
             ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (test instanceof IDeviceTest) {
             ((IDeviceTest)test).setDevice(device);
         }
-        listener.invocationStarted(buildInfo);
+        if (test instanceof IConfigurationReceiver) {
+            ((IConfigurationReceiver)test).setConfiguration(config);
+        }
         if (test instanceof IRemoteTest) {
             // run as a remote test, so results are forwarded directly to TestInvocationListener
             ((IRemoteTest) test).run(listener);
@@ -153,6 +189,5 @@ public class TestInvocation implements ITestInvocation {
             test.run(result);
             listener.testRunEnded(System.currentTimeMillis() - startTime);
         }
-        listener.invocationEnded();
     }
 }
