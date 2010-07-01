@@ -138,14 +138,36 @@ public interface ITestDevice {
             ITestRunListener... listeners) throws DeviceNotAvailableException;
 
     /**
+     * Install an Android package on device.
+     *
+     * @param packageFile the apk file to install
+     * @param reinstall <code>true</code> if a reinstall should be performed
+     * @return a {@link String} with an error code, or <code>null</code> if success.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String installPackage(File packageFile, boolean reinstall)
+            throws DeviceNotAvailableException;
+
+    /**
+     * Uninstall an Android package from device.
+     *
+     * @param packageName the Android package to uninstall
+     * @return a {@link String} with an error code, or <code>null</code> if success.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String uninstallPackage(String packageName) throws DeviceNotAvailableException;
+
+    /**
      * Retrieves a file off device.
      *
      * @param remoteFilePath the absolute path to file on device.
      * @param localFile the local file to store contents in. If non-empty, contents will be
-     * replaced.
+     *            replaced.
      * @return <code>true</code> if file was retrieved successfully. <code>false</code> otherwise.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     *             recovered.
      */
     public boolean pullFile(String remoteFilePath, File localFile)
             throws DeviceNotAvailableException;

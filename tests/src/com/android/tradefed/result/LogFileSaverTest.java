@@ -16,7 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.tradefed.targetsetup.IBuildInfo;
-import com.android.tradefed.targetsetup.StubBuildInfo;
+import com.android.tradefed.targetsetup.BuildInfo;
 
 import org.easymock.EasyMock;
 
@@ -71,7 +71,7 @@ public class LogFileSaverTest extends TestCase {
         try {
             // TODO: would be nice to create a mock file output to make this test not use disk I/O
             File tmpDir = createUniqueTmpDir();
-            ILogFileSaver saver = new LogFileSaver(new StubBuildInfo(), tmpDir);
+            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), tmpDir);
             final String testData = "Here's some test data, blah";
             ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
             logFile = saver.saveLogData("testSaveLogData", LogDataType.TEXT, mockInput);

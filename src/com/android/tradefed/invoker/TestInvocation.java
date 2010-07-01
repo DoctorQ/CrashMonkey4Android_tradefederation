@@ -124,10 +124,10 @@ public class TestInvocation implements ITestInvocation {
             // TODO: consider re-throwing
             // throw e;
         } finally {
-            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
             if (device != null) {
                 listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
             }
+            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
             if (error == null) {
                 listener.invocationEnded();
             } else {

@@ -253,4 +253,21 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return false;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String installPackage(File packageFile, boolean reinstall)
+            throws DeviceNotAvailableException {
+        // ignore
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String uninstallPackage(String packageName) throws DeviceNotAvailableException {
+        // ignore
+        return null;
+    }
 }
