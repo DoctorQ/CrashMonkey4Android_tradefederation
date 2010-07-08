@@ -17,6 +17,7 @@ package com.android.tradefed;
 
 import com.android.tradefed.device.TestDeviceFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.testtype.GTestFuncTest;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;
 import com.android.tradefed.util.RunUtilFuncTest;
 
@@ -34,6 +35,7 @@ public class FuncTests extends DeviceTestSuite {
         this.addTestSuite(TestDeviceFuncTest.class);
         this.addTestSuite(InstrumentationTestFuncTest.class);
         this.addTestSuite(RunUtilFuncTest.class);
+        this.addTestSuite(GTestFuncTest.class);
     }
 
     public static Test suite() {
