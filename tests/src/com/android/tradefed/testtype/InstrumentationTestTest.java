@@ -24,11 +24,9 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.StubTestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.LogDataType;
 
 import org.easymock.EasyMock;
 
-import java.io.InputStream;
 import java.util.Collection;
 
 import junit.framework.TestCase;
@@ -175,8 +173,6 @@ public class InstrumentationTestTest extends TestCase {
                 (String)EasyMock.anyObject());
         // run should be reported as a failure
         mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockListener);
         EasyMock.replay(mMockTestDevice);
@@ -209,8 +205,6 @@ public class InstrumentationTestTest extends TestCase {
         });
         mMockListener.testRunStarted(0);
         mMockListener.testRunEnded(1);
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         // expect normal mode to be turned off
         mMockRemoteRunner.setLogOnly(false);
         mMockRemoteRunner.removeInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG);
@@ -295,9 +289,6 @@ public class InstrumentationTestTest extends TestCase {
         mMockListener.testStarted(test2);
         mMockListener.testEnded(test2);
         mMockListener.testRunEnded(1);
-        // expect only one "testRunLog" call
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
 
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockTestDevice);

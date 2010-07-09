@@ -205,7 +205,7 @@ public class RunUtil implements IRunUtil {
         }
     }
 
-    private String getStringFromStream(InputStream stream) throws IOException {
+    public static String getStringFromStream(InputStream stream) throws IOException {
         Reader ir = new BufferedReader(new InputStreamReader(stream));
         int irChar = -1;
         StringBuilder builder = new StringBuilder();

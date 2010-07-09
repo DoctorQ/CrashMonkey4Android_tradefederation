@@ -29,7 +29,6 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -55,9 +54,6 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
 
     /** max time in ms to allow for single  collect list of tests attempt */
     private static final int COLLECT_TESTS_OP_TIMEOUT = 2 * 60 * 1000;
-
-    /** name of saved device logcat file */
-    private static final String DEVICE_LOGCAT_NAME = "%s_logcat_";
 
     static final String TIMED_OUT_MSG = "timed out: test did not complete in %d ms";
     static final String DELAY_MSEC_ARG = "delay_msec";
@@ -99,8 +95,6 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
 
     private IRemoteAndroidTestRunner mRunner;
     private Collection<ITestRunListener> mListeners;
-
-    private boolean mIsCaptureLog = true;
 
     /**
      * {@inheritDoc}
@@ -208,13 +202,6 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     }
 
     /**
-     * Sets whether the logcat should be captured at end of test run.
-     */
-    void setCaptureLog(boolean captureLog) {
-        mIsCaptureLog = captureLog;
-    }
-
-    /**
      * Get the {@link RunUtil} instance to use.
      * <p/>
      * Exposed for unit testing.
@@ -271,15 +258,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-        boolean didTestsRun = true;
-        try {
-            didTestsRun = doTestRun(listener);
-        } finally {
-            if (mIsCaptureLog && didTestsRun) {
-                listener.testRunLog(String.format(DEVICE_LOGCAT_NAME, mPackageName),
-                        LogDataType.TEXT, mDevice.getLogcat());
-            }
-        }
+        doTestRun(listener);
     }
 
     /**

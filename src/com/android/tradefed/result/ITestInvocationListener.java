@@ -61,20 +61,19 @@ public interface ITestInvocationListener extends ITestRunListener {
     public void testRunStarted(String name, int numTests);
 
     /**
-     * Provides the associated log or debug data from the test run.
+     * Provides the associated log or debug data from the test invocation.
      * <p/>
-     * Called zero or more times immediately following a testRunFailed or testRunEnded.
+     * Must be called before {@link #invocationFailed(String, Throwable)} or
+     * {@link #invocationEnded()}
      *
-     * @param dataName a {@link String} descriptive name of the data. e.g. "deviceLogcat".
+     * @param dataName a {@link String} descriptive name of the data. e.g. "device_logcat".
      * @param dataType the {@link LogDataType} of the data
      * @param dataStream the {@link InputStream} of the data.
      */
-    public void testRunLog(String dataName, LogDataType dataType, InputStream dataStream);
+    public void testLog(String dataName, LogDataType dataType, InputStream dataStream);
 
     /**
      * Reports the end of the test invocation.
-     *
-     * @param buildInfo information about the build being tested
      */
     public void invocationEnded();
 

@@ -248,7 +248,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testRunLog(String dataName, LogDataType logData, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType logData, InputStream dataStream) {
         // ignore
     }
 }

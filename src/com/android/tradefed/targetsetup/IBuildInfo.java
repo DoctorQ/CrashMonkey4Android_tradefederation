@@ -15,13 +15,10 @@
  */
 package com.android.tradefed.targetsetup;
 
+import java.util.Map;
+
 /**
  * Holds information about the build under test.
- * <p/>
- * TODO: what other generic interfaces need to be added:
- * Some potential candidates:
- *   - getBuildDescription - user meaningful string describing build
- *   - getBranch - too specific ?
  */
 public interface IBuildInfo {
 
@@ -29,5 +26,22 @@ public interface IBuildInfo {
      * @return the unique identifier of build under test
      */
     public int getBuildId();
+
+    /**
+     * Return a unique description of the tests being run.
+     */
+    public String getTestTarget();
+
+    /**
+     * Return a unique description of the type of build.
+     */
+    public String getBuildName();
+
+    /**
+     * Get a set of name-value pairs of attributes describing the build.
+     *
+     * @return a {@link Map} of build attributes. Will not be <code>null</code>, but may be empty.
+     */
+    public Map<String, String> getBuildAttributes();
 
 }

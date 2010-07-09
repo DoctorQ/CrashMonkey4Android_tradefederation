@@ -77,8 +77,9 @@ public class TestInvocationTest extends TestCase {
                 mMockTestListener);
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(
                 mMockLogger);
-        mMockTestListener.testRunLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+        EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
+        mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
+            (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation() {
@@ -96,7 +97,6 @@ public class TestInvocationTest extends TestCase {
 
     }
 
-
     /**
      * Test the normal case invoke scenario with a {@link IRemoteTest}.
      * <p/>
@@ -109,10 +109,13 @@ public class TestInvocationTest extends TestCase {
         test.run(mMockTestListener);
         setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
     }
 
     /**
      * Test the invoke scenario where build retrieve fails.
+     * <p/>
+     * An invocation will not be started in this scenario.
      */
     public void testInvoke_buildFailed() throws TargetSetupError, ConfigurationException,
             DeviceNotAvailableException  {
@@ -120,17 +123,11 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockBuildRetriever.getBuild()).andThrow(exception);
         Test test = EasyMock.createMock(Test.class);
         EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
-        EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
-        mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
-            (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
         mMockLogger.closeLog();
-        mMockTestListener.invocationFailed((String)EasyMock.anyObject(), EasyMock.eq(exception));
-        // expect no other methods to be called
-        EasyMock.replay(test, mMockTestListener, mMockConfiguration, mMockPreparer,
-                mMockBuildRetriever, mMockLogger);
+        replayMocks(test);
         // TODO: add verification for sending an error/logging error ?
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
     }
 
     /**
@@ -139,10 +136,11 @@ public class TestInvocationTest extends TestCase {
     public void testInvoke_noBuild() throws TargetSetupError, ConfigurationException,
             DeviceNotAvailableException  {
         EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(null);
-        // expect no other methods to be called
-        EasyMock.replay(mMockTestListener, mMockConfiguration, mMockPreparer,
-                mMockBuildRetriever);
+        Test test = EasyMock.createMock(Test.class);
+        EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
+        replayMocks(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
     }
 
     /**
@@ -151,15 +149,15 @@ public class TestInvocationTest extends TestCase {
     public void testInvoke_configFailed() throws ConfigurationException,
             DeviceNotAvailableException  {
         EasyMock.expect(mMockConfiguration.getTest()).andThrow(new ConfigurationException("fail"));
-        // expect no other methods to be called
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         mMockLogger.closeLog();
-        EasyMock.replay(mMockTestListener, mMockConfiguration, mMockPreparer,
-                mMockBuildRetriever, mMockLogger);
+        Test test = EasyMock.createMock(Test.class);
+        replayMocks(test);
         // TODO: add verification for sending an error/logging error ?
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
     }
 
     /**
@@ -176,6 +174,7 @@ public class TestInvocationTest extends TestCase {
          mMockTestListener.invocationEnded();
          setupNormalInvoke(mockDeviceConfigTest);
          mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+         verifyMocks(mockDeviceConfigTest);
     }
 
     /**
@@ -195,6 +194,7 @@ public class TestInvocationTest extends TestCase {
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
     }
 
     /**
@@ -206,10 +206,32 @@ public class TestInvocationTest extends TestCase {
             DeviceNotAvailableException {
         EasyMock.expect(mMockConfiguration.getTest()).andReturn(test);
         EasyMock.expect(mMockBuildRetriever.getBuild()).andReturn(mMockBuildInfo);
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
-        mMockLogger.closeLog();
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
-        EasyMock.replay(test, mMockTestListener, mMockConfiguration, mMockPreparer,
+        EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]));
+        mMockTestListener.testLog(EasyMock.eq(TestInvocation.DEVICE_LOG_NAME),
+                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
+        mMockTestListener.testLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
+                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+        mMockLogger.closeLog();
+        replayMocks(test);
+    }
+
+    /**
+     * Verify all mock objects received expected calls
+     */
+    private void verifyMocks(Test mockTest) {
+        // note: intentionally exclude configuration and logger from verification - don't care
+        // what methods are called
+        EasyMock.verify(mockTest, mMockTestListener, mMockPreparer,
+                mMockBuildRetriever);
+    }
+
+    /**
+     * Switch all mock objects into replay mode.
+     */
+    private void replayMocks(Test mockTest) {
+        EasyMock.replay(mockTest, mMockTestListener, mMockConfiguration, mMockPreparer,
                 mMockBuildRetriever, mMockLogger);
     }
 
