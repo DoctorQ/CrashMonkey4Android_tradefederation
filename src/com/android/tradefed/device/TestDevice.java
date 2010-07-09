@@ -253,6 +253,51 @@ class TestDevice implements IManagedTestDevice {
         runInstrumentationTests(runner, Arrays.asList(listeners));
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public String installPackage(final File packageFile, final boolean reinstall)
+            throws DeviceNotAvailableException {
+        // use array to store response, so it can be returned to caller
+        final String[] response = new String[1];
+        DeviceAction installAction = new DeviceAction() {
+            public boolean run() throws IOException {
+                String result = getIDevice().installPackage(packageFile.getAbsolutePath(),
+                        reinstall);
+                response[0] = result;
+                return result == null;
+            }
+
+            public void cancel() {
+                // do nothing
+            }
+        };
+        performDeviceAction(String.format("install %s", packageFile.getAbsolutePath()),
+                installAction, MAX_RETRY_ATTEMPTS);
+        return response[0];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String uninstallPackage(final String packageName) throws DeviceNotAvailableException {
+        // use array to store response, so it can be returned to caller
+        final String[] response = new String[1];
+        DeviceAction uninstallAction = new DeviceAction() {
+            public boolean run() throws IOException {
+                String result = getIDevice().uninstallPackage(packageName);
+                response[0] = result;
+                return result == null;
+            }
+
+            public void cancel() {
+                // do nothing
+            }
+        };
+        performDeviceAction(String.format("uninstall %s", packageName), uninstallAction,
+                MAX_RETRY_ATTEMPTS);
+        return response[0];
+    }
 
     /**
      * {@inheritDoc}

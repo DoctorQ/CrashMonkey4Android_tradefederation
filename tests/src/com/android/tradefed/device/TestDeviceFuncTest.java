@@ -64,6 +64,21 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test install and uninstall of package
+     */
+    public void testInstallUninstall() throws IOException, DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testInstallUninstall");
+        // TODO: somehow inject path to apk file to test
+//        File tmpFile = new File("<path toTradeFedTestApp.apk>");
+//        mTestDevice.uninstallPackage(TestAppConstants.TESTAPP_PACKAGE);
+//        assertFalse(mTestDevice.executeShellCommand("pm list packages").contains(
+//                TestAppConstants.TESTAPP_PACKAGE));
+//        mTestDevice.installPackage(tmpFile, true);
+//        assertTrue(mTestDevice.executeShellCommand("pm list packages").contains(
+//                TestAppConstants.TESTAPP_PACKAGE));
+    }
+
+    /**
      * Push and then pull a file from device, and verify contents are as expected.
      */
     public void testPushPull() throws IOException, DeviceNotAvailableException {

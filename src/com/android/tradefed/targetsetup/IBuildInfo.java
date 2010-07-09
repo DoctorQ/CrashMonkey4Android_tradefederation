@@ -44,4 +44,12 @@ public interface IBuildInfo {
      */
     public Map<String, String> getBuildAttributes();
 
+    /**
+     * Add a build attribute
+     *
+     * @param attributeName the unique attribute name
+     * @param attributeValue the attribute value
+     */
+    public void addBuildAttribute(String attributeName, String attributeValue);
+
 }

@@ -27,7 +27,7 @@ public class StubBuildProvider implements IBuildProvider {
      */
     public IBuildInfo getBuild() throws TargetSetupError {
         Log.d("BuildProvider", "skipping build provider step");
-        return new StubBuildInfo();
+        return new BuildInfo();
     }
 
 }
