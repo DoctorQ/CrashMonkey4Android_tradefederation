@@ -88,7 +88,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
     private TestResult mCurrentTestResult = null;
     private int mNumTestsRun = 0;
     private int mNumTestsExpected = 0;
-    private int mTotalRunTime = 0;
+    private long mTotalRunTime = 0;
     private boolean mTestInProgress = false;
     private boolean mTestRunInProgress = false;
     private final Collection<ITestRunListener> mTestListeners;
@@ -107,11 +107,38 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
         private String mTestClass = null;
         private StringBuilder mStackTrace = null;
         @SuppressWarnings("unused")
-        private Integer mRunTime = null;  // may be useful later
+        private Long mRunTime = null;
 
-        /** Returns true if all expected values have been parsed */
+        /** Returns whether expected values have been parsed
+         *
+         * @return true if all expected values have been parsed
+         */
         boolean isComplete() {
             return mTestName != null && mTestClass != null;
+        }
+
+        /** Returns whether there is currently a stack trace
+         *
+         * @return true if there is currently a stack trace, false otherwise
+         */
+        boolean hasStackTrace() {
+            return mStackTrace != null;
+        }
+
+        /**
+         * Returns the stack trace of the current test.
+         *
+         * @return a String representation of the current test's stack trace; if there is not
+         * a current stack trace, it returns an error string. Use {@link TestResult#hasStackTrace}
+         * if you need to know whether there is a stack trace.
+         */
+        String getTrace() {
+            if (hasStackTrace()) {
+                return mStackTrace.toString();
+            } else {
+                Log.e(LOG_TAG, "Could not find stack trace for failed test");
+                return new Throwable("Unknown failure").toString();
+            }
         }
 
         /** Provides a more user readable string for TestResult, if possible */
@@ -149,7 +176,6 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
     private static class Prefixes {
         @SuppressWarnings("unused")
         private static final String INFORMATIONAL_MARKER = "[----------]";
-        private static final String STATUS_LINE_MARKER = "[";
         private static final String START_TEST_RUN_MARKER = "[==========] Running";
         private static final String TEST_RUN_MARKER = "[==========]";
         private static final String START_TEST_MARKER = "[ RUN      ]";
@@ -247,7 +273,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
                 message = line.substring(Prefixes.TEST_RUN_MARKER.length()).trim();
                 processRunCompletedTag(message);
             }
-            else if (!line.startsWith(Prefixes.STATUS_LINE_MARKER) && testInProgress()) {
+            else if (testInProgress()) {
                 // Note this does not handle the case of an error outside an actual test run
                 appendTestOutputLine(line);
             }
@@ -293,18 +319,6 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
      */
     private void setTestEnded() {
         mTestInProgress = false;
-    }
-
-    /**
-     * Returns the stack trace of the current failed test, from the provided testResult.
-     */
-    private String getTrace(TestResult testResult) {
-        if (testResult.mStackTrace != null) {
-            return testResult.mStackTrace.toString();
-        } else {
-            Log.e(LOG_TAG, "Could not find stack trace for failed test");
-            return new Throwable("Unknown failure").toString();
-        }
     }
 
     /**
@@ -364,8 +378,8 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
                     identifier);
         }
         else {
-            returnInfo.mTestName = testId[0];
-            returnInfo.mTestClassName = testId[1];
+            returnInfo.mTestClassName = testId[0];
+            returnInfo.mTestName = testId[1];
         }
         return returnInfo;
     }
@@ -377,10 +391,10 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
      */
     private void processRunStartedTag(String identifier) {
         // eg: (Running XX tests from 1 test case.)
-        Pattern numTestsPattern = Pattern.compile("Running (\\d+) tests from .*");
+        Pattern numTestsPattern = Pattern.compile("Running (\\d+) test[s]? from .*");
         Matcher numTests = numTestsPattern.matcher(identifier);
 
-        // Try to find a time
+        // Try to find number of tests
         if (numTests.find()) {
             try {
                 mNumTestsExpected = Integer.parseInt(numTests.group(1));
@@ -390,9 +404,11 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
                         numTests.group(1));
             }
         }
-        reportTestRunStarted();
-        mNumTestsRun = 0;
-        mTestRunInProgress = true;
+        if (mNumTestsExpected > 0) {
+          reportTestRunStarted();
+          mNumTestsRun = 0;
+          mTestRunInProgress = true;
+        }
     }
 
     /**
@@ -408,7 +424,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
         if (time.find()) {
             String timeString = time.group(1);
             try {
-                mTotalRunTime = Integer.parseInt(time.group(1));
+                mTotalRunTime = Long.parseLong(time.group(1));
             }
             catch (NumberFormatException e) {
                 Log.e(LOG_TAG, "Unable to determine the total running time, received: " +
@@ -460,7 +476,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
         // Save the run time for this test if one exists
         if (parsedResults.mTestRunTime != null) {
             try {
-                testResult.mRunTime = new Integer(parsedResults.mTestRunTime);
+                testResult.mRunTime = new Long(parsedResults.mTestRunTime);
             }
             catch (NumberFormatException e) {
                 Log.e(LOG_TAG, "Test run time value is invalid, received: " +
@@ -493,7 +509,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
             // the last known test failed, regardless of whether we received a pass or fail tag.
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
-                        getTrace(mCurrentTestResult));
+                        mCurrentTestResult.getTrace());
             }
         }
         else if (testPassed) {  // test passed
@@ -506,7 +522,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
         else {  // test failed
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.FAILURE, testId,
-                        getTrace(mCurrentTestResult));
+                        mCurrentTestResult.getTrace());
             }
         }
         setTestEnded();
@@ -556,7 +572,8 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
      */
     private void handleTestRunFailed(String errorMsg) {
         errorMsg = (errorMsg == null ? "Unknown error" : errorMsg);
-        Log.i(LOG_TAG, String.format("Test run failed %s", errorMsg));
+        Log.i(LOG_TAG, String.format("Test run failed: %s", errorMsg));
+        String testRunStackTrace = "";
 
         // Report that the last known test failed
         if ((mCurrentTestResult != null) && (mCurrentTestResult.isComplete())) {
@@ -564,9 +581,15 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
             // if it's not null, assume the last test caused this and report as a test failure
             TestIdentifier testId = new TestIdentifier(mCurrentTestResult.mTestClass,
                     mCurrentTestResult.mTestName);
+
+            // If there was any stack trace during the test run, append it to the "test failed"
+            // error message so we have an idea of what caused the crash/failure.
+            if (mCurrentTestResult.hasStackTrace()) {
+                testRunStackTrace = mCurrentTestResult.getTrace();
+            }
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
-                        "No test results.");
+                        "No test results.\r\n" + testRunStackTrace);
                 listener.testEnded(testId);
             }
             clearCurrentTestResult();
@@ -574,6 +597,7 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
         // Report the test run failed
         for (ITestRunListener listener : mTestListeners) {
             listener.testRunFailed(errorMsg);
+            listener.testRunEnded(mTotalRunTime);
         }
     }
 
