@@ -85,7 +85,7 @@ public class GTestFuncTest extends DeviceTestCase {
             }
         }
         mMockListener.testRunEnded(EasyMock.anyLong());
-        mMockListener.testRunLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
+        mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mGTest.run(mMockListener);
