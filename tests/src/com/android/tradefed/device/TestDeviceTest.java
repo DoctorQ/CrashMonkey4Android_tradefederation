@@ -21,6 +21,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.SyncService;
+import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
@@ -502,6 +503,10 @@ public class TestDeviceTest extends TestCase {
                 throws IOException {
         }
 
+        public void executeShellCommand(String command, IShellOutputReceiver receiver, int timeout)
+                throws TimeoutException, IOException {
+        }
+
         public String getAvdName() {
             return null;
         }
@@ -605,5 +610,7 @@ public class TestDeviceTest extends TestCase {
         }
         public void reboot(String into) throws IOException {
         }
+
+
     }
 }
