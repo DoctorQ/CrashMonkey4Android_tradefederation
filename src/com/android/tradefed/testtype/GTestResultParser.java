@@ -422,7 +422,6 @@ public class GTestResultParser extends MultiLineReceiver implements ICancelableR
 
         // Try to find the total run time
         if (time.find()) {
-            String timeString = time.group(1);
             try {
                 mTotalRunTime = Long.parseLong(time.group(1));
             }
