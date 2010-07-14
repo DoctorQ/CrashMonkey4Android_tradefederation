@@ -32,6 +32,7 @@ import org.easymock.EasyMock;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
+import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import junit.framework.TestCase;
@@ -239,6 +240,27 @@ public class CommandFileFuncTest extends TestCase {
          */
         public void terminate() {
             // ignore
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public Collection<String> getAllocatedDevices() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public Collection<String> getAvailableDevices() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public Collection<String> getUnavailableDevices() {
+            return null;
         }
     }
 }

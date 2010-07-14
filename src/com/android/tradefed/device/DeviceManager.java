@@ -24,6 +24,8 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -273,6 +275,49 @@ public class DeviceManager implements IDeviceManager {
         mAdbBridge.removeDeviceChangeListener(mManagedDeviceListener);
         mAdbBridge.terminate();
         mFastbootMonitor.terminate();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<String> getAllocatedDevices() {
+        Collection<String> allocatedDeviceSerials = new ArrayList<String>(
+                mAllocatedDeviceMap.size());
+        allocatedDeviceSerials.addAll(mAllocatedDeviceMap.keySet());
+        return allocatedDeviceSerials;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<String> getAvailableDevices() {
+        Collection<String> availableDeviceSerials = new ArrayList<String>(
+                mAvailableDeviceQueue.size());
+        synchronized (mAvailableDeviceQueue) {
+            for (IDevice device : mAvailableDeviceQueue) {
+                availableDeviceSerials.add(device.getSerialNumber());
+            }
+        }
+        return availableDeviceSerials;
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<String> getUnavailableDevices() {
+        IDevice[] visibleDevices = mAdbBridge.getDevices();
+        Collection<String> unavailableSerials = new ArrayList<String>(
+                visibleDevices.length);
+        Collection<String> availSerials = getAvailableDevices();
+        Collection<String> allocatedSerials = getAllocatedDevices();
+        for (IDevice device : visibleDevices) {
+            if (!availSerials.contains(device.getSerialNumber()) &&
+                    !allocatedSerials.contains(device.getSerialNumber())) {
+                unavailableSerials.add(device.getSerialNumber());
+            }
+        }
+        return unavailableSerials;
     }
 
     private class ManagedDeviceListener implements IDeviceChangeListener {

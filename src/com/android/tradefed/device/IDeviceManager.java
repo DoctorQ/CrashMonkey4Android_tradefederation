@@ -18,6 +18,8 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.AndroidDebugBridge;
 
+import java.util.Collection;
+
 /**
  * Interface for managing the set of available devices for testing.
  */
@@ -62,6 +64,28 @@ public interface IDeviceManager {
      * @see AndroidDebugBridge#terminate()
      */
     public void terminate();
+
+    /**
+     * Diagnostic method that returns a list of the devices available for allocation.
+     *
+     * @return a {@link Collection} of device serials
+     */
+    public Collection<String> getAvailableDevices();
+
+    /**
+     * Diagnostic method that returns a list of the devices currently allocated for testing.
+     *
+     * @return a {@link Collection} of device serials
+     */
+    public Collection<String> getAllocatedDevices();
+
+    /**
+     * Diagnostic method that returns a list of the devices currently visible via adb, but not
+     * deemed available for allocation.
+     *
+     * @return a {@link Collection} of device serials
+     */
+    public Collection<String> getUnavailableDevices();
 
     /**
      * Informs the manager that a listener is interested in fastboot state changes.
