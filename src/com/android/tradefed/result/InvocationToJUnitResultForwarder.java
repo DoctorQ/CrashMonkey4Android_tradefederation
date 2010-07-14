@@ -213,7 +213,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void invocationEnded() {
+    public void invocationEnded(long elapsedTime) {
         // ignore
     }
 
@@ -241,7 +241,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void invocationFailed(String message, Throwable cause) {
+    public void invocationFailed(long elapsedTime, String message, Throwable cause) {
         // ignore
     }
 

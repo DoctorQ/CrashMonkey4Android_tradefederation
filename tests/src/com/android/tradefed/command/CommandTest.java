@@ -22,8 +22,11 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.StdoutLogger;
+import com.android.tradefed.log.StubLogRegistry;
 
 import org.easymock.EasyMock;
 
@@ -66,6 +69,11 @@ public class CommandTest extends TestCase {
             protected IConfiguration createConfigurationAndParseArgs(String[] args) {
                 return mMockConfiguration;
             }
+
+            @Override
+            protected LogRegistry getLogRegistry() {
+                return new StubLogRegistry();
+            }
         };
     }
 
@@ -79,7 +87,7 @@ public class CommandTest extends TestCase {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
                 .andReturn(mMockDevice);
-        mMockDeviceManager.freeDevice(mMockDevice, true);
+        mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
@@ -135,6 +143,11 @@ public class CommandTest extends TestCase {
             protected IDeviceManager getDeviceManager() {
                 return mMockDeviceManager;
             }
+
+            @Override
+            protected LogRegistry getLogRegistry() {
+                return new StubLogRegistry();
+            }
         };
         mMockDeviceManager.terminate();
         // switch mock objects to verify mode
@@ -158,7 +171,7 @@ public class CommandTest extends TestCase {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery, Command.WAIT_DEVICE_TIME))
                 .andReturn(mMockDevice);
-        mMockDeviceManager.freeDevice(mMockDevice, true);
+        mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);

@@ -80,6 +80,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation() {
@@ -105,7 +106,7 @@ public class TestInvocationTest extends TestCase {
     public void testInvoke_RemoteTest() throws Exception {
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         mMockTestListener.invocationStarted(mMockBuildInfo);
-        mMockTestListener.invocationEnded();
+        mMockTestListener.invocationEnded(EasyMock.anyLong());
         test.run(mMockTestListener);
         setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
@@ -171,7 +172,7 @@ public class TestInvocationTest extends TestCase {
          mockDeviceConfigTest.setConfiguration(mMockConfiguration);
          mockDeviceConfigTest.run(mMockTestListener);
          mMockTestListener.invocationStarted(mMockBuildInfo);
-         mMockTestListener.invocationEnded();
+         mMockTestListener.invocationEnded(EasyMock.anyLong());
          setupNormalInvoke(mockDeviceConfigTest);
          mTestInvocation.invoke(mMockDevice, mMockConfiguration);
          verifyMocks(mockDeviceConfigTest);
@@ -188,13 +189,40 @@ public class TestInvocationTest extends TestCase {
         test.run(mMockTestListener);
         EasyMock.expectLastCall().andThrow(exception);
         mMockTestListener.invocationStarted(mMockBuildInfo);
-        mMockTestListener.invocationFailed((String)EasyMock.anyObject(), EasyMock.eq(exception));
+        mMockTestListener.invocationFailed(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                EasyMock.eq(exception));
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
         verifyMocks(test);
+    }
+
+    /**
+     * Test the invoke scenario where test run throws {@link DeviceNotAvailable}
+     *
+     * @throws Exception if unexpected error occurs
+     */
+    public void testInvoke_deviceNotAvail() throws Exception {
+        DeviceNotAvailableException exception = new DeviceNotAvailableException();
+        IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
+        test.run(mMockTestListener);
+        EasyMock.expectLastCall().andThrow(exception);
+        mMockTestListener.invocationStarted(mMockBuildInfo);
+        mMockTestListener.invocationFailed(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                EasyMock.eq(exception));
+        EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
+        mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
+            (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
+        setupNormalInvoke(test);
+        try {
+            mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+            fail("DeviceNotAvailableException not thrown");
+            verifyMocks(test);
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
     }
 
     /**
@@ -232,7 +260,7 @@ public class TestInvocationTest extends TestCase {
      */
     private void replayMocks(Test mockTest) {
         EasyMock.replay(mockTest, mMockTestListener, mMockConfiguration, mMockPreparer,
-                mMockBuildRetriever, mMockLogger);
+                mMockBuildRetriever, mMockLogger, mMockDevice);
     }
 
     /**

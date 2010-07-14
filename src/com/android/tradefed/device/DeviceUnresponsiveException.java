@@ -17,35 +17,34 @@ package com.android.tradefed.device;
 
 
 /**
- * Thrown when a device is no longer available for testing.
- * e.g. the adb connection to the device has been lost, device has stopped responding to commands,
- * etc
+ * A specialization of {@link DeviceNotAvailableException} that indicates device is visible to
+ * adb, but is unresponsive (ie commands timing out, won't boot, etc)
  */
 @SuppressWarnings("serial")
-public class DeviceNotAvailableException extends Exception {
+public class DeviceUnresponsiveException extends DeviceNotAvailableException {
     /**
-     * Creates a {@link DeviceNotAvailableException}.
+     * Creates a {@link DeviceUnresponsiveException}.
      */
-    public DeviceNotAvailableException() {
+    public DeviceUnresponsiveException() {
         super();
     }
 
     /**
-     * Creates a {@link DeviceNotAvailableException}.
+     * Creates a {@link DeviceUnresponsiveException}.
      *
      * @param msg a descriptive message.
      */
-    public DeviceNotAvailableException(String msg) {
+    public DeviceUnresponsiveException(String msg) {
         super(msg);
     }
 
     /**
-     * Creates a {@link DeviceNotAvailableException}.
+     * Creates a {@link DeviceUnresponsiveException}.
      *
      * @param msg a descriptive message.
      * @param cause the root {@link Throwable} that caused the device to become unavailable.
      */
-    public DeviceNotAvailableException(String msg, Throwable cause) {
+    public DeviceUnresponsiveException(String msg, Throwable cause) {
         super(msg, cause);
     }
 }

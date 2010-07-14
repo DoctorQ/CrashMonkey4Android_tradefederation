@@ -175,6 +175,70 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         };
         rebootThread.start();
         mInstrumentationTest.run(mMockListener);
+        EasyMock.verify(mMockListener);
+        // now run the ui tests and verify success
+        // done to ensure keyguard is cleared after reboot
+        InstrumentationTest uiTest = new InstrumentationTest();
+        uiTest.setPackageName(TestAppConstants.UITESTAPP_PACKAGE);
+        uiTest.setDevice(getDevice());
+        CollectingTestListener uilistener = new CollectingTestListener();
+        uiTest.run(uilistener);
+        assertFalse(uilistener.hasFailedTests());
+        assertEquals(TestAppConstants.UI_TOTAL_TESTS, uilistener.getNumPassedTests());
+    }
+
+    /**
+     * Test run scenario where device runtime resets during test run.
+     * <p/>
+     * TODO: this test probably belongs more in TestDeviceFuncTest
+     */
+    public void testRun_deviceRuntimeReset() throws Exception {
+        Log.i(LOG_TAG, "testRun_deviceRuntimeReset");
+
+        TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
+                TestAppConstants.TIMEOUT_TEST_METHOD);
+        mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
+        mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
+        mMockListener.testRunStarted(1);
+        mMockListener.testStarted(EasyMock.eq(expectedTest));
+        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
+                (String)EasyMock.anyObject());
+        mMockListener.testEnded(EasyMock.eq(expectedTest));
+        mMockListener.testRunFailed((String)EasyMock.anyObject());
+        EasyMock.replay(mMockListener);
+        // fork off a thread to do the runtime reset
+        Thread resetThread = new Thread() {
+            @Override
+            public void run() {
+                // wait for test run to begin
+                try {
+                    Thread.sleep(1000);
+                    Runtime.getRuntime().exec(
+                            String.format("adb -s %s shell stop", getDevice().getIDevice()
+                                    .getSerialNumber()));
+                    Thread.sleep(500);
+                    Runtime.getRuntime().exec(
+                            String.format("adb -s %s shell start", getDevice().getIDevice()
+                                    .getSerialNumber()));
+                } catch (InterruptedException e) {
+                    Log.w(LOG_TAG, "interrupted");
+                } catch (IOException e) {
+                    Log.w(LOG_TAG, "IOException when rebooting");
+                }
+            }
+        };
+        resetThread.start();
+        mInstrumentationTest.run(mMockListener);
+        EasyMock.verify(mMockListener);
+        // now run the ui tests and verify success
+        // done to ensure keyguard is cleared after runtime reset
+        InstrumentationTest uiTest = new InstrumentationTest();
+        uiTest.setPackageName(TestAppConstants.UITESTAPP_PACKAGE);
+        uiTest.setDevice(getDevice());
+        CollectingTestListener uilistener = new CollectingTestListener();
+        uiTest.run(uilistener);
+        assertFalse(uilistener.hasFailedTests());
+        assertEquals(TestAppConstants.UI_TOTAL_TESTS, uilistener.getNumPassedTests());
     }
 
     /**

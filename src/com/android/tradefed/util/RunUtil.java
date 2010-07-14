@@ -18,11 +18,6 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.Arrays;
 
 /**
@@ -55,8 +50,8 @@ public class RunUtil implements IRunUtil {
                 Log.v(LOG_TAG, String.format("Running %s", fullCmd));
                 Process process = Runtime.getRuntime().exec(command);
                 int rc = process.waitFor();
-                result.setStdout(getStringFromStream(process.getInputStream()));
-                result.setStderr(getStringFromStream(process.getErrorStream()));
+                result.setStdout(StreamUtil.getStringFromStream(process.getInputStream()));
+                result.setStderr(StreamUtil.getStringFromStream(process.getErrorStream()));
 
                 if (rc == 0) {
                     return true;
@@ -183,6 +178,9 @@ public class RunUtil implements IRunUtil {
             CommandStatus status;
             try {
                 status = mRunnable.run() ? CommandStatus.SUCCESS : CommandStatus.FAILED;
+            } catch (InterruptedException e) {
+                Log.i(LOG_TAG, "runutil interrupted");
+                status = CommandStatus.EXCEPTION;
             } catch (Exception e) {
                 // TODO: add more meaningful error message
                 Log.e(LOG_TAG, e);
@@ -203,15 +201,5 @@ public class RunUtil implements IRunUtil {
         synchronized CommandStatus getStatus() {
             return mStatus;
         }
-    }
-
-    public static String getStringFromStream(InputStream stream) throws IOException {
-        Reader ir = new BufferedReader(new InputStreamReader(stream));
-        int irChar = -1;
-        StringBuilder builder = new StringBuilder();
-        while ((irChar = ir.read()) != -1) {
-            builder.append((char)irChar);
-        }
-        return builder.toString();
     }
 }

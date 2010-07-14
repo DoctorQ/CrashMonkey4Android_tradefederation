@@ -55,6 +55,7 @@ public class DeviceManager implements IDeviceManager {
     private IAndroidDebugBridge mAdbBridge;
     private final ManagedDeviceListener mManagedDeviceListener;
     private final FastbootMonitor mFastbootMonitor;
+    private Set<String> mCheckDeviceSet;
 
     private boolean mEnableLogcat = true;
 
@@ -69,6 +70,7 @@ public class DeviceManager implements IDeviceManager {
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         // use LinkedBlockingQueue since it supports unlimited capacity
         mAvailableDeviceQueue = new LinkedBlockingQueue<IDevice>();
+        mCheckDeviceSet = Collections.synchronizedSet(new HashSet<String>());
         mAdbBridge = createAdbBridge();
         mAdbBridge.init(false /* client support */);
         for (IDevice device : mAdbBridge.getDevices()) {
@@ -111,18 +113,30 @@ public class DeviceManager implements IDeviceManager {
      * @param device
      */
     private void checkAndAddAvailableDevice(final IDevice device) {
+        if (mCheckDeviceSet.contains(device.getSerialNumber())) {
+            // device already being checked, ignore
+            Log.d(LOG_TAG, String.format("Already checking new device %s, ignoring",
+                    device.getSerialNumber()));
+            return;
+        }
+        mCheckDeviceSet.add(device.getSerialNumber());
+
         final String threadName = String.format("Check device %s", device.getSerialNumber());
         Thread checkThread = new Thread(threadName) {
             @Override
             public void run() {
+                Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
+                        device.getSerialNumber()));
                 IDeviceStateMonitor monitor = createStateMonitor(device);
                 if (monitor.waitForDeviceAvailable(2*60*1000) != null) {
+                    Log.i(LOG_TAG, String.format("Detected new device %s", device.getSerialNumber()));
                     addAvailableDevice(device);
                 } else {
                     Log.e(LOG_TAG, String.format(
                             "Device %s is not responding, skip adding to available pool",
                             device.getSerialNumber()));
                 }
+                mCheckDeviceSet.remove(device.getSerialNumber());
             }
         };
         checkThread.start();
@@ -234,7 +248,7 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public void freeDevice(ITestDevice device, boolean isAvailable) {
+    public void freeDevice(ITestDevice device, FreeDeviceState deviceState) {
         if (device instanceof IManagedTestDevice) {
             final IManagedTestDevice managedDevice = (IManagedTestDevice)device;
             managedDevice.stopLogcat();
@@ -242,7 +256,12 @@ public class DeviceManager implements IDeviceManager {
         if (mAllocatedDeviceMap.remove(device.getSerialNumber()) == null) {
             Log.e(LOG_TAG, String.format("freeDevice called with unallocated device %s",
                         device.getSerialNumber()));
-        } else if (isAvailable) {
+        } else if (deviceState == FreeDeviceState.UNRESPONSIVE) {
+            // TODO: add class flag to control if unresponsive device's are returned to pool
+            // TODO: also consider tracking unresponsive events received per device - so a
+            // device that is continually unresponsive could be removed from available queue
+            addAvailableDevice(device.getIDevice());
+        } else if (deviceState == FreeDeviceState.AVAILABLE) {
             addAvailableDevice(device.getIDevice());
         }
     }
@@ -273,10 +292,13 @@ public class DeviceManager implements IDeviceManager {
          * {@inheritDoc}
          */
         public void deviceConnected(IDevice device) {
+            Log.d(LOG_TAG, String.format("Detected device connect %s, id %d",
+                    device.getSerialNumber(), device.hashCode()));
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
             if (testDevice == null) {
-                Log.i(LOG_TAG, String.format("Detected new device %s", device.getSerialNumber()));
-                checkAndAddAvailableDevice(device);
+                if (isValidDeviceSerial(device.getSerialNumber())) {
+                    checkAndAddAvailableDevice(device);
+                }
             } else {
                 // this device is known already. However DDMS will allocate a new IDevice, so need
                 // to update the TestDevice record with the new device
@@ -288,20 +310,24 @@ public class DeviceManager implements IDeviceManager {
             }
         }
 
+        private boolean isValidDeviceSerial(String serial) {
+            return serial.length() > 1 && !serial.contains("?");
+        }
+
         /**
          * {@inheritDoc}
          */
         public void deviceDisconnected(IDevice disconnectedDevice) {
-            Log.i(LOG_TAG, String.format("Detected device disconnect %s",
-                    disconnectedDevice.getSerialNumber()));
-            mAvailableDeviceQueue.remove(disconnectedDevice);
+            if (mAvailableDeviceQueue.remove(disconnectedDevice)) {
+                Log.i(LOG_TAG, String.format("Removed disconnected device %s from available queue",
+                        disconnectedDevice.getSerialNumber()));
+            }
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(
                     disconnectedDevice.getSerialNumber());
             if (testDevice != null) {
                 testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
             }
         }
-
     }
 
     /**
@@ -354,8 +380,9 @@ public class DeviceManager implements IDeviceManager {
                         // now update devices that are no longer on fastboot
                         synchronized (mAllocatedDeviceMap) {
                             for (IManagedTestDevice testDevice : mAllocatedDeviceMap.values()) {
-                                if (!serials.contains(testDevice.getSerialNumber()) &&
-                                        testDevice.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
+                                if (!serials.contains(testDevice.getSerialNumber())
+                                        && testDevice.getDeviceState().equals(
+                                                TestDeviceState.FASTBOOT)) {
                                     testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
                                 }
                             }

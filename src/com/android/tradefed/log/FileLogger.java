@@ -39,26 +39,47 @@ public class FileLogger implements ILeveledLogOutput {
     private File mTempLogFile = null;
     private BufferedWriter mLogWriter = null;
 
-    // TODO: raise this to info level
     @Option(name="log-level", description="minimum log level to log")
     private String mLogLevel = LogLevel.DEBUG.getStringValue();
 
-    // TODO: raise this to warning level
     @Option(name="log-level-display", description="minimum log level to display on stdout")
-    private String mLogLevelStringDisplay = LogLevel.INFO.getStringValue();
+    private String mLogLevelStringDisplay = LogLevel.WARN.getStringValue();
 
     /**
-     * Constructor for creating a temporary log file in the system's default temp directory
+     * Sets the log level filtering for stdout.
+     *
+     * @param logLevel the {@link LogLevel#getStringValue()} log level to display
+     */
+    void setLogLevelDisplay(String logLevel) {
+        mLogLevelStringDisplay = logLevel;
+    }
+
+    /**
+     * Constructor for creating a temporary log file in the system's default temp directory,
+     * that will be deleted on program exit.
+     *
      * @throws ConfigurationException if unable to create log file
      */
     public FileLogger() throws ConfigurationException  {
+        this(true);
+    }
+
+    /**
+     * Constructor for creating a temporary log file in the system's default temp directory
+     *
+     * @param deleteLogOnExit <code>true</code> if log file should be deleted on program exit
+     * @throws ConfigurationException if unable to create log file
+     */
+    public FileLogger(boolean deleteLogOnExit) throws ConfigurationException {
         try {
             mTempLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             // delete the temp file on exit rather than on close, so log is available in case
             // program fails before logs are collected
             System.out.println(String.format("Created tmp tradefed log at %s",
                     mTempLogFile.getAbsolutePath()));
-            mTempLogFile.deleteOnExit();
+            if (deleteLogOnExit) {
+                mTempLogFile.deleteOnExit();
+            }
             mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
         }
         catch (IOException e) {
@@ -156,6 +177,9 @@ public class FileLogger implements ILeveledLogOutput {
      * @throws IOException
      */
     void doCloseLog() throws IOException {
+        if (mLogWriter == null) {
+            return;
+        }
         // set mLogWriter to null first before closing, to prevent "write" calls after "close"
         BufferedWriter writer = mLogWriter;
         mLogWriter = null;

@@ -24,10 +24,12 @@ import com.android.ddmlib.SyncService;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.device.TestDevice.LogCatReceiver;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
 
@@ -63,7 +65,17 @@ public class TestDeviceTest extends TestCase {
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
-        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor);
+        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor) {
+            @Override
+            public void reboot() {
+                // reboot is too complicated to mock out correctly, so just do a adb reboot command
+                // without any of the other associated commands
+                try {
+                    mMockIDevice.reboot(null);
+                } catch (IOException e) {
+                }
+            }
+        };
         mTestDevice.setCommandTimeout(100);
     }
 
@@ -148,6 +160,63 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
+     * Test the log file size limiting.
+     */
+    public void testLogCatReceiver() throws IOException, InterruptedException {
+        mTestDevice.setTmpLogcatSize(10);
+        final String input = "this is the output of greater than 10 bytes.";
+        final String input2 = "this is the second output of greater than 10 bytes.";
+        final String input3 = "<10bytes";
+        LogCatReceiver receiver = mTestDevice.createLogcatReceiver();
+        final Object notifier = new Object();
+
+        try {
+            // expect shell command to be called, with any receiver
+            mMockIDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
+                    EasyMock.anyObject());
+            EasyMock.expectLastCall().andDelegateTo(
+                  new MockDevice() {
+                      @Override
+                      public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                          byte[] inputData = input.getBytes();
+                          // add log data > maximum. This will trigger a log swap, where inputData
+                          // will be moved to the backup log file
+                          receiver.addOutput(inputData, 0, inputData.length);
+                          // inject the second input data > maximum. This will trigger another log
+                          // swap, that will discard inputData. the backup log file will have
+                          // inputData2, and the current log file will be empty
+                          byte[] inputData2 = input2.getBytes();
+                          receiver.addOutput(inputData2, 0, inputData2.length);
+                          // inject log data smaller than max log data - that will not trigger a
+                          // log swap. The backup log file should contain inputData2, and the
+                          // current should contain inputData3
+                          byte[] inputData3 = input3.getBytes();
+                          receiver.addOutput(inputData3, 0, inputData3.length);
+                          synchronized (notifier) {
+                              notifier.notify();
+                              try {
+                                // block until interrupted
+                                notifier.wait();
+                              } catch (InterruptedException e) {
+                            }
+                          }
+                      }
+                  });
+            EasyMock.replay(mMockIDevice);
+            receiver.start();
+            synchronized (notifier) {
+                notifier.wait();
+            }
+            String actualString = StreamUtil.getStringFromStream(receiver.getLogcatData());
+            // verify that data from both the backup log file (input2) and current log file
+            // (input3) is retrieved
+            assertEquals(input2 + input3, actualString);
+        } finally {
+            receiver.cancel();
+        }
+    }
+
+    /**
      * Simple normal case test for
      * {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)}.
      * <p/>
@@ -220,13 +289,17 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall().andThrow(new IOException());
-        mMockRecovery.recoverDevice(mMockMonitor);
-        EasyMock.expectLastCall();
+        assertRecoverySuccess();
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
-        EasyMock.expectLastCall();
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRecovery);
+        replayMocks();
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
+    }
+
+    /** Set expectations for a successful recovery operation */
+    private void assertRecoverySuccess() throws DeviceNotAvailableException, IOException {
+        mMockRecovery.recoverDevice(mMockMonitor);
+        // expect reboot after recovery
+        mMockIDevice.reboot(null);
     }
 
     /**
@@ -247,12 +320,11 @@ public class TestDeviceTest extends TestCase {
         });
         mMockReceiver.cancel();
         EasyMock.expectLastCall();
-        mMockRecovery.recoverDevice(mMockMonitor);
-        EasyMock.expectLastCall();
+        assertRecoverySuccess();
         // now expect shellCommand to be executed again, and succeed
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
         EasyMock.expectLastCall();
-        EasyMock.replay(mMockIDevice, mMockRecovery, mMockReceiver);
+        replayMocks();
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
 
@@ -266,17 +338,24 @@ public class TestDeviceTest extends TestCase {
         final String testCommand = "simple command";
         // expect shell command to be called
         mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
-        EasyMock.expectLastCall().andThrow(new IOException()).anyTimes();
-        mMockRecovery.recoverDevice(mMockMonitor);
-        EasyMock.expectLastCall().anyTimes();
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRecovery);
+        EasyMock.expectLastCall().andThrow(new IOException()).times(TestDevice.MAX_RETRY_ATTEMPTS);
+        for (int i=0; i < TestDevice.MAX_RETRY_ATTEMPTS; i++) {
+            assertRecoverySuccess();
+        }
+        replayMocks();
         try {
             mTestDevice.executeShellCommand(testCommand, mMockReceiver);
-            fail("DeviceNotAvailableException not thrown");
-        } catch (DeviceNotAvailableException e) {
+            fail("DeviceUnresponsiveException not thrown");
+        } catch (DeviceUnresponsiveException e) {
             // expected
         }
+    }
+
+    /**
+     *
+     */
+    private void replayMocks() {
+        EasyMock.replay(mMockIDevice, mMockRecovery, mMockMonitor);
     }
 
     /**
@@ -290,7 +369,7 @@ public class TestDeviceTest extends TestCase {
         final String dfOutput =
             "/mnt/sdcard: 3864064K total, 1282880K used, 2581184K available (block size 32768)";
 
-        EasyMock.expect(mMockIDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
+        EasyMock.expect(mMockMonitor.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
                 mntPoint);
         // expect shell command to be called, and return the test df output
         mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
@@ -303,7 +382,7 @@ public class TestDeviceTest extends TestCase {
                       receiver.addOutput(inputData, 0, inputData.length);
                   }
               });
-        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
         assertEquals(2581184, mTestDevice.getExternalStoreFreeSpace());
     }
 
@@ -318,7 +397,7 @@ public class TestDeviceTest extends TestCase {
         final String dfOutput =
             "/mnt/sdcard: blaH";
 
-        EasyMock.expect(mMockIDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
+        EasyMock.expect(mMockMonitor.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
                 mntPoint);
         // expect shell command to be called, and return the test df output
         mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
@@ -331,7 +410,7 @@ public class TestDeviceTest extends TestCase {
                       receiver.addOutput(inputData, 0, inputData.length);
                   }
               });
-        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
         assertEquals(0, mTestDevice.getExternalStoreFreeSpace());
     }
 
@@ -395,7 +474,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
         listener.testRunFailed((String)EasyMock.anyObject());
-        mMockRecovery.recoverDevice(mMockMonitor);
+        assertRecoverySuccess();
         EasyMock.replay(listener, mockRunner, mMockIDevice, mMockRecovery);
         mTestDevice.runInstrumentationTests(mockRunner, listeners);
     }

@@ -87,8 +87,7 @@ public class TestInvocation implements ITestInvocation {
         } catch (ConfigurationException e) {
             handleError(listener, e);
         } catch (DeviceNotAvailableException e) {
-            handleError(listener, e);
-            // rethrow this so device is marked as unavailable
+            // already logged, just catch and rethrow to prevent uncaught exception logic
             throw e;
         } catch (Throwable e) {
             Log.e(LOG_TAG, "Uncaught exception!");
@@ -102,12 +101,29 @@ public class TestInvocation implements ITestInvocation {
         }
     }
 
-    private void performInvocation(IConfiguration config, ITestDevice device, ITestInvocationListener listener,
-            ITargetPreparer preparer, Test test, IBuildInfo info, ILeveledLogOutput logger) throws
-            DeviceNotAvailableException {
+    /**
+     * Performs the invocation
+     *
+     * @param config the {@link IConfiguration}
+     * @param device the {@link ITestDevice} to use. May be <code>null</code>
+     * @param listener the {@link ITestInvocationListener} to report results to
+     * @param preparer the {@link ITargetPreparer}
+     * @param test the {@link Test} to run
+     * @param info the {@link IBuildInfo}
+     * @param logger the {@link ILeveledLogOutput}
+     * @throws DeviceNotAvailableException
+     */
+    private void performInvocation(IConfiguration config, ITestDevice device,
+            ITestInvocationListener listener, ITargetPreparer preparer, Test test, IBuildInfo info,
+            ILeveledLogOutput logger) throws DeviceNotAvailableException {
         Throwable error = null;
+        long startTime = System.currentTimeMillis();
         listener.invocationStarted(info);
         try {
+            // TODO: find a cleaner way to add this info
+            if (device != null) {
+                info.addBuildAttribute("device_serial", device.getSerialNumber());
+            }
             preparer.setUp(device, info);
             runTests(config, device, info, test, listener);
         } catch (TargetSetupError e) {
@@ -129,9 +145,10 @@ public class TestInvocation implements ITestInvocation {
             }
             listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
             if (error == null) {
-                listener.invocationEnded();
+                listener.invocationEnded(System.currentTimeMillis() - startTime);
             } else {
-                listener.invocationFailed(error.getMessage(), error);
+                listener.invocationFailed(System.currentTimeMillis() - startTime,
+                        error.getMessage(), error);
             }
         }
 
@@ -153,22 +170,24 @@ public class TestInvocation implements ITestInvocation {
     private void handleError(ITestInvocationListener listener, Throwable e) {
         Log.e(LOG_TAG, e);
         if (listener != null) {
-            listener.invocationFailed(e.getMessage(), e);
+            // TODO: pass in elapsedTime
+            listener.invocationFailed(0, e.getMessage(), e);
         }
     }
 
     /**
      * Runs the test.
      *
+     * @param config the {@link IConfiguration}
      * @param device the {@link ITestDevice} to run tests on
      * @param buildInfo the {@link BuildInfo} describing the build target
      * @param test the {@link Test} to run
      * @param listener the {@link ITestInvocationListener} that listens for test results in real
-     * time
+     *            time
      * @throws DeviceNotAvailableException
      */
-    private void runTests(IConfiguration config, ITestDevice device, IBuildInfo buildInfo, Test test,
-            ITestInvocationListener listener) throws DeviceNotAvailableException {
+    private void runTests(IConfiguration config, ITestDevice device, IBuildInfo buildInfo,
+            Test test, ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (test instanceof IDeviceTest) {
             ((IDeviceTest)test).setDevice(device);
         }
@@ -177,13 +196,13 @@ public class TestInvocation implements ITestInvocation {
         }
         if (test instanceof IRemoteTest) {
             // run as a remote test, so results are forwarded directly to TestInvocationListener
-            ((IRemoteTest) test).run(listener);
+            ((IRemoteTest)test).run(listener);
         } else {
             listener.testRunStarted(test.countTestCases());
             long startTime = System.currentTimeMillis();
             // forward the JUnit results to the invocation listener
-            JUnitToInvocationResultForwarder resultForwarder =
-                new JUnitToInvocationResultForwarder(listener);
+            JUnitToInvocationResultForwarder resultForwarder = new JUnitToInvocationResultForwarder(
+                    listener);
             TestResult result = new TestResult();
             result.addListener(resultForwarder);
             test.run(result);

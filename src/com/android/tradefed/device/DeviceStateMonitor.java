@@ -95,7 +95,10 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceNotAvailable(long waitTime) {
-        return waitForDeviceState(TestDeviceState.NOT_AVAILABLE, waitTime);
+        mMgr.addFastbootListener(this);
+        boolean result = waitForDeviceState(TestDeviceState.NOT_AVAILABLE, waitTime);
+        mMgr.removeFastbootListener(this);
+        return result;
     }
 
     /**
@@ -109,16 +112,11 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         //
         // The current implementation waits for each event to occur in sequence.
         //
-        // This method will always wait at least DEFAULT_ONLINE_TIMEOUT for device to be online.
-        // Then for the remaining events, it will track the currently elapsed time and fail if it is
+        // it will track the currently elapsed time and fail if it is
         // greater than waitTime
-        if (waitTime < DEFAULT_ONLINE_TIMEOUT) {
-            Log.w(LOG_TAG, String.format("Wait time %d ms provided to waitForDeviceAvailable" +
-                    " is less than the DEFAULT_ONLINE_TIMEOUT. Waiting for %d instead", waitTime,
-                    DEFAULT_ONLINE_TIMEOUT));
-        }
+
         long startTime = System.currentTimeMillis();
-        IDevice device = waitForDeviceOnline();
+        IDevice device = waitForDeviceOnline(waitTime);
         if (device == null) {
             return null;
         }
@@ -190,9 +188,9 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             public boolean run() {
                 final String cmd = "cat /proc/mounts";
                 try {
-                    String externalStore = getIDevice().getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+                    String externalStore = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
                     if (externalStore == null) {
-                        Log.i(LOG_TAG, String.format(
+                        Log.w(LOG_TAG, String.format(
                                 "Failed to get external store mount point for %s",
                                 getSerialNumber()));
                         return false;
@@ -213,6 +211,24 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         };
         return getRunUtil().runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
                 storePollRunnable);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getMountPoint(String mountName) {
+        String mountPoint = getIDevice().getMountPoint(mountName);
+        if (mountPoint != null) {
+            return mountPoint;
+        }
+        // cached mount point is null - try querying directly
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        try {
+            getIDevice().executeShellCommand("echo $" + mountName, receiver);
+            return receiver.getOutput().trim();
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     /**

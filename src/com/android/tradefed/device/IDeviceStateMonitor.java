@@ -99,7 +99,22 @@ public interface IDeviceStateMonitor {
     public TestDeviceState getDeviceState();
 
     /**
+     * Sets the device current state.
+     *
      * @param deviceState
      */
     public void setState(TestDeviceState deviceState);
+
+    /**
+     * Returns a mount point.
+     * <p/>
+     * Queries the device directly if the cached info in {@link IDevice} is not available.
+     * <p/>
+     * TODO: move this behavior to {@link IDevice#getMountPoint(String)}
+     *
+     * @param mountName the name of the mount point
+     * @return the mount point or <code>null</code>
+     * @see {@link IDevice#getMountPoint(String)}
+     */
+    public String getMountPoint(String mountName);
 }

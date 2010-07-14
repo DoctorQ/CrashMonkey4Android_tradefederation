@@ -25,8 +25,10 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.LogRegistry;
@@ -75,7 +77,7 @@ public class Command {
      */
     protected void run(String[] args) {
         DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
-        Log.setLogOutput(LogRegistry.getLogRegistry());
+        Log.setLogOutput(getLogRegistry());
 
         IDeviceManager manager = null;
 
@@ -129,7 +131,7 @@ public class Command {
     protected void runInvocation(IDeviceManager manager, IConfiguration config)
             throws ConfigurationException {
         ITestDevice device = null;
-        boolean deviceAvailable = true;
+        FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
         try {
             ITestInvocation instance = createRunInstance();
             device = manager.allocateDevice(config.getDeviceRecovery(), WAIT_DEVICE_TIME);
@@ -138,11 +140,13 @@ public class Command {
                 throw new DeviceNotAvailableException();
             }
             instance.invoke(device, config);
+        } catch (DeviceUnresponsiveException e) {
+            deviceState = FreeDeviceState.UNRESPONSIVE;
         } catch (DeviceNotAvailableException e) {
-            deviceAvailable = false;
+            deviceState = FreeDeviceState.UNAVAILABLE;
         } finally {
             if (manager != null && device != null) {
-                manager.freeDevice(device, deviceAvailable);
+                manager.freeDevice(device, deviceState);
             }
         }
     }
@@ -151,6 +155,7 @@ public class Command {
         if (manager != null) {
             manager.terminate();
         }
+        getLogRegistry().closeAndRemoveAllLogs();
     }
 
     /**
@@ -169,6 +174,15 @@ public class Command {
      */
     protected IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
+    }
+
+    /**
+     * Factory method for getting a reference to the {@link LogRegistry}
+     *
+     * @return the {@link LogRegistry} to use
+     */
+    protected LogRegistry getLogRegistry() {
+        return LogRegistry.getLogRegistry();
     }
 
     /**

@@ -44,4 +44,16 @@ public interface ILogFileSaver {
     public File saveLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException;
 
+    /**
+     * Save and compress the log data to a zip file
+     *
+     * @param dataName a {@link String} descriptive name of the data. e.g. "device_logcat"
+     * @param dataType the {@link LogDataType} of the file.
+     * @param dataStream the {@link InputStream} of the data.
+     * @return the file of the generated data
+     * @throws IOException if log file could not be generated
+     */
+    public File saveAndZipLogData(String dataName, LogDataType dataType, InputStream dataStream)
+            throws IOException;
+
 }

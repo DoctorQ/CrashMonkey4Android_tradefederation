@@ -64,12 +64,12 @@ public class XmlResultReporterTest extends TestCase {
      */
     public void testEmptyGeneration() {
         final String expectedOutput = "<?xml version='1.0' encoding='UTF-8' ?>" +
-            "<testsuite name=\"todo\" tests=\"0\" failures=\"0\" errors=\"0\" time=\"0\" " +
+            "<testsuite name=\"todo\" tests=\"0\" failures=\"0\" errors=\"0\" time=\"1\" " +
             "timestamp=\"ignore\" hostname=\"localhost\"> " +
             "<properties />" +
             "</testsuite>";
         mResultReporter.invocationStarted(new BuildInfo());
-        mResultReporter.invocationEnded();
+        mResultReporter.invocationEnded(1);
         assertEquals(expectedOutput, getOutput());
     }
 
@@ -81,7 +81,7 @@ public class XmlResultReporterTest extends TestCase {
         mResultReporter.invocationStarted(new BuildInfo());
         mResultReporter.testStarted(testId);
         mResultReporter.testEnded(testId);
-        mResultReporter.invocationEnded();
+        mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare
         assertTrue(output.contains("tests=\"1\" failures=\"0\" errors=\"0\""));
@@ -100,7 +100,7 @@ public class XmlResultReporterTest extends TestCase {
         mResultReporter.testStarted(testId);
         mResultReporter.testFailed(TestFailure.FAILURE, testId, trace);
         mResultReporter.testEnded(testId);
-        mResultReporter.invocationEnded();
+        mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare
         assertTrue(output.contains("tests=\"1\" failures=\"1\" errors=\"0\""));

@@ -74,15 +74,18 @@ public interface ITestInvocationListener extends ITestRunListener {
 
     /**
      * Reports the end of the test invocation.
+     *
+     * @param elapsedTime the elapsed time of the invocation in ms
      */
-    public void invocationEnded();
+    public void invocationEnded(long elapsedTime);
 
     /**
      * Reports an incomplete invocation due to a fatal error.
      *
+     * @param elapsedTime the elapsed time of the invocation in ms
      * @param message a {@link String} error description
      * @param cause the {@link Throwable} cause of the failure
      */
-    public void invocationFailed(String message, Throwable cause);
+    public void invocationFailed(long elapsedTime, String message, Throwable cause);
 
 }

@@ -23,6 +23,10 @@ import com.android.ddmlib.AndroidDebugBridge;
  */
 public interface IDeviceManager {
 
+    public enum FreeDeviceState {
+        AVAILABLE, UNAVAILABLE, UNRESPONSIVE;
+    }
+
     /**
      * Request a device for testing, waiting indefinitely until one becomes available.
      *
@@ -47,10 +51,10 @@ public interface IDeviceManager {
      * Attempts to return a device that hasn't been previously allocated will be ignored.
      *
      * @param device the {@link ITestDevice} to free
-     * @param isAvailable <code>true</code> if device is currently operational and can be returned
-     *            to device pool. <code>false</code> otherwise.
+     * @param state the {@link FreeDeviceState}. Used to control if device is returned to available
+     *            device pool.
      */
-    public void freeDevice(ITestDevice device, boolean isAvailable);
+    public void freeDevice(ITestDevice device, FreeDeviceState state);
 
     /**
      * Terminates the ddm library. This must be called upon application termination.

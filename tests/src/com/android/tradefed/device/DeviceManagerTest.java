@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.IDevice.DeviceState;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 
 import org.easymock.EasyMock;
 
@@ -37,7 +38,7 @@ public class DeviceManagerTest extends TestCase {
      * higher.
      */
     private static final int MIN_ALLOCATE_WAIT_TIME = 100;
-    private static final String DEVICE_SERIAL = "1";
+    private static final String DEVICE_SERIAL = "serial";
 
     private IAndroidDebugBridge mMockAdbBridge;
     private IDeviceRecovery mMockRecovery;
@@ -176,7 +177,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManager();
         ITestDevice testDevice = manager.allocateDevice(mMockRecovery);
         assertEquals(mMockDevice, testDevice.getIDevice());
-        manager.freeDevice(testDevice, true);
+        manager.freeDevice(testDevice, FreeDeviceState.AVAILABLE);
         // verify same device can be allocated again
         ITestDevice newDevice = manager.allocateDevice(mMockRecovery);
         assertEquals(mMockDevice, newDevice.getIDevice());
@@ -194,7 +195,7 @@ public class DeviceManagerTest extends TestCase {
         EasyMock.expect(testDevice.getSerialNumber()).andReturn("dontexist");
         EasyMock.replay(mMockMonitor, testDevice, mMockDevice, mMockAdbBridge);
         DeviceManager manager = createDeviceManager();
-        manager.freeDevice(testDevice, true);
+        manager.freeDevice(testDevice, FreeDeviceState.AVAILABLE);
     }
 
     /**

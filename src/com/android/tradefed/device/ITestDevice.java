@@ -108,6 +108,19 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Helper method which executes a long running fastboot command as a system command.
+     * <p/>
+     * Identical to {@link #executeFastbootCommand(String...)} except uses a longer timeout.
+     *
+     * @param commandArgs the fastboot command and arguments to run
+     * @return the CommandResult containing output of command
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public CommandResult executeLongFastbootCommand(String... commandArgs)
+            throws DeviceNotAvailableException;
+
+    /**
      * Runs instrumentation tests, and provides device recovery.
      * <p/>
      * If connection with device is lost before test run completes, and recovery succeeds, this

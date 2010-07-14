@@ -15,8 +15,9 @@
  */
 package com.android.tradefed.result;
 
-import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.BuildInfo;
+import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
 
@@ -26,6 +27,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipInputStream;
 
 import junit.framework.TestCase;
 
@@ -83,6 +87,38 @@ public class LogFileSaverTest extends TestCase {
         } finally {
             if (logFileReader != null) {
                 logFileReader.close();
+            }
+            if (logFile != null) {
+                logFile.delete();
+            }
+        }
+    }
+
+    /**
+     * Simple normal case test for
+     * {@link LogFileSaver#saveAndZipLogData}.
+     */
+    public void testSaveAndZipLogData() throws IOException {
+        File logFile = null;
+        ZipInputStream zipFileStream = null;
+        try {
+            // TODO: would be nice to create a mock file output to make this test not use disk I/O
+            File tmpDir = createUniqueTmpDir();
+            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), tmpDir);
+            final String testData = "Here's some test data, blah";
+            ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
+            logFile = saver.saveAndZipLogData("testSaveLogData", LogDataType.TEXT, mockInput);
+
+            assertTrue(logFile.getName().endsWith(LogDataType.ZIP.getFileExt()));
+            // Verify test data was written to file
+            ZipFile zipFile = new ZipFile(logFile);
+
+            String actualLogString = StreamUtil.getStringFromStream(zipFile.getInputStream(
+                    new ZipEntry("testSaveLogData.txt")));
+            assertTrue(actualLogString.equals(testData));
+        } finally {
+            if (zipFileStream != null) {
+                zipFileStream.close();
             }
             if (logFile != null) {
                 logFile.delete();

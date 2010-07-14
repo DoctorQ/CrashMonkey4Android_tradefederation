@@ -18,6 +18,7 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.ConfigurationException;
 
 import java.lang.Thread;
 import java.lang.ThreadGroup;
@@ -38,8 +39,9 @@ import java.util.Map;
 public class LogRegistry implements ILogOutput {
     private static final String LOG_TAG = "LogRegistry";
     private static LogRegistry mLogRegistry = null;
-    private static Map<ThreadGroup, ILeveledLogOutput> mLogTable =
+    private Map<ThreadGroup, ILeveledLogOutput> mLogTable =
             new Hashtable<ThreadGroup, ILeveledLogOutput>();
+    private FileLogger mGlobalLogger;
 
     /** the log level to use for log messages occurring on a unregistered thread */
     private static final LogLevel DEFAULT_LOG_LEVEL = LogLevel.INFO;
@@ -49,6 +51,14 @@ public class LogRegistry implements ILogOutput {
      * the {@link LogRegistry}.
      */
     LogRegistry() {
+        try {
+            mGlobalLogger = new FileLogger(false /* don't delete file on exit */);
+            mGlobalLogger.setLogLevelDisplay(DEFAULT_LOG_LEVEL.getStringValue());
+        } catch (ConfigurationException e) {
+            System.err.println("Failed to create global logger");
+            throw new IllegalStateException(e);
+        }
+
     }
 
     /**
@@ -105,19 +115,13 @@ public class LogRegistry implements ILogOutput {
      */
     public void printLog(LogLevel logLevel, String tag, String message) {
         ILeveledLogOutput log = mLogTable.get(getCurrentThreadGroup());
-        if (log != null) {
-            LogLevel currentLogLevel = LogLevel.getByString(log.getLogLevel());
-            if (logLevel.getPriority() >= currentLogLevel.getPriority()) {
-                log.printLog(logLevel, tag, message);
-            }
+        if (log == null) {
+            // If there's no logger set for this thread, use global logger
+            log = mGlobalLogger;
         }
-        else {
-
-            // If there's no logger set for this thread yet, just print to console
-            if (logLevel.compareTo(DEFAULT_LOG_LEVEL) >= 0) {
-                // @TODO: Change to use a FileLogger as the default, instead of printing to console
-                Log.printLog(logLevel, tag, message);
-            }
+        LogLevel currentLogLevel = LogLevel.getByString(log.getLogLevel());
+        if (logLevel.getPriority() >= currentLogLevel.getPriority()) {
+            log.printLog(logLevel, tag, message);
         }
     }
 
@@ -151,7 +155,7 @@ public class LogRegistry implements ILogOutput {
     /**
      * Closes and removes all logs being managed by this LogRegistry.
      */
-    public static void closeAndRemoveAllLogs() {
+    public void closeAndRemoveAllLogs() {
         Collection<ILeveledLogOutput> allLogs = mLogTable.values();
         Iterator<ILeveledLogOutput> iter = allLogs.iterator();
         while (iter.hasNext()) {
@@ -159,5 +163,6 @@ public class LogRegistry implements ILogOutput {
             log.closeLog();
             iter.remove();
         }
+        mGlobalLogger.closeLog();
     }
 }

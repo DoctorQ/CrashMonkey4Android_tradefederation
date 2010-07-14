@@ -202,14 +202,14 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void invocationEnded() {
+    public void invocationEnded(long elapsedTime) {
         // ignore
     }
 
     /**
      * {@inheritDoc}
      */
-    public void invocationFailed(String message, Throwable cause) {
+    public void invocationFailed(long elapsedTime, String message, Throwable cause) {
         // ignore
     }
 

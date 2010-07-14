@@ -118,6 +118,15 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public CommandResult executeLongFastbootCommand(String... commandArgs)
+            throws DeviceNotAvailableException {
+        // ignore
+        return new CommandResult();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean enableAdbRoot() throws DeviceNotAvailableException {
         // ignore
         return true;

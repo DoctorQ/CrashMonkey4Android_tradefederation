@@ -23,7 +23,10 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.log.StubLogRegistry;
 
 import org.easymock.EasyMock;
 
@@ -34,7 +37,7 @@ import java.io.StringReader;
 import junit.framework.TestCase;
 
 /**
- * Unit tests for {@link Command}
+ * Unit tests for {@link CommandFile}
  */
 public class CommandFileTest extends TestCase {
 
@@ -52,12 +55,13 @@ public class CommandFileTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockTestInvoker = EasyMock.createMock(ITestInvocation.class);
-        mMockDeviceManager = EasyMock.createMock(IDeviceManager.class);
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
         mMockConfigFactory = EasyMock.createMock(IConfigurationFactory.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
+        mMockDeviceManager =  EasyMock.createMock(IDeviceManager.class);
 
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
 
         mCommandFile = new CommandFile() {
             @Override
@@ -79,19 +83,24 @@ public class CommandFileTest extends TestCase {
             BufferedReader createConfigFileReader(File file) {
                return new BufferedReader(new StringReader(mMockFileData));
             }
+
+            @Override
+            protected LogRegistry getLogRegistry() {
+                return new StubLogRegistry();
+            }
         };
     }
 
     /** Set all mock objects to replay mode */
     private void replayMocks() {
-        EasyMock.replay(mMockConfigFactory, mMockConfiguration, mMockDeviceManager,
-                mMockTestInvoker);
+        EasyMock.replay(mMockConfigFactory, mMockConfiguration,
+                mMockTestInvoker, mMockDevice, mMockDeviceManager);
     }
 
     /** Verify all mock objects */
     private void verifyMocks() {
-        EasyMock.verify(mMockConfigFactory, mMockConfiguration, mMockDeviceManager,
-                mMockTestInvoker);
+        EasyMock.verify(mMockConfigFactory, mMockConfiguration,
+                mMockTestInvoker, mMockDeviceManager);
     }
 
     /**
@@ -105,11 +114,10 @@ public class CommandFileTest extends TestCase {
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(expectedArgs)))
                 .andReturn(mMockConfiguration);
         EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
-        // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
-        mMockDeviceManager.freeDevice(mMockDevice, true);
+        mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
         mMockDeviceManager.terminate();
         // switch mock objects to verify mode
         replayMocks();
@@ -146,5 +154,4 @@ public class CommandFileTest extends TestCase {
         verifyMocks();
     }
 
-    // TODO: add tests for loop mode
 }

@@ -27,27 +27,31 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
+import com.android.tradefed.result.StubTestListener;
 import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.SequenceInputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -59,7 +63,7 @@ class TestDevice implements IManagedTestDevice {
 
     private static final String LOG_TAG = "TestDevice";
     /** the default number of command retry attempts to perform */
-    private static final int MAX_RETRY_ATTEMPTS = 3;
+    static final int MAX_RETRY_ATTEMPTS = 3;
     /** the max number of bytes to store in logcat tmp buffer */
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
@@ -71,7 +75,10 @@ class TestDevice implements IManagedTestDevice {
     /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
     static final String DISMISS_DIALOG_CMD = "input keyevent 23";
     /** The time in ms to wait for a command to complete. */
-    private long mCmdTimeout = 3 * 60 * 1000;
+    private long mCmdTimeout = 2 * 60 * 1000;
+    /** The time in ms to wait for a 'long' command to complete. */
+    private long mLongCmdTimeout = 12 * 60 * 1000;
+
     private IDevice mIDevice;
     private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
@@ -98,6 +105,15 @@ class TestDevice implements IManagedTestDevice {
 
     @Option(name="disable-keyguard-cmd", description="shell command to disable keyguard")
     private String mDisableKeyguardCmd = "input keyevent 82";
+
+    /**
+     * The maximum size of a tmp logcat file, in bytes.
+     * <p/>
+     * The actual size of the log info stored will be up to twice this number, as two logcat files
+     * are stored.
+     */
+    @Option(name="max-tmp-logcat-file", description="The maximum size of a tmp logcat file, in bytes")
+    private long mMaxLogcatFileSize = 10 * 1024 * 1024;
 
     /**
      * Interface for a generic device communication attempt.
@@ -134,6 +150,15 @@ class TestDevice implements IManagedTestDevice {
      */
     IRunUtil getRunUtil() {
         return RunUtil.getInstance();
+    }
+
+    /**
+     * Sets the max size of a tmp logcat file.
+     *
+     * @param size max byte size of tmp file
+     */
+    void setTmpLogcatSize(long size) {
+        mMaxLogcatFileSize = size;
     }
 
     /**
@@ -231,7 +256,16 @@ class TestDevice implements IManagedTestDevice {
     public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
         try {
+            RunFailureListener failureListener = new RunFailureListener();
+            listeners.add(failureListener);
             runner.run(listeners);
+            if (failureListener.mIsRunFailure) {
+                // run failed, might be system crash. Ensure device is up
+                if (mMonitor.waitForDeviceAvailable(10*1000) == null) {
+                    // device isn't up, recover
+                    recoverDevice();
+                }
+            }
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("IOException %s when running tests %s on %s",
                     e.getMessage(), runner.getPackageName(), getSerialNumber()));
@@ -245,12 +279,23 @@ class TestDevice implements IManagedTestDevice {
         }
     }
 
+    private static class RunFailureListener extends StubTestListener {
+        private boolean mIsRunFailure = false;
+
+        @Override
+        public void testRunFailed(String message) {
+            mIsRunFailure = true;
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
     public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException {
-        runInstrumentationTests(runner, Arrays.asList(listeners));
+        List<ITestRunListener> listenerList = new ArrayList<ITestRunListener>();
+        listenerList.addAll(Arrays.asList(listeners));
+        runInstrumentationTests(runner, listenerList);
     }
 
     /**
@@ -381,7 +426,7 @@ class TestDevice implements IManagedTestDevice {
      */
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Checking free space for %s", getSerialNumber()));
-        String externalStorePath = getIDevice().getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        String externalStorePath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         String output = executeShellCommand(String.format("df %s", externalStorePath));
         final Pattern freeSpacePattern = Pattern.compile("(\\d+)K available");
         Matcher patternMatcher = freeSpacePattern.matcher(output);
@@ -396,6 +441,10 @@ class TestDevice implements IManagedTestDevice {
         Log.e(LOG_TAG, String.format(
                 "free space command output \"%s\" did not match expected pattern ", output));
         return 0;
+    }
+
+    private String getMountPoint(String mountName) {
+        return mMonitor.getMountPoint(mountName);
     }
 
     /**
@@ -593,6 +642,23 @@ class TestDevice implements IManagedTestDevice {
      */
     public CommandResult executeFastbootCommand(String... cmdArgs)
             throws DeviceNotAvailableException {
+        return doFastbootCommand(getCommandTimeout(), cmdArgs);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public CommandResult executeLongFastbootCommand(String... cmdArgs)
+            throws DeviceNotAvailableException {
+        return doFastbootCommand(getLongCommandTimeout(), cmdArgs);
+    }
+
+    /**
+     * @param cmdArgs
+     * @throws DeviceNotAvailableException
+     */
+    private CommandResult doFastbootCommand(final long timeout, String... cmdArgs)
+            throws DeviceNotAvailableException {
         final String[] fullCmd = buildFastbootCommand(cmdArgs);
         for (int i = 0; i < MAX_RETRY_ATTEMPTS; i++) {
             // block state changes while executing a fastboot command, since
@@ -602,7 +668,7 @@ class TestDevice implements IManagedTestDevice {
             } catch (InterruptedException e) {
                 // ignore
             }
-            CommandResult result = getRunUtil().runTimedCmd(getCommandTimeout(), fullCmd);
+            CommandResult result = getRunUtil().runTimedCmd(timeout, fullCmd);
             mFastbootLock.release();
             // a fastboot command will always time out if device not available
             if (result.getStatus() != CommandStatus.TIMED_OUT) {
@@ -610,7 +676,7 @@ class TestDevice implements IManagedTestDevice {
             }
             recoverDeviceFromBootloader();
         }
-        throw new DeviceNotAvailableException(String.format("Attempted fastboot %s multiple "
+        throw new DeviceUnresponsiveException(String.format("Attempted fastboot %s multiple "
                 + "times on device %s without communication success. Aborting.", cmdArgs[0],
                 getSerialNumber()));
     }
@@ -620,6 +686,20 @@ class TestDevice implements IManagedTestDevice {
      */
     long getCommandTimeout() {
         return mCmdTimeout;
+    }
+
+    /**
+     * Set the max time allowed in ms for commands.
+     */
+    void setLongCommandTimeout(long timeout) {
+        mLongCmdTimeout = timeout;
+    }
+
+    /**
+     * Get the max time allowed in ms for commands.
+     */
+    long getLongCommandTimeout() {
+        return mLongCmdTimeout;
     }
 
     /**
@@ -658,7 +738,7 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Recursively performs an action on this device. Attempts to recover device and retry command
+     * Performs an action on this device. Attempts to recover device and retry command
      * if action fails.
      *
      * @param actionDescription a short description of action to be performed. Used for logging
@@ -666,42 +746,42 @@ class TestDevice implements IManagedTestDevice {
      * @param action the action to be performed
      * @param callback optional action to perform if action fails but recovery succeeds. If no post
      *            recovery action needs to be taken pass in <code>null</code>
-     * @param remainingAttempts the remaining retry attempts to make for action if it fails but
+     * @param attempts the retry attempts to make for action if it fails but
      *            recovery succeeds
      * @returns <code>true</code> if action was performed successfully
      * @throws DeviceNotAvailableException if recovery attempt fails or max attempts done without
      *             success
      */
     private boolean performDeviceAction(String actionDescription, final DeviceAction action,
-            int remainingAttempts) throws DeviceNotAvailableException {
+            int attempts) throws DeviceNotAvailableException {
 
-        CommandStatus result = getRunUtil().runTimed(action.mTimeout, action);
+        for (int i=0; i < attempts; i++) {
+            CommandStatus result = getRunUtil().runTimed(action.mTimeout, action);
 
-        switch (result) {
-            case SUCCESS: {
-                return true;
+            switch (result) {
+                case SUCCESS: {
+                    return true;
+                }
+                case FAILED: {
+                    return false;
+                }
+                case EXCEPTION: {
+                    Log.w(LOG_TAG, String.format("Exception when attempting %s on device %s",
+                            actionDescription, getSerialNumber()));
+                    break;
+                }
+                case TIMED_OUT: {
+                    Log.w(LOG_TAG, String.format("'%s' did not complete after %d ms on device %s",
+                            actionDescription, action.mTimeout, getSerialNumber()));
+                    break;
+                }
             }
-            case FAILED: {
-                return false;
-            }
-            case EXCEPTION: {
-                Log.w(LOG_TAG, String.format("Exception when attempting %s on device %s",
-                        actionDescription, getSerialNumber()));
-            }
-            case TIMED_OUT: {
-                Log.w(LOG_TAG, String.format("'%s' did not complete after %d ms on device %s",
-                        actionDescription, action.mTimeout, getSerialNumber()));
-            }
+            recoverDevice();
         }
-        recoverDevice();
+        throw new DeviceUnresponsiveException(String.format("Attempted %s multiple times "
+                + "on device %s without communication success. Aborting.", actionDescription,
+                getSerialNumber()));
 
-        if (remainingAttempts > 0) {
-            return performDeviceAction(actionDescription, action, remainingAttempts - 1);
-        } else {
-            throw new DeviceNotAvailableException(String.format("Attempted %s multiple times "
-                    + "on device %s without communication success. Aborting.", actionDescription,
-                    getSerialNumber()));
-        }
     }
 
     /**
@@ -713,6 +793,9 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
+        Log.i(LOG_TAG, String.format("Reboot device %s after recovery to ensure proper setup",
+                getSerialNumber()));
+        reboot();
     }
 
     /**
@@ -784,12 +867,23 @@ class TestDevice implements IManagedTestDevice {
      */
     public void stopLogcat() {
         if (mLogcatReceiver != null) {
-            mLogcatReceiver.cancel();
-            mLogcatReceiver = null;
+            synchronized(mLogcatReceiver) {
+                mLogcatReceiver.cancel();
+                mLogcatReceiver = null;
+            }
         } else {
             Log.w(LOG_TAG, String.format("Attempting to stop logcat when not capturing for %s",
                     getSerialNumber()));
         }
+    }
+
+    /**
+     * Factory method to create a {@link LogCatReceiver}.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    LogCatReceiver createLogcatReceiver() {
+        return new LogCatReceiver();
     }
 
     /**
@@ -799,44 +893,74 @@ class TestDevice implements IManagedTestDevice {
      * <li>if device goes permanently offline during a test, the log data is retained.
      * <li>to capture more data than may fit in device's circular log.
      * <p/>
-     * TODO: consider placing a maximum cap on data stored to host file
+     * The maximum size of the tmp file is limited to approximately mMaxLogcatFileSize.
+     * To prevent data loss when the limit has been reached, this file keeps two tmp host
+     * files.
      */
-    private class LogCatReceiver extends Thread implements IShellOutputReceiver {
+    class LogCatReceiver extends Thread implements IShellOutputReceiver {
 
         private boolean mIsCancelled = false;
         private OutputStream mOutStream;
-        private File mTmpFile;
+        /** the archived previous tmp file */
+        private File mPreviousTmpFile = null;
+        /** the current temp file which logcat data will be streamed into */
+        private File mTmpFile = null;
+        private long mTmpBytesStored = 0;
 
         /**
          * {@inheritDoc}
          */
-        public void addOutput(byte[] data, int offset, int length) {
+        public synchronized void addOutput(byte[] data, int offset, int length) {
+            if (mOutStream == null) {
+                return;
+            }
             try {
                 mOutStream.write(data, offset, length);
+                mTmpBytesStored += length;
+                if (mTmpBytesStored > mMaxLogcatFileSize) {
+                    Log.i(LOG_TAG, String.format(
+                            "Max tmp logcat file size reached for %s, swapping",
+                            getSerialNumber()));
+                    createTmpFile();
+                    mTmpBytesStored = 0;
+                }
             } catch (IOException e) {
                 Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
                         getSerialNumber()));
             }
         }
 
-        public InputStream getLogcatData() {
-            flush();
-            try {
-                FileInputStream fileStream = new FileInputStream(mTmpFile);
-                return fileStream;
-            } catch (IOException e) {
-                Log.e(LOG_TAG,
-                        String.format("failed to get logcat data for %s.", getSerialNumber()));
-                Log.e(LOG_TAG, e);
-                // return an empty input stream
-                return new ByteArrayInputStream(new byte[0]);
+        public synchronized InputStream getLogcatData() {
+            if (mTmpFile != null) {
+                flush();
+                try {
+                    FileInputStream fileStream = new FileInputStream(mTmpFile);
+                    if (mPreviousTmpFile != null) {
+                        // return a input stream that first reads from mPreviousTmpFile, then reads
+                        // from mTmpFile
+                        return new SequenceInputStream(new FileInputStream(mPreviousTmpFile),
+                                fileStream);
+                    } else {
+                        // no previous file, just return mTmpFile's stream
+                        return fileStream;
+                    }
+                } catch (IOException e) {
+                    Log.e(LOG_TAG,
+                            String.format("failed to get logcat data for %s.", getSerialNumber()));
+                    Log.e(LOG_TAG, e);
+                }
             }
+            // return an empty input stream
+            return new ByteArrayInputStream(new byte[0]);
         }
 
         /**
          * {@inheritDoc}
          */
-        public void flush() {
+        public synchronized void flush() {
+            if (mOutStream == null) {
+                return;
+            }
             try {
                 mOutStream.flush();
             } catch (IOException e) {
@@ -845,11 +969,27 @@ class TestDevice implements IManagedTestDevice {
             }
         }
 
-        public void cancel() {
+        public synchronized void cancel() {
             mIsCancelled = true;
             interrupt();
+            closeLogStream();
+            if (mTmpFile != null) {
+                mTmpFile.delete();
+                mTmpFile = null;
+            }
+            if (mPreviousTmpFile != null) {
+                mPreviousTmpFile.delete();
+                mPreviousTmpFile = null;
+            }
+        }
+
+        /**
+         * Closes the stream to tmp log file
+         */
+        private void closeLogStream() {
             try {
                 if (mOutStream != null) {
+                    mOutStream.flush();
                     mOutStream.close();
                     mOutStream = null;
                 }
@@ -858,29 +998,19 @@ class TestDevice implements IManagedTestDevice {
                 Log.w(LOG_TAG, String.format("failed to close logcat stream for %s.",
                         getSerialNumber()));
             }
-            if (mTmpFile != null) {
-                mTmpFile.delete();
-                mTmpFile = null;
-            }
         }
 
         /**
          * {@inheritDoc}
          */
-        public boolean isCancelled() {
+        public synchronized boolean isCancelled() {
             return mIsCancelled;
         }
 
         @Override
         public void run() {
             try {
-                mTmpFile = File.createTempFile(String.format("logcat_%s_", getSerialNumber()),
-                        ".txt");
-                Log.i(LOG_TAG, String.format("Created tmp logcat file %s",
-                        mTmpFile.getAbsolutePath()));
-                mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
-                        LOGCAT_BUFF_SIZE);
-
+                createTmpFile();
             } catch (IOException e) {
                 Log.e(LOG_TAG, String.format("failed to create tmp logcat file for %s.",
                         getSerialNumber()));
@@ -910,11 +1040,33 @@ class TestDevice implements IManagedTestDevice {
         }
 
         /**
+         * Creates a new tmp file, closing the old one as necessary
+         * @throws IOException
+         * @throws FileNotFoundException
+         */
+        private synchronized void createTmpFile() throws IOException, FileNotFoundException {
+            closeLogStream();
+            if (mPreviousTmpFile != null) {
+                mPreviousTmpFile.delete();
+            }
+            mPreviousTmpFile = mTmpFile;
+            mTmpFile = File.createTempFile(String.format("logcat_%s_", getSerialNumber()),
+                    ".txt");
+            Log.i(LOG_TAG, String.format("Created tmp logcat file %s",
+                    mTmpFile.getAbsolutePath()));
+            mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
+                    LOGCAT_BUFF_SIZE);
+        }
+
+        /**
          * Adds a message to the captured device log.
          *
          * @param msg
          */
-        private void appendDeviceLogMsg(String msg) {
+        private synchronized void appendDeviceLogMsg(String msg) {
+            if (mOutStream == null) {
+                return;
+            }
             // add the msg to device tmp log, so readers will know logcat was interrupted
             try {
                 mOutStream.write("\n*******************\n".getBytes());
@@ -1111,7 +1263,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void reboot() throws DeviceNotAvailableException {
-        if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
+        if (TestDeviceState.FASTBOOT == getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s in fastboot. Rebooting to userspace.",
                     getSerialNumber()));
             executeFastbootCommand("reboot");
@@ -1177,7 +1329,7 @@ class TestDevice implements IManagedTestDevice {
             return true;
         } else if (output.contains("restarting adbd as root")) {
             // wait for device to disappear from adb
-            waitForDeviceNotAvailable("root", 20 * 1000);
+            waitForDeviceNotAvailable("root", 30 * 1000);
             // wait for device to be back online
             waitForDeviceOnline();
             return true;

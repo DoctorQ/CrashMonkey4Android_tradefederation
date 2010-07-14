@@ -83,9 +83,9 @@ public class XmlResultReporter extends CollectingTestListener {
      * {@inheritDoc}
      */
     @Override
-    public void invocationEnded() {
+    public void invocationEnded(long elapsedTime) {
         if (mReportDir != null) {
-            generateReport(mLogFileSaver.getFileDir());
+            generateReport(mLogFileSaver.getFileDir(), elapsedTime);
         }
     }
 
@@ -93,9 +93,9 @@ public class XmlResultReporter extends CollectingTestListener {
      * {@inheritDoc}
      */
     @Override
-    public void invocationFailed(String message, Throwable e) {
+    public void invocationFailed(long elapsedTime, String message, Throwable e) {
         if (mReportDir != null) {
-            generateReport(mLogFileSaver.getFileDir());
+            generateReport(mLogFileSaver.getFileDir(), elapsedTime);
         }
     }
 
@@ -121,7 +121,7 @@ public class XmlResultReporter extends CollectingTestListener {
     /**
      * Creates a report file and populates it with the report data from the completed tests.
      */
-    private void generateReport(File reportDir) {
+    private void generateReport(File reportDir, long elapsedTime) {
         String timestamp = getTimestamp();
 
         OutputStream stream = null;
@@ -133,7 +133,7 @@ public class XmlResultReporter extends CollectingTestListener {
             serializer.setFeature(
                     "http://xmlpull.org/v1/doc/features.html#indent-output", true);
             // TODO: insert build info
-            printTestResults(serializer, timestamp);
+            printTestResults(serializer, timestamp, elapsedTime);
             serializer.endDocument();
             String msg = String.format("XML test result file generated at %s. Total tests %d, " +
                     "Failed %d, Error %d", reportDir.getAbsolutePath(), getTestResults().size(),
@@ -176,15 +176,15 @@ public class XmlResultReporter extends CollectingTestListener {
         return new FileOutputStream(reportFile);
     }
 
-    void printTestResults(KXmlSerializer serializer, String timestamp) throws IOException {
+    void printTestResults(KXmlSerializer serializer, String timestamp, long elapsedTime)
+            throws IOException {
         Map<TestIdentifier, TestResult>  results = getTestResults();
         serializer.startTag(ns, TESTSUITE);
         serializer.attribute(ns, ATTR_NAME, "todo");
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(results.size()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(getNumFailedTests()));
         serializer.attribute(ns, ATTR_ERRORS, Integer.toString(getNumErrorTests()));
-        // TODO: support this for single test run
-        serializer.attribute(ns, ATTR_TIME, "0");
+        serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTime));
         serializer.attribute(ns, TIMESTAMP, timestamp);
         serializer.attribute(ns, HOSTNAME, "localhost");
         serializer.startTag(ns, PROPERTIES);

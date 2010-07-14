@@ -22,6 +22,7 @@ public enum LogDataType {
 
     TEXT("txt"),
     PNG("png"),
+    ZIP("zip"),
     UNKNOWN("tmp");
 
     private final String mFileExt;
