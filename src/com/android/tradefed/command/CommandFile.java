@@ -346,8 +346,8 @@ public class CommandFile extends Command {
                             device.getSerialNumber()));
                     deviceState = FreeDeviceState.UNAVAILABLE;
                 }
-                manager.freeDevice(device, deviceState);
                 cmd.updateExecTime(System.currentTimeMillis() - startTime);
+                manager.freeDevice(device, deviceState);
             }
         };
         invocationThread.start();
