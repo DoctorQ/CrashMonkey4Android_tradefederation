@@ -88,7 +88,9 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andReturn((String)null);
         CommandResult fastbootResult = new CommandResult();
         fastbootResult.setStatus(CommandStatus.SUCCESS);
-        fastbootResult.setStdout("product: nexusone\n" + "finished. total time: 0.001s");
+        // output of this cmd goes to stderr
+        fastbootResult.setStdout("");
+        fastbootResult.setStderr("product: nexusone\n" + "finished. total time: 0.001s");
         EasyMock.expect(
                 mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
                         (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),

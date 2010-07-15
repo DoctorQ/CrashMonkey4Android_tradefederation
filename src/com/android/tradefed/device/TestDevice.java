@@ -196,11 +196,14 @@ class TestDevice implements IManagedTestDevice {
         if (productType == null) {
             // this is likely because ddms hasn't processed all the properties yet, query this
             // property directly
-            Log.w(LOG_TAG, String.format("Product type for device %s is null, re-querying",
-                    getSerialNumber()));
             if (getDeviceState() == TestDeviceState.FASTBOOT) {
+                Log.w(LOG_TAG, String.format(
+                        "Product type for device %s is null, re-querying in fastboot",
+                        getSerialNumber()));
                 return getFastbootProduct();
             } else {
+                Log.w(LOG_TAG, String.format(
+                        "Product type for device %s is null, re-querying", getSerialNumber()));
                 return executeShellCommand("getprop ro.product.board");
             }
         }
@@ -208,11 +211,15 @@ class TestDevice implements IManagedTestDevice {
     }
 
     private String getFastbootProduct() throws DeviceNotAvailableException {
-        // TODO: will fastboot product be same as ro.product.board ?
         CommandResult result = executeFastbootCommand("getvar", "product");
         if (result.getStatus() == CommandStatus.SUCCESS) {
             Pattern fastbootProductPattern = Pattern.compile("product:\\s+(\\w+)");
-            Matcher matcher = fastbootProductPattern.matcher(result.getStdout());
+            // fastboot is weird, and may dump the output on stderr instead of stdout
+            String resultText = result.getStdout();
+            if (resultText == null || resultText.length() < 1) {
+                resultText = result.getStderr();
+            }
+            Matcher matcher = fastbootProductPattern.matcher(resultText);
             if (matcher.find()) {
                 return matcher.group(1);
             }
