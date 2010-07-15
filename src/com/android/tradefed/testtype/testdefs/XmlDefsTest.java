@@ -48,7 +48,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
 
     @Option(name = "timeout",
             description = "Fail any test that takes longer than the specified number of "
-            + " milliseconds ")
+            + "milliseconds ")
     private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",

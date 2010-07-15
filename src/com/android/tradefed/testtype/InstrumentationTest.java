@@ -76,7 +76,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
 
     @Option(name = "timeout",
             description="Aborts the test run if any test takes longer than the specified number of "
-            + " milliseconds ")
+            + "milliseconds ")
     private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
