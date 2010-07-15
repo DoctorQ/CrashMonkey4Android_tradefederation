@@ -161,7 +161,7 @@ public class CommandFileFuncTest extends TestCase {
                         runCounts[SLOW_CONFIG_INDEX]++;
                     }
                     // sleep time should be more than two times fast configs time
-                    Thread.sleep(250);
+                    Thread.sleep(210);
                 } catch (InterruptedException e) {
                 }
             }

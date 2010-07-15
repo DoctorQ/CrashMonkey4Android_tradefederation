@@ -19,7 +19,6 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /** the time in ms to wait between 'poll for responsiveness' attempts */
     private static final long CHECK_POLL_TIME = 5 * 1000;
     /** the maximum operation time in ms for a 'poll for responsiveness' command */
-    private static final long MAX_OP_TIME = 30 * 1000;
+    private static final int MAX_OP_TIME = 30 * 1000;
 
     /** The  time in ms to wait for a device to be online. */
     // TODO: make this configurable
@@ -148,29 +147,25 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private boolean waitForPmResponsive(final long waitTime) {
         Log.i(LOG_TAG, String.format("Waiting %d ms for device %s package manager",
                 waitTime, getSerialNumber()));
-        final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-        IRunnableResult pmPollRunnable = new IRunnableResult() {
-            public boolean run() {
-                final String cmd = "pm path android";
-                try {
-                    // assume the 'adb shell pm path android' command will always
-                    // return 'package: something' in the success case
-                    getIDevice().executeShellCommand(cmd, receiver);
-                    String output = receiver.getOutput();
-                    Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
-                    return output.contains("package:");
-                } catch (IOException e) {
-                    Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
-                    return false;
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < waitTime) {
+            final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            final String cmd = "pm path android";
+            try {
+                getIDevice().executeShellCommand(cmd, receiver, MAX_OP_TIME);
+                String output = receiver.getOutput();
+                Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
+                if (output.contains("package:")) {
+                    return true;
                 }
+            } catch (IOException e) {
+                Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
             }
-
-            public void cancel() {
-                receiver.cancel();
-            }
-        };
-        return getRunUtil().runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
-                pmPollRunnable);
+            getRunUtil().sleep(CHECK_POLL_TIME);
+        }
+        Log.w(LOG_TAG, String.format("Device %s package manager is unresponsive",
+                getSerialNumber()));
+        return false;
     }
 
     /**
@@ -181,36 +176,34 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * <code>false</code> otherwise
      */
     private boolean waitForStoreMount(final long waitTime) {
-        Log.i(LOG_TAG, String.format("Waiting %d ms for device %s external store",
-                waitTime, getSerialNumber()));
-        final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-        IRunnableResult storePollRunnable = new IRunnableResult() {
-            public boolean run() {
-                final String cmd = "cat /proc/mounts";
+        Log.i(LOG_TAG, String.format("Waiting %d ms for device %s external store", waitTime,
+                getSerialNumber()));
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < waitTime) {
+            final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            final String cmd = "cat /proc/mounts";
+            String externalStore = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            if (externalStore != null) {
                 try {
-                    String externalStore = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-                    if (externalStore == null) {
-                        Log.w(LOG_TAG, String.format(
-                                "Failed to get external store mount point for %s",
-                                getSerialNumber()));
-                        return false;
-                    }
-                    getIDevice().executeShellCommand(cmd, receiver);
+                    getIDevice().executeShellCommand(cmd, receiver, MAX_OP_TIME);
                     String output = receiver.getOutput();
                     Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
-                    return output.contains(externalStore);
+                    if (output.contains(externalStore)) {
+                        return true;
+                    }
                 } catch (IOException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
-                    return false;
                 }
-            }
 
-            public void cancel() {
-                receiver.cancel();
+            } else {
+                Log.w(LOG_TAG, String.format("Failed to get external store mount point for %s",
+                        getSerialNumber()));
             }
-        };
-        return getRunUtil().runFixedTimedRetry(MAX_OP_TIME, CHECK_POLL_TIME, waitTime,
-                storePollRunnable);
+            getRunUtil().sleep(CHECK_POLL_TIME);
+        }
+        Log.w(LOG_TAG, String.format("Device %s external storage is not mounted after %d ms",
+                getSerialNumber(), waitTime));
+        return false;
     }
 
     /**

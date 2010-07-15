@@ -29,7 +29,6 @@ import com.android.tradefed.device.TestDevice.LogCatReceiver;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
@@ -48,7 +47,7 @@ import junit.framework.TestCase;
 public class TestDeviceTest extends TestCase {
 
     private IDevice mMockIDevice;
-    private ICancelableReceiver mMockReceiver;
+    private IShellOutputReceiver mMockReceiver;
     private TestDevice mTestDevice;
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
@@ -62,7 +61,7 @@ public class TestDeviceTest extends TestCase {
         super.setUp();
         mMockIDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn("serial").anyTimes();
-        mMockReceiver = EasyMock.createMock(ICancelableReceiver.class);
+        mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
@@ -116,16 +115,16 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andReturn((String)null);
         final String expectedOutput = "nexusone";
         mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
             @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                    int timeout) {
                 byte[] inputData = expectedOutput.getBytes();
                 receiver.addOutput(inputData, 0, inputData.length);
             }
         });
         EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRunUtil);
         assertEquals(expectedOutput, mTestDevice.getProductType());
     }
 
@@ -141,7 +140,7 @@ public class TestDeviceTest extends TestCase {
         // construct a string with 2 error dialogs of each type to ensure proper detection
         final String fourErrors = anrOutput + anrOutput + crashOutput + crashOutput;
         mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
             @Override
             public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
@@ -174,11 +173,12 @@ public class TestDeviceTest extends TestCase {
         try {
             // expect shell command to be called, with any receiver
             mMockIDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
-                    EasyMock.anyObject());
+                    EasyMock.anyObject(), EasyMock.eq(0));
             EasyMock.expectLastCall().andDelegateTo(
                   new MockDevice() {
                       @Override
-                      public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                      public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                              int timeout) {
                           byte[] inputData = input.getBytes();
                           // add log data > maximum. This will trigger a log swap, where inputData
                           // will be moved to the backup log file
@@ -226,7 +226,8 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand_receiver() throws IOException, DeviceNotAvailableException {
         final String testCommand = "simple command";
         // expect shell command to be called
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         EasyMock.replay(mMockIDevice);
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
@@ -243,11 +244,12 @@ public class TestDeviceTest extends TestCase {
 
         // expect shell command to be called, with any receiver
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), (IShellOutputReceiver)
-                EasyMock.anyObject());
+                EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(
               new MockDevice() {
                   @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                          int timeout) {
                       byte[] inputData = expectedOutput.getBytes();
                       receiver.addOutput(inputData, 0, inputData.length);
                   }
@@ -265,7 +267,8 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand_recoveryFail() throws Exception {
         final String testCommand = "simple command";
         // expect shell command to be called
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         EasyMock.expectLastCall().andThrow(new IOException());
         mMockRecovery.recoverDevice(mMockMonitor);
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
@@ -288,10 +291,12 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand_recoveryRetry() throws Exception {
         final String testCommand = "simple command";
         // expect shell command to be called
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         EasyMock.expectLastCall().andThrow(new IOException());
         assertRecoverySuccess();
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         replayMocks();
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
@@ -312,19 +317,13 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand_recoveryTimeoutRetry() throws Exception {
         final String testCommand = "simple command";
         // expect shell command to be called - and never return from that call
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                RunUtil.getInstance().sleep(1000);
-            }
-        });
-        mMockReceiver.cancel();
-        EasyMock.expectLastCall();
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
+        EasyMock.expectLastCall().andThrow(new TimeoutException());
         assertRecoverySuccess();
         // now expect shellCommand to be executed again, and succeed
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
-        EasyMock.expectLastCall();
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         replayMocks();
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
@@ -338,7 +337,8 @@ public class TestDeviceTest extends TestCase {
     public void testExecuteShellCommand_recoveryAttempts() throws Exception {
         final String testCommand = "simple command";
         // expect shell command to be called
-        mMockIDevice.executeShellCommand(testCommand, mMockReceiver);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
         EasyMock.expectLastCall().andThrow(new IOException()).times(TestDevice.MAX_RETRY_ATTEMPTS);
         for (int i=0; i < TestDevice.MAX_RETRY_ATTEMPTS; i++) {
             assertRecoverySuccess();
@@ -374,11 +374,12 @@ public class TestDeviceTest extends TestCase {
                 mntPoint);
         // expect shell command to be called, and return the test df output
         mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
-                EasyMock.anyObject());
+                EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(
               new MockDevice() {
                   @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                          int timeout) {
                       byte[] inputData = dfOutput.getBytes();
                       receiver.addOutput(inputData, 0, inputData.length);
                   }
@@ -402,11 +403,12 @@ public class TestDeviceTest extends TestCase {
                 mntPoint);
         // expect shell command to be called, and return the test df output
         mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
-                EasyMock.anyObject());
+                EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(
               new MockDevice() {
                   @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
+                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                          int timeout) {
                       byte[] inputData = dfOutput.getBytes();
                       receiver.addOutput(inputData, 0, inputData.length);
                   }

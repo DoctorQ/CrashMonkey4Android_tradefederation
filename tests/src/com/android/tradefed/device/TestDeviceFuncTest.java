@@ -89,8 +89,9 @@ public class TestDeviceFuncTest extends DeviceTestCase {
 
         try {
             tmpFile = createTempTestFile(null);
-            deviceFilePath = String.format("%s/%s", mTestDevice.getIDevice().getMountPoint(
-                    IDevice.MNT_EXTERNAL_STORAGE), "tmp_testPushPull.txt");
+            String externalStorePath =  mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            assertNotNull(externalStorePath);
+            deviceFilePath = String.format("%s/%s", externalStorePath, "tmp_testPushPull.txt");
             // ensure file does not already exist
             mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
             assertFalse(String.format("%s exists", deviceFilePath),
@@ -163,8 +164,8 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         File tmpFile = createTempTestFile(tmpDir);
         // set last modified to 10 minutes ago
         tmpFile.setLastModified(System.currentTimeMillis() - 10*60*1000);
-        String externalStorePath = mTestDevice.getIDevice().getMountPoint(
-                IDevice.MNT_EXTERNAL_STORAGE);
+        String externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        assertNotNull(externalStorePath);
         String expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
                 tmpDir.getName(), tmpFile.getName());
         try {
@@ -211,7 +212,7 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      */
     public void testExecuteFastbootCommand_deviceInAdb() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testExecuteFastbootCommand_deviceInAdb");
-        long origTimeout = mTestDevice.getCommandTimeout();
+        int origTimeout = mTestDevice.getCommandTimeout();
         try {
             assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
             // reset operation timeout to small value to make test run quicker

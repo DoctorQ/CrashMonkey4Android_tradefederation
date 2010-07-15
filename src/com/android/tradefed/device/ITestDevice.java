@@ -17,6 +17,7 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.util.CommandResult;
@@ -64,11 +65,11 @@ public interface ITestDevice {
      * Executes the given adb shell command.
      *
      * @param command the adb shell command to run
-     * @param receiver the {@link ICancelableReceiver} to direct shell output to.
+     * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      *             recovered.
      */
-    public void executeShellCommand(String command, ICancelableReceiver receiver)
+    public void executeShellCommand(String command, IShellOutputReceiver receiver)
         throws DeviceNotAvailableException;
 
     /**
@@ -171,6 +172,19 @@ public interface ITestDevice {
      *             recovered.
      */
     public String uninstallPackage(String packageName) throws DeviceNotAvailableException;
+
+    /**
+     * Returns a mount point.
+     * <p/>
+     * Queries the device directly if the cached info in {@link IDevice} is not available.
+     * <p/>
+     * TODO: move this behavior to {@link IDevice#getMountPoint(String)}
+     *
+     * @param mountName the name of the mount point
+     * @return the mount point or <code>null</code>
+     * @see {@link IDevice#getMountPoint(String)}
+     */
+    public String getMountPoint(String mountName);
 
     /**
      * Retrieves a file off device.

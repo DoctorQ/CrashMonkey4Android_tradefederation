@@ -15,18 +15,18 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.ICancelableReceiver;
 import com.android.tradefed.device.IFileListingService;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IFileListingService.IFileEntry;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 
 import java.util.Vector;
+
+import junit.framework.TestCase;
 
 
 /**
@@ -35,7 +35,7 @@ import java.util.Vector;
 public class GTestTest extends TestCase {
     private ITestInvocationListener mMockInvocationListener = null;
     private IFileEntry mMockRootFileEntry = null;
-    private ICancelableReceiver mMockCancelableReceiver = null;
+    private IShellOutputReceiver mMockReceiver = null;
     private IFileListingService mMockFileListingService = null;
     private ITestDevice mMockITestDevice = null;
 
@@ -45,7 +45,7 @@ public class GTestTest extends TestCase {
     private void initializeMocks() {
         mMockInvocationListener = EasyMock.createMock(ITestInvocationListener.class);
         mMockRootFileEntry = EasyMock.createMock(IFileEntry.class);
-        mMockCancelableReceiver = EasyMock.createMock(ICancelableReceiver.class);
+        mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
         mMockFileListingService = EasyMock.createMock(IFileListingService.class);
         mMockITestDevice = EasyMock.createMock(ITestDevice.class);
     }
@@ -55,7 +55,7 @@ public class GTestTest extends TestCase {
      */
     private void replayMocks() {
       EasyMock.replay(mMockInvocationListener, mMockRootFileEntry, mMockFileListingService,
-              mMockITestDevice, mMockCancelableReceiver);
+              mMockITestDevice, mMockReceiver);
     }
 
     /**
@@ -63,7 +63,7 @@ public class GTestTest extends TestCase {
      */
     private void verifyMocks() {
       EasyMock.verify(mMockRootFileEntry, mMockFileListingService, mMockITestDevice,
-              mMockCancelableReceiver);
+              mMockReceiver);
     }
 
     /**
@@ -106,7 +106,7 @@ public class GTestTest extends TestCase {
             // Stubbed - test this method separately
             @Override
             protected boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry,
-                    ITestDevice testDevice, ICancelableReceiver outputReceiver) {
+                    ITestDevice testDevice, IShellOutputReceiver outputReceiver) {
               return false;
             }
         };
@@ -151,7 +151,7 @@ public class GTestTest extends TestCase {
             else {
               EasyMock.expect(children[i].isAppFileName()).andReturn(false);
               mMockITestDevice.executeShellCommand(EasyMock.startsWith(childrensPath[i]),
-                      EasyMock.same(mMockCancelableReceiver));
+                      EasyMock.same(mMockReceiver));
             }
         }
 
@@ -161,7 +161,7 @@ public class GTestTest extends TestCase {
         replayMocks();
 
         gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockCancelableReceiver);
+                mMockReceiver);
 
         for (IFileEntry file : children) {
             EasyMock.verify(file);
@@ -218,7 +218,7 @@ public class GTestTest extends TestCase {
         for (int i=0; i<children2Paths.length; ++i) {
             EasyMock.expect(directory2Children[i].isAppFileName()).andReturn(false);
             mMockITestDevice.executeShellCommand(EasyMock.startsWith(children2Paths[i]),
-                    EasyMock.same(mMockCancelableReceiver));
+                    EasyMock.same(mMockReceiver));
         }
 
         for (IFileEntry file : directory1Children) {
@@ -230,7 +230,7 @@ public class GTestTest extends TestCase {
         replayMocks();
 
         gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockCancelableReceiver);
+                mMockReceiver);
 
         verifyMocks();
         for (IFileEntry file : directory1Children) {
@@ -283,7 +283,7 @@ public class GTestTest extends TestCase {
 
         for (int i=0; i<children.length; ++i) {
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
-                    EasyMock.same(mMockCancelableReceiver));
+                    EasyMock.same(mMockReceiver));
         }
 
         for (IFileEntry file : children) {
@@ -292,7 +292,7 @@ public class GTestTest extends TestCase {
         replayMocks();
 
         gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockCancelableReceiver);
+                mMockReceiver);
 
         for (IFileEntry file : children) {
             EasyMock.verify(file);

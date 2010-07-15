@@ -17,6 +17,7 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.util.CommandResult;
@@ -35,7 +36,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void executeShellCommand(String command, ICancelableReceiver receiver)
+    public void executeShellCommand(String command, IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
         // ignore
     }
@@ -277,6 +278,13 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     public String uninstallPackage(String packageName) throws DeviceNotAvailableException {
         // ignore
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getMountPoint(String mountName) {
         return null;
     }
 }

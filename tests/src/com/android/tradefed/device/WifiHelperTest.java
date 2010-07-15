@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tradefed.device.WifiHelper.WifiState;
 
 import org.easymock.EasyMock;
@@ -136,19 +137,19 @@ public class WifiHelperTest extends TestCase {
         injectShellResponse(listNetworkResponse);
 
         mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (ICancelableReceiver)EasyMock.anyObject());
+                (IShellOutputReceiver)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
             @Override
-            public void executeShellCommand(String cmd, ICancelableReceiver receiver) {
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
                 assertTrue(cmd.contains("remove_network 0"));
             }
         });
 
         mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (ICancelableReceiver)EasyMock.anyObject());
+                (IShellOutputReceiver)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
             @Override
-            public void executeShellCommand(String cmd, ICancelableReceiver receiver) {
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
                 assertTrue(cmd.contains("remove_network 1"));
             }
         });
@@ -178,10 +179,10 @@ public class WifiHelperTest extends TestCase {
 
     private void injectShellResponse(final String data) throws DeviceNotAvailableException {
         mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (ICancelableReceiver)EasyMock.anyObject());
+                (IShellOutputReceiver)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
             @Override
-            public void executeShellCommand(String cmd, ICancelableReceiver receiver) {
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
                 byte[] byteData = data.getBytes();
                 receiver.addOutput(byteData, 0, byteData.length);
                 receiver.flush();

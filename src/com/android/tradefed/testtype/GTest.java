@@ -16,22 +16,22 @@
 
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.FileListingServiceWrapper;
-import com.android.tradefed.device.ICancelableReceiver;
 import com.android.tradefed.device.IFileListingService;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IFileListingService.IFileEntry;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import junit.framework.TestResult;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Vector;
+
+import junit.framework.TestResult;
 
 /**
  * A Test that runs a native test package on given device.
@@ -254,7 +254,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
      * @throws DeviceNotAvailableException
      */
     protected boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
-            ICancelableReceiver outputReceiver) throws DeviceNotAvailableException {
+            IShellOutputReceiver outputReceiver) throws DeviceNotAvailableException {
 
         Vector<IFileEntry> folders = new Vector<IFileEntry>();
         Vector<String> files = new Vector<String>();

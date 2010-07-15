@@ -20,7 +20,6 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.tradefed.device.ICancelableReceiver;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -81,7 +80,7 @@ import java.util.regex.Pattern;
  *
  * All other lines are ignored.
  */
-public class GTestResultParser extends MultiLineReceiver implements ICancelableReceiver {
+public class GTestResultParser extends MultiLineReceiver {
     private static final String LOG_TAG = "GTestResultParser";
 
     // Variables to keep track of state

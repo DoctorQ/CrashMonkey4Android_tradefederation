@@ -351,7 +351,7 @@ class WifiHelper {
     /**
      * Processes the output of a wpa_cli command.
      */
-    private static class WpaCliOutput extends MultiLineReceiver implements ICancelableReceiver {
+    private static class WpaCliOutput extends MultiLineReceiver {
 
         private boolean mDidCommandComplete = false;
         private boolean mIsCommandSuccess = true;
@@ -361,8 +361,6 @@ class WifiHelper {
 
         /** The output lines of the wpa cli command. */
         List<String> mOutputLines;
-
-        private boolean mIsCanceled = false;
 
         WpaCliOutput() {
             mOutputLines = new ArrayList<String>();
@@ -399,11 +397,7 @@ class WifiHelper {
          * {@inheritDoc}
          */
         public boolean isCancelled() {
-            return mIsCanceled;
-        }
-
-        public void cancel() {
-            mIsCanceled = true;
+            return false;
         }
     }
 
@@ -413,11 +407,10 @@ class WifiHelper {
      * Looks for valid IP being assigned to a given network interface. 'Valid' is interpreted as
      * != "0.0.0.0".
      */
-    private static class DhcpOutput extends MultiLineReceiver implements ICancelableReceiver {
+    private static class DhcpOutput extends MultiLineReceiver {
 
         boolean mDhcpSuccess = false;
         final String mInterfaceName;
-        private boolean mIsCanceled = false;
 
         DhcpOutput(String interfaceName) {
             mInterfaceName = interfaceName;
@@ -444,15 +437,7 @@ class WifiHelper {
          * {@inheritDoc}
          */
         public boolean isCancelled() {
-            return mIsCanceled ;
+            return false ;
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void cancel() {
-            mIsCanceled = true;
-        }
-
     }
 }
