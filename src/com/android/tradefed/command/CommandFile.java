@@ -295,7 +295,8 @@ public class CommandFile extends Command {
         String line = null;
         while ((line = fileReader.readLine()) != null) {
             line = line.trim();
-            if (line.length() > 0) {
+            // ignore empty or commented lines
+            if (line.length() > 0 && !line.startsWith("#")) {
                 String[] args = line.split("\\s+");
                 mConfigQueue.add(new ConfigCommand(args));
             }
