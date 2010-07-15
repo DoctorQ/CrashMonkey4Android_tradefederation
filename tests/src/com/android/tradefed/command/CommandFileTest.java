@@ -108,7 +108,7 @@ public class CommandFileTest extends TestCase {
      */
     public void testRun_singleConfig() throws DeviceNotAvailableException, ConfigurationException {
         // inject mock file data
-        mMockFileData = "--foo  config";
+        mMockFileData = "  #Comment followed by blank line\n \n--foo  config";
         String[] expectedArgs = new String[] {"--foo", "config"};
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(expectedArgs)))
