@@ -77,6 +77,9 @@ public class CommandFile extends Command {
     @Option(name="file", description="the path to file of configs to run")
     private File mFile = null;
 
+    @Option(name="help", description="get command line usage info")
+    private boolean mHelpMode = false;
+
     private PriorityBlockingQueue<ConfigCommand> mConfigQueue;
     private List<Thread> mInvocationThreads;
 
@@ -180,8 +183,14 @@ public class CommandFile extends Command {
         try {
             ArgsOptionParser myParser = new ArgsOptionParser(this);
             myParser.parse(args);
+            if (mHelpMode) {
+                printHelp();
+                return;
+            }
             if (mFile == null) {
-                throw new IllegalArgumentException("missing --file option");
+                System.err.println("Missing --file option.\n");
+                printHelp();
+                return;
             }
             parseFile(mFile);
 
@@ -226,6 +235,16 @@ public class CommandFile extends Command {
         mConfigTimer.cancel();
         System.out.println("All done");
         exit(manager);
+    }
+
+    /**
+     * Output command line help info to stdout.
+     */
+    private void printHelp() {
+        System.out.println(
+                "Run TradeFederation with a file specifying a list of configs to run.");
+        System.out.println("Options:");
+        System.out.print(ArgsOptionParser.getOptionHelp(this.getClass()));
     }
 
     /**

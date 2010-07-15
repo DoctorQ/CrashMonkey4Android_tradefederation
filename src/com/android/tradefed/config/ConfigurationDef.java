@@ -16,7 +16,6 @@
 package com.android.tradefed.config;
 
 import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -163,19 +162,8 @@ public class ConfigurationDef {
      */
     private String printOptionsForObject(String objectName, String objectClass)
             throws ConfigurationException {
-        String eol = System.getProperty("line.separator");
-        StringBuilder out = new StringBuilder();
         final Class<?> optionClass = getClassForObject(objectName, objectClass);
-        for (Field field : optionClass.getDeclaredFields()) {
-            // TODO: consider moving this logic to ArgsOptionParser
-            if (field.isAnnotationPresent(Option.class)) {
-                final Option option = field.getAnnotation(Option.class);
-                out.append(String.format("    %s%s: %s", ArgsOptionParser.OPTION_NAME_PREFIX,
-                        option.name(), option.description()));
-                out.append(eol);
-            }
-        }
-        return out.toString();
+        return ArgsOptionParser.getOptionHelp(optionClass);
     }
 
     /**

@@ -112,6 +112,7 @@ public class Command {
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
+            getConfigFactory().printHelp(args, System.out);
         } catch (Throwable e) {
             System.out.println("Uncaught exception!");
             e.printStackTrace();

@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.config;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -243,5 +244,25 @@ public class ArgsOptionParser extends OptionSetter {
                     name, type));
         }
         return args.next();
+    }
+
+    /**
+     * Output help text for all {@link Option} fields in <param>optionClass</param>
+     *
+     * @param optionClass the class to print help text for
+     * @return a String containing user-friendly help text for all Option fields
+     */
+    public static String getOptionHelp(final Class<?> optionClass) {
+        StringBuilder out = new StringBuilder();
+        String eol = System.getProperty("line.separator");
+        for (Field field : optionClass.getDeclaredFields()) {
+            if (field.isAnnotationPresent(Option.class)) {
+                final Option option = field.getAnnotation(Option.class);
+                out.append(String.format("    %s%s: %s", OPTION_NAME_PREFIX,
+                        option.name(), option.description()));
+                out.append(eol);
+            }
+        }
+        return out.toString();
     }
 }
