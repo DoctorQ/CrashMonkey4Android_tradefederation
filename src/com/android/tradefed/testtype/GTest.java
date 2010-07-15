@@ -328,7 +328,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
                 nativeTestDirectory = nextDirectory;
             }
         }
-        boolean testsRan = doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, resultParser);
+        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, resultParser);
     }
 
     //@TODO: Add timeout: public void testTimeout(TestIdentifier test) {
