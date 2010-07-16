@@ -497,8 +497,7 @@ public class TestDeviceTest extends TestCase {
      */
     private static class MockDevice implements IDevice {
 
-        public boolean createForward(int localPort, int remotePort) {
-            return false;
+        public void createForward(int localPort, int remotePort) {
         }
 
         public void executeShellCommand(String command, IShellOutputReceiver receiver)
@@ -590,8 +589,7 @@ public class TestDeviceTest extends TestCase {
             return false;
         }
 
-        public boolean removeForward(int localPort, int remotePort) {
-            return false;
+        public void removeForward(int localPort, int remotePort) {
         }
 
         public void removeRemotePackage(String remoteFilePath) throws IOException {
