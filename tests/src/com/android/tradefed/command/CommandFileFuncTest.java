@@ -19,6 +19,7 @@ package com.android.tradefed.command;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
+import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.IDeviceRecovery;
@@ -26,6 +27,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.StubLogRegistry;
+import com.android.tradefed.util.RunUtil;
 
 import org.easymock.EasyMock;
 
@@ -44,27 +46,23 @@ public class CommandFileFuncTest extends TestCase {
 
     /** the {@link CommandFile} under test, with all dependencies mocked out */
     private CommandFile mCommandFile;
-    private ITestInvocation mMockTestInvoker;
+    private MeasuredInvocation mMockTestInvoker;
     private IDeviceManager mMockDeviceManager;
-    private IConfiguration mMockConfiguration;
+    private IConfiguration mSlowConfig;
+    private IConfiguration mFastConfig;
     private IConfigurationFactory mMockConfigFactory;
-    private ITestDevice mMockDevice;
     private IDeviceRecovery mMockRecovery;
     private String mMockFileData = "";
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mMockTestInvoker = EasyMock.createMock(ITestInvocation.class);
-        mMockConfiguration = EasyMock.createMock(IConfiguration.class);
-        mMockConfigFactory = EasyMock.createMock(IConfigurationFactory.class);
-        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
-        mMockDevice = EasyMock.createMock(ITestDevice.class);
-        // set up the mock device manager with more devices than configs to make comparison
-        // accurate
-        mMockDeviceManager = new MockDeviceManager(mMockDevice, 3);
 
-        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
+        mSlowConfig = EasyMock.createNiceMock(IConfiguration.class);
+        mFastConfig = EasyMock.createNiceMock(IConfiguration.class);
+        mMockDeviceManager = new MockDeviceManager(3);
+        mMockTestInvoker = new MeasuredInvocation();
+        mMockConfigFactory = EasyMock.createNiceMock(IConfigurationFactory.class);
 
         mCommandFile = new CommandFile() {
             @Override
@@ -91,21 +89,13 @@ public class CommandFileFuncTest extends TestCase {
             protected LogRegistry getLogRegistry() {
                 return new StubLogRegistry();
             }
+
+            @Override
+            protected void setLogRegistry() {
+                // do nothing
+            }
         };
     }
-
-    /** Set all mock objects to replay mode */
-    private void replayMocks() {
-        EasyMock.replay(mMockConfigFactory, mMockConfiguration,
-                mMockTestInvoker, mMockDevice);
-    }
-
-    /** Verify all mock objects */
-    private void verifyMocks() {
-        EasyMock.verify(mMockConfigFactory, mMockConfiguration,
-                mMockTestInvoker);
-    }
-
 
     /**
      * Test config priority scheduling. Verifies that configs are prioritized according to their
@@ -114,73 +104,37 @@ public class CommandFileFuncTest extends TestCase {
      * This test continually executes two configs in loop mode. One config executes quickly (ie
      * "fast config"). The other config (ie "slow config") takes ~ 2 * fast config time to execute.
      * <p/>
-     * The run is stopped after the slow config is executed 10 times. At the end of the test, it is
+     * The run is stopped after the slow config is executed 20 times. At the end of the test, it is
      * expected that "fast config" has executed roughly twice as much as the "slow config".
      */
     public void testRun_scheduling() throws ConfigurationException, DeviceNotAvailableException {
         mMockFileData = "fastConfig\nslowConfig";
         String[] fastConfigArgs = new String[] {"fastConfig"};
         String[] slowConfigArgs = new String[] {"slowConfig"};
-        // used to store the number of times each config has run.
-        final int[] runCounts = new int[2];
-        final int FAST_CONFIG_INDEX = 0;
-        final int SLOW_CONFIG_INDEX = 1;
-        final IConfiguration slowConfig = EasyMock.createNiceMock(IConfiguration.class);
+
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(fastConfigArgs)))
-                .andReturn(mMockConfiguration).anyTimes();
-        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andStubReturn(mMockRecovery);
+                .andReturn(mFastConfig).anyTimes();
+        EasyMock.expect(mFastConfig.getDeviceRecovery()).andStubReturn(mMockRecovery);
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(slowConfigArgs)))
-                .andReturn(slowConfig).anyTimes();
-        EasyMock.expect(slowConfig.getDeviceRecovery()).andReturn(mMockRecovery).times(10);
-        EasyMock.expect(slowConfig.getDeviceRecovery()).andThrow(new RuntimeException());
+                .andReturn(mSlowConfig).anyTimes();
+        EasyMock.expect(mSlowConfig.getDeviceRecovery()).andReturn(mMockRecovery).times(20);
+        // throw an exception to stop running after 20 slow iterations.
+        EasyMock.expect(mSlowConfig.getDeviceRecovery()).andThrow(new RuntimeException());
 
-        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
-        EasyMock.expectLastCall().andDelegateTo(new ITestInvocation() {
-            public void invoke(ITestDevice device, IConfiguration config)
-                    throws DeviceNotAvailableException {
-                // sleep for small amount to simulate runtime
-                try {
-                    synchronized (runCounts) {
-                        runCounts[FAST_CONFIG_INDEX]++;
-                    }
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {
-                }
-            }
-        }).anyTimes();
-
-        mMockTestInvoker.invoke(mMockDevice, slowConfig);
-        EasyMock.expectLastCall().andDelegateTo(new ITestInvocation() {
-            public void invoke(ITestDevice device, IConfiguration config)
-                    throws DeviceNotAvailableException {
-                // sleep for small amount to simulate runtime
-                try {
-                    synchronized (runCounts) {
-                        runCounts[SLOW_CONFIG_INDEX]++;
-                    }
-                    // sleep time should be more than two times fast configs time
-                    Thread.sleep(210);
-                } catch (InterruptedException e) {
-                }
-            }
-        }).anyTimes();
-
-        replayMocks();
-        EasyMock.replay(slowConfig);
+        EasyMock.replay(mFastConfig, mSlowConfig, mMockConfigFactory);
         mCommandFile.setConfigFile(new File("tmp"));
         // put configs immediately back into queue after invocation is started
         mCommandFile.setMinLoopTime(0);
         mCommandFile.setLoopMode(true);
         mCommandFile.run(new String[] {});
         System.out.println(String.format("fast times %d slow times %d",
-                runCounts[FAST_CONFIG_INDEX], runCounts[SLOW_CONFIG_INDEX]));
+                mMockTestInvoker.mFastCount, mMockTestInvoker.mSlowCount));
         // assert that fast config has executed roughly twice as much as slow config. Allow for
         // some variance since the execution time of each config (governed via Thread.sleep) will
         // not be 100% accurate
-        assertEquals(runCounts[FAST_CONFIG_INDEX], runCounts[SLOW_CONFIG_INDEX] * 2, 2);
-        verifyMocks();
+        assertEquals(mMockTestInvoker.mFastCount, mMockTestInvoker.mSlowCount * 2, 5);
     }
 
     /**
@@ -191,8 +145,12 @@ public class CommandFileFuncTest extends TestCase {
 
         LinkedBlockingQueue<ITestDevice> mDeviceQueue = new LinkedBlockingQueue<ITestDevice>();
 
-        MockDeviceManager(ITestDevice mockDevice, int numDevices) {
+        MockDeviceManager(int numDevices) {
+            // EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
             for (int i=0; i < numDevices; i++) {
+                ITestDevice mockDevice = EasyMock.createNiceMock(ITestDevice.class);
+                EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial" + i);
+                EasyMock.replay(mockDevice);
                 mDeviceQueue.add(mockDevice);
             }
         }
@@ -261,6 +219,29 @@ public class CommandFileFuncTest extends TestCase {
          */
         public Collection<String> getUnavailableDevices() {
             return null;
+        }
+    }
+
+    private class MeasuredInvocation implements ITestInvocation {
+        Integer mSlowCount = 0;
+        Integer mFastCount = 0;
+
+        public void invoke(ITestDevice device, IConfiguration config)
+                throws DeviceNotAvailableException {
+            if (config.equals(mSlowConfig)) {
+                // sleep for 2 * fast config time
+                RunUtil.getInstance().sleep(200);
+                synchronized (mSlowCount) {
+                    mSlowCount++;
+                }
+            } else if (config.equals(mFastConfig)) {
+                RunUtil.getInstance().sleep(100);
+                synchronized (mFastCount) {
+                    mFastCount++;
+                }
+            } else {
+                throw new IllegalArgumentException("unknown config");
+            }
         }
     }
 }

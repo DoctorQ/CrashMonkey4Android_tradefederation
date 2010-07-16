@@ -77,7 +77,7 @@ public class Command {
      */
     protected void run(String[] args) {
         DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
-        Log.setLogOutput(getLogRegistry());
+        setLogRegistry();
 
         IDeviceManager manager = null;
 
@@ -118,6 +118,15 @@ public class Command {
             e.printStackTrace();
         }
         exit(manager);
+    }
+
+    /**
+     * Sets the ddms log output.
+     * <p/>
+     * Exposed so unit tests can omit.
+     */
+    protected void setLogRegistry() {
+        Log.setLogOutput(getLogRegistry());
     }
 
     /**

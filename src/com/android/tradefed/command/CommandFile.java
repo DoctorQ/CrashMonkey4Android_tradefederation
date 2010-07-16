@@ -365,7 +365,10 @@ public class CommandFile extends Command {
                             device.getSerialNumber()));
                     deviceState = FreeDeviceState.UNAVAILABLE;
                 }
-                cmd.updateExecTime(System.currentTimeMillis() - startTime);
+                long elapsedTime = System.currentTimeMillis() - startTime;
+                Log.i(LOG_TAG, String.format("Updating config '%s' with elapsed time %d ms",
+                        getArgString(cmd.mArgs), elapsedTime));
+                cmd.updateExecTime(elapsedTime);
                 manager.freeDevice(device, deviceState);
             }
         };
