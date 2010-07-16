@@ -127,6 +127,62 @@ public class CommandFileTest extends TestCase {
     }
 
     /**
+     * Make sure that a config with a quoted argument is parsed properly.  Whitespace inside of the
+     * quoted section should be preserved.  Also, embedded escaped quotation marks should be
+     * ignored.
+     */
+    public void testRun_quotedConfig() throws DeviceNotAvailableException, ConfigurationException {
+        // inject mock file data
+        mMockFileData = "--foo \"this is a config\" --bar \"escap\\\\ed \\\" quotation\"";
+        String[] expectedArgs = new String[] {"--foo", "this is a config", "--bar",
+                "escap\\\\ed \\\" quotation"};
+        EasyMock.expect(
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(expectedArgs)))
+                .andReturn(mMockConfiguration);
+        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
+        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
+        // expect doRun is invoked with the device
+        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
+        mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
+        mMockDeviceManager.terminate();
+        // switch mock objects to verify mode
+        replayMocks();
+        mCommandFile.setConfigFile(new File("tmp"));
+        mCommandFile.run(new String[] {});
+        verifyMocks();
+    }
+
+    /**
+     * Test the scenario where the configuration ends inside a quotation
+     * <p/>
+     * Expect run to not proceed, and exception to be silently handled
+     */
+    public void testRun_endOnQuote() throws DeviceNotAvailableException, ConfigurationException {
+        // inject mock file data
+        mMockFileData = "--foo \"this is truncated";
+        // switch mock objects to verify mode
+        replayMocks();
+        mCommandFile.setConfigFile(new File("tmp"));
+        mCommandFile.run(new String[] {});
+        verifyMocks();
+    }
+
+    /**
+     * Test the scenario where the configuration ends inside a quotation
+     * <p/>
+     * Expect run to not proceed, and exception to be silently handled
+     */
+    public void testRun_endWithEscape() throws DeviceNotAvailableException, ConfigurationException {
+        // inject mock file data
+        mMockFileData = "--foo escape\\";
+        // switch mock objects to verify mode
+        replayMocks();
+        mCommandFile.setConfigFile(new File("tmp"));
+        mCommandFile.run(new String[] {});
+        verifyMocks();
+    }
+
+    /**
      * Test run when --file is not specified
      * <p/>
      * Expect run to not proceed, and exception silently handled
