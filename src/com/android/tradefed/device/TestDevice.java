@@ -270,7 +270,7 @@ class TestDevice implements IManagedTestDevice {
             }
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("IOException %s when running tests %s on %s",
-                    e.getMessage(), runner.getPackageName(), getSerialNumber()));
+                    e.toString(), runner.getPackageName(), getSerialNumber()));
             for (ITestRunListener listener : listeners) {
                 listener.testRunFailed("lost connection with device");
             }
