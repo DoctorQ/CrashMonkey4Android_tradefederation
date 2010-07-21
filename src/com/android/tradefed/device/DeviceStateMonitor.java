@@ -247,7 +247,8 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             Log.i(LOG_TAG, String.format("Device %s is already %s", deviceSerial, state));
             return true;
         }
-        Log.i(LOG_TAG, String.format("Waiting for device %s to be %s...", deviceSerial, state));
+        Log.i(LOG_TAG, String.format("Waiting for device %s to be %s; it is currently %s...",
+                deviceSerial, state, getDeviceState()));
         DeviceStateListener listener = new DeviceStateListener(state);
         addDeviceStateListener(listener);
         synchronized (listener) {
