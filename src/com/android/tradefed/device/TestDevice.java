@@ -71,6 +71,8 @@ class TestDevice implements IManagedTestDevice {
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
 
+    /** The time in ms to wait before starting logcat for a device */
+    private int mLogStartDelay = 5*1000;
     /** The time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
     /** number of attempts made to clear dialogs */
@@ -162,6 +164,15 @@ class TestDevice implements IManagedTestDevice {
      */
     void setTmpLogcatSize(long size) {
         mMaxLogcatFileSize = size;
+    }
+
+    /**
+     * Sets the time in ms to wait before starting logcat capture for a online device.
+     *
+     * @param delay the delay in ms
+     */
+    void setLogStartDelay(int delay) {
+        mLogStartDelay = delay;
     }
 
     /**
@@ -268,7 +279,7 @@ class TestDevice implements IManagedTestDevice {
             runner.run(listeners);
             if (failureListener.mIsRunFailure) {
                 // run failed, might be system crash. Ensure device is up
-                if (mMonitor.waitForDeviceAvailable(10*1000) == null) {
+                if (mMonitor.waitForDeviceAvailable(5*1000) == null) {
                     // device isn't up, recover
                     recoverDevice();
                 }
@@ -824,9 +835,14 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
-        Log.i(LOG_TAG, String.format("Reboot device %s after recovery to ensure proper setup",
-                getSerialNumber()));
-        reboot();
+        if (!hasPrebootSetupRun()) {
+            Log.i(LOG_TAG, String.format("Preboot setup missing on device %s after recovery. " +
+                    "Rebooting to ensure proper setup", getSerialNumber()));
+            reboot();
+        } else {
+            // this might be a runtime reset - still need to run post boot setup steps
+            postBootSetup();
+        }
     }
 
     /**
@@ -864,8 +880,8 @@ class TestDevice implements IManagedTestDevice {
      */
     public InputStream getLogcat() {
         if (mLogcatReceiver == null) {
-            Log.w(LOG_TAG, String.format("Not capturing logcat for %s, returning a dump for",
-                    getSerialNumber()));
+            Log.w(LOG_TAG, String.format("Not capturing logcat for %s in background, " +
+                    "returning a logcat dump", getSerialNumber()));
             return getLogcatDump();
         } else {
             return mLogcatReceiver.getLogcatData();
@@ -1064,6 +1080,14 @@ class TestDevice implements IManagedTestDevice {
             // then comes back online
             while (!isCancelled()) {
                 try {
+                    // FIXME: Disgusting hack alert! Sleep for a small amount before starting
+                    // logcat, as starting logcat immediately after a device comes online has caused
+                    // adb instability
+                    if (mLogStartDelay > 0) {
+                        Log.d(LOG_TAG, String.format("Sleep for %d before starting logcat for %s.",
+                                mLogStartDelay, getSerialNumber()));
+                        getRunUtil().sleep(mLogStartDelay);
+                    }
                     Log.d(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
                     getIDevice().executeShellCommand(LOGCAT_CMD, this, 0);
                 } catch (Exception e) {
@@ -1260,6 +1284,39 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Determines if device has run all the necessary preboot setup steps
+     *
+     * @return <code>true</code> if all pre-boot setup settings are properly in place
+     * @throws DeviceNotAvailableException
+     */
+    boolean hasPrebootSetupRun() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Checking prebootsetup on %s", getSerialNumber()));
+        // just attempt to enable adb root regardless
+        if (mEnableAdbRoot) {
+            enableAdbRoot();
+        }
+        if (mSetAudioSilent) {
+            String result = executeShellCommand("getprop ro.audio.silent");
+            if (!result.contains("1")) {
+                return false;
+            }
+        }
+        if (mSetMonkey) {
+            String result = executeShellCommand("getprop ro.monkey");
+            if (!result.contains("1")) {
+                return false;
+            }
+        }
+        if (mDisableDialing) {
+            String result = executeShellCommand("getprop ro.telephony.disable-call");
+            if (!result.contains("true")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
      * {@inheritDoc}
      */
     public void postBootSetup() throws DeviceNotAvailableException  {
@@ -1268,6 +1325,15 @@ class TestDevice implements IManagedTestDevice {
                     getSerialNumber(), mDisableKeyguardCmd));
             executeShellCommand(mDisableKeyguardCmd);
         }
+    }
+
+    /**
+     * Gets the adb shell command to disable the keyguard for this device.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    String getDisableKeyguardCmd() {
+        return mDisableKeyguardCmd;
     }
 
     /**

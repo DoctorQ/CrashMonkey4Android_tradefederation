@@ -47,6 +47,8 @@ public class DeviceManager implements IDeviceManager {
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
     static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
+    /** max wait time for device to become available when becoming online */
+    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 2*60*1000;
 
     private static DeviceManager sInstance;
 
@@ -76,7 +78,9 @@ public class DeviceManager implements IDeviceManager {
         mAdbBridge = createAdbBridge();
         mAdbBridge.init(false /* client support */);
         for (IDevice device : mAdbBridge.getDevices()) {
-            checkAndAddAvailableDevice(device);
+            if (device.getState() == IDevice.DeviceState.ONLINE) {
+                checkAndAddAvailableDevice(device);
+            }
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
@@ -130,8 +134,9 @@ public class DeviceManager implements IDeviceManager {
                 Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
                         device.getSerialNumber()));
                 IDeviceStateMonitor monitor = createStateMonitor(device);
-                if (monitor.waitForDeviceAvailable(2*60*1000) != null) {
-                    Log.i(LOG_TAG, String.format("Detected new device %s", device.getSerialNumber()));
+                if (monitor.waitForDeviceAvailable(CHECK_WAIT_DEVICE_AVAIL_MS) != null) {
+                    Log.i(LOG_TAG, String.format("Detected new device %s",
+                            device.getSerialNumber()));
                     addAvailableDevice(device);
                 } else {
                     Log.e(LOG_TAG, String.format(
@@ -180,7 +185,7 @@ public class DeviceManager implements IDeviceManager {
         if (allocatedDevice == null) {
             return null;
         }
-        return createTestDevice(allocatedDevice, recovery);
+        return createAllocatedDevice(allocatedDevice, recovery);
     }
 
     /**
@@ -206,7 +211,7 @@ public class DeviceManager implements IDeviceManager {
         if (allocatedDevice == null) {
             return null;
         }
-        return createTestDevice(allocatedDevice, recovery);
+        return createAllocatedDevice(allocatedDevice, recovery);
     }
 
     /**
@@ -226,15 +231,30 @@ public class DeviceManager implements IDeviceManager {
         }
     }
 
-    private ITestDevice createTestDevice(IDevice allocatedDevice, IDeviceRecovery recovery) {
-        IManagedTestDevice testDevice =  new TestDevice(allocatedDevice, recovery,
-                new DeviceStateMonitor(this, allocatedDevice));
+    private ITestDevice createAllocatedDevice(IDevice allocatedDevice, IDeviceRecovery recovery) {
+        IManagedTestDevice testDevice =  createTestDevice(allocatedDevice, recovery,
+                createStateMonitor(allocatedDevice));
         if (mEnableLogcat) {
             testDevice.startLogcat();
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
         Log.i(LOG_TAG, String.format("Allocated device %s", testDevice.getSerialNumber()));
         return testDevice;
+    }
+
+    /**
+     * Factory method to create a {@link IManagedTestDevice}.
+     * <p/>
+     * Exposed so unit tests can mock
+     *
+     * @param allocatedDevice
+     * @param recovery
+     * @param monitor
+     * @return
+     */
+    IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceRecovery recovery,
+            IDeviceStateMonitor monitor) {
+        return new TestDevice(allocatedDevice, recovery, monitor);
     }
 
     /**
@@ -327,9 +347,14 @@ public class DeviceManager implements IDeviceManager {
          */
         public void deviceChanged(IDevice device, int changeMask) {
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
-            if (testDevice != null && (changeMask & IDevice.CHANGE_STATE) != 0) {
-                TestDeviceState newState = TestDeviceState.getStateByDdms(device.getState());
-                testDevice.setDeviceState(newState);
+            if ((changeMask & IDevice.CHANGE_STATE) != 0) {
+                if (testDevice != null) {
+                    TestDeviceState newState = TestDeviceState.getStateByDdms(device.getState());
+                    testDevice.setDeviceState(newState);
+                } else if (!mAvailableDeviceQueue.contains(device) &&
+                        device.getState() == IDevice.DeviceState.ONLINE) {
+                            checkAndAddAvailableDevice(device);
+                }
             }
         }
 
@@ -341,7 +366,8 @@ public class DeviceManager implements IDeviceManager {
                     device.getSerialNumber(), device.hashCode()));
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
             if (testDevice == null) {
-                if (isValidDeviceSerial(device.getSerialNumber())) {
+                if (isValidDeviceSerial(device.getSerialNumber()) &&
+                        device.getState() == IDevice.DeviceState.ONLINE) {
                     checkAndAddAvailableDevice(device);
                 }
             } else {

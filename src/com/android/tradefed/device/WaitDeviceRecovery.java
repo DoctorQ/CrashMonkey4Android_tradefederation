@@ -39,6 +39,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     protected static final long INITIAL_BOOTLOADER_PAUSE_TIME =
         DeviceManager.FASTBOOT_POLL_WAIT_TIME * 3;
 
+    // TODO: add a separate configurable timeout per operation
     @Option(name="device-wait-time",
             description="maximum time in ms to wait for a single device recovery command")
     protected long mWaitTime = 4 * 60 * 1000;
@@ -82,7 +83,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         }
 
         // wait for device online
-        IDevice device = monitor.waitForDeviceOnline(mWaitTime);
+        IDevice device = monitor.waitForDeviceOnline();
         if (device == null) {
             handleDeviceNotAvailable(monitor);
             return;

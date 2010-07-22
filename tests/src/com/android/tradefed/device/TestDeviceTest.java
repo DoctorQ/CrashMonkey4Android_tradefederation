@@ -80,8 +80,14 @@ public class TestDeviceTest extends TestCase {
                 } catch (AdbCommandRejectedException e) {
                 }
             }
+            @Override
+            boolean hasPrebootSetupRun() {
+                // preboot setup is too complicated to mock out correctly, so just return true
+                return true;
+            }
         };
         mTestDevice.setCommandTimeout(100);
+        mTestDevice.setLogStartDelay(-1);
     }
 
     /**
@@ -319,10 +325,11 @@ public class TestDeviceTest extends TestCase {
     /** Set expectations for a successful recovery operation
      */
     private void assertRecoverySuccess() throws DeviceNotAvailableException, IOException,
-            TimeoutException, AdbCommandRejectedException {
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mMockRecovery.recoverDevice(mMockMonitor);
-        // expect reboot after recovery
-        mMockIDevice.reboot(null);
+        // expect post boot up steps
+        mMockIDevice.executeShellCommand(EasyMock.eq(mTestDevice.getDisableKeyguardCmd()),
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
     }
 
     /**
@@ -370,7 +377,7 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
-     *
+     * Puts all the mock objects into replay mode
      */
     private void replayMocks() {
         EasyMock.replay(mMockIDevice, mMockRecovery, mMockMonitor);
