@@ -15,8 +15,10 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -176,7 +178,13 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         try {
             device.reboot("bootloader");
         } catch (IOException e) {
-            Log.w(LOG_TAG, String.format("failed to reboot %s", device.getSerialNumber()));
+            Log.w(LOG_TAG, String.format("failed to reboot %s: %s", device.getSerialNumber(),
+                    e.getMessage()));
+        } catch (TimeoutException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s: timeout", device.getSerialNumber()));
+        } catch (AdbCommandRejectedException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s: %s", device.getSerialNumber(),
+                    e.getMessage()));
         }
     }
 
