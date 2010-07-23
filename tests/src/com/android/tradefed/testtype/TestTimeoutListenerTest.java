@@ -37,7 +37,7 @@ public class TestTimeoutListenerTest extends TestCase {
         listener.testRunStarted(1);
         listener.testStarted(test);
         listener.testEnded(test);
-        listener.testRunEnded(0);
+        listener.testRunEnded(0, null);
     }
 
     /**

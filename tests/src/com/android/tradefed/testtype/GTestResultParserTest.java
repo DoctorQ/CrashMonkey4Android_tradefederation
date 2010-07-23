@@ -82,7 +82,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(3);  // time
+        mockRunListener.testRunEnded(3, null);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -100,7 +100,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(0);
+        mockRunListener.testRunEnded(0, null);
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -113,7 +113,7 @@ public class GTestResultParserTest extends TestCase {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_3);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
         mockRunListener.testRunStarted(0);
-        mockRunListener.testRunEnded(0);
+        mockRunListener.testRunEnded(0, null);
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -131,7 +131,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(325);  //time
+        mockRunListener.testRunEnded(325, null);  //time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -171,7 +171,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
 
-        mockRunListener.testRunEnded(8);  // time
+        mockRunListener.testRunEnded(8, null);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -206,7 +206,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
 
-        mockRunListener.testRunEnded(10);  // time
+        mockRunListener.testRunEnded(10, null);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);

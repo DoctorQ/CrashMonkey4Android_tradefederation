@@ -84,7 +84,7 @@ public class GTestFuncTest extends DeviceTestCase {
                 mMockListener.testEnded(id);
             }
         }
-        mMockListener.testRunEnded(EasyMock.anyLong());
+        mMockListener.testRunEnded(EasyMock.anyLong(), null);
         mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
@@ -105,7 +105,7 @@ public class GTestFuncTest extends DeviceTestCase {
                 EasyMock.isA(String.class));
         mMockListener.testEnded(EasyMock.eq(testId));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
-        mMockListener.testRunEnded(EasyMock.anyLong());
+        mMockListener.testRunEnded(EasyMock.anyLong(), null);
         EasyMock.replay(mMockListener);
     }
 

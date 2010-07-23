@@ -44,7 +44,7 @@ public class CollectingTestListenerTest extends TestCase {
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
         mCollectingTestListener.testStarted(test);
         mCollectingTestListener.testEnded(test);
-        mCollectingTestListener.testRunEnded(0);
+        mCollectingTestListener.testRunEnded(0, null);
         assertTrue(mCollectingTestListener.isRunComplete());
         assertFalse(mCollectingTestListener.isRunFailure());
         assertEquals(1, mCollectingTestListener.getTestResults().size());
