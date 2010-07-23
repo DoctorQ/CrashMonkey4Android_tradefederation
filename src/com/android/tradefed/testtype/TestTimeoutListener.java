@@ -19,6 +19,8 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 
+import java.util.Map;
+
 /**
  * A test listener that ensures tests complete within a given time.
  */
@@ -127,7 +129,7 @@ public class TestTimeoutListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
-    public void testRunEnded(long elapsedTime) {
+    public void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
         mMonitor.cancel();
     }
 

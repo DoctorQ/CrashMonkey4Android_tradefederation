@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -72,7 +73,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testRunEnded(long elapsedTime) {
+    public void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
        // TODO: no run ended method on TestListener - would be good to propagate the elaspedTime
        // info up
        Log.i(LOG_TAG, String.format("run ended %d ms", elapsedTime));

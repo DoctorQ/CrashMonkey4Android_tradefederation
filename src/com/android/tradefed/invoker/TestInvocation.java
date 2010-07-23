@@ -206,7 +206,7 @@ public class TestInvocation implements ITestInvocation {
             TestResult result = new TestResult();
             result.addListener(resultForwarder);
             test.run(result);
-            listener.testRunEnded(System.currentTimeMillis() - startTime);
+            listener.testRunEnded(System.currentTimeMillis() - startTime, null);
         }
     }
 }

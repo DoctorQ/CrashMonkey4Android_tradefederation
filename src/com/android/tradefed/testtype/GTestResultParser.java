@@ -339,7 +339,7 @@ public class GTestResultParser extends MultiLineReceiver {
      */
     private void reportTestRunEnded() {
         for (ITestRunListener listener : mTestListeners) {
-            listener.testRunEnded(mTotalRunTime);
+            listener.testRunEnded(mTotalRunTime, null);
         }
         mTestRunStartReported = false;
     }
@@ -595,7 +595,7 @@ public class GTestResultParser extends MultiLineReceiver {
         // Report the test run failed
         for (ITestRunListener listener : mTestListeners) {
             listener.testRunFailed(errorMsg);
-            listener.testRunEnded(mTotalRunTime);
+            listener.testRunEnded(mTotalRunTime, null);
         }
     }
 

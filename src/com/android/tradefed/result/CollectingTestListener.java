@@ -109,7 +109,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public synchronized void testRunEnded(long elapsedTime) {
+    public synchronized void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
         mIsRunComplete = true;
     }
 
