@@ -15,14 +15,14 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.tradefed.targetsetup.IBuildInfo;
-
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+
+import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.targetsetup.IBuildInfo;
 
 /**
  * A thread-safe {@link ITestInvocationListener} that will collect all test results.
@@ -75,6 +75,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     // Uses a LinkedHashmap to have predictable iteration order
     private Map<TestIdentifier, TestResult> mTestResults =
         Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
+    private Map<String, String> mRunMetrics = null;
     private boolean mIsRunComplete = false;
     private boolean mIsRunFailed = false;
 
@@ -109,8 +110,9 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public synchronized void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
+    public synchronized void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
         mIsRunComplete = true;
+        mRunMetrics = runMetrics;
     }
 
     /**
@@ -147,6 +149,13 @@ public class CollectingTestListener implements ITestInvocationListener {
      */
     public synchronized  boolean isRunFailure() {
         return mIsRunFailed;
+    }
+
+    /**
+     * Gets the map of test run metrics
+     */
+    public Map<String, String> getRunMetrics() {
+        return mRunMetrics;
     }
 
     /**

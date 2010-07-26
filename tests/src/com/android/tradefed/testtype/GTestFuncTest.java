@@ -27,6 +27,8 @@ import org.easymock.EasyMock;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
+import java.util.Map;
 
 
 /**
@@ -37,6 +39,7 @@ public class GTestFuncTest extends DeviceTestCase {
     private static final String LOG_TAG = "GTestFuncTest";
     private GTest mGTest = null;
     private ITestInvocationListener mMockListener = null;
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     // Native test app constants
     public static final String NATIVE_TESTAPP_GTEST_CLASSNAME = "TradeFedNativeAppTest";
@@ -84,7 +87,7 @@ public class GTestFuncTest extends DeviceTestCase {
                 mMockListener.testEnded(id);
             }
         }
-        mMockListener.testRunEnded(EasyMock.anyLong(), null);
+        mMockListener.testRunEnded(EasyMock.anyLong(), EMPTY_MAP);
         mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
@@ -105,7 +108,7 @@ public class GTestFuncTest extends DeviceTestCase {
                 EasyMock.isA(String.class));
         mMockListener.testEnded(EasyMock.eq(testId));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
-        mMockListener.testRunEnded(EasyMock.anyLong(), null);
+        mMockListener.testRunEnded(EasyMock.anyLong(), EMPTY_MAP);
         EasyMock.replay(mMockListener);
     }
 

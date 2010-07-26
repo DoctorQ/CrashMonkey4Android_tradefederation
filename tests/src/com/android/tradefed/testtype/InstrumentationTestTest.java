@@ -28,6 +28,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import org.easymock.EasyMock;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -39,6 +41,7 @@ public class InstrumentationTestTest extends TestCase {
     private static final String TEST_PACKAGE_VALUE = "com.foo";
     private static final String TEST_RUNNER_VALUE = ".FooRunner";
 
+    private static final Map<String, String> EMPTY_STRING_MAP = Collections.emptyMap();
     /** The {@link InstrumentationTest} under test, with all dependencies mocked out */
     private InstrumentationTest mInstrumentationTest;
 
@@ -199,12 +202,12 @@ public class InstrumentationTestTest extends TestCase {
                 // perform call back on listeners to show empty run
                 for (ITestRunListener listener : listeners) {
                     listener.testRunStarted(0);
-                    listener.testRunEnded(1, null);
+                    listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
         });
         mMockListener.testRunStarted(0);
-        mMockListener.testRunEnded(1, null);
+        mMockListener.testRunEnded(1, EMPTY_STRING_MAP);
         // expect normal mode to be turned off
         mMockRemoteRunner.setLogOnly(false);
         mMockRemoteRunner.removeInstrumentationArg(InstrumentationTest.DELAY_MSEC_ARG);
@@ -241,7 +244,7 @@ public class InstrumentationTestTest extends TestCase {
                     listener.testEnded(test1);
                     listener.testStarted(test2);
                     listener.testEnded(test2);
-                    listener.testRunEnded(1, null);
+                    listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
         });
@@ -276,7 +279,7 @@ public class InstrumentationTestTest extends TestCase {
                     listener.testRunStarted(1);
                     listener.testStarted(test2);
                     listener.testEnded(test2);
-                    listener.testRunEnded(1, null);
+                    listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
         });
@@ -288,7 +291,7 @@ public class InstrumentationTestTest extends TestCase {
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(test2);
         mMockListener.testEnded(test2);
-        mMockListener.testRunEnded(1, null);
+        mMockListener.testRunEnded(1, EMPTY_STRING_MAP);
 
         EasyMock.replay(mMockRemoteRunner);
         EasyMock.replay(mMockTestDevice);

@@ -26,6 +26,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Collections;
+import java.util.Map;
 import java.util.Vector;
 
 import junit.framework.TestCase;
@@ -43,6 +45,7 @@ public class GTestResultParserTest extends TestCase {
     private static final String GTEST_OUTPUT_FILE_5 = "gtest_output5.txt";
     private static final String GTEST_OUTPUT_FILE_6 = "gtest_output6.txt";
     private static final String LOG_TAG = "GTestResultParserTest";
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     /**
      * Helper to read a file from the res/testtype directory and return its contents as a String[]
@@ -82,7 +85,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(3, null);  // time
+        mockRunListener.testRunEnded(3, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -100,7 +103,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(0, null);
+        mockRunListener.testRunEnded(0, EMPTY_MAP);
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -113,7 +116,7 @@ public class GTestResultParserTest extends TestCase {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_3);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
         mockRunListener.testRunStarted(0);
-        mockRunListener.testRunEnded(0, null);
+        mockRunListener.testRunEnded(0, EMPTY_MAP);
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -131,7 +134,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
-        mockRunListener.testRunEnded(325, null);  //time
+        mockRunListener.testRunEnded(325, EMPTY_MAP);  //time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -171,7 +174,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
 
-        mockRunListener.testRunEnded(8, null);  // time
+        mockRunListener.testRunEnded(8, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
@@ -206,7 +209,7 @@ public class GTestResultParserTest extends TestCase {
             mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject());
         }
 
-        mockRunListener.testRunEnded(10, null);  // time
+        mockRunListener.testRunEnded(10, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
         GTestResultParser resultParser = new GTestResultParser(mockRunListener);
         resultParser.processNewLines(contents);
