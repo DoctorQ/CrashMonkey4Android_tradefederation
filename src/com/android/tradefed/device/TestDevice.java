@@ -16,14 +16,17 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ddmlib.InstallException;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.SyncService.SyncResult;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
@@ -127,7 +130,8 @@ class TestDevice implements IManagedTestDevice {
          *         otherwise
          * @throws Exception if operation terminated abnormally
          */
-        public boolean run() throws IOException, TimeoutException;
+        public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                ShellCommandUnresponsiveException, InstallException, SyncException;
     }
 
     /**
@@ -233,7 +237,8 @@ class TestDevice implements IManagedTestDevice {
     public void executeShellCommand(final String command, final IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
         DeviceAction action = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws TimeoutException, IOException,
+                    AdbCommandRejectedException, ShellCommandUnresponsiveException {
                 getIDevice().executeShellCommand(command, receiver, mCmdTimeout);
                 return true;
             }
@@ -278,6 +283,27 @@ class TestDevice implements IManagedTestDevice {
             // TODO: no attempt tracking here. Would be good to catch scenario where repeated
             // test runs fail even though recovery is succeeding
             recoverDevice();
+        } catch (ShellCommandUnresponsiveException e) {
+            Log.w(LOG_TAG, String.format(
+                    "ShellCommandUnresponsiveException %s when running tests %s on %s",
+                    e.toString(), runner.getPackageName(), getSerialNumber()));
+            for (ITestRunListener listener : listeners) {
+                listener.testRunFailed("device unresponsive");
+            }
+        } catch (TimeoutException e) {
+            Log.w(LOG_TAG, String.format(
+                    "TimeoutException when running tests %s on %s",
+                    runner.getPackageName(), getSerialNumber()));
+            for (ITestRunListener listener : listeners) {
+                listener.testRunFailed("timeout");
+            }
+        } catch (AdbCommandRejectedException e) {
+            Log.w(LOG_TAG, String.format(
+                    "AdbCommandRejectedException %s when running tests %s on %s",
+                    e.getMessage(), runner.getPackageName(), getSerialNumber()));
+            for (ITestRunListener listener : listeners) {
+                listener.testRunFailed(e.getMessage());
+            }
         }
     }
 
@@ -308,7 +334,7 @@ class TestDevice implements IManagedTestDevice {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction installAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws InstallException {
                 String result = getIDevice().installPackage(packageFile.getAbsolutePath(),
                         reinstall);
                 response[0] = result;
@@ -327,7 +353,7 @@ class TestDevice implements IManagedTestDevice {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction uninstallAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws InstallException {
                 String result = getIDevice().uninstallPackage(packageName);
                 response[0] = result;
                 return result == null;
@@ -345,28 +371,19 @@ class TestDevice implements IManagedTestDevice {
             throws DeviceNotAvailableException {
 
         DeviceAction pullAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException, SyncException {
                 SyncService syncService = null;
                 boolean status = false;
                 try {
                     syncService = getIDevice().getSyncService();
-                    SyncResult result = syncService.pullFile(remoteFilePath,
+                    syncService.pullFile(remoteFilePath,
                             localFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
-                    switch (result.getCode()) {
-                        case SyncService.RESULT_OK:
-                            status = true;
-                            break;
-                        case SyncService.RESULT_CONNECTION_ERROR:
-                            throw new IOException("pullFile connection error");
-                        case SyncService.RESULT_CONNECTION_TIMEOUT:
-                            throw new TimeoutException();
-                        default:
-                            Log.w(LOG_TAG, String.format(
-                                    "Failed to pull %s from %s. Reason code: %d, message %s",
-                                    remoteFilePath, getSerialNumber(), result.getCode(),
-                                    result.getMessage()));
-                            break;
-                    }
+                    status = true;
+                } catch (SyncException e) {
+                    Log.w(LOG_TAG, String.format(
+                            "Failed to pull %s from %s. Message %s",
+                            remoteFilePath, getSerialNumber(), e.getMessage()));
+                    throw e;
                 } finally {
                     if (syncService != null) {
                         syncService.close();
@@ -385,28 +402,20 @@ class TestDevice implements IManagedTestDevice {
     public boolean pushFile(final File localFile, final String remoteFilePath)
             throws DeviceNotAvailableException {
         DeviceAction pushAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
+                    SyncException {
                 SyncService syncService = null;
                 boolean status = false;
                 try {
                     syncService = getIDevice().getSyncService();
-                    SyncResult result = syncService.pushFile(localFile.getAbsolutePath(),
+                    syncService.pushFile(localFile.getAbsolutePath(),
                         remoteFilePath, SyncService.getNullProgressMonitor());
-                    switch (result.getCode()) {
-                        case SyncService.RESULT_OK:
-                            status = true;
-                            break;
-                        case SyncService.RESULT_CONNECTION_ERROR:
-                            throw new IOException("pushFile connection error");
-                        case SyncService.RESULT_CONNECTION_TIMEOUT:
-                            throw new TimeoutException();
-                        default:
-                            Log.w(LOG_TAG, String.format(
-                                    "Failed to push to %s on device %s. Reason code: %d, " + "message %s",
-                                    remoteFilePath, getSerialNumber(), result.getCode(),
-                                    result.getMessage()));
-                            break;
-                    }
+                    status = true;
+                } catch (SyncException e) {
+                    Log.w(LOG_TAG, String.format(
+                            "Failed to push to %s on device %s. Message %s",
+                            remoteFilePath, getSerialNumber(), e.getMessage()));
+                    throw e;
                 } finally {
                     if (syncService != null) {
                         syncService.close();
@@ -549,28 +558,19 @@ class TestDevice implements IManagedTestDevice {
         }
         final String files[] = filePathsToSync.toArray(new String[filePathsToSync.size()]);
         DeviceAction syncAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
+                    SyncException {
                 SyncService syncService = null;
                 boolean status = false;
                 try {
                     syncService = getIDevice().getSyncService();
-                    SyncResult result = syncService.push(files, remoteFileEntry,
-                            SyncService.getNullProgressMonitor());
-                    switch (result.getCode()) {
-                        case SyncService.RESULT_OK:
-                            status = true;
-                            break;
-                        case SyncService.RESULT_CONNECTION_ERROR:
-                            throw new IOException("push connection error");
-                        case SyncService.RESULT_CONNECTION_TIMEOUT:
-                            throw new TimeoutException();
-                        default:
-                            Log.w(LOG_TAG, String.format(
-                                    "Failed to sync files to %s on device %s. Reason code: %d, " +
-                                    "message %s", remoteFileEntry.getFullPath(), getSerialNumber(),
-                                    result.getCode(), result.getMessage()));
-                            break;
-                    }
+                    syncService.push(files, remoteFileEntry, SyncService.getNullProgressMonitor());
+                    status = true;
+                } catch (SyncException e) {
+                    Log.w(LOG_TAG, String.format(
+                            "Failed to sync files to %s on device %s. Message %s",
+                            remoteFileEntry.getFullPath(), getSerialNumber(), e.getMessage()));
+                    throw e;
                 } finally {
                     if (syncService != null) {
                         syncService.close();
@@ -792,6 +792,18 @@ class TestDevice implements IManagedTestDevice {
             } catch (IOException e) {
                 Log.w(LOG_TAG, String.format("Exception when attempting %s on device %s",
                         actionDescription, getSerialNumber()));
+            } catch (InstallException e) {
+                Log.w(LOG_TAG, String.format("InstallException when attempting %s on device %s",
+                        actionDescription, getSerialNumber()));
+            } catch (SyncException e) {
+                Log.w(LOG_TAG, String.format("SyncException when attempting %s on device %s",
+                        actionDescription, getSerialNumber()));
+            } catch (AdbCommandRejectedException e) {
+                Log.w(LOG_TAG, String.format("AdbCommandRejectedException when attempting %s on device %s",
+                        actionDescription, getSerialNumber()));
+            } catch (ShellCommandUnresponsiveException e) {
+                Log.w(LOG_TAG, String.format("Device %s stopped responding when attempting %s",
+                        getSerialNumber(), actionDescription));
             }
             // TODO: currently treat all exceptions the same. In future consider different recovery
             // mechanisms for time out's vs IOExceptions
@@ -876,7 +888,17 @@ class TestDevice implements IManagedTestDevice {
             getIDevice().executeShellCommand(LOGCAT_CMD + " -d", receiver);
             output = receiver.getOutput();
         } catch (IOException e) {
-            Log.w(LOG_TAG, String.format("Failed to get logcat dump %s", getSerialNumber()));
+            Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: ", getSerialNumber(),
+                    e.getMessage()));
+        } catch (TimeoutException e) {
+            Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: timeout",
+                    getSerialNumber()));
+        } catch (AdbCommandRejectedException e) {
+            Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: ", getSerialNumber(),
+                    e.getMessage()));
+        } catch (ShellCommandUnresponsiveException e) {
+            Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: ", getSerialNumber(),
+                    e.getMessage()));
         }
         return new ByteArrayInputStream(output.getBytes());
     }
@@ -1044,7 +1066,7 @@ class TestDevice implements IManagedTestDevice {
                 try {
                     Log.d(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
                     getIDevice().executeShellCommand(LOGCAT_CMD, this, 0);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     final String msg = String.format("logcat capture interrupted for %s. Waiting"
                             + " for device to be back online. May see duplicate content in log.",
                             getSerialNumber());
@@ -1273,9 +1295,25 @@ class TestDevice implements IManagedTestDevice {
             Log.w(LOG_TAG, String.format("IOException '%s' when rebooting %s into bootloader",
                     e.getMessage(), getSerialNumber()));
             recoverDeviceFromBootloader();
+            // no need to try multiple times - if recoverDeviceFromBootloader() succeeds device is
+            // successfully in bootloader mode
+
+        } catch (TimeoutException e) {
+            Log.w(LOG_TAG, String.format("TimeoutException when rebooting %s into bootloader",
+                    getSerialNumber()));
+            recoverDeviceFromBootloader();
+            // no need to try multiple times - if recoverDeviceFromBootloader() succeeds device is
+            // successfully in bootloader mode
+
+        } catch (AdbCommandRejectedException e) {
+            Log.w(LOG_TAG, String.format(
+                    "AdbCommandRejectedException '%s' when rebooting %s into bootloader",
+                    e.getMessage(), getSerialNumber()));
+            recoverDeviceFromBootloader();
+            // no need to try multiple times - if recoverDeviceFromBootloader() succeeds device is
+            // successfully in bootloader mode
+
         }
-        // no need to try multiple times - if recoverDeviceFromBootloader() succeeds device is
-        // successfully in bootloader mode
     }
 
     /**
@@ -1315,7 +1353,7 @@ class TestDevice implements IManagedTestDevice {
      */
     private void doAdbReboot(final String into) throws DeviceNotAvailableException {
         DeviceAction rebootAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException {
                 getIDevice().reboot(into);
                 return true;
             }

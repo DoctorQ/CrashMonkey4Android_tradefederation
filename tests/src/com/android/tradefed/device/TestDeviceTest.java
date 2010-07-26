@@ -15,11 +15,14 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.Client;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ddmlib.InstallException;
 import com.android.ddmlib.RawImage;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.log.LogReceiver;
@@ -73,6 +76,8 @@ public class TestDeviceTest extends TestCase {
                 try {
                     mMockIDevice.reboot(null);
                 } catch (IOException e) {
+                } catch (TimeoutException e) {
+                } catch (AdbCommandRejectedException e) {
                 }
             }
         };
@@ -112,7 +117,8 @@ public class TestDeviceTest extends TestCase {
      * Test {@link TestDevice#getProductType()} when device is in adb and IDevice has not cached
      * product type property
      */
-    public void testGetProductType_adb() throws DeviceNotAvailableException, IOException {
+    public void testGetProductType_adb() throws DeviceNotAvailableException, IOException,
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null);
         final String expectedOutput = "nexusone";
@@ -133,7 +139,8 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test {@link TestDevice#clearErrorDialogs()} when both a error and anr dialog are present.
      */
-    public void testClearErrorDialogs() throws IOException, DeviceNotAvailableException {
+    public void testClearErrorDialogs() throws IOException, DeviceNotAvailableException,
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         final String anrOutput = "debugging=false crashing=false null notResponding=true "
                 + "com.android.server.am.AppNotRespondingDialog@4534aaa0 bad=false\n blah\n";
         final String crashOutput = "debugging=false crashing=true "
@@ -164,7 +171,8 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test the log file size limiting.
      */
-    public void testLogCatReceiver() throws IOException, InterruptedException {
+    public void testLogCatReceiver() throws IOException, InterruptedException, TimeoutException,
+            AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mTestDevice.setTmpLogcatSize(10);
         final String input = "this is the output of greater than 10 bytes.";
         final String input2 = "this is the second output of greater than 10 bytes.";
@@ -225,7 +233,8 @@ public class TestDeviceTest extends TestCase {
      * <p/>
      * Verify that the shell command is routed to the IDevice.
      */
-    public void testExecuteShellCommand_receiver() throws IOException, DeviceNotAvailableException {
+    public void testExecuteShellCommand_receiver() throws IOException, DeviceNotAvailableException,
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         final String testCommand = "simple command";
         // expect shell command to be called
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
@@ -239,8 +248,12 @@ public class TestDeviceTest extends TestCase {
      * {@link TestDevice#executeShellCommand(String)}.
      * <p/>
      * Verify that the shell command is routed to the IDevice, and shell output is collected.
+     * @throws ShellCommandUnresponsiveException
+     * @throws AdbCommandRejectedException
+     * @throws TimeoutException
      */
-    public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException {
+    public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException,
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         final String testCommand = "simple command";
         final String expectedOutput = "this is the output\r\n in two lines\r\n";
 
@@ -303,8 +316,10 @@ public class TestDeviceTest extends TestCase {
         mTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
 
-    /** Set expectations for a successful recovery operation */
-    private void assertRecoverySuccess() throws DeviceNotAvailableException, IOException {
+    /** Set expectations for a successful recovery operation
+     */
+    private void assertRecoverySuccess() throws DeviceNotAvailableException, IOException,
+            TimeoutException, AdbCommandRejectedException {
         mMockRecovery.recoverDevice(mMockMonitor);
         // expect reboot after recovery
         mMockIDevice.reboot(null);
@@ -566,12 +581,13 @@ public class TestDeviceTest extends TestCase {
             return false;
         }
 
-        public String installPackage(String packageFilePath, boolean reinstall) throws IOException {
+        public String installPackage(String packageFilePath, boolean reinstall)
+                throws InstallException {
             return null;
         }
 
         public String installRemotePackage(String remoteFilePath, boolean reinstall)
-                throws IOException {
+                throws InstallException {
             return null;
         }
 
@@ -594,7 +610,7 @@ public class TestDeviceTest extends TestCase {
         public void removeForward(int localPort, int remotePort) {
         }
 
-        public void removeRemotePackage(String remoteFilePath) throws IOException {
+        public void removeRemotePackage(String remoteFilePath) throws InstallException {
         }
 
         public void runEventLogService(LogReceiver receiver) throws IOException {
@@ -607,7 +623,7 @@ public class TestDeviceTest extends TestCase {
             return null;
         }
 
-        public String uninstallPackage(String packageName) throws IOException {
+        public String uninstallPackage(String packageName) throws InstallException {
             return null;
         }
         public void reboot(String into) throws IOException {

@@ -15,8 +15,11 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -160,6 +163,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                 }
             } catch (IOException e) {
                 Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
+            } catch (TimeoutException e) {
+                Log.i(LOG_TAG, String.format("%s failed: timeout", cmd));
+            } catch (AdbCommandRejectedException e) {
+                Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
+            } catch (ShellCommandUnresponsiveException e) {
+                Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
             }
             getRunUtil().sleep(CHECK_POLL_TIME);
         }
@@ -193,6 +202,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                     }
                 } catch (IOException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
+                } catch (TimeoutException e) {
+                    Log.i(LOG_TAG, String.format("%s failed: timeout", cmd));
+                } catch (AdbCommandRejectedException e) {
+                    Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
+                } catch (ShellCommandUnresponsiveException e) {
+                    Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
                 }
 
             } else {
@@ -220,6 +235,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             getIDevice().executeShellCommand("echo $" + mountName, receiver);
             return receiver.getOutput().trim();
         } catch (IOException e) {
+            return null;
+        } catch (TimeoutException e) {
+            return null;
+        } catch (AdbCommandRejectedException e) {
+            return null;
+        } catch (ShellCommandUnresponsiveException e) {
             return null;
         }
     }
