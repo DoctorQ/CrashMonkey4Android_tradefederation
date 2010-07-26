@@ -12,22 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile to build sample static library with native tests.
-
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-#All source files for the library
-LOCAL_SRC_FILES := \
-    src/TradeFedNativeTestSampleLib.cpp
-
-LOCAL_C_INCLUDES := \
-	$(LOCAL_PATH)/include
-
-LOCAL_MODULE_TAGS := tests
-
-LOCAL_MODULE := tfnativetestsamplelib
-
-include $(BUILD_STATIC_LIBRARY)
 include $(call all-makefiles-under,$(LOCAL_PATH))
 

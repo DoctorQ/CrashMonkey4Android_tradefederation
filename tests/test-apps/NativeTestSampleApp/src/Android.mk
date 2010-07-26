@@ -12,22 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile to build device-based native tests.
-
-# GTest does not build on the simulator because it depends on STLport.
-ifneq ($(TARGET_SIMULATOR),true)
+# Makefile to build sample static library that has native tests.
 
 LOCAL_PATH := $(call my-dir)
 include $(CLEAR_VARS)
 
-# All source files will be bundled into one test module
-LOCAL_SRC_FILES := TradeFedNativeTestApp_test.cpp
+#All source files for the library
+LOCAL_SRC_FILES := TradeFedNativeTestSampleLib.cpp
 
-# All gtests in all files should be compiled into one binary
-# The standard naming should conform to: <module_being_tested>tests
-# For example, for libjingle, use libjingletests
-LOCAL_MODULE := nativetestapp
+LOCAL_C_INCLUDES := \
+	$(LOCAL_PATH)/../include
 
-include $(BUILD_NATIVE_TEST)
+LOCAL_MODULE_TAGS := tests
 
-endif
+LOCAL_MODULE := tfnativetestsamplelib
+
+include $(BUILD_STATIC_LIBRARY)

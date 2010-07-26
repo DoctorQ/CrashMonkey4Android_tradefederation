@@ -12,10 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Makefile to build device-based native tests.
+# Makefile to build device-based native tests for a test static library.
 
-# GTest does not build on the simulator because it depends on
-# STLport.
+# GTest does not build on the simulator because it depends on STLport.
 ifneq ($(TARGET_SIMULATOR),true)
 
 LOCAL_PATH := $(call my-dir)
@@ -26,36 +25,22 @@ LOCAL_SRC_FILES := \
 	TradeFedNativeTestSample_test.cpp \
 	TradeFedNativeTestSample2_test.cpp
 
-# stlport required for gtest
-LOCAL_SHARED_LIBRARIES := \
-	libstlport
-
-# GTest libraries
+# Library to be tested
 LOCAL_STATIC_LIBRARIES := \
-	libgtest \
-	libgtest_main \
 	tfnativetestsamplelib
 
-# bionic, libstdc++, and stlport are required for gtest
 LOCAL_C_INCLUDES := \
-    bionic \
-    bionic/libstdc++/include \
-    external/gtest/include \
-    external/stlport/stlport \
 	$(LOCAL_PATH)/../include
-
-LOCAL_MODULE_TAGS := tests
 
 # All gtests in all files should be compiled into one binary
 # The standard naming should conform to: <module_being_tested>tests
 LOCAL_MODULE := tfnativetestsamplelibtests
 
-# Always put native tests into data/nativetest
-# TODO: change this to use a global variable
-LOCAL_MODULE_PATH := $(TARGET_OUT_DATA)/nativetest
+# Standard location for native device tests; automatically defaults
+# to $(TARGET_OUT_DATA_NATIVE_TESTS)/$(LOCAL_MODULE) - only define this if you
+# want to override the default location to use a different subdirectory, such as:
+# LOCAL_MODULE_PATH := $(TARGET_OUT_DATA_NATIVE_TESTS)/special_tfnativetestsamplelib
 
-EXTRA_CFLAGS := -DGTEST_OS_LINUX -DGTEST_HAS_STD_STRING
+include $(BUILD_NATIVE_TEST)
 
-include $(BUILD_EXECUTABLE)
-
-endif  #($(TARGET_SIMULATOR),true)
+endif
