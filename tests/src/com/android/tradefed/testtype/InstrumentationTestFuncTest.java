@@ -29,7 +29,6 @@ import org.easymock.EasyMock;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -38,8 +37,6 @@ import java.util.Map;
 public class InstrumentationTestFuncTest extends DeviceTestCase {
 
     private static final String LOG_TAG = "InstrumentationTestFuncTest";
-
-    private static final Map<String, String> THE_EMPTY_MAP = Collections.emptyMap();
 
     /** The {@link InstrumentationTest} under test */
     private InstrumentationTest mInstrumentationTest;
@@ -63,6 +60,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test normal run scenario with a single passed test result.
      */
+    @SuppressWarnings("unchecked")
     public void testRun() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun");
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
@@ -72,7 +70,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testEnded(EasyMock.eq(expectedTest));
-        mMockListener.testRunEnded(EasyMock.anyLong(), THE_EMPTY_MAP);
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -80,6 +78,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test normal run scenario with a single failed test result.
      */
+    @SuppressWarnings("unchecked")
     public void testRun_testFailed() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun_testFailed");
 
@@ -93,7 +92,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testFailed(EasyMock.eq(TestFailure.FAILURE), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
         mMockListener.testEnded(EasyMock.eq(expectedTest));
-        mMockListener.testRunEnded(EasyMock.anyLong(), THE_EMPTY_MAP);
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -101,6 +100,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test run scenario where test process crashes.
      */
+    @SuppressWarnings("unchecked")
     public void testRun_testCrash() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun_testCrash");
 
@@ -114,7 +114,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 (String)EasyMock.anyObject());
         mMockListener.testEnded(EasyMock.eq(expectedTest));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
-        mMockListener.testRunEnded(EasyMock.anyLong(), THE_EMPTY_MAP);
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
@@ -122,6 +122,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test run scenario where test run hangs indefinitely, and times out.
      */
+    @SuppressWarnings("unchecked")
     public void testRun_testTimeout() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun_testTimeout");
 
@@ -138,7 +139,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
         mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
                 (InputStream)EasyMock.anyObject());
-        mMockListener.testRunEnded(EasyMock.anyLong(), THE_EMPTY_MAP);
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
     }
