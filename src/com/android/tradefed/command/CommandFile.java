@@ -206,7 +206,7 @@ public class CommandFile extends Command {
                         getArgString(cmd.mArgs), cmd.mTotalExecTime));
                 final IConfiguration config = getConfigFactory().createConfigurationFromArgs(
                         cmd.mArgs);
-                final ITestDevice device = manager.allocateDevice(config.getDeviceRecovery());
+                final ITestDevice device = manager.allocateDevice();
                 Thread thread = startInvocation(manager, device, config, cmd);
                 if (thread != null) {
                     mInvocationThreads.add(thread);

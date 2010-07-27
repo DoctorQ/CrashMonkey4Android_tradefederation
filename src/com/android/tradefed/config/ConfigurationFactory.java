@@ -129,19 +129,37 @@ public class ConfigurationFactory implements IConfigurationFactory {
         return args[args.length-1];
     }
 
-
-
     /**
      * {@inheritDoc}
      */
     public void printHelp(String[] args, PrintStream out) {
+        printHelp(args, out, new Class[] {});
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void printHelp(String[] args, PrintStream out, Class<?>... additionalSources) {
         out.println("Usage: [options] <configuration_name>");
         out.println();
         // expected args is either just "--help", or "--help <configname>"
         if (args.length > 1) {
+
             String configName = getConfigNameFromArgs(args);
             try {
                 ConfigurationDef def = getConfigurationDef(configName);
+                if (additionalSources.length > 0) {
+                    StringBuilder buf = new StringBuilder();
+                    for (Class<?> source: additionalSources) {
+                        buf.append(ArgsOptionParser.getOptionHelp(source));
+                    }
+                    if (buf.length() > 0) {
+                        out.println("General options:");
+                        out.println();
+                        out.print(buf.toString());
+                        out.println();
+                    }
+                }
                 def.printCommandUsage(out);
                 return;
             } catch (ConfigurationException e) {

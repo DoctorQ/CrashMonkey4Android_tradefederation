@@ -80,4 +80,17 @@ public interface IConfigurationFactory {
      */
     public void printHelp(String[] args, PrintStream out);
 
+    /**
+     * Prints help output.
+     * <p/>
+     * If a configuration argument is specified prints the help info specific to that
+     * configuration. Otherwise prints a generic help info, and lists all available configurations.
+     *
+     * @param args the command line arguments
+     * @param additionalOptionSources additional objects with {@link Option} fields to print
+     *      help for
+     * @param out the {@link PrintStream} to dump output to
+     */
+    public void printHelp(String[] args, PrintStream out, Class<?>... additionalOptionSources);
+
 }

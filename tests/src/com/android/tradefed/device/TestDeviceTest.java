@@ -68,7 +68,7 @@ public class TestDeviceTest extends TestCase {
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
-        mTestDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor) {
+        mTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
             @Override
             public void reboot() {
                 // reboot is too complicated to mock out correctly, so just do a adb reboot command
@@ -86,6 +86,7 @@ public class TestDeviceTest extends TestCase {
                 return true;
             }
         };
+        mTestDevice.setRecovery(mMockRecovery);
         mTestDevice.setCommandTimeout(100);
         mTestDevice.setLogStartDelay(-1);
     }
@@ -109,7 +110,7 @@ public class TestDeviceTest extends TestCase {
                 fastbootResult);
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRunUtil);
-        TestDevice testDevice = new TestDevice(mMockIDevice, mMockRecovery, mMockMonitor) {
+        TestDevice testDevice = new TestDevice(mMockIDevice, mMockMonitor) {
             @Override
             IRunUtil getRunUtil() {
                 return mMockRunUtil;

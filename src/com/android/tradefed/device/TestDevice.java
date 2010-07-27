@@ -142,9 +142,8 @@ class TestDevice implements IManagedTestDevice {
      * @param device the associated {@link IDevice}
      * @param recovery the {@link IDeviceRecovery} mechanism to use
      */
-    TestDevice(IDevice device, IDeviceRecovery recovery, IDeviceStateMonitor monitor) {
+    TestDevice(IDevice device, IDeviceStateMonitor monitor) {
         mIDevice = device;
-        mRecovery = recovery;
         mMonitor = monitor;
     }
 
@@ -1508,11 +1507,9 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Set this device's recovery mechanism.
-     * <p/>
-     * Exposed for unit testing.
+     * {@inheritDoc}
      */
-    void setRecovery(IDeviceRecovery recovery) {
+    public void setRecovery(IDeviceRecovery recovery) {
         mRecovery = recovery;
     }
 

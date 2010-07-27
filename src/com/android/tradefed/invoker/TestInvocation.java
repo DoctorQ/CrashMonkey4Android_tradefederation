@@ -20,6 +20,7 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
@@ -77,11 +78,13 @@ public class TestInvocation implements ITestInvocation {
 
             IBuildProvider buildProvider = config.getBuildProvider();
             ITargetPreparer preparer = config.getTargetPreparer();
+            IDeviceRecovery recovery = config.getDeviceRecovery();
             Test test = config.getTest();
             IBuildInfo info = buildProvider.getBuild();
             if (info != null) {
                 Log.i(LOG_TAG, "Starting invocation");
                 listener = config.getTestInvocationListener();
+                device.setRecovery(recovery);
                 performInvocation(config, buildProvider, device, listener, preparer, test, info,
                         logger);
             } else {

@@ -35,6 +35,14 @@ import java.util.Collection;
 public interface ITestDevice {
 
     /**
+     * Set the {@link IDeviceRecovery} to use for this device. Should be set when device is first
+     * allocated.
+     *
+     * @param recovery the {@link IDeviceRecovery}
+     */
+    public void setRecovery(IDeviceRecovery recovery);
+
+    /**
      * Returns a reference to the associated ddmlib {@link IDevice}.
      * <p/>
      * A new {@link IDevice} may be allocated by DDMS each time the device disconnects and

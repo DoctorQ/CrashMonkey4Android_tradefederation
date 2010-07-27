@@ -31,6 +31,14 @@ public class ConfigurationFactoryTest extends TestCase {
 
     private IConfigurationFactory mFactory;
 
+    private static final String OPTION_DESCRIPTION = "bool description";
+    private static final String OPTION_NAME = "bool";
+
+    private static class TestConfigObject {
+        @Option(name = OPTION_NAME, description = OPTION_DESCRIPTION)
+        private boolean mBool;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -133,5 +141,19 @@ public class ConfigurationFactoryTest extends TestCase {
         for (String config : ConfigurationFactory.sDefaultConfigs) {
             assertTrue(usageString.contains(config));
         }
+    }
+
+    /**
+     * Test {@link ConfigurationFactory#printHelp(String[], PrintStream, Class...))}
+     */
+    public void testPrintHelp_additional() {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream mockPrintStream = new PrintStream(outputStream);
+        mFactory.printHelp(new String[] {"--help", ConfigurationFactory.sDefaultConfigs[0]},
+                mockPrintStream, TestConfigObject.class);
+        // verify TestConfigObject options present
+        final String usageString = outputStream.toString();
+        assertTrue(usageString.contains(OPTION_NAME));
+        assertTrue(usageString.contains(OPTION_DESCRIPTION));
     }
 }

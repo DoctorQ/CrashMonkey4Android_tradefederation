@@ -182,12 +182,12 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice(IDeviceRecovery recovery) {
+    public ITestDevice allocateDevice() {
         IDevice allocatedDevice = takeAvailableDevice();
         if (allocatedDevice == null) {
             return null;
         }
-        return createAllocatedDevice(allocatedDevice, recovery);
+        return createAllocatedDevice(allocatedDevice);
     }
 
     /**
@@ -208,12 +208,12 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice(IDeviceRecovery recovery, long timeout) {
+    public ITestDevice allocateDevice(long timeout) {
         IDevice allocatedDevice = pollAvailableDevice(timeout);
         if (allocatedDevice == null) {
             return null;
         }
-        return createAllocatedDevice(allocatedDevice, recovery);
+        return createAllocatedDevice(allocatedDevice);
     }
 
     /**
@@ -233,8 +233,8 @@ public class DeviceManager implements IDeviceManager {
         }
     }
 
-    private ITestDevice createAllocatedDevice(IDevice allocatedDevice, IDeviceRecovery recovery) {
-        IManagedTestDevice testDevice =  createTestDevice(allocatedDevice, recovery,
+    private ITestDevice createAllocatedDevice(IDevice allocatedDevice) {
+        IManagedTestDevice testDevice =  createTestDevice(allocatedDevice,
                 createStateMonitor(allocatedDevice));
         if (mEnableLogcat) {
             testDevice.startLogcat();
@@ -254,9 +254,8 @@ public class DeviceManager implements IDeviceManager {
      * @param monitor
      * @return
      */
-    IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceRecovery recovery,
-            IDeviceStateMonitor monitor) {
-        return new TestDevice(allocatedDevice, recovery, monitor);
+    IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceStateMonitor monitor) {
+        return new TestDevice(allocatedDevice, monitor);
     }
 
     /**

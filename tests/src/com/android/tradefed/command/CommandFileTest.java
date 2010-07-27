@@ -21,7 +21,6 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
@@ -48,7 +47,6 @@ public class CommandFileTest extends TestCase {
     private IConfiguration mMockConfiguration;
     private IConfigurationFactory mMockConfigFactory;
     private ITestDevice mMockDevice;
-    private IDeviceRecovery mMockRecovery;
     private String mMockFileData = "";
 
     @Override
@@ -57,7 +55,6 @@ public class CommandFileTest extends TestCase {
         mMockTestInvoker = EasyMock.createMock(ITestInvocation.class);
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
         mMockConfigFactory = EasyMock.createMock(IConfigurationFactory.class);
-        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         mMockDeviceManager =  EasyMock.createMock(IDeviceManager.class);
 
@@ -113,8 +110,7 @@ public class CommandFileTest extends TestCase {
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(expectedArgs)))
                 .andReturn(mMockConfiguration);
-        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
-        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
@@ -139,8 +135,7 @@ public class CommandFileTest extends TestCase {
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(expectedArgs)))
                 .andReturn(mMockConfiguration);
-        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(mMockRecovery);
-        EasyMock.expect(mMockDeviceManager.allocateDevice(mMockRecovery)).andReturn(mMockDevice);
+        EasyMock.expect(mMockDeviceManager.allocateDevice()).andReturn(mMockDevice);
         // expect doRun is invoked with the device
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);

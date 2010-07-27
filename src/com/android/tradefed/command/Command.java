@@ -144,7 +144,7 @@ public class Command {
         FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
         try {
             ITestInvocation instance = createRunInstance();
-            device = manager.allocateDevice(config.getDeviceRecovery(), WAIT_DEVICE_TIME);
+            device = manager.allocateDevice(WAIT_DEVICE_TIME);
             if (device == null) {
                 System.out.println("Could not find device to test");
                 throw new DeviceNotAvailableException();

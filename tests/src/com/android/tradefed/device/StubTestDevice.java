@@ -287,4 +287,11 @@ public class StubTestDevice implements IManagedTestDevice {
     public String getMountPoint(String mountName) {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void setRecovery(IDeviceRecovery recovery) {
+        // ignore
+    }
 }

@@ -21,6 +21,7 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
@@ -59,6 +60,7 @@ public class TestInvocationTest extends TestCase {
     private IBuildInfo mMockBuildInfo;
     private ITestInvocationListener mMockTestListener;
     private ILeveledLogOutput mMockLogger;
+    private IDeviceRecovery mMockRecovery;
 
     @Override
     protected void setUp() throws Exception {
@@ -66,6 +68,7 @@ public class TestInvocationTest extends TestCase {
 
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
+        mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockPreparer = EasyMock.createMock(ITargetPreparer.class);
         mMockBuildProvider = EasyMock.createMock(IBuildProvider.class);
         mMockTestListener = EasyMock.createMock(ITestInvocationListener.class);
@@ -78,10 +81,13 @@ public class TestInvocationTest extends TestCase {
                 mMockTestListener);
         EasyMock.expect(mMockConfiguration.getLogOutput()).andReturn(
                 mMockLogger);
+        EasyMock.expect(mMockConfiguration.getDeviceRecovery()).andReturn(
+                mMockRecovery);
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
+        mMockDevice.setRecovery(mMockRecovery);
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation() {

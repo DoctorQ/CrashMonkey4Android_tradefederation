@@ -42,20 +42,18 @@ public interface IDeviceManager {
     /**
      * Request a device for testing, waiting indefinitely until one becomes available.
      *
-     * @param recovery the {@link IDeviceRecovery} to use for device
      * @return a {@link ITestDevice} for testing, or <code>null</code> if interrupted
      */
-    public ITestDevice allocateDevice(IDeviceRecovery recovery);
+    public ITestDevice allocateDevice();
 
     /**
      * Request a device for testing, waiting for timeout ms until one becomes available.
      *
-     * @param recovery the {@link IDeviceRecovery} to use for device
      * @param timeout
      * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before
      * one became available
      */
-    public ITestDevice allocateDevice(IDeviceRecovery recovery, long timeout);
+    public ITestDevice allocateDevice(long timeout);
 
     /**
      * Return a device to the pool
