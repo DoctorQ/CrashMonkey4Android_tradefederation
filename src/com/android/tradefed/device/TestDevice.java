@@ -1471,6 +1471,15 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
+        if (mMonitor.waitForDeviceOnline(waitTime) == null) {
+            recoverDevice();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceAvailable(waitTime) == null) {
             recoverDevice();

@@ -182,6 +182,13 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void waitForDeviceOnline() throws DeviceNotAvailableException {
         // ignore
     }
