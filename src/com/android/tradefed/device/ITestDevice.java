@@ -340,19 +340,7 @@ public interface ITestDevice {
     public void waitForDeviceAvailable() throws DeviceNotAvailableException;
 
     /**
-     * Blocks until device is visible via adb, waiting at most waitTime ms.
-     * <p/>
-     * Note the device may not necessarily be responsive to commands on completion. Use
-     * {@link #waitForDeviceAvailable()} instead.
-     *
-     * @param waitTime the time in ms to wait
-     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
-     */
-    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException;
-
-    /**
-     * Blocks until device is visible via adb.  Waits for the default amount of time.
+     * Blocks until device is visible via adb.
      * <p/>
      * Note the device may not necessarily be responsive to commands on completion. Use
      * {@link #waitForDeviceAvailable()} instead.
