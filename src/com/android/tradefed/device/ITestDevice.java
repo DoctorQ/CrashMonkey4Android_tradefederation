@@ -349,7 +349,7 @@ public interface ITestDevice {
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
      */
-    public void waitForDeviceOnline(final long waitTime) throws DeviceNotAvailableException;
+    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException;
 
     /**
      * Blocks until device is visible via adb.  Waits for the default amount of time.

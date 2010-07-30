@@ -1427,7 +1427,7 @@ class TestDevice implements IManagedTestDevice {
         performDeviceAction("reboot", rebootAction, MAX_RETRY_ATTEMPTS);
     }
 
-    private void waitForDeviceNotAvailable(String operationDesc, final long time) {
+    private void waitForDeviceNotAvailable(String operationDesc, long time) {
         // TODO: a bit of a race condition here. Would be better to start a device listener
         // before the operation
         if (!mMonitor.waitForDeviceNotAvailable(time)) {
@@ -1462,15 +1462,6 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDeviceOnline(final long waitTime) throws DeviceNotAvailableException {
-        if (mMonitor.waitForDeviceOnline(waitTime) == null) {
-            recoverDevice();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void waitForDeviceOnline() throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceOnline() == null) {
             recoverDevice();
@@ -1480,7 +1471,16 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDeviceAvailable(final long waitTime) throws DeviceNotAvailableException {
+    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
+        if (mMonitor.waitForDeviceOnline(waitTime) == null) {
+            recoverDevice();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceAvailable(waitTime) == null) {
             recoverDevice();
         }

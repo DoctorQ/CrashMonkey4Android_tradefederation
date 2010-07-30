@@ -159,7 +159,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDevice(final long time) throws DeviceNotAvailableException {
+    public void waitForDevice(long time) throws DeviceNotAvailableException {
         // ignore
 
     }
@@ -167,7 +167,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDeviceAvailable(final long waitTime) throws DeviceNotAvailableException {
+    public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
         // ignore
 
     }
@@ -182,7 +182,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDeviceOnline(final long waitTime) throws DeviceNotAvailableException {
+    public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
         // ignore
     }
 
