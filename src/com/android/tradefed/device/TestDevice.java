@@ -193,6 +193,7 @@ class TestDevice implements IManagedTestDevice {
             synchronized (currentDevice) {
                 mIDevice = newDevice;
             }
+            mMonitor.setIDevice(mIDevice);
         }
     }
 

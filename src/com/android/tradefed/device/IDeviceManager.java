@@ -30,6 +30,16 @@ public interface IDeviceManager {
     }
 
     /**
+     * A listener for fastboot state changes.
+     */
+    public static interface IFastbootListener {
+        /**
+         * Callback when fastboot state has been updated for all devices.
+         */
+        public void stateUpdated();
+    }
+
+    /**
      * Request a device for testing, waiting indefinitely until one becomes available.
      *
      * @param recovery the {@link IDeviceRecovery} to use for device
@@ -97,11 +107,11 @@ public interface IDeviceManager {
      *
      * @param listener
      */
-    public void addFastbootListener(Object listener);
+    public void addFastbootListener(IFastbootListener listener);
 
     /**
      * Informs the manager that a listener is no longer interested in fastboot state changes.
      * @param listener
      */
-    public void removeFastbootListener(Object listener);
+    public void removeFastbootListener(IFastbootListener listener);
 }

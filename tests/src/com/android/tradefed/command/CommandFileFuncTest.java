@@ -158,7 +158,8 @@ public class CommandFileFuncTest extends TestCase {
         /**
          * {@inheritDoc}
          */
-        public void addFastbootListener(Object listener) {
+        public void addFastbootListener(IFastbootListener listener) {
+            // ignore
         }
 
         /**
@@ -189,7 +190,7 @@ public class CommandFileFuncTest extends TestCase {
         /**
          * {@inheritDoc}
          */
-        public void removeFastbootListener(Object listener) {
+        public void removeFastbootListener(IFastbootListener listener) {
             // ignore
         }
 

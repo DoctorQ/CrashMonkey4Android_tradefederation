@@ -46,7 +46,7 @@ public class DeviceManager implements IDeviceManager {
     /** max wait time in ms for fastboot devices command to complete */
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
-    static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
+    private static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
     /** max wait time for device to become available when becoming online */
     private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 2*60*1000;
 
@@ -63,7 +63,7 @@ public class DeviceManager implements IDeviceManager {
 
     private boolean mEnableLogcat = true;
 
-    private Set<Object> mFastbootListeners;
+    private Set<IFastbootListener> mFastbootListeners;
 
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
@@ -84,7 +84,7 @@ public class DeviceManager implements IDeviceManager {
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
-        mFastbootListeners = Collections.synchronizedSet(new HashSet<Object>());
+        mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
         mFastbootMonitor = new FastbootMonitor();
         startFastbootMonitor();
     }
@@ -404,14 +404,14 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public void addFastbootListener(Object listener) {
+    public void addFastbootListener(IFastbootListener listener) {
         mFastbootListeners.add(listener);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void removeFastbootListener(Object listener) {
+    public void removeFastbootListener(IFastbootListener listener) {
         mFastbootListeners.remove(listener);
     }
 
@@ -458,6 +458,13 @@ public class DeviceManager implements IDeviceManager {
                                 }
                             }
                         }
+                    }
+                    // create a copy of listeners for notification to prevent deadlocks
+                    Collection<IFastbootListener> listenersCopy = new ArrayList<IFastbootListener>(
+                            mFastbootListeners.size());
+                    listenersCopy.addAll(mFastbootListeners);
+                    for (IFastbootListener listener : listenersCopy) {
+                        listener.stateUpdated();
                     }
                 }
                 getRunUtil().sleep(FASTBOOT_POLL_WAIT_TIME);
