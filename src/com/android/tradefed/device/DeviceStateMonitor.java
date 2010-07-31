@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
+import com.android.tradefed.device.IDeviceManager.IFastbootListener;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -83,7 +84,16 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * @return
      */
     private IDevice getIDevice() {
-        return mDevice;
+        synchronized (mDevice) {
+            return mDevice;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getSerialNumber() {
+        return getIDevice().getSerialNumber();
     }
 
     /**
@@ -97,9 +107,10 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceNotAvailable(long waitTime) {
-        mMgr.addFastbootListener(this);
+        IFastbootListener listener = new StubFastbootListener();
+        mMgr.addFastbootListener(listener);
         boolean result = waitForDeviceState(TestDeviceState.NOT_AVAILABLE, waitTime);
-        mMgr.removeFastbootListener(this);
+        mMgr.removeFastbootListener(listener);
         return result;
     }
 
@@ -256,10 +267,28 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceBootloader(long time) {
-        mMgr.addFastbootListener(this);
-        boolean result =  waitForDeviceState(TestDeviceState.FASTBOOT, time);
-        mMgr.removeFastbootListener(this);
+        long startTime = System.currentTimeMillis();
+        // ensure fastboot state is updated at least once
+        waitForDeviceBootloaderStateUpdate();
+        long elapsedTime = System.currentTimeMillis() - startTime;
+        IFastbootListener listener = new StubFastbootListener();
+        mMgr.addFastbootListener(listener);
+        boolean result =  waitForDeviceState(TestDeviceState.FASTBOOT, time - elapsedTime);
+        mMgr.removeFastbootListener(listener);
         return result;
+    }
+
+    public void waitForDeviceBootloaderStateUpdate() {
+        IFastbootListener listener = new NotifyFastbootListener();
+        synchronized (listener) {
+            mMgr.addFastbootListener(listener);
+            try {
+                listener.wait();
+            } catch (InterruptedException e) {
+                Log.w(LOG_TAG, "wait for device bootloader state update interrupted");
+            }
+        }
+        mMgr.removeFastbootListener(listener);
     }
 
     private boolean waitForDeviceState(TestDeviceState state, long time) {
@@ -318,6 +347,15 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         }
     }
 
+    public void setIDevice(IDevice newDevice) {
+        IDevice currentDevice = mDevice;
+        if (!getIDevice().equals(newDevice)) {
+            synchronized (currentDevice) {
+                mDevice = newDevice;
+            }
+        }
+    }
+
     private static class DeviceStateListener {
         private final TestDeviceState mExpectedState;
 
@@ -335,9 +373,22 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     }
 
     /**
-     * {@inheritDoc}
+     * An empty implementation of {@link IFastbootListener}
      */
-    public String getSerialNumber() {
-        return getIDevice().getSerialNumber();
+    private static class StubFastbootListener implements IFastbootListener {
+        public void stateUpdated() {
+            // ignore
+        }
+    }
+
+    /**
+     * A {@link IFastbootListener} that notifies when a status update has been received.
+     */
+    private static class NotifyFastbootListener implements IFastbootListener {
+        public void stateUpdated() {
+            synchronized (this) {
+                notify();
+            }
+        }
     }
 }

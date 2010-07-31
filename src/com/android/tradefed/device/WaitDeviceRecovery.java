@@ -33,11 +33,8 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
     private static final String LOG_TAG = "WaitDeviceRecovery";
 
-    /** the time in ms to wait before beginning recovery attempts for bootloader */
-    // TODO: this is a gross hack - currently this value should be more than
-    // DeviceManager.FASTBOOT_POLL_TIME because that factor drives the fastboot state refresh times
-    protected static final long INITIAL_BOOTLOADER_PAUSE_TIME =
-        DeviceManager.FASTBOOT_POLL_WAIT_TIME * 3;
+    /** the time in ms to wait before beginning recovery attempts */
+    protected static final long INITIAL_PAUSE_TIME = 5 * 1000;
 
     // TODO: add a separate configurable timeout per operation
     @Option(name="device-wait-time",
@@ -69,9 +66,11 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // sleep a small amount to give ddms state a chance to settle
         // TODO - see if there is better way to handle this
         Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover",
-                INITIAL_BOOTLOADER_PAUSE_TIME, monitor.getSerialNumber()));
-        // wait for bootloader state instead of just sleeping to refresh state
-        monitor.waitForDeviceBootloader(INITIAL_BOOTLOADER_PAUSE_TIME);
+                INITIAL_PAUSE_TIME, monitor.getSerialNumber()));
+        getRunUtil().sleep(INITIAL_PAUSE_TIME);
+
+        // ensure bootloader state is updated
+        monitor.waitForDeviceBootloaderStateUpdate();
 
         if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
             Log.i(LOG_TAG, String.format(
@@ -126,27 +125,30 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // device may have just gone offline
         // wait a small amount to give device state a chance to settle
         // TODO - see if there is better way to handle this
-        Log.i(LOG_TAG, String.format("Waiting for %d for %s in bootloader",
-                INITIAL_BOOTLOADER_PAUSE_TIME, monitor.getSerialNumber()));
-        monitor.waitForDeviceBootloader(INITIAL_BOOTLOADER_PAUSE_TIME);
+        Log.i(LOG_TAG, String.format("Pausing for %d for %s to recover",
+                INITIAL_PAUSE_TIME, monitor.getSerialNumber()));
+        getRunUtil().sleep(INITIAL_PAUSE_TIME);
 
-        if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
+        // ensure bootloader state is updated
+        monitor.waitForDeviceBootloaderStateUpdate();
+
+        if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
             Log.i(LOG_TAG, String.format(
-                    "Found device %s online but expected fastboot. Rebooting...",
-                    monitor.getSerialNumber()));
-            // TODO: retry if failed
-            IDevice device = monitor.waitForDeviceOnline();
-            if (device == null) {
-                handleDeviceBootloaderNotAvailable(monitor);
-                return;
-            }
-            rebootDeviceIntoBootloader(device);
-        } else if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
-            Log.i(LOG_TAG, String.format(
-                    "Found device %s in fastboot but unresponsive. Rebooting...",
+                    "Found device %s in fastboot but unresponsive.",
                     monitor.getSerialNumber()));
             handleDeviceBootloaderUnresponsive(monitor);
         } else {
+            if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
+                Log.i(LOG_TAG, String.format(
+                    "Found device %s online but expected fastboot.",
+                    monitor.getSerialNumber()));
+                IDevice device = monitor.waitForDeviceOnline();
+                if (device == null) {
+                    handleDeviceBootloaderNotAvailable(monitor);
+                    return;
+                }
+                rebootDeviceIntoBootloader(device);
+            }
             if (!monitor.waitForDeviceBootloader(mWaitTime)) {
                 handleDeviceBootloaderNotAvailable(monitor);
             }

@@ -78,6 +78,11 @@ public interface IDeviceStateMonitor {
     public boolean waitForDeviceBootloader(long waitTime);
 
     /**
+     * Waits for device bootloader state to be refreshed
+     */
+    public void waitForDeviceBootloaderStateUpdate();
+
+    /**
      * Waits for the device to be not available
      *
      * @param waitTime the maximum time in ms to wait
@@ -117,4 +122,13 @@ public interface IDeviceStateMonitor {
      * @see {@link IDevice#getMountPoint(String)}
      */
     public String getMountPoint(String mountName);
+
+    /**
+     * Updates the current IDevice.
+     *
+     * @param device
+     *
+     * @see {@link IManagedTestDevice#setIDevice(IDevice)}
+     */
+    public void setIDevice(IDevice device);
 }
