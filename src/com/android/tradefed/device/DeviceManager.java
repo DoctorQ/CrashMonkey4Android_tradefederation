@@ -76,7 +76,9 @@ public class DeviceManager implements IDeviceManager {
         mAvailableDeviceQueue = new LinkedBlockingQueue<IDevice>();
         mCheckDeviceSet = Collections.synchronizedSet(new HashSet<String>());
         mAdbBridge = createAdbBridge();
-        mAdbBridge.init(false /* client support */);
+        // assume "adb" is in PATH
+        // TODO: make this configurable
+        mAdbBridge.init(false /* client support */, "adb");
         for (IDevice device : mAdbBridge.getDevices()) {
             if (device.getState() == IDevice.DeviceState.ONLINE) {
                 checkAndAddAvailableDevice(device);

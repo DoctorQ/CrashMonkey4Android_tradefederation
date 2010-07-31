@@ -70,7 +70,7 @@ public class DeviceManagerTest extends TestCase {
             public void removeDeviceChangeListener(IDeviceChangeListener listener) {
             }
 
-            public void init(boolean clientSupport) {
+            public void init(boolean clientSupport, String adbOsLocation) {
             }
 
             public void terminate() {

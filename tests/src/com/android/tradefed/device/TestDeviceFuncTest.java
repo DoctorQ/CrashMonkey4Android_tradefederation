@@ -21,7 +21,9 @@ import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
+import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.RunUtil;
 
 import org.easymock.EasyMock;
 
@@ -58,6 +60,13 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      */
     public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException {
         Log.i(LOG_TAG, "testExecuteShellCommand");
+        assertSimpleShellCommand();
+    }
+
+    /**
+     * Verify that a simple {@link TestDevice#executeShellCommand(String)} command is successful.
+     */
+    private void assertSimpleShellCommand() throws DeviceNotAvailableException {
         final String output = mTestDevice.executeShellCommand("ls");
         assertTrue(output.contains("data"));
         assertTrue(output.contains("system"));
@@ -305,6 +314,16 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testDisableKeyguard");
         getDevice().reboot();
         assertTrue(runUITests());
+    }
+
+    /**
+     * Test that TradeFed can successfully recover from the adb host daemon process being killed
+     */
+    public void testExecuteShellCommand_adbKilled() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testExecuteShellCommand_adbKilled");
+        CommandResult result = RunUtil.getInstance().runTimedCmd(30*1000, "adb", "kill-server");
+        assertEquals(CommandStatus.SUCCESS, result.getStatus());
+        assertSimpleShellCommand();
     }
 
     /**

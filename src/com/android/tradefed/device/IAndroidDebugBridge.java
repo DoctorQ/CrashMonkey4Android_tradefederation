@@ -43,9 +43,10 @@ public interface IAndroidDebugBridge {
     void removeDeviceChangeListener(IDeviceChangeListener listener);
 
     /**
-     * Wrapper for {@link AndroidDebugBridge#init(boolean)}
+     * Wrapper for {@link AndroidDebugBridge#init(boolean)} and
+     * {@link AndroidDebugBridge#createBridge(String, boolean)}
      */
-    void init(boolean clientSupport);
+    void init(boolean clientSupport, String adbOsLocation);
 
     /**
      * Wrapper for {@link AndroidDebugBridge#terminate()}
