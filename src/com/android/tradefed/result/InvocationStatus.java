@@ -13,27 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.targetsetup;
-
-import com.android.ddmlib.Log;
+package com.android.tradefed.result;
 
 /**
- * No-op empty implementation of a {@link IBuildProvider}.
+ * A helper enum to represent the invocation status
  */
-public class StubBuildProvider implements IBuildProvider {
-
-    /**
-     * {@inheritDoc}
-     */
-    public IBuildInfo getBuild() throws TargetSetupError {
-        Log.d("BuildProvider", "skipping build provider step");
-        return new BuildInfo();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void buildNotTested(IBuildInfo info) {
-        // ignore
-    }
+public enum InvocationStatus {
+    SUCCESS, FAILED, BUILD_ERROR
 }

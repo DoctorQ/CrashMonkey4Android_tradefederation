@@ -15,25 +15,18 @@
  */
 package com.android.tradefed.targetsetup;
 
-import com.android.ddmlib.Log;
-
 /**
- * No-op empty implementation of a {@link IBuildProvider}.
+ * Thrown if the provided build fails to run.
  */
-public class StubBuildProvider implements IBuildProvider {
+@SuppressWarnings("serial")
+public class BuildError extends Exception {
 
     /**
-     * {@inheritDoc}
+     * Constructs a new (@link BuildError} with a detailed error message.
+     *
+     * @param reason a error message giving more details on the build error
      */
-    public IBuildInfo getBuild() throws TargetSetupError {
-        Log.d("BuildProvider", "skipping build provider step");
-        return new BuildInfo();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void buildNotTested(IBuildInfo info) {
-        // ignore
+    public BuildError(String reason) {
+        super(reason);
     }
 }

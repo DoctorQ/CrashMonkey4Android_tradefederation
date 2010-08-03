@@ -80,7 +80,16 @@ public interface ITestInvocationListener extends ITestRunListener {
     public void invocationEnded(long elapsedTime);
 
     /**
-     * Reports an incomplete invocation due to a fatal error.
+     * Reports an incomplete invocation due to a fatal error in the build (ie the build failed to
+     * launch properly)
+     *
+     * @param elapsedTime the elapsed time of the invocation in ms
+     * @param message a more detaled error description
+     */
+    public void invocationBuildError(long elapsedTime, String message);
+
+    /**
+     * Reports an incomplete invocation due to a fatal error in the test environment.
      *
      * @param elapsedTime the elapsed time of the invocation in ms
      * @param message a {@link String} error description

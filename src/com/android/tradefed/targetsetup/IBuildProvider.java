@@ -28,4 +28,14 @@ public interface IBuildProvider {
      * @throws TargetSetupError if build info failed to be retrieved due to an unexpected error
      */
     public IBuildInfo getBuild() throws TargetSetupError;
+
+    /**
+     * Mark the given build as untested.
+     * <p/>
+     * Called in cases where TradeFederation has failed to complete testing on the build due to an
+     * environment problem.
+     *
+     * @param info the {@link IBuildInfo} to reset
+     */
+    public void buildNotTested(IBuildInfo info);
 }

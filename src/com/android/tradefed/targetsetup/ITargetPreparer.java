@@ -36,5 +36,5 @@ public interface ITargetPreparer {
      * @throws DeviceNotAvailableException if device became unresponsive
      */
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
-            DeviceNotAvailableException;
+            BuildError, DeviceNotAvailableException;
 }

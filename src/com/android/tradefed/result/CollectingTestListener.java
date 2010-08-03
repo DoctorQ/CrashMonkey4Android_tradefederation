@@ -225,6 +225,13 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    public void invocationBuildError(long elapsedTime, String message) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void invocationStarted(IBuildInfo buildInfo) {
         // ignore
     }

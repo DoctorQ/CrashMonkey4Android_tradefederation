@@ -15,9 +15,6 @@
  */
 package com.android.tradefed.invoker;
 
-import java.util.Collections;
-import java.util.Map;
-
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
@@ -27,14 +24,20 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.targetsetup.BuildError;
+import com.android.tradefed.targetsetup.BuildInfo;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 import com.android.tradefed.targetsetup.TargetSetupError;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+
+import java.util.Collections;
+import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
@@ -79,7 +82,8 @@ public class TestInvocation implements ITestInvocation {
             if (info != null) {
                 Log.i(LOG_TAG, "Starting invocation");
                 listener = config.getTestInvocationListener();
-                performInvocation(config, device, listener, preparer, test, info, logger);
+                performInvocation(config, buildProvider, device, listener, preparer, test, info,
+                        logger);
             } else {
                 Log.i(LOG_TAG, "No build to test");
             }
@@ -108,6 +112,7 @@ public class TestInvocation implements ITestInvocation {
      * Performs the invocation
      *
      * @param config the {@link IConfiguration}
+     * @param buildProvider the {@link IBuildProvider}
      * @param device the {@link ITestDevice} to use. May be <code>null</code>
      * @param listener the {@link ITestInvocationListener} to report results to
      * @param preparer the {@link ITargetPreparer}
@@ -116,10 +121,12 @@ public class TestInvocation implements ITestInvocation {
      * @param logger the {@link ILeveledLogOutput}
      * @throws DeviceNotAvailableException
      */
-    private void performInvocation(IConfiguration config, ITestDevice device,
-            ITestInvocationListener listener, ITargetPreparer preparer, Test test, IBuildInfo info,
-            ILeveledLogOutput logger) throws DeviceNotAvailableException {
+    private void performInvocation(IConfiguration config, IBuildProvider buildProvider,
+            ITestDevice device, ITestInvocationListener listener, ITargetPreparer preparer,
+            Test test, IBuildInfo info, ILeveledLogOutput logger)
+            throws DeviceNotAvailableException {
         Throwable error = null;
+        InvocationStatus status = InvocationStatus.SUCCESS;
         long startTime = System.currentTimeMillis();
         listener.invocationStarted(info);
         try {
@@ -129,15 +136,23 @@ public class TestInvocation implements ITestInvocation {
             }
             preparer.setUp(device, info);
             runTests(config, device, info, test, listener);
+        } catch (BuildError e) {
+            error = e;
+            status = InvocationStatus.BUILD_ERROR;
+            Log.w(LOG_TAG, String.format("Build %d failed on device %s", info.getBuildId(),
+                    device.getSerialNumber()));
         } catch (TargetSetupError e) {
             error = e;
+            status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, e);
         } catch (DeviceNotAvailableException e) {
             error = e;
+            status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, e);
             throw e;
         } catch (Throwable e) {
             error = e;
+            status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, "Unexpected exception!");
             Log.e(LOG_TAG, e);
             // TODO: consider re-throwing
@@ -147,11 +162,19 @@ public class TestInvocation implements ITestInvocation {
                 listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
             }
             listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-            if (error == null) {
-                listener.invocationEnded(System.currentTimeMillis() - startTime);
-            } else {
-                listener.invocationFailed(System.currentTimeMillis() - startTime,
-                        error.getMessage(), error);
+            switch (status) {
+                case SUCCESS:
+                    listener.invocationEnded(System.currentTimeMillis() - startTime);
+                    break;
+                case BUILD_ERROR:
+                    listener.invocationBuildError(System.currentTimeMillis() - startTime,
+                            error.getMessage());
+                    break;
+                case FAILED:
+                    listener.invocationFailed(System.currentTimeMillis() - startTime,
+                            error.getMessage(), error);
+                    buildProvider.buildNotTested(info);
+                    break;
             }
         }
 
