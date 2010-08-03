@@ -89,7 +89,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         }
         if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
             // device is online but not responsive
-            handleDeviceUnresponsive(monitor);
+            handleDeviceUnresponsive(device, monitor);
         }
     }
 
@@ -98,11 +98,18 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      * @param monitor
      * @throws DeviceNotAvailableException
      */
-    protected void handleDeviceUnresponsive(IDeviceStateMonitor monitor)
+    protected void handleDeviceUnresponsive(IDevice device, IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
-        // consider trying a reboot?
-        throw new DeviceUnresponsiveException(String.format(
-                "Device %s is online but unresponsive", monitor.getSerialNumber()));
+        rebootDevice(device);
+        IDevice newdevice = monitor.waitForDeviceOnline();
+        if (newdevice == null) {
+            handleDeviceNotAvailable(monitor);
+            return;
+        }
+        if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
+            throw new DeviceUnresponsiveException(String.format(
+                    "Device %s is online but unresponsive", monitor.getSerialNumber()));
+        }
     }
 
     /**
@@ -180,6 +187,25 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     protected void rebootDeviceIntoBootloader(IDevice device) {
         try {
             device.reboot("bootloader");
+        } catch (IOException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s: %s", device.getSerialNumber(),
+                    e.getMessage()));
+        } catch (TimeoutException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s: timeout", device.getSerialNumber()));
+        } catch (AdbCommandRejectedException e) {
+            Log.w(LOG_TAG, String.format("failed to reboot %s: %s", device.getSerialNumber(),
+                    e.getMessage()));
+        }
+    }
+
+    /**
+     * Reboot device into bootloader.
+     *
+     * @param device the {@link IDevice} to reboot.
+     */
+    protected void rebootDevice(IDevice device) {
+        try {
+            device.reboot(null);
         } catch (IOException e) {
             Log.w(LOG_TAG, String.format("failed to reboot %s: %s", device.getSerialNumber(),
                     e.getMessage()));
