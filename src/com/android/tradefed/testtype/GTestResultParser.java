@@ -510,22 +510,21 @@ public class GTestResultParser extends MultiLineReceiver {
             // the last known test failed, regardless of whether we received a pass or fail tag.
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
-                        mCurrentTestResult.getTrace());
+                                mCurrentTestResult.getTrace());
             }
         }
-        else if (testPassed) {  // test passed
-            // Report test ended successfully
-            for (ITestRunListener listener : mTestListeners) {
-                // @TODO: Add reporting of test run time to ITestRunListener
-                listener.testEnded(testId);
-            }
-        }
-        else {  // test failed
+        else if (!testPassed) {  // test failed
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.FAILURE, testId,
-                        mCurrentTestResult.getTrace());
+                                mCurrentTestResult.getTrace());
             }
         }
+        // For all cases (pass or fail), we ultimately need to report test has ended
+        for (ITestRunListener listener : mTestListeners) {
+            // @TODO: Add reporting of test run time to ITestRunListener
+            listener.testEnded(testId);
+        }
+
         setTestEnded();
         ++mNumTestsRun;
     }
