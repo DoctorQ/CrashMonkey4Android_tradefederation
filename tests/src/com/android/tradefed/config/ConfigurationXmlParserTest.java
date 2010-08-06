@@ -40,7 +40,7 @@ public class ConfigurationXmlParserTest extends TestCase {
         ConfigurationDef configDef = xmlParser.parse(configName, getStringAsStream(normalConfig));
         assertEquals(configName, configDef.getName());
         assertEquals("desc", configDef.getDescription());
-        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test"));
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(0));
         assertEquals("opName", configDef.getOptionList().get(0).name);
         assertEquals("val", configDef.getOptionList().get(0).value);
     }
@@ -83,7 +83,7 @@ public class ConfigurationXmlParserTest extends TestCase {
             "<object name=\"foo\" class=\"junit.framework.TestCase\" />";
         ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         ConfigurationDef configDef = xmlParser.parse("name", getStringAsStream(config));
-        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("foo"));
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("foo").get(0));
     }
 
     /**

@@ -23,6 +23,8 @@ import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import org.easymock.EasyMock;
 
+import java.util.List;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 
@@ -98,6 +100,45 @@ public class ConfigurationTest extends TestCase {
             // arbitrarily, use the "Test" interface as expected type
             mConfig.getConfigurationObject(CONFIG_OBJECT_NAME, Test.class);
             fail("getConfigurationObject did not throw ConfigurationException");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link Configuration#getConfigurationObjectList(String, Class)}
+     */
+    @SuppressWarnings("unchecked")
+    public void testGetConfigurationObjectList() throws ConfigurationException  {
+        List<TestConfig> configList = (List<TestConfig>)mConfig.getConfigurationObjectList(
+                CONFIG_OBJECT_NAME, TestConfig.class);
+        assertEquals(mConfigObject, configList.get(0));
+    }
+
+    /**
+     * Test {@link Configuration#getConfigurationObjectList(String, Class)} when config object
+     * with given name does not exist.
+     */
+    public void testGetConfigurationObjectList_wrongname() throws ConfigurationException  {
+        try {
+            mConfig.getConfigurationObjectList("non-existent", TestConfig.class);
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link Configuration#getConfigurationObjectList(String, Class)} when config object
+     * exists but is the wrong type
+     */
+    public void testGetConfigurationObjectList_wrongtype() throws ConfigurationException  {
+        // add a object of the wrong type
+        mConfig.addObject(CONFIG_OBJECT_NAME, new Object());
+        try {
+
+            mConfig.getConfigurationObjectList(CONFIG_OBJECT_NAME, TestConfig.class);
+            fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
         }

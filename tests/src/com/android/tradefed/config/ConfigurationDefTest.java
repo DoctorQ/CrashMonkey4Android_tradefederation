@@ -59,7 +59,7 @@ public class ConfigurationDefTest extends TestCase {
     /**
      * Test {@link ConfigurationDef#createConfiguration()} for a collection option.
      */
-    public void testCreateConfiguration_collection() throws ConfigurationException {
+    public void testCreateConfiguration_optionCollection() throws ConfigurationException {
         mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, OPTION_VALUE);
         mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, OPTION_VALUE2);
         IConfiguration config = mConfigDef.createConfiguration();

@@ -109,7 +109,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
             throw new ConfigurationException("Configuration to run was not specified");
         }
         IConfiguration config = getConfiguration(getConfigNameFromArgs(args));
-        Collection<Object> optionObjects = config.getConfigurationObjects();
+        Collection<Object> optionObjects = config.getAllConfigurationObjects();
         for (Object optionObj : additionalOptionSources) {
             optionObjects.add(optionObj);
         }

@@ -17,6 +17,7 @@ package com.android.tradefed.config;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,8 +27,8 @@ import java.util.Map;
  */
 public class ConfigurationDef {
 
-    /** a map of names to config object class names. */
-    private final Map<String, String> mObjectClassMap;
+    /** a map of names to config object class name(s). */
+    private final Map<String, List<String>> mObjectClassMap;
     /** a list of option name/value pairs. */
     private final List<OptionDef> mOptionList;
 
@@ -49,7 +50,7 @@ public class ConfigurationDef {
 
     public ConfigurationDef(String name) {
         mName = name;
-        mObjectClassMap = new HashMap<String, String>();
+        mObjectClassMap = new HashMap<String, List<String>>();
         mOptionList = new ArrayList<OptionDef>();
     }
 
@@ -73,7 +74,12 @@ public class ConfigurationDef {
      * @param className the class name of the config object
      */
     void addConfigObjectDef(String name, String className) {
-        mObjectClassMap.put(name, className);
+        List<String> classList = mObjectClassMap.get(name);
+        if (classList == null) {
+            classList = new ArrayList<String>();
+            mObjectClassMap.put(name, classList);
+        }
+        classList.add(className);
     }
 
     /**
@@ -90,7 +96,7 @@ public class ConfigurationDef {
      * <p/>
      * Exposed for unit testing
      */
-    Map<String, String> getObjectClassMap() {
+    Map<String, List<String>> getObjectClassMap() {
         return mObjectClassMap;
     }
 
@@ -109,17 +115,25 @@ public class ConfigurationDef {
      * @throws ConfigurationException if configuration could not be created
      */
     IConfiguration createConfiguration() throws ConfigurationException {
-        Map<String, Object> configObjectMap = new HashMap<String, Object>(mObjectClassMap.size());
-        for (Map.Entry<String, String> objClassEntry : mObjectClassMap.entrySet()) {
-            Object configObject = createObject(objClassEntry.getKey(), objClassEntry.getValue());
-            configObjectMap.put(objClassEntry.getKey(), configObject);
+        Map<String, List<Object>> configObjectMap = new HashMap<String, List<Object>>(
+                mObjectClassMap.size());
+
+        for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
+            List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());
+            for (String className : objClassEntry.getValue()) {
+                Object configObject = createObject(objClassEntry.getKey(), className);
+                objectList.add(configObject);
+            }
+            configObjectMap.put(objClassEntry.getKey(), objectList);
         }
-        OptionSetter setter = new OptionSetter(configObjectMap.values());
+        IConfiguration config = new Configuration(configObjectMap);
+        Collection<Object> allConfigObjs = config.getAllConfigurationObjects();
+        OptionSetter setter = new OptionSetter(allConfigObjs);
         for (OptionDef optionEntry : mOptionList) {
             setter.setOptionValue(optionEntry.name, optionEntry.value);
         }
 
-        return new Configuration(configObjectMap);
+        return config;
     }
 
     /**
@@ -139,15 +153,17 @@ public class ConfigurationDef {
     public void printCommandUsage(PrintStream out) throws ConfigurationException {
         out.println(String.format("'%s' configuration: %s", getName(), getDescription()));
         out.println();
-        for (Map.Entry<String, String> configObjectEntry : mObjectClassMap.entrySet()) {
-            String optionHelp = printOptionsForObject(configObjectEntry.getKey(),
-                    configObjectEntry.getValue());
-            // only print help for object if optionHelp is non zero length
-            if (optionHelp.length() > 0) {
-                out.printf("  %s options:", configObjectEntry.getKey());
-                out.println();
-                out.print(optionHelp);
-                out.println();
+        for (Map.Entry<String, List<String>> configObjectsEntry : mObjectClassMap.entrySet()) {
+            for (String objectClass : configObjectsEntry.getValue()) {
+                String optionHelp = printOptionsForObject(configObjectsEntry.getKey(),
+                        objectClass);
+                // only print help for object if optionHelp is non zero length
+                if (optionHelp.length() > 0) {
+                    out.printf("  %s options:", configObjectsEntry.getKey());
+                    out.println();
+                    out.print(optionHelp);
+                    out.println();
+                }
             }
         }
     }

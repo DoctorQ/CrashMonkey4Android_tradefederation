@@ -23,8 +23,9 @@ import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,28 +60,42 @@ public class Configuration implements IConfiguration {
         return sObjNames;
     }
 
-    /** Mapping of config object name to config object. */
-    private Map<String, Object> mConfigMap;
-
-    protected Configuration() {
-        mConfigMap = new Hashtable<String, Object>();
-    }
+    /** Mapping of config object name to config objects. */
+    private Map<String, List<Object>> mConfigMap;
 
     /**
-     * @param configObjects
+     * Creates a {@link Configuration} with no config objects.
+     * <p/>
+     * Exposed for unit testing
      */
-    public Configuration(Map<String, Object> configObjects) {
+    Configuration() {
+        this(new HashMap<String, List<Object>>());
+    }
+    /**
+     * Create a {@link Configuration}.
+     *
+     * @param configObjects the config object name to object list map
+     */
+    Configuration(Map<String, List<Object>> configObjects) {
         mConfigMap = configObjects;
     }
 
     /**
      * Adds a loaded object to this configuration.
+     * <p/>
+     * Exposed for unit testing
      *
      * @param name the unique name of the configuration object
      * @param configObject the configuration object
+     *
      */
-    protected void addObject(String name, Object configObject) {
-        mConfigMap.put(name, configObject);
+    void addObject(String name, Object configObject) {
+        List<Object> objList = mConfigMap.get(name);
+        if (objList == null) {
+            objList = new ArrayList<Object>(1);
+            mConfigMap.put(name, objList);
+        }
+        objList.add(configObject);
     }
 
     /**
@@ -131,30 +146,46 @@ public class Configuration implements IConfiguration {
                 ITestInvocationListener.class);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public Object getConfigurationObject(String name, Class<?> expectedType)
-            throws ConfigurationException {
-        Object configObject = mConfigMap.get(name);
-        if (configObject == null) {
+    public List<?> getConfigurationObjectList(String name, Class<?> expectedType)
+        throws ConfigurationException {
+        List<Object> configObjects = mConfigMap.get(name);
+        if (configObjects == null) {
             throw new ConfigurationException(String.format(
                     "Could not find config object with name %s", name));
-        } else if (!expectedType.isInstance(configObject)) {
-            throw new ConfigurationException(String.format(
-                    "The config object %s is not the correct type. Expected %s ", name,
-                    expectedType.getCanonicalName()));
         }
-        return configObject;
-
+        for (Object object : configObjects) {
+            if (!expectedType.isInstance(object)) {
+                throw new ConfigurationException(String.format(
+                        "The config object %s is not the correct type. Expected %s, received %s",
+                        name, expectedType.getCanonicalName(),
+                        object.getClass().getCanonicalName()));
+            }
+        }
+        return configObjects;
     }
 
     /**
      * {@inheritDoc}
      */
-    public Collection<Object> getConfigurationObjects() {
-        Collection<Object> objectsCopy = new ArrayList<Object>(mConfigMap.size());
-        objectsCopy.addAll(mConfigMap.values());
+    public Object getConfigurationObject(String name, Class<?> expectedType)
+            throws ConfigurationException {
+        List<?> configObjects = getConfigurationObjectList(name, expectedType);
+        if (configObjects.size() != 1) {
+            throw new ConfigurationException(String.format(
+                    "Only one config object allowed for %s, but %d were specified.",
+                    name, configObjects.size()));
+        }
+        return configObjects.get(0);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<Object> getAllConfigurationObjects() {
+        Collection<Object> objectsCopy = new ArrayList<Object>();
+        for (List<Object> objectList : mConfigMap.values()) {
+            objectsCopy.addAll(objectList);
+        }
         return objectsCopy;
     }
 }

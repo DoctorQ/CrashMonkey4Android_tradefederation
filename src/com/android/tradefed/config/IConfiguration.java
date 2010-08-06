@@ -23,6 +23,7 @@ import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import java.util.Collection;
+import java.util.List;
 
 import junit.framework.Test;
 
@@ -92,12 +93,6 @@ public interface IConfiguration {
     /**
      * Generic interface to get the configuration object with the given name.
      *
-     * This will create the object if necessary, and set all of its {@link Option} fields with
-     * values supplied in the configuration.
-     *
-     * In addition, if the current {@link IConfiguration} will be injected if the object
-     * extends {@link IConfigurationReceiver}.
-     *
      * @param name the unique name of the configuration object
      * @param expectedType the expected object type
      *
@@ -110,10 +105,25 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
+     * Similar to {@link #getConfigurationObject(String, Class)}, but for configuration
+     * object types that support multiple objects.
+     *
+     * @param name the unique name of the configuration object
+     * @param expectedType the expected object type
+     *
+     * @return the list of configuration objects, with all its {@link Option} fields set
+     *
+     * @throws ConfigurationException if any of the config object could not be fully loaded, or
+     * were not the correct type
+     */
+    public List<?> getConfigurationObjectList(String name, Class<?> expectedType)
+            throws ConfigurationException;
+
+    /**
      * Gets a copy of the list of all configuration objects.
      *
      * @return a {@link Collection} of all configuration objects
      * @throws {@link ConfigurationException} if the config objects could not be fully loaded
      */
-    public Collection<Object> getConfigurationObjects() throws ConfigurationException;
+    public Collection<Object> getAllConfigurationObjects() throws ConfigurationException;
 }
