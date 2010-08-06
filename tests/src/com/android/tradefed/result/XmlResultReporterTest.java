@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -86,10 +88,11 @@ public class XmlResultReporterTest extends TestCase {
      * A simple test to ensure expected output is generated for test run with a single passed test.
      */
     public void testSinglePass() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         mResultReporter.invocationStarted(new BuildInfo());
         mResultReporter.testStarted(testId);
-        mResultReporter.testEnded(testId);
+        mResultReporter.testEnded(testId, emptyMap);
         mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare
@@ -103,12 +106,13 @@ public class XmlResultReporterTest extends TestCase {
      * A simple test to ensure expected output is generated for test run with a single failed test.
      */
     public void testSingleFail() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         final String trace = "this is a trace";
         mResultReporter.invocationStarted(new BuildInfo());
         mResultReporter.testStarted(testId);
         mResultReporter.testFailed(TestFailure.FAILURE, testId, trace);
-        mResultReporter.testEnded(testId);
+        mResultReporter.testEnded(testId, emptyMap);
         mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare

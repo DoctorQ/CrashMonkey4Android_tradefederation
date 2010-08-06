@@ -520,9 +520,10 @@ public class GTestResultParser extends MultiLineReceiver {
             }
         }
         // For all cases (pass or fail), we ultimately need to report test has ended
+        Map <String, String> emptyMap = Collections.emptyMap();
         for (ITestRunListener listener : mTestListeners) {
             // @TODO: Add reporting of test run time to ITestRunListener
-            listener.testEnded(testId);
+            listener.testEnded(testId, emptyMap);
         }
 
         setTestEnded();
@@ -584,13 +585,14 @@ public class GTestResultParser extends MultiLineReceiver {
 
             // If there was any stack trace during the test run, append it to the "test failed"
             // error message so we have an idea of what caused the crash/failure.
+            Map<String, String> emptyMap = Collections.emptyMap();
             if (mCurrentTestResult.hasStackTrace()) {
                 testRunStackTrace = mCurrentTestResult.getTrace();
             }
             for (ITestRunListener listener : mTestListeners) {
                 listener.testFailed(ITestRunListener.TestFailure.ERROR, testId,
                         "No test results.\r\n" + testRunStackTrace);
-                listener.testEnded(testId);
+                listener.testEnded(testId, emptyMap);
             }
             clearCurrentTestResult();
         }

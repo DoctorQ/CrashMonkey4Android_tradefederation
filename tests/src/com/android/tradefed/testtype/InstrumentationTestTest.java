@@ -224,6 +224,7 @@ public class InstrumentationTestTest extends TestCase {
     public void testRun_rerun() throws Exception {
         final TestIdentifier test1 = new TestIdentifier("Test", "test1");
         final TestIdentifier test2 = new TestIdentifier("Test", "test2");
+        final Map<String, String> emptyMap = Collections.emptyMap();
         final String runErrorMsg = "error";
 
         mInstrumentationTest.setRerunMode(true);
@@ -241,9 +242,9 @@ public class InstrumentationTestTest extends TestCase {
                 for (ITestRunListener listener : listeners) {
                     listener.testRunStarted(2);
                     listener.testStarted(test1);
-                    listener.testEnded(test1);
+                    listener.testEnded(test1, emptyMap);
                     listener.testStarted(test2);
-                    listener.testEnded(test2);
+                    listener.testEnded(test2, emptyMap);
                     listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
@@ -261,7 +262,7 @@ public class InstrumentationTestTest extends TestCase {
                 for (ITestRunListener listener : listeners) {
                     listener.testRunStarted(2);
                     listener.testStarted(test1);
-                    listener.testEnded(test1);
+                    listener.testEnded(test1, emptyMap);
                     listener.testRunFailed(runErrorMsg);
                 }
             }
@@ -278,7 +279,7 @@ public class InstrumentationTestTest extends TestCase {
                 for (ITestRunListener listener : listeners) {
                     listener.testRunStarted(1);
                     listener.testStarted(test2);
-                    listener.testEnded(test2);
+                    listener.testEnded(test2, emptyMap);
                     listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
@@ -286,11 +287,11 @@ public class InstrumentationTestTest extends TestCase {
 
         mMockListener.testRunStarted(2);
         mMockListener.testStarted(test1);
-        mMockListener.testEnded(test1);
+        mMockListener.testEnded(test1, emptyMap);
         mMockListener.testRunFailed(runErrorMsg);
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(test2);
-        mMockListener.testEnded(test2);
+        mMockListener.testEnded(test2, emptyMap);
         mMockListener.testRunEnded(1, EMPTY_STRING_MAP);
 
         EasyMock.replay(mMockRemoteRunner);

@@ -43,12 +43,12 @@ public class CollectingTestListenerTest extends TestCase {
      * Test the listener under normal test run.
      */
     public void testNormalRun() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         mCollectingTestListener.testRunStarted(1);
         final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
         mCollectingTestListener.testStarted(test);
-        mCollectingTestListener.testEnded(test);
-        Map<String, String> map = Collections.emptyMap();
-        mCollectingTestListener.testRunEnded(0, map);
+        mCollectingTestListener.testEnded(test, emptyMap);
+        mCollectingTestListener.testRunEnded(0, emptyMap);
         assertTrue(mCollectingTestListener.isRunComplete());
         assertFalse(mCollectingTestListener.isRunFailure());
         assertEquals(1, mCollectingTestListener.getTestResults().size());

@@ -22,7 +22,9 @@ import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -70,8 +72,9 @@ public class JUnitToInvocationResultForwarder implements TestListener {
      * {@inheritDoc}
      */
     public void endTest(Test test) {
+        Map<String, String> emptyMap = Collections.emptyMap();
         for (ITestInvocationListener listener : mInvocationListeners) {
-            listener.testEnded(getTestId(test));
+            listener.testEnded(getTestId(test), emptyMap);
         }
     }
 

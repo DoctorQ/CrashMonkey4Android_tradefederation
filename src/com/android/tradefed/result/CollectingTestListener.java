@@ -89,7 +89,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void testEnded(TestIdentifier test) {
+    public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         // only record test pass if failure not already recorded
         if (!mTestResults.containsKey(test)) {
             mTestResults.put(test, new TestResult(TestStatus.PASSED));

@@ -113,7 +113,7 @@ public class TestTimeoutListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
-    public void testEnded(TestIdentifier test) {
+    public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         // TODO: might not be needed. Its a fairly safe assumption that the next testStarted call
         // will immediately follow previous testEnded
         //mMonitor.reset();

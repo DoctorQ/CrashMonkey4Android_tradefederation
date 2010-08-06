@@ -20,6 +20,9 @@ import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 
 import org.easymock.EasyMock;
 
+import java.util.Collections;
+import java.util.Map;
+
 import junit.framework.AssertionFailedError;
 import junit.framework.TestCase;
 
@@ -70,8 +73,10 @@ public class JUnitToInvocationResultForwarderTest extends TestCase {
      * Test method for {@link JUnitToInvocationResultForwarder#endTest(Test)}.
      */
     public void testEndTest() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         mListener.testEnded(EasyMock.eq(new TestIdentifier(
-                JUnitToInvocationResultForwarderTest.class.getName(), "testEndTest")));
+                JUnitToInvocationResultForwarderTest.class.getName(), "testEndTest")),
+                EasyMock.eq(emptyMap));
         EasyMock.replay(mListener);
         mForwarder.endTest(this);
     }

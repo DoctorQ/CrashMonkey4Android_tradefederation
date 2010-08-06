@@ -51,7 +51,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testEnded(TestIdentifier test) {
+    public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         mJUnitListener.endTest(new TestIdentifierResult(test));
     }
 

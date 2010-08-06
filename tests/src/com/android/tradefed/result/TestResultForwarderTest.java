@@ -19,6 +19,9 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 
 import org.easymock.EasyMock;
 
+import java.util.Collections;
+import java.util.Map;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestListener;
@@ -51,9 +54,10 @@ public class TestResultForwarderTest extends TestCase {
      * Verifies that data put into TestIdentifier is forwarded in correct format
      */
     public void testTestEnded() {
+        Map<String, String> emptyMap = Collections.emptyMap();
         mJUnitListener.endTest((Test) EasyMock.anyObject());
         EasyMock.replay(mJUnitListener);
-        mTestForwarder.testEnded(mTestIdentifier);
+        mTestForwarder.testEnded(mTestIdentifier, emptyMap);
         // TODO: check format
     }
 

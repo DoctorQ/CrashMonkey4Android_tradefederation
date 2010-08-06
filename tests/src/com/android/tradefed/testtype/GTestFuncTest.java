@@ -27,6 +27,7 @@ import org.easymock.EasyMock;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Map;
 
 
@@ -59,6 +60,7 @@ public class GTestFuncTest extends DeviceTestCase {
      */
     @SuppressWarnings("unchecked")
     public void testRun() throws DeviceNotAvailableException {
+        Map<String, String> emptyMap = Collections.emptyMap();
         mGTest.setRunTestsInAllSubdirectories(false);
         Log.i(LOG_TAG, "testRun");
         mMockListener.testRunStarted(7);
@@ -83,7 +85,7 @@ public class GTestFuncTest extends DeviceTestCase {
                       EasyMock.isA(String.class));
             }
             else {
-                mMockListener.testEnded(id);
+                mMockListener.testEnded(id, emptyMap);
             }
         }
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
@@ -101,12 +103,13 @@ public class GTestFuncTest extends DeviceTestCase {
      */
     @SuppressWarnings("unchecked")
     private void doNativeTestAppRunSingleTestFailure(TestIdentifier testId) {
+        Map<String, String> emptyMap = Collections.emptyMap();
         mGTest.setModuleName(NATIVE_TESTAPP_MODULE_NAME);
         mMockListener.testRunStarted(1);
         mMockListener.testStarted(EasyMock.eq(testId));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(testId),
                 EasyMock.isA(String.class));
-        mMockListener.testEnded(EasyMock.eq(testId));
+        mMockListener.testEnded(EasyMock.eq(testId), EasyMock.eq(emptyMap));
         mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);

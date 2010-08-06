@@ -28,7 +28,7 @@ public class StubTestListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
-    public void testEnded(TestIdentifier test) {
+    public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         // ignore
     }
 

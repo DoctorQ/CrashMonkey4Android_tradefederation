@@ -37,11 +37,11 @@ public class TestTimeoutListenerTest extends TestCase {
         ITimeoutCallback callback = EasyMock.createStrictMock(ITimeoutCallback.class);
         TestTimeoutListener listener = new TestTimeoutListener(1000, callback);
         final TestIdentifier test = new TestIdentifier("Foo", "testFoo");
+        Map<String, String> emptyMap = Collections.emptyMap();
         listener.testRunStarted(1);
         listener.testStarted(test);
-        listener.testEnded(test);
-        Map<String, String> map = Collections.emptyMap();
-        listener.testRunEnded(0, map);
+        listener.testEnded(test, emptyMap);
+        listener.testRunEnded(0, emptyMap);
     }
 
     /**
