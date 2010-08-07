@@ -277,6 +277,8 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         while (it.hasNext()) {
             String fullPath = it.next();
             String flags = getAllGTestFlags();
+            // force file to be executable
+            testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
             testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), outputReceiver);
             testsRan = true;
         }

@@ -149,9 +149,11 @@ public class GTestTest extends TestCase {
                 EasyMock.expect(children[i].isAppFileName()).andReturn(true);
             }
             else {
-              EasyMock.expect(children[i].isAppFileName()).andReturn(false);
-              mMockITestDevice.executeShellCommand(EasyMock.startsWith(childrensPath[i]),
-                      EasyMock.same(mMockReceiver));
+                EasyMock.expect(children[i].isAppFileName()).andReturn(false);
+                EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                        .andReturn("");
+                mMockITestDevice.executeShellCommand(EasyMock.startsWith(childrensPath[i]),
+                        EasyMock.same(mMockReceiver));
             }
         }
 
@@ -217,6 +219,8 @@ public class GTestTest extends TestCase {
 
         for (int i=0; i<children2Paths.length; ++i) {
             EasyMock.expect(directory2Children[i].isAppFileName()).andReturn(false);
+            EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                    .andReturn("");
             mMockITestDevice.executeShellCommand(EasyMock.startsWith(children2Paths[i]),
                     EasyMock.same(mMockReceiver));
         }
@@ -282,6 +286,8 @@ public class GTestTest extends TestCase {
         }
 
         for (int i=0; i<children.length; ++i) {
+            EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                    .andReturn("");
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
                     EasyMock.same(mMockReceiver));
         }
