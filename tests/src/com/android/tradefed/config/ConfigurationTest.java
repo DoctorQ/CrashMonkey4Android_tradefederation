@@ -163,13 +163,16 @@ public class ConfigurationTest extends TestCase {
     }
 
     /**
-     * Test method for {@link Configuration#getTest()}.
+     * Test method for {@link Configuration#getTests()}.
      * @throws ConfigurationException
      */
-    public void testGetTest() throws ConfigurationException {
-        final Test test = EasyMock.createMock(Test.class);
-        mConfig.addObject(Configuration.TEST_NAME, test);
-        assertEquals(test, mConfig.getTest());
+    public void testGetTests() throws ConfigurationException {
+        final Test test1 = EasyMock.createMock(Test.class);
+        final Test test2 = EasyMock.createMock(Test.class);
+        mConfig.addObject(Configuration.TEST_NAME, test1);
+        mConfig.addObject(Configuration.TEST_NAME, test2);
+        assertTrue(mConfig.getTests().contains(test1));
+        assertTrue(mConfig.getTests().contains(test2));
     }
 
     /**
@@ -193,12 +196,17 @@ public class ConfigurationTest extends TestCase {
     }
 
     /**
-     * Test method for {@link Configuration#getTestInvocationListener()}.
+     * Test method for {@link Configuration#getTestInvocationListeners()}.
      * @throws ConfigurationException
      */
-    public void testGetTestInvocationListener() throws ConfigurationException {
-        final ITestInvocationListener listener = EasyMock.createMock(ITestInvocationListener.class);
-        mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener);
-        assertEquals(listener, mConfig.getTestInvocationListener());
+    public void testGetTestInvocationListeners() throws ConfigurationException {
+        final ITestInvocationListener listener1 = EasyMock.createMock(
+                ITestInvocationListener.class);
+        final ITestInvocationListener listener2 = EasyMock.createMock(
+                ITestInvocationListener.class);
+        mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener1);
+        mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener2);
+        assertTrue(mConfig.getTestInvocationListeners().contains(listener1));
+        assertTrue(mConfig.getTestInvocationListeners().contains(listener2));
     }
 }

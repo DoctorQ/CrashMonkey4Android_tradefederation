@@ -22,13 +22,12 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.Collection;
-
-import junit.framework.TestResult;
+import java.util.List;
 
 /**
  * A Test that runs a set of individual instrumentation tests.
  */
-class InstrumentationListTest implements IDeviceTest, IRemoteTest {
+class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
 
     /** the Android package name of test application */
     private final String mPackageName;
@@ -80,6 +79,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int countTestCases() {
         return mTests.size();
     }
@@ -94,7 +94,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
+    public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -109,15 +109,8 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             runner.setTestTimeout(mTestTimeout);
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
-            runner.run(listener);
+            runner.run(listeners);
         }
         // TODO: capture log here ?
-    }
-
-    /**
-     * unsupported
-     */
-    public void run(TestResult result) {
-        throw new UnsupportedOperationException();
     }
 }

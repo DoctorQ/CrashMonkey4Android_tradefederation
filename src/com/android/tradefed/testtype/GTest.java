@@ -18,6 +18,7 @@ package com.android.tradefed.testtype;
 
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.FileListingServiceWrapper;
@@ -28,15 +29,15 @@ import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
-
-import junit.framework.TestResult;
 
 /**
  * A Test that runs a native test package on given device.
  */
-public class GTest implements IDeviceTest, IRemoteTest {
+public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "GTest";
     private ITestDevice mDevice = null;
@@ -220,20 +221,6 @@ public class GTest implements IDeviceTest, IRemoteTest {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public int countTestCases() {
-        // TODO: not sure we even want to support this
-        throw new UnsupportedOperationException();    }
-
-    /**
-     * unsupported
-     */
-    public void run(TestResult result) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * Returns the IFileListingService for this device; exposed for unit testing
      */
     protected IFileListingService getFileListingService() {
@@ -301,14 +288,14 @@ public class GTest implements IDeviceTest, IRemoteTest {
      *
      * @throws DeviceNotAvailableException
      */
-    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
+    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         // @TODO: add support for rerunning tests
 
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
 
-        GTestResultParser resultParser = new GTestResultParser(listener);
+        GTestResultParser resultParser = new GTestResultParser(convertListeners(listeners));
 
         IFileListingService fileListingService = getFileListingService();
 
@@ -329,6 +316,15 @@ public class GTest implements IDeviceTest, IRemoteTest {
             }
         }
         doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, resultParser);
+    }
+
+    /**
+     * Convert a list of {@link ITestInvocationListener} to a collection of {@link ITestRunListener}
+     */
+    private Collection<ITestRunListener> convertListeners(List<ITestInvocationListener> listeners) {
+        ArrayList<ITestRunListener> copy = new ArrayList<ITestRunListener>(listeners.size());
+        copy.addAll(listeners);
+        return copy;
     }
 
     //@TODO: Add timeout: public void testTimeout(TestIdentifier test) {

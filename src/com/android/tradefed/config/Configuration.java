@@ -117,9 +117,9 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
-    public Test getTest() throws ConfigurationException {
-        return (Test)getConfigurationObject(TEST_NAME,
-                Test.class);
+    @SuppressWarnings("unchecked")
+    public List<Test> getTests() throws ConfigurationException {
+        return (List<Test>)getConfigurationObjectList(TEST_NAME, Test.class);
     }
 
     /**
@@ -141,8 +141,9 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
-    public ITestInvocationListener getTestInvocationListener() throws ConfigurationException {
-        return (ITestInvocationListener)getConfigurationObject(RESULT_REPORTER_NAME,
+    @SuppressWarnings("unchecked")
+    public List<ITestInvocationListener> getTestInvocationListeners() throws ConfigurationException {
+        return (List<ITestInvocationListener>)getConfigurationObjectList(RESULT_REPORTER_NAME,
                 ITestInvocationListener.class);
     }
 

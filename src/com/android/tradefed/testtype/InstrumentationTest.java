@@ -36,13 +36,13 @@ import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import junit.framework.TestResult;
+import java.util.List;
 
 /**
  * A Test that runs an instrumentation test package on given device.
  */
-public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCallback {
+public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest,
+        ITimeoutCallback {
 
     private static final String LOG_TAG = "InstrumentationTest";
 
@@ -218,16 +218,6 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public int countTestCases() {
-        // TODO: not sure we even want to support this
-        // a possible implementation is to issue a adb shell am instrument -e count command when
-        // this is first called and cache the result
-        throw new UnsupportedOperationException();
-    }
-
-    /**
      * @return the {@link IRemoteAndroidTestRunner} to use.
      */
     IRemoteAndroidTestRunner createRemoteAndroidTestRunner(String packageName, String runnerName,
@@ -238,7 +228,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * {@inheritDoc}
      */
-    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
+    public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mPackageName == null) {
             throw new IllegalArgumentException("package name has not been set");
         }
@@ -258,7 +248,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-        doTestRun(listener);
+        doTestRun(listeners);
     }
 
     /**
@@ -268,12 +258,12 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
      * @returns true if tests were run. false if test run was skipped
      * @throws DeviceNotAvailableException if device stops communicating
      */
-    private boolean doTestRun(final ITestInvocationListener listener)
+    private boolean doTestRun(final List<ITestInvocationListener> listeners)
             throws DeviceNotAvailableException {
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
         mListeners = new ArrayList<ITestRunListener>();
-        mListeners.add(listener);
+        mListeners.addAll(listeners);
 
         if (mTestTimeout >= 0) {
             mListeners.add(new TestTimeoutListener(mTestTimeout, this));
@@ -281,7 +271,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
 
         if (expectedTests != null) {
             if (expectedTests.size() != 0) {
-                runWithRerun(listener, expectedTests);
+                runWithRerun(listeners, expectedTests);
             } else {
                 Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
                 return false;
@@ -295,10 +285,10 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
     /**
      * Execute the test run, but re-run incomplete tests individually if run fails to complete.
      *
-     * @param listener {@link ITestRunListener}
+     * @param listeners list of {@link ITestInvocationListener}
      * @param expectedTests the full set of expected tests in this run.
      */
-    private void runWithRerun(final ITestInvocationListener listener,
+    private void runWithRerun(final List<ITestInvocationListener> listeners,
             Collection<TestIdentifier> expectedTests) throws DeviceNotAvailableException {
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);
@@ -310,7 +300,7 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
                     mRunnerName, expectedTests);
             testRerunner.setDevice(getDevice());
             testRerunner.setTestTimeout(getTestTimeout());
-            testRerunner.run(listener);
+            testRerunner.run(listeners);
         }
     }
 
@@ -418,12 +408,5 @@ public class InstrumentationTest implements IDeviceTest, IRemoteTest, ITimeoutCa
             listener.testFailed(TestFailure.ERROR, test, msg);
             listener.testRunFailed(msg);
         }
-    }
-
-    /**
-     * unsupported
-     */
-    public void run(TestResult result) {
-        throw new UnsupportedOperationException();
     }
 }

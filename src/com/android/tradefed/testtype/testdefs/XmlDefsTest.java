@@ -20,6 +20,7 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.testtype.AbstractRemoteTest;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.InstrumentationTest;
@@ -31,8 +32,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-
-import junit.framework.TestResult;
+import java.util.List;
 
 /**
  * Runs a set of instrumentation test's defined in test_defs.xml files.
@@ -40,7 +40,7 @@ import junit.framework.TestResult;
  * The test definition files can either be one or more files on local file system, and/or one or
  * more files stored on the device under test.
  */
-public class XmlDefsTest implements IDeviceTest, IRemoteTest {
+public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "XmlDefsTest";
 
@@ -94,21 +94,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
-    public int countTestCases() {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void run(TestResult result) {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
+    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (getDevice() == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -148,7 +134,7 @@ public class XmlDefsTest implements IDeviceTest, IRemoteTest {
                 test.setRerunMode(isRerunMode());
                 test.setTestSize(getTestSize());
                 test.setTestTimeout(getTestTimeout());
-                test.run(listener);
+                test.run(listeners);
             }
         }
     }

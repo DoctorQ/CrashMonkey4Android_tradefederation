@@ -55,22 +55,22 @@ public interface IConfiguration {
     public ITargetPreparer getTargetPreparer() throws ConfigurationException;
 
     /**
-     * Gets the {@link Test} to run from the configuration.
+     * Gets the {@link Test}s to run from the configuration.
      *
-     * @return the {@link Test} provided in the configuration
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
+     * @return the {@link Test}s provided in the configuration
+     * @throws ConfigurationException if config objects could not be fully loaded, or was not the
      * correct type
      */
-    public Test getTest()  throws ConfigurationException;
+    public List<Test> getTests()  throws ConfigurationException;
 
     /**
-     * Gets the {@link ITestInvocationListener} to use from the configuration.
+     * Gets the {@link ITestInvocationListener}s to use from the configuration.
      *
-     * @return the {@link Test} provided in the configuration
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
+     * @return the {@link ITestInvocationListener}s provided in the configuration.
+     * @throws ConfigurationException if config objects could not be fully loaded, or was not the
      * correct type
      */
-    public ITestInvocationListener getTestInvocationListener() throws ConfigurationException;
+    public List<ITestInvocationListener> getTestInvocationListeners() throws ConfigurationException;
 
     /**
      * Gets the {@link IDeviceRecovery} to use from the configuration.

@@ -17,12 +17,19 @@ package com.android.tradefed.testtype;
 
 import com.android.tradefed.result.ITestInvocationListener;
 
+import java.util.List;
+
 /**
  * Mock for InstrumentationTest.
  */
 public class MockInstrumentationTest extends InstrumentationTest {
 
     private ITestInvocationListener mListener = null;
+
+    @Override
+    public void run(final List<ITestInvocationListener> listeners) {
+        mListener = listeners.get(0);
+    }
 
     @Override
     public void run(final ITestInvocationListener listener) {

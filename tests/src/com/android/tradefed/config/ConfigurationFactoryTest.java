@@ -35,6 +35,7 @@ public class ConfigurationFactoryTest extends TestCase {
     private static final String OPTION_NAME = "bool";
 
     private static class TestConfigObject {
+        @SuppressWarnings("unused")
         @Option(name = OPTION_NAME, description = OPTION_DESCRIPTION)
         private boolean mBool;
     }
@@ -75,8 +76,8 @@ public class ConfigurationFactoryTest extends TestCase {
         assertNotNull(config.getDeviceRecovery());
         assertNotNull(config.getLogOutput());
         assertNotNull(config.getTargetPreparer());
-        assertNotNull(config.getTest());
-        assertNotNull(config.getTestInvocationListener());
+        assertNotNull(config.getTests());
+        assertNotNull(config.getTestInvocationListeners());
     }
 
     /**

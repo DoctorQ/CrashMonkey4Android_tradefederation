@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
@@ -20,6 +21,8 @@ import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
@@ -31,40 +34,54 @@ import junit.framework.TestListener;
  * {@link ITestInvocationListener}.
  * <p/>
  */
- public class JUnitToInvocationResultForwarder implements TestListener {
+public class JUnitToInvocationResultForwarder implements TestListener {
 
-    private final ITestInvocationListener mInvocationListener;
+    private final List<ITestInvocationListener> mInvocationListeners;
 
     public JUnitToInvocationResultForwarder(ITestInvocationListener invocationListener) {
-        mInvocationListener = invocationListener;
+        mInvocationListeners = new ArrayList<ITestInvocationListener>(1);
+        mInvocationListeners.add(invocationListener);
+    }
+
+    public JUnitToInvocationResultForwarder(List<ITestInvocationListener> invocationListeners) {
+        mInvocationListeners = new ArrayList<ITestInvocationListener>(invocationListeners.size());
+        mInvocationListeners.addAll(invocationListeners);
     }
 
     /**
      * {@inheritDoc}
      */
     public void addError(Test test, Throwable t) {
-        mInvocationListener.testFailed(TestFailure.ERROR, getTestId(test), getStackTrace(t));
+        for (ITestInvocationListener listener : mInvocationListeners) {
+            listener.testFailed(TestFailure.ERROR, getTestId(test), getStackTrace(t));
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void addFailure(Test test, AssertionFailedError t) {
-        mInvocationListener.testFailed(TestFailure.FAILURE, getTestId(test), getStackTrace(t));
+        for (ITestInvocationListener listener : mInvocationListeners) {
+            listener.testFailed(TestFailure.FAILURE, getTestId(test), getStackTrace(t));
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void endTest(Test test) {
-        mInvocationListener.testEnded(getTestId(test));
+        for (ITestInvocationListener listener : mInvocationListeners) {
+            listener.testEnded(getTestId(test));
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     public void startTest(Test test) {
-        mInvocationListener.testStarted(getTestId(test));
+        for (ITestInvocationListener listener : mInvocationListeners) {
+            listener.testStarted(getTestId(test));
+        }
     }
 
     /**
