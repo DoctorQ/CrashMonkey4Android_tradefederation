@@ -35,7 +35,7 @@ import junit.framework.TestCase;
  */
 public class CommandSchedulerFuncTest extends TestCase {
 
-    /** the {@link CommandFile} under test, with all dependencies mocked out */
+    /** the {@link CommandScheduler} under test, with all dependencies mocked out */
     private CommandScheduler mCommandScheduler;
     private MeasuredInvocation mMockTestInvoker;
     private IDeviceManager mMockDeviceManager;

@@ -15,8 +15,10 @@
  */
 package com.android.tradefed;
 
-import com.android.tradefed.command.CommandFileTest;
+import com.android.tradefed.command.CommandSchedulerTest;
 import com.android.tradefed.command.CommandTest;
+import com.android.tradefed.command.ConditionPriorityBlockingQueueTest;
+import com.android.tradefed.command.ConfigFileParserTest;
 import com.android.tradefed.config.ArgsOptionParserTest;
 import com.android.tradefed.config.ConfigurationDefTest;
 import com.android.tradefed.config.ConfigurationFactoryTest;
@@ -35,8 +37,8 @@ import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
 import com.android.tradefed.result.TestResultForwarderTest;
 import com.android.tradefed.result.XmlResultReporterTest;
-import com.android.tradefed.testtype.GTestTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
+import com.android.tradefed.testtype.GTestTest;
 import com.android.tradefed.testtype.HostTestTest;
 import com.android.tradefed.testtype.InstrumentationListTestTest;
 import com.android.tradefed.testtype.InstrumentationTestTest;
@@ -58,7 +60,9 @@ public class UnitTests extends TestSuite {
     public UnitTests() {
         super();
         addTestSuite(CommandTest.class);
-        addTestSuite(CommandFileTest.class);
+        addTestSuite(CommandSchedulerTest.class);
+        addTestSuite(ConditionPriorityBlockingQueueTest.class);
+        addTestSuite(ConfigFileParserTest.class);
         addTestSuite(ConfigurationTest.class);
         addTestSuite(ArgsOptionParserTest.class);
         addTestSuite(OptionParserTest.class);

@@ -49,7 +49,7 @@ import java.util.TimerTask;
  * <p/>
  * Runs forever in background until shutdown.
  */
-public class CommandScheduler extends Thread {
+public class CommandScheduler extends Thread implements ICommandScheduler {
 
     private static final String LOG_TAG = "ConfigScheduler";
     private ConditionPriorityBlockingQueue<ConfigCommand> mConfigQueue;
@@ -286,7 +286,7 @@ public class CommandScheduler extends Thread {
     CommandScheduler() {
         mConfigQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
         mInvocationThreads = new HashSet<InvocationThread>();
-        mConfigTimer = new Timer("config timer");
+
     }
 
     /**
@@ -321,6 +321,7 @@ public class CommandScheduler extends Thread {
      */
     @Override
     public void run() {
+        mConfigTimer = new Timer("config timer");
         IDeviceManager manager = getDeviceManager();
         while (!mShutDown) {
             Log.d(LOG_TAG, "Waiting for device to test");
@@ -356,15 +357,7 @@ public class CommandScheduler extends Thread {
     }
 
     /**
-     * Adds a configuration to the scheduler.
-     * <p/>
-     * If "--help" argument is specified, or the config arguments are invalid, the help text for
-     * the config will be outputed to stdout. Otherwise, the config will be added to the queue to
-     * run.
-     *
-     * @param args the config arguments.
-     *
-     * @see {@link IConfigurationFactory#createConfigurationFromArgs(String[])}
+     * {@inheritDoc}
      */
     public void addConfig(String[] args) {
         CommandOptions options = createCommandOptions();
@@ -484,17 +477,14 @@ public class CommandScheduler extends Thread {
     }
 
     /**
-     * Attempt to gracefully shutdown the command scheduler.
-     * <p/>
-     * Clears config queue and requests all active invocation threads to shutdown gracefully.
-     * <p/>
-     * After shutdown is called, the scheduler main loop will wait for all invocations in progress
-     * to complete before exiting completely.
+     * {@inheritDoc}
      */
     public synchronized void shutdown() {
         mShutDown = true;
         mConfigQueue.clear();
-        mConfigTimer.cancel();
+        if (mConfigTimer != null) {
+            mConfigTimer.cancel();
+        }
         for (InvocationThread invThread : mInvocationThreads) {
             invThread.shutdown();
         }

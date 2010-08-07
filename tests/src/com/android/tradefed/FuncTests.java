@@ -15,7 +15,7 @@
  */
 package com.android.tradefed;
 
-import com.android.tradefed.command.CommandFileFuncTest;
+import com.android.tradefed.command.CommandSchedulerFuncTest;
 import com.android.tradefed.device.TestDeviceFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.GTestFuncTest;
@@ -33,7 +33,7 @@ public class FuncTests extends DeviceTestSuite {
 
     public FuncTests() {
         super();
-        this.addTestSuite(CommandFileFuncTest.class);
+        this.addTestSuite(CommandSchedulerFuncTest.class);
         this.addTestSuite(TestDeviceFuncTest.class);
         this.addTestSuite(InstrumentationTestFuncTest.class);
         this.addTestSuite(RunUtilFuncTest.class);
