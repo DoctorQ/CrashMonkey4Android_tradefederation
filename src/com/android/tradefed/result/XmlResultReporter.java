@@ -17,6 +17,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.targetsetup.IBuildInfo;
@@ -138,8 +139,7 @@ public class XmlResultReporter extends CollectingTestListener {
             String msg = String.format("XML test result file generated at %s. Total tests %d, " +
                     "Failed %d, Error %d", reportDir.getAbsolutePath(), getTestResults().size(),
                     getNumFailedTests(), getNumErrorTests());
-            System.out.println(msg);
-            Log.i(LOG_TAG, msg);
+            Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg);
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to generate report data");
             // TODO: consider throwing exception

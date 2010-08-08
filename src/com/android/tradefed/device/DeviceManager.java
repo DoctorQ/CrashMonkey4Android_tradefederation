@@ -19,6 +19,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
@@ -137,8 +138,8 @@ public class DeviceManager implements IDeviceManager {
                         device.getSerialNumber()));
                 IDeviceStateMonitor monitor = createStateMonitor(device);
                 if (monitor.waitForDeviceAvailable(CHECK_WAIT_DEVICE_AVAIL_MS) != null) {
-                    Log.i(LOG_TAG, String.format("Detected new device %s",
-                            device.getSerialNumber()));
+                    Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
+                            "Detected new device %s", device.getSerialNumber()));
                     addAvailableDevice(device);
                 } else {
                     Log.e(LOG_TAG, String.format(
@@ -286,6 +287,10 @@ public class DeviceManager implements IDeviceManager {
             addAvailableDevice(device.getIDevice());
         } else if (deviceState == FreeDeviceState.AVAILABLE) {
             addAvailableDevice(device.getIDevice());
+        } else if (deviceState == FreeDeviceState.UNAVAILABLE) {
+            Log.logAndDisplay(LogLevel.WARN, LOG_TAG, String.format(
+                    "Freed device %s is unavailable. Removing from use.",
+                    device.getSerialNumber()));
         }
     }
 
