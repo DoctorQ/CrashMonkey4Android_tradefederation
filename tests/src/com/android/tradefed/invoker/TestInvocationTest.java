@@ -41,7 +41,9 @@ import org.easymock.EasyMock;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -50,6 +52,8 @@ import junit.framework.TestCase;
  * Unit tests for {@link TestInvocation}.
  */
 public class TestInvocationTest extends TestCase {
+
+    private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
 
     /** The {@link TestInvocation} under test, with all dependencies mocked out */
     private TestInvocation mTestInvocation;
@@ -75,7 +79,7 @@ public class TestInvocationTest extends TestCase {
         mMockPreparer = EasyMock.createMock(ITargetPreparer.class);
         mMockBuildProvider = EasyMock.createMock(IBuildProvider.class);
         mMockTestListener = EasyMock.createMock(ITestInvocationListener.class);
-        mMockBuildInfo = EasyMock.createMock(IBuildInfo.class);
+        mMockBuildInfo = EasyMock.createNiceMock(IBuildInfo.class);
         mMockLogger = EasyMock.createNiceMock(ILeveledLogOutput.class);
 
         EasyMock.expect(mMockConfiguration.getBuildProvider()).andReturn(mMockBuildProvider);
@@ -93,6 +97,10 @@ public class TestInvocationTest extends TestCase {
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
         mMockDevice.setRecovery(mMockRecovery);
+
+        EasyMock.expect(mMockBuildInfo.getBuildId()).andStubReturn(1);
+        EasyMock.expect(mMockBuildInfo.getBuildAttributes()).andStubReturn(EMPTY_MAP);
+        EasyMock.expect(mMockBuildInfo.getTestTarget()).andStubReturn("");
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation() {
@@ -303,7 +311,7 @@ public class TestInvocationTest extends TestCase {
      */
     private void replayMocks(Test mockTest) {
         EasyMock.replay(mockTest, mMockTestListener, mMockConfiguration, mMockPreparer,
-                mMockBuildProvider, mMockLogger, mMockDevice);
+                mMockBuildProvider, mMockLogger, mMockDevice, mMockBuildInfo);
     }
 
     /**

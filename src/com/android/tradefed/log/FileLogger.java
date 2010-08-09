@@ -43,7 +43,7 @@ public class FileLogger implements ILeveledLogOutput {
     private String mLogLevel = LogLevel.DEBUG.getStringValue();
 
     @Option(name="log-level-display", description="minimum log level to display on stdout")
-    private String mLogLevelStringDisplay = LogLevel.WARN.getStringValue();
+    private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
 
     /**
      * Sets the log level filtering for stdout.
@@ -75,8 +75,6 @@ public class FileLogger implements ILeveledLogOutput {
             mTempLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             // delete the temp file on exit rather than on close, so log is available in case
             // program fails before logs are collected
-            System.out.println(String.format("Created tmp tradefed log at %s",
-                    mTempLogFile.getAbsolutePath()));
             if (deleteLogOnExit) {
                 mTempLogFile.deleteOnExit();
             }
@@ -93,6 +91,7 @@ public class FileLogger implements ILeveledLogOutput {
      */
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
         printLog(logLevel, tag, message);
+        Log.printLog(logLevel, tag, message);
     }
 
     /**

@@ -43,9 +43,6 @@ public class LogRegistry implements ILogOutput {
             new Hashtable<ThreadGroup, ILeveledLogOutput>();
     private FileLogger mGlobalLogger;
 
-    /** the log level to use for log messages occurring on a unregistered thread */
-    private static final LogLevel DEFAULT_LOG_LEVEL = LogLevel.INFO;
-
     /**
      * Package-private constructor; callers should use {@link #getLogRegistry} to get an instance of
      * the {@link LogRegistry}.
@@ -53,7 +50,6 @@ public class LogRegistry implements ILogOutput {
     LogRegistry() {
         try {
             mGlobalLogger = new FileLogger(false /* don't delete file on exit */);
-            mGlobalLogger.setLogLevelDisplay(DEFAULT_LOG_LEVEL.getStringValue());
         } catch (ConfigurationException e) {
             System.err.println("Failed to create global logger");
             throw new IllegalStateException(e);
@@ -114,11 +110,7 @@ public class LogRegistry implements ILogOutput {
      * {@inheritDoc}
      */
     public void printLog(LogLevel logLevel, String tag, String message) {
-        ILeveledLogOutput log = mLogTable.get(getCurrentThreadGroup());
-        if (log == null) {
-            // If there's no logger set for this thread, use global logger
-            log = mGlobalLogger;
-        }
+        ILeveledLogOutput log = getLogger();
         LogLevel currentLogLevel = LogLevel.getByString(log.getLogLevel());
         if (logLevel.getPriority() >= currentLogLevel.getPriority()) {
             log.printLog(logLevel, tag, message);
@@ -129,7 +121,7 @@ public class LogRegistry implements ILogOutput {
      * {@inheritDoc}
      */
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
-        printLog(logLevel, tag, message);
+        getLogger().printAndPromptLog(logLevel, tag, message);
     }
 
     /**
@@ -138,7 +130,12 @@ public class LogRegistry implements ILogOutput {
      * @return the logger for this thread, or null if one has not been registered.
      */
     ILeveledLogOutput getLogger() {
-        return mLogTable.get(getCurrentThreadGroup());
+        ILeveledLogOutput log = mLogTable.get(getCurrentThreadGroup());
+        if (log == null) {
+            // If there's no logger set for this thread, use global logger
+            log = mGlobalLogger;
+        }
+        return log;
     }
 
     /**

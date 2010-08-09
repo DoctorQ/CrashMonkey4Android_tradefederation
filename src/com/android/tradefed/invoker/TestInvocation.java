@@ -16,6 +16,7 @@
 package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
@@ -84,7 +85,6 @@ public class TestInvocation implements ITestInvocation {
             List<Test> tests = config.getTests();
             IBuildInfo info = buildProvider.getBuild();
             if (info != null) {
-                Log.i(LOG_TAG, "Starting invocation");
                 listeners = config.getTestInvocationListeners();
                 performInvocation(config, buildProvider, device, listeners, preparer, tests, info,
                         logger);
@@ -113,6 +113,26 @@ public class TestInvocation implements ITestInvocation {
     }
 
     /**
+     * Display a log message informing the user of a invocation being started.
+     *
+     * @param info the {@link IBuildInfo}
+     * @param device the {@link ITestDevice}
+     */
+    private void logStartInvocation(IBuildInfo info, ITestDevice device) {
+        StringBuilder msg = new StringBuilder("Starting invocation for target ");
+        msg.append(info.getTestTarget());
+        msg.append(" on build ");
+        msg.append(info.getBuildId());
+        for (String buildAttr : info.getBuildAttributes().values()) {
+            msg.append(" ");
+            msg.append(buildAttr);
+        }
+        msg.append(" on device ");
+        msg.append(device.getSerialNumber());
+        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg.toString());
+    }
+
+    /**
      * Performs the invocation
      *
      * @param config the {@link IConfiguration}
@@ -132,6 +152,7 @@ public class TestInvocation implements ITestInvocation {
         Throwable error = null;
         InvocationStatus status = InvocationStatus.SUCCESS;
         long startTime = System.currentTimeMillis();
+        logStartInvocation(info, device);
         for (ITestInvocationListener listener : listeners) {
             listener.invocationStarted(info);
         }
