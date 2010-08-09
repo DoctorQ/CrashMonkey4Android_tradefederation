@@ -32,31 +32,22 @@ import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.LogRegistry;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
 
 /**
- * Command-line launcher for Trade Federation.
+ * Command-line launcher for Trade Federation that runs a single configuration then exits.
  * <p/>
  * Loads the test configuration based on command line arguments, connects to available device,
  * and delegates off to {@link ITestInvocation} to perform the work of running of tests.
  */
 public class Command {
 
+    @SuppressWarnings("unused")
     private static final String LOG_TAG = "Command";
-    /** the minimum invocation time in ms when in loop mode */
-    private static final long MIN_LOOP_TIME = 2 * 60 * 1000;
     /** the time in ms to wait for a device */
     static final long WAIT_DEVICE_TIME = 10 * 1000;
 
-    @Option(name="loop", description="keep running continuously")
-    private boolean mLoopMode = false;
-
     @Option(name="help", description="get command line usage info")
     private boolean mHelpMode = false;
-
-    @Option(name="serial", shortName='s', description="serial number of device to run tests on")
-    private String mSerial = null;
 
     public Command() {
     }
@@ -64,81 +55,54 @@ public class Command {
     /**
      * The main worker method that will parse the command line arguments, and invoke the test run.
      * <p/>
-     * TODO: support "--help"
      * @param args the command line arguments. Expected format is:
      *   [configuration options] [--loop] configuration_name
      * where:
      *  <li> configuration_name: unique name of {@link IConfiguration} to use
      *  <li> configuration options: the {@link Option} names and associated values to provide to
      *  the {@link IConfiguration}
-     *  <li> --loop: keep running an invocation continuously. Each invocation will be spaced at
-     *  least 2 minutes apart. ie if a prior invocation has nothing to do, the program will sleep
-     *  until 2 minutes has elapsed before starting next invocation.
      */
     protected void run(String[] args) {
-        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
-        setLogRegistry();
+        initLogging();
 
         IDeviceManager manager = null;
 
         try {
-            IConfiguration config = createConfigurationAndParseArgs(args);
+            IConfiguration config = getConfigFactory().createConfigurationFromArgs(args, this);
 
             if (mHelpMode) {
                 getConfigFactory().printHelp(args, System.out);
                 return;
             }
-            if (mSerial != null) {
-                throw new ConfigurationException("serial not supported yet");
-            }
 
             manager = getDeviceManager();
-            if (mLoopMode) {
-                while (true) {
-                    long startTime = System.currentTimeMillis();
-                    Log.i(LOG_TAG, "Starting new invocation");
-                    runInvocation(manager, config);
-                    long stopTime = System.currentTimeMillis();
-                    long sleepTime = MIN_LOOP_TIME - (stopTime - startTime);
-                    if (sleepTime > 0) {
-                        Log.i(LOG_TAG, String.format("Sleeping for %d ms", sleepTime));
-                        getRunUtil().sleep(sleepTime);
-                    }
-                    // recreate config otherwise state can accumlate
-                    config = createConfigurationAndParseArgs(args);
-                }
-            } else {
-                runInvocation(manager, config);
-            }
+            runInvocation(manager, config);
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
-            getConfigFactory().printHelp(args, System.out);
-        } catch (Throwable e) {
-            System.out.println("Uncaught exception!");
-            e.printStackTrace();
+            getConfigFactory().printHelp(args, System.out, Command.class);
+        } finally {
+            exit(manager);
         }
-        exit(manager);
     }
 
     /**
-     * Sets the ddms log output.
+     * Initialize logging.
      * <p/>
-     * Exposed so unit tests can omit.
+     * Exposed so tests can override.
      */
-    protected void setLogRegistry() {
+    void initLogging() {
+        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
         Log.setLogOutput(getLogRegistry());
     }
 
     /**
-     * Get the {@link RunUtil} instance to use.
-     * <p/>
-     * Exposed for unit testing.
+     * Allocate a device and runs the given configuration.
+     *
+     * @param manager
+     * @param config
+     * @throws ConfigurationException
      */
-    protected IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
-    }
-
-    protected void runInvocation(IDeviceManager manager, IConfiguration config)
+    private void runInvocation(IDeviceManager manager, IConfiguration config)
             throws ConfigurationException {
         ITestDevice device = null;
         FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
@@ -161,7 +125,7 @@ public class Command {
         }
     }
 
-    protected void exit(IDeviceManager manager) {
+    private void exit(IDeviceManager manager) {
         if (manager != null) {
             manager.terminate();
         }
@@ -173,7 +137,7 @@ public class Command {
      *
      * @return the {@link ITestInvocation} to use
      */
-    protected ITestInvocation createRunInstance() {
+    ITestInvocation createRunInstance() {
         return new TestInvocation();
     }
 
@@ -182,7 +146,7 @@ public class Command {
      *
      * @return the {@link IDeviceManager} to use
      */
-    protected IDeviceManager getDeviceManager() {
+    IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
     }
 
@@ -191,23 +155,14 @@ public class Command {
      *
      * @return the {@link LogRegistry} to use
      */
-    protected LogRegistry getLogRegistry() {
+    LogRegistry getLogRegistry() {
         return LogRegistry.getLogRegistry();
     }
 
     /**
-     * Factory method for creating a {@link IConfiguration}.
-     *
-     * @param args the command line arguments
-     * @return the {@link IConfiguration} populated with option values supplied in args
-     * @throws {@link ConfigurationException} if {@link IConfiguration} could not be loaded.
+     * Factory method for retrieving the {@link IConfigurationFactory} to use.
      */
-    protected IConfiguration createConfigurationAndParseArgs(String[] args)
-            throws ConfigurationException {
-        return getConfigFactory().createConfigurationFromArgs(args, this);
-    }
-
-    protected IConfigurationFactory getConfigFactory() {
+    IConfigurationFactory getConfigFactory() {
         return ConfigurationFactory.getInstance();
     }
 

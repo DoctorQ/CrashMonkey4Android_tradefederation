@@ -57,22 +57,28 @@ public class CommandTest extends TestCase {
 
         mCommand = new Command() {
             @Override
-            protected ITestInvocation createRunInstance() {
+            ITestInvocation createRunInstance() {
                 return mMockTestInvoker;
             }
 
             @Override
-            protected IDeviceManager getDeviceManager() {
+            IDeviceManager getDeviceManager() {
                 return mMockDeviceManager;
             }
 
             @Override
-            protected IConfigurationFactory getConfigFactory() {
+            IConfigurationFactory getConfigFactory() {
                 return mMockConfigFactory;
             }
 
             @Override
-            protected LogRegistry getLogRegistry() {
+            void initLogging() {
+                // do nothing
+
+            }
+
+            @Override
+            LogRegistry getLogRegistry() {
                 return new StubLogRegistry();
             }
         };
@@ -132,42 +138,23 @@ public class CommandTest extends TestCase {
      * <p/>
      * Expect exception to be captured gracefully and run to not proceed.
      */
-    public void testRun_configException() {
-        Command command = new Command() {
-            @Override
-            protected IConfiguration createConfigurationAndParseArgs(String[] args)
-                    throws ConfigurationException {
-                throw new ConfigurationException("error");
-            }
+    public void testRun_configException() throws ConfigurationException {
+        String[] args = new String[] {};
+        EasyMock.expect(
+                mMockConfigFactory.createConfigurationFromArgs((String[])EasyMock.anyObject(),
+                        EasyMock.anyObject())).andThrow(new ConfigurationException(""));
+        mMockConfigFactory.printHelp(EasyMock.aryEq(args), EasyMock.eq(System.out),
+                EasyMock.eq(Command.class));
 
-            @Override
-            protected ITestInvocation createRunInstance() {
-                return mMockTestInvoker;
-            }
-
-            @Override
-            protected IDeviceManager getDeviceManager() {
-                return mMockDeviceManager;
-            }
-
-            @Override
-            protected LogRegistry getLogRegistry() {
-                return new StubLogRegistry();
-            }
-        };
-        mMockDeviceManager.terminate();
-        // switch mock objects to verify mode
-        // expect allocateDevices to not be called
-        EasyMock.replay(mMockDeviceManager);
-        // expect RunInstance to NOT be called
-        EasyMock.replay(mMockTestInvoker);
-        command.run(new String[] {});
+        replayMocks();
+        mCommand.run(args);
+        verifyMocks();
     }
 
     /**
      * Test that scenario where the invocation throws a unexpected exception
      * <p/>
-     * Expect exception to be captured gracefully and device to be freed.
+     * Expect device and device manager to be freed.
      */
     public void testRun_uncaughtThrowable() throws ConfigurationException,
             DeviceNotAvailableException {
@@ -182,7 +169,11 @@ public class CommandTest extends TestCase {
         mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
         EasyMock.expectLastCall().andThrow(new RuntimeException());
         replayMocks();
-        mCommand.run(new String[] {});
+        try {
+            mCommand.run(new String[] {});
+        } catch (RuntimeException e) {
+            // expected
+        }
         verifyMocks();
     }
 
@@ -195,7 +186,8 @@ public class CommandTest extends TestCase {
         EasyMock.expect(mMockConfigFactory.createConfigurationFromArgs(
                 EasyMock.eq(args), EasyMock.eq(mCommand))).andThrow(new ConfigurationException(
                         "missing config"));
-        mMockConfigFactory.printHelp(EasyMock.eq(args), (PrintStream)EasyMock.anyObject());
+        mMockConfigFactory.printHelp(EasyMock.eq(args), (PrintStream)EasyMock.anyObject(),
+                EasyMock.eq(Command.class));
         replayMocks();
         mCommand.run(args);
         verifyMocks();
