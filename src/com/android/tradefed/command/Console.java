@@ -19,14 +19,24 @@ package com.android.tradefed.command;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+
 import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.util.QuotationAwareTokenizer;
 
+import java.lang.UnsupportedOperationException;
+
+import java.io.BufferedReader;
+// not importing java.io.Console because of class name conflict
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.InputStreamReader;
 import java.io.IOException;
+
+import java.util.Collection;
 
 /**
  * Main TradeFederation console providing user with the interface to interact
@@ -43,6 +53,9 @@ import java.io.IOException;
  */
 public class Console {
 
+    private static final String LOG_TAG = "Console";
+    private static final String CONSOLE_PROMPT = "tf >";
+
     @Option(name = "file", description = "the path to file of configs to run")
     private File mFile = null;
 
@@ -50,6 +63,7 @@ public class Console {
     private boolean mHelpMode = false;
 
     private ICommandScheduler mScheduler;
+    private java.io.Console mTerminal;
 
     Console() {
         this(new CommandScheduler());
@@ -62,6 +76,7 @@ public class Console {
      */
     Console(ICommandScheduler scheduler) {
         mScheduler = scheduler;
+        mTerminal = System.console();
     }
 
     /**
@@ -71,6 +86,20 @@ public class Console {
      */
     void setConfigFile(File file) {
         mFile = file;
+    }
+
+    private String getConsoleInput() throws IOException {
+        String line = mTerminal.readLine(CONSOLE_PROMPT);
+
+        return line;
+    }
+
+    private String index(String[] array, int i) {
+        if (i > array.length) {
+            return null;
+        } else {
+            return array[i];
+        }
     }
 
     /**
@@ -94,7 +123,55 @@ public class Console {
 
             mScheduler.start();
 
-            // TODO: launch console ui, and process user commands
+            if (mTerminal == null) {
+                // If we're running in non-interactive mode, just wait indefinitely for the
+                // scheduler to shut down
+                Log.logAndDisplay(LogLevel.INFO, LOG_TAG,
+                        "Running indefinitely in non-interactive mode.");
+                mScheduler.join();
+                return;
+            }
+
+            String input = "";
+            boolean shouldExit = false;
+            Thread.sleep(1500);  // Try to let preliminary messages scroll past
+
+            while (!shouldExit) {
+                input = getConsoleInput();
+                System.err.println("Got input line: " + input);
+                String[] tokens = QuotationAwareTokenizer.tokenizeLine(input);
+
+                if (tokens.length == 0) {
+                    continue;
+                }
+                String cmd = tokens[0];
+
+                // FIXME: make it easier to add command handlers and to handle shortcuts
+                // FIXME: make all this stuff a bit more modular and less sucky
+                // TODO: think about having the modules themselves advertise their management
+                // TODO:   interfaces
+                // TODO: perhaps use a prefix matching algorithm to select commands based on
+                // TODO:   shortest unique prefix
+                if ("exit".equals(cmd) || "q".equals(cmd)) {
+                    shouldExit = true;
+                } else if ("?".equals(cmd) || "help".equals(cmd) || "h".equals(cmd)) {
+                    mTerminal.printf("Muahahahaha!  Type 'exit' to exit.\n");
+                } else if ("list".equals(cmd) || "l".equals(cmd)) {
+                    if ("i".equals(index(tokens, 1)) || "invocations".equals(index(tokens, 1))) {
+                        Collection<ITestInvocation> invs = mScheduler.listInvocations();
+
+                        for (ITestInvocation inv : invs) {
+                            System.err.println("Got invocation: " + inv);
+                        }
+                    }
+                } else {
+                    mTerminal.printf("Unknown command '%s'.  Type ? for help.\n", cmd);
+                }
+
+                Thread.sleep(100);
+            }
+
+            mScheduler.shutdown();
 
             mScheduler.join();
         } catch (ConfigurationException e) {
@@ -109,6 +186,12 @@ public class Console {
             e.printStackTrace();
         } catch (InterruptedException e) {
             // ignore
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            // Manually exit, since there may be other threads hanging around, keeping the runtime
+            // alive
+            System.exit(0);
         }
     }
 
