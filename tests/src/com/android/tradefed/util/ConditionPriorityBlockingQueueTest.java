@@ -13,9 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.command;
+package com.android.tradefed.util;
 
-import com.android.tradefed.command.ConditionPriorityBlockingQueue.Matcher;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.Matcher;
 
 import java.util.Comparator;
 
@@ -66,6 +67,21 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
         assertEquals(one, mQueue.take());
         assertEquals(two, mQueue.take());
         assertNull(mQueue.poll());
+    }
+
+    /**
+     * Test {@link ConditionPriorityBlockingQueue#poll()} when using FIFO ordering.
+     */
+    public void testTake_fifo() throws InterruptedException {
+        ConditionPriorityBlockingQueue<Integer> fifoQueue =
+            new ConditionPriorityBlockingQueue<Integer>();
+        Integer one = new Integer(1);
+        Integer two = new Integer(2);
+        fifoQueue.add(two);
+        fifoQueue.add(one);
+        assertEquals(two, fifoQueue.take());
+        assertEquals(one, fifoQueue.take());
+        assertNull(fifoQueue.poll());
     }
 
     /**
@@ -203,6 +219,21 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
         mQueue.add(two);
         assertEquals(one, mQueue.poll(new OneMatcher()));
         assertNull(mQueue.poll(new OneMatcher()));
+    }
+
+    /**
+     * Test {@link ConditionPriorityBlockingQueue#poll(Matcher)} when object matches, and one
+     * doesn't, using FIFO ordering.
+     */
+    public void testPoll_fifo_condition() {
+        ConditionPriorityBlockingQueue<Integer> fifoQueue =
+            new ConditionPriorityBlockingQueue<Integer>();
+        Integer one = new Integer(1);
+        Integer two = new Integer(2);
+        fifoQueue.add(two);
+        fifoQueue.add(one);
+        assertEquals(one, fifoQueue.poll(new OneMatcher()));
+        assertNull(fifoQueue.poll(new OneMatcher()));
     }
 
     /**

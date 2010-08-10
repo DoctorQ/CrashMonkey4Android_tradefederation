@@ -16,7 +16,6 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log;
-import com.android.tradefed.command.ConditionPriorityBlockingQueue.Matcher;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
@@ -30,6 +29,8 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.Matcher;
 
 import java.util.ArrayList;
 import java.util.Collection;

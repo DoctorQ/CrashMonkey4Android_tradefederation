@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.command;
+package com.android.tradefed.util;
 
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -85,6 +86,15 @@ public class ConditionPriorityBlockingQueue<T> {
 
     /**
      * Creates a {@link ConditionPriorityBlockingQueue}
+     * <p/>
+     * Elements will be prioritized in FIFO order.
+     */
+    public ConditionPriorityBlockingQueue() {
+        this(null);
+    }
+
+    /**
+     * Creates a {@link ConditionPriorityBlockingQueue}
      *
      * @param c the {@link Comparator} used to prioritize the queue.
      */
@@ -114,22 +124,43 @@ public class ConditionPriorityBlockingQueue<T> {
         try {
             // reference to the current min object
             T minObject = null;
-            int minObjIndex = -1;
-            for (int i=0; i < mList.size(); i++ ) {
-                T obj = mList.get(i);
-                if (matcher.matches(obj) &&
-                        (minObject == null ||
-                         (mComparator.compare(obj, minObject) < 0) )) {
+            ListIterator<T> iter = mList.listIterator();
+            while (iter.hasNext()) {
+                T obj = iter.next();
+                if (matcher.matches(obj) && compareObjects(obj, minObject) < 0) {
                     minObject = obj;
-                    minObjIndex = i;
                 }
             }
-            if (minObjIndex != -1) {
-                mList.remove(minObjIndex);
+            if (minObject != null) {
+                mList.remove(minObject);
             }
             return minObject;
         } finally {
             mLock.unlock();
+        }
+    }
+
+    /**
+     * Compare given <var>object</var> against given <var>minObject</var> using this class'
+     * {@link Comparator}.
+     *
+     * @param object the object to compare
+     * @param minObject the current minimum object to use as basis for comparison
+     * @return -1 if <var>object</var> is less than <var>minObject</var> or <var>minObject</var> is
+     *         null.<br/>
+     *         0 if the two objects are equal.<br/>
+     *         1 if <var>object</var> is greater than <var>minObject</var>. Note that 1 will always
+     *         be returned if FIFO prioritization is used (ie the comparator is null) and
+     *         <var>minObject</var> is not null, because <var>minObject</var> represents an
+     *         <var>object</var> that is earlier in the queue.
+     */
+    private int compareObjects(T object, T minObject) {
+        if (minObject == null) {
+            return -1;
+        } else if (mComparator == null) {
+            return 1;
+        } else {
+            return mComparator.compare(object, minObject);
         }
     }
 
