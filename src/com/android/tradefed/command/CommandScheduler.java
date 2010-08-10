@@ -75,18 +75,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         @Option(name="loop", description="keep running continuously")
         private boolean mLoopMode = false;
 
-        @Option(name="serial", shortName='s', description=
-            "run this config on a specific device with given serial number(s)")
-        private Collection<String> mSerials = new ArrayList<String>();
-
-        @Option(name="exclude-serial", description=
-            "run this test on any device except those with this serial number(s)")
-        private Collection<String> mNotSerials = new ArrayList<String>();
-
-        @Option(name="product-type", description=
-            "run this test on device with this product type")
-        private Collection<String> mProductTypes = new ArrayList<String>();
-
         /**
          * Set the help mode for the config.
          * <p/>
@@ -94,6 +82,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         void setHelpMode(boolean helpMode) {
             mHelpMode = helpMode;
+        }
+
+        /**
+         * Gets the help mode.
+         */
+        public boolean isHelpMode() {
+            return mHelpMode;
         }
 
         /**
@@ -105,16 +100,105 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             mLoopMode = loopMode;
         }
 
+        /**
+         * Return the loop mode for the config.
+         */
+        boolean isLoopMode() {
+            return mLoopMode;
+        }
+
+        /**
+         * Set the min loop time for the config.
+         * <p/>
+         * Exposed for testing.
+         */
         void setMinLoopTime(long loopTime) {
             mMinLoopTime = loopTime;
         }
 
-        void addSerial(String serialNumber) {
+        /**
+         * Get the min loop time for the config.
+         */
+        public long getMinLoopTime() {
+            return mMinLoopTime;
+        }
+    }
+
+    /**
+     * Container for for device selection criteria.
+     */
+    public static class DeviceSelectionOptions {
+
+        @Option(name="serial", shortName='s', description=
+            "run this test on a specific device with given serial number(s)")
+        private Collection<String> mSerials = new ArrayList<String>();
+
+        @Option(name="exclude-serial", description=
+            "run this test on any device except those with this serial number(s)")
+        private Collection<String> mNotSerials = new ArrayList<String>();
+
+        @Option(name="product-type", description=
+            "run this test on device with this product type(s)")
+        private Collection<String> mProductTypes = new ArrayList<String>();
+
+        /**
+         * Add a serial number to the device selection options.
+         *
+         * @param serialNumber
+         */
+        public void addSerial(String serialNumber) {
             mSerials.add(serialNumber);
         }
 
-        void addNotSerial(String serialNumber) {
+        /**
+         * Add a serial number to exclusion list.
+         *
+         * @param serialNumber
+         */
+        public void addNotSerial(String serialNumber) {
             mNotSerials.add(serialNumber);
+        }
+
+        /**
+         * Add a product type to the device selection options.
+         *
+         * @param serialNumber
+         */
+        public void addProductType(String productType) {
+            mProductTypes.add(productType);
+        }
+
+        /**
+         * Gets a copy of the serial numbers
+         *
+         * @return a {@link Collection} of serial numbers
+         */
+        public Collection<String> getSerials() {
+            return copyCollection(mSerials);
+        }
+
+        /**
+         * Gets a copy of the serial numbers exclusion list
+         *
+         * @return a {@link Collection} of serial numbers
+         */
+        public Collection<String> getNotSerials() {
+            return copyCollection(mNotSerials);
+        }
+
+        /**
+         * Gets a copy of the product type list
+         *
+         * @return a {@link Collection} of product types
+         */
+        public Collection<String> getProductTypes() {
+            return copyCollection(mProductTypes);
+        }
+
+        private Collection<String> copyCollection(Collection<String> original) {
+            Collection<String> listCopy = new ArrayList<String>(original.size());
+            listCopy.addAll(original);
+            return listCopy;
         }
     }
 
@@ -122,20 +206,44 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * Represents one config to be executed
      */
     private static class ConfigCommand {
-        final String[] mArgs;
+        private final String[] mArgs;
 
-        final CommandOptions mOptions;
+        private final CommandOptions mCmdOptions;
+        private final DeviceSelectionOptions mDeviceOptions;
 
         /** the total amount of time this config was executing. Used to prioritize */
         private long mTotalExecTime = 0;
 
-        ConfigCommand(String[] args, CommandOptions options) {
+        ConfigCommand(String[] args, CommandOptions cmdOptions,
+                DeviceSelectionOptions deviceOptions) {
             mArgs = args;
-            mOptions = options;
+            mCmdOptions = cmdOptions;
+            mDeviceOptions = deviceOptions;
         }
 
         synchronized void incrementExecTime(long execTime) {
             mTotalExecTime += execTime;
+        }
+
+        /**
+         * Get the {@link CommandOptions} associated with this command.
+         */
+        CommandOptions getCommandOptions() {
+            return mCmdOptions;
+        }
+
+        /**
+         * Get the {@link DeviceSelectionOptions} associated with this command.
+         */
+        DeviceSelectionOptions getDeviceOptions() {
+            return mDeviceOptions;
+        }
+
+        /**
+         * Get the full list of config arguments associated with this command.
+         */
+        String[] getArgs() {
+            return mArgs;
         }
     }
 
@@ -174,15 +282,20 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          * {@inheritDoc}
          */
         public boolean matches(ConfigCommand cmd) {
-            if (!cmd.mOptions.mSerials.isEmpty() &&
-                    !cmd.mOptions.mSerials.contains(mDevice.getSerialNumber())) {
+            DeviceSelectionOptions deviceOptions = cmd.getDeviceOptions();
+            Collection<String> serials = deviceOptions.getSerials();
+            Collection<String> notSerials = deviceOptions.getNotSerials();
+            Collection<String> productTypes = deviceOptions.getProductTypes();
+
+            if (!serials.isEmpty() &&
+                    !serials.contains(mDevice.getSerialNumber())) {
                 return false;
             }
-            if (cmd.mOptions.mNotSerials.contains(mDevice.getSerialNumber())) {
+            if (notSerials.contains(mDevice.getSerialNumber())) {
                 return false;
             }
-            if (!cmd.mOptions.mProductTypes.isEmpty() &&
-                    !cmd.mOptions.mProductTypes.contains(getDeviceProductType(mDevice))) {
+            if (!productTypes.isEmpty() &&
+                    !productTypes.contains(getDeviceProductType(mDevice))) {
                 return false;
             }
             return true;
@@ -234,7 +347,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             ITestInvocation instance = createInvocation();
             try {
                 IConfiguration config = getConfigFactory().createConfigurationFromArgs(
-                        cmd.mArgs, new CommandOptions());
+                        cmd.getArgs(), new CommandOptions(), new DeviceSelectionOptions());
                 instance.invoke(mDevice, config);
             } catch (DeviceUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s is unresponsive",
@@ -251,7 +364,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } finally {
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 Log.i(LOG_TAG, String.format("Updating config '%s' with elapsed time %d ms",
-                        getArgString(cmd.mArgs), elapsedTime));
+                        getArgString(cmd.getArgs()), elapsedTime));
                 cmd.incrementExecTime(elapsedTime);
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
@@ -361,19 +474,22 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     public void addConfig(String[] args) {
-        CommandOptions options = createCommandOptions();
+        CommandOptions cmdOptions = createCommandOptions();
+        DeviceSelectionOptions deviceOptions = createDeviceOptions();
         try {
             // load a config to parse options and validate arguments up front
-            getConfigFactory().createConfigurationFromArgs(args, options);
-            if (options.mHelpMode) {
-                getConfigFactory().printHelp(args, System.out, CommandOptions.class);
+            getConfigFactory().createConfigurationFromArgs(args, cmdOptions, deviceOptions);
+            if (cmdOptions.isHelpMode()) {
+                getConfigFactory().printHelp(args, System.out, CommandOptions.class,
+                        DeviceSelectionOptions.class);
             } else {
-                ConfigCommand cmd = new ConfigCommand(args, options);
+                ConfigCommand cmd = new ConfigCommand(args, cmdOptions, deviceOptions);
                 mConfigQueue.add(cmd);
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
-            getConfigFactory().printHelp(args, System.out, CommandOptions.class);
+            getConfigFactory().printHelp(args, System.out, CommandOptions.class,
+                    DeviceSelectionOptions.class);
         }
     }
 
@@ -384,6 +500,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     CommandOptions createCommandOptions() {
         return new CommandOptions();
+    }
+
+    /**
+     * Factory method for creating {@link DeviceSelectionOptions}.
+     * <p/>
+     * Exposed for testing.
+     */
+    DeviceSelectionOptions createDeviceOptions() {
+        return new DeviceSelectionOptions();
     }
 
     /**
@@ -399,7 +524,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         ConfigCommand cmd = null;
         try {
             cmd = mConfigQueue.take(new DeviceMatcher(device));
-            if (cmd.mOptions.mLoopMode) {
+            if (cmd.getCommandOptions().isLoopMode()) {
                 returnConfigToQueue(cmd);
             }
         } catch (InterruptedException e) {
@@ -414,19 +539,20 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * @param cmd the {@link ConfigCommand} to return to queue
      */
     private void returnConfigToQueue(final ConfigCommand cmd) {
-        if (cmd.mOptions.mMinLoopTime > 0) {
+        final long minLoopTime = cmd.getCommandOptions().getMinLoopTime();
+        if (minLoopTime > 0) {
             // delay before adding config back to queue
             TimerTask delayConfig = new TimerTask() {
                 @Override
                 public void run() {
                     Log.d(LOG_TAG, String.format("Adding config '%s' back to queue",
-                            getArgString(cmd.mArgs)));
+                            getArgString(cmd.getArgs())));
                     mConfigQueue.add(cmd);
                 }
             };
             Log.d(LOG_TAG, String.format("Delay adding config '%s' back to queue for %d ms",
-                    getArgString(cmd.mArgs), cmd.mOptions.mMinLoopTime));
-            mConfigTimer.schedule(delayConfig, cmd.mOptions.mMinLoopTime);
+                    getArgString(cmd.getArgs()), minLoopTime));
+            mConfigTimer.schedule(delayConfig, minLoopTime);
         } else {
             // return to queue immediately
             mConfigQueue.add(cmd);
