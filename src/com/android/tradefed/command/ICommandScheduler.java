@@ -17,6 +17,11 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.config.IConfigurationFactory;
+import com.android.tradefed.invoker.ITestInvocation;
+
+import java.lang.UnsupportedOperationException;
+
+import java.util.Collection;
 
 /**
  * A scheduler for running TradeFederation configs.
@@ -63,4 +68,22 @@ public interface ICommandScheduler {
      */
     public void join() throws InterruptedException;
 
+
+    // The following are optional management-related interfaces.
+    /**
+     * Get a list of current invocations.
+     *
+     * @return A list of currently-running {@link ITestInvocation}
+     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     */
+    public Collection<ITestInvocation> listInvocations() throws UnsupportedOperationException;
+
+    /**
+     * Stop a running invocation.
+     *
+     * @return true if the invocation was stopped, false otherwise
+     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     */
+    public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException;
 }
+

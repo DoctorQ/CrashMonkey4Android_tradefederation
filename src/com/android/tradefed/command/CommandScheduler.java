@@ -32,6 +32,7 @@ import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.Matcher;
 
+import java.lang.UnsupportedOperationException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -615,5 +616,31 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         for (InvocationThread invThread : mInvocationThreads) {
             invThread.shutdown();
         }
+    }
+
+
+    // Implementations of the optional managment interfaces
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<ITestInvocation> listInvocations() throws UnsupportedOperationException {
+        Collection<ITestInvocation> invs = new HashSet<ITestInvocation>(mInvocationThreads.size());
+
+        if (mInvocationThreads == null) {
+            return null;
+        }
+
+        for (InvocationThread invThread : mInvocationThreads) {
+            invs.add(invThread.getInvocation());
+        }
+
+        return invs;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException {
+        throw new UnsupportedOperationException();
     }
 }
