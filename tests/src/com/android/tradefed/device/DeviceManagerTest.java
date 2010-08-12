@@ -80,8 +80,8 @@ public class DeviceManagerTest extends TestCase {
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockTestDevice = EasyMock.createMock(IManagedTestDevice.class);
 
-        EasyMock.expect(mMockIDevice.getSerialNumber()).andReturn(DEVICE_SERIAL).anyTimes();
-        EasyMock.expect(mMockTestDevice.getSerialNumber()).andReturn(DEVICE_SERIAL).anyTimes();
+        EasyMock.expect(mMockIDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
+        EasyMock.expect(mMockTestDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockTestDevice.getIDevice()).andStubReturn(mMockIDevice);
     }
 
@@ -153,9 +153,9 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceManager#allocateDevice(IDeviceRecovery, long))} when device is returned
+     * Test {@link DeviceManager#allocateDevice(long))} when device is returned
      */
-    public void testAllocateDeviceTime() throws DeviceNotAvailableException {
+    public void testAllocateDevice_time() throws DeviceNotAvailableException {
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mMockIDevice});
         EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
@@ -167,13 +167,47 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceManager#allocateDevice(IDeviceRecovery, long))} when timeout is reached.
+     * Test {@link DeviceManager#allocateDevice(long))} when timeout is reached.
      */
-    public void testAllocateDeviceTime_timeout() throws DeviceNotAvailableException {
+    public void testAllocateDevice_timeout() throws DeviceNotAvailableException {
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
         EasyMock.replay(mMockIDevice, mMockAdbBridge);
         DeviceManager manager = createDeviceManager();
         assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
+    }
+
+    /**
+     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when device is
+     * returned.
+     */
+    public void testAllocateDevice_match() throws DeviceNotAvailableException {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addSerial(DEVICE_SERIAL);
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mMockIDevice});
+        EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
+                mMockIDevice);
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertEquals(mMockTestDevice, manager.allocateDevice(100, options));
+        EasyMock.verify(mMockMonitor);
+    }
+
+    /**
+     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when timeout is
+     * reached.
+     */
+    public void testAllocateDevice_matchTimeout() throws DeviceNotAvailableException {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addExcludeSerial(DEVICE_SERIAL);
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mMockIDevice});
+        EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
+                mMockIDevice);
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME, options));
+        assertNotNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
     }
 
     /**
@@ -314,7 +348,7 @@ public class DeviceManagerTest extends TestCase {
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
                 mMockIDevice);
         mMockTestDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
-        EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge);
+        replayMocks();
         DeviceManager manager = createDeviceManager();
         assertEquals(mMockTestDevice, manager.allocateDevice());
         mDeviceListener.deviceDisconnected(mMockIDevice);
@@ -330,7 +364,7 @@ public class DeviceManagerTest extends TestCase {
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
                 mMockIDevice);
         mMockTestDevice.setDeviceState(TestDeviceState.OFFLINE);
-        EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge);
+        replayMocks();
         DeviceManager manager = createDeviceManager();
         assertEquals(mMockTestDevice, manager.allocateDevice());
         IDevice newDevice = EasyMock.createMock(IDevice.class);
@@ -362,5 +396,12 @@ public class DeviceManagerTest extends TestCase {
     public void testGetDeviceOnFastboot_empty() {
         Collection<String> deviceSerials = DeviceManager.getDevicesOnFastboot("");
         assertEquals(0, deviceSerials.size());
+    }
+
+    /**
+     * Sets all mock objects into replay mode.
+     */
+    private void replayMocks() {
+        EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge);
     }
 }

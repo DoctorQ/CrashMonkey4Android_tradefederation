@@ -15,11 +15,13 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * A {@link IDeviceManager} that simulates the resource allocation of {@link DeviceManager}
@@ -27,7 +29,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class MockDeviceManager implements IDeviceManager {
 
-    LinkedBlockingQueue<ITestDevice> mDeviceQueue = new LinkedBlockingQueue<ITestDevice>();
+    ConditionPriorityBlockingQueue<ITestDevice> mDeviceQueue =
+        new ConditionPriorityBlockingQueue<ITestDevice>();
 
     public MockDeviceManager(int numDevices) {
         setNumDevices(numDevices);
@@ -35,10 +38,14 @@ public class MockDeviceManager implements IDeviceManager {
 
     public void setNumDevices(int numDevices) {
         mDeviceQueue.clear();
-        for (int i=0; i < numDevices; i++) {
+        for (int i = 0; i < numDevices; i++) {
             ITestDevice mockDevice = EasyMock.createNiceMock(ITestDevice.class);
             EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial" + i);
-            EasyMock.replay(mockDevice);
+            IDevice mockIDevice = EasyMock.createNiceMock(IDevice.class);
+            EasyMock.expect(mockIDevice.getSerialNumber()).andStubReturn("serial" + i);
+            EasyMock.expect(mockDevice.getIDevice()).andStubReturn(
+                    mockIDevice);
+            EasyMock.replay(mockDevice, mockIDevice);
             mDeviceQueue.add(mockDevice);
         }
     }
@@ -111,6 +118,13 @@ public class MockDeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public Collection<String> getUnavailableDevices() {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ITestDevice allocateDevice(long timeout, DeviceSelectionOptions options) {
         throw new UnsupportedOperationException();
     }
 

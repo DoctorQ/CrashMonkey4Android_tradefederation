@@ -16,10 +16,12 @@
 
 package com.android.tradefed.command;
 
+import com.android.ddmlib.Log;
 import com.android.tradefed.command.CommandScheduler.CommandOptions;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockDeviceManager;
@@ -35,6 +37,7 @@ import junit.framework.TestCase;
  */
 public class CommandSchedulerFuncTest extends TestCase {
 
+    private static final String LOG_TAG = "CommandSchedulerFuncTest";
     /** the {@link CommandScheduler} under test, with all dependencies mocked out */
     private CommandScheduler mCommandScheduler;
     private MeasuredInvocation mMockTestInvoker;
@@ -96,11 +99,13 @@ public class CommandSchedulerFuncTest extends TestCase {
 
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(fastConfigArgs),
-                        (CommandOptions)EasyMock.anyObject()))
+                        (CommandOptions)EasyMock.anyObject(),
+                        (DeviceSelectionOptions)EasyMock.anyObject()))
                 .andReturn(mFastConfig).anyTimes();
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(slowConfigArgs),
-                        (CommandOptions)EasyMock.anyObject()))
+                        (CommandOptions)EasyMock.anyObject(),
+                        (DeviceSelectionOptions)EasyMock.anyObject()))
                 .andReturn(mSlowConfig).anyTimes();
 
         EasyMock.replay(mFastConfig, mSlowConfig, mMockConfigFactory);
@@ -115,7 +120,7 @@ public class CommandSchedulerFuncTest extends TestCase {
         mCommandScheduler.shutdown();
         mCommandScheduler.join();
 
-        System.out.println(String.format("fast times %d slow times %d",
+        Log.i(LOG_TAG, String.format("fast times %d slow times %d",
                 mMockTestInvoker.mFastCount, mMockTestInvoker.mSlowCount));
         // assert that fast config has executed roughly twice as much as slow config. Allow for
         // some variance since the execution time of each config (governed via Thread.sleep) will

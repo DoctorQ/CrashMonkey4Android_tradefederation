@@ -25,6 +25,7 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
@@ -68,21 +69,33 @@ public class Command {
         IDeviceManager manager = null;
 
         try {
-            IConfiguration config = getConfigFactory().createConfigurationFromArgs(args, this);
+            DeviceSelectionOptions deviceOptions = new DeviceSelectionOptions();
+            IConfiguration config = getConfigFactory().createConfigurationFromArgs(args, this,
+                    deviceOptions);
 
             if (mHelpMode) {
-                getConfigFactory().printHelp(args, System.out);
+                printHelp(args);
                 return;
             }
 
             manager = getDeviceManager();
-            runInvocation(manager, config);
+            runInvocation(manager, deviceOptions, config);
         } catch (ConfigurationException e) {
             System.out.println(String.format("Failed to load configuration: %s", e.getMessage()));
-            getConfigFactory().printHelp(args, System.out, Command.class);
+            printHelp(args);
         } finally {
             exit(manager);
         }
+    }
+
+    /**
+     * Print help text for given command line arguments.
+     *
+     * @param args the command line arguments
+     */
+    private void printHelp(String[] args) {
+        getConfigFactory().printHelp(args, System.out, this.getClass(),
+                DeviceSelectionOptions.class);
     }
 
     /**
@@ -99,16 +112,18 @@ public class Command {
      * Allocate a device and runs the given configuration.
      *
      * @param manager
+     * @param deviceOptions
      * @param config
      * @throws ConfigurationException
      */
-    private void runInvocation(IDeviceManager manager, IConfiguration config)
+    private void runInvocation(IDeviceManager manager, DeviceSelectionOptions deviceOptions,
+            IConfiguration config)
             throws ConfigurationException {
         ITestDevice device = null;
         FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
         try {
             ITestInvocation instance = createRunInstance();
-            device = manager.allocateDevice(WAIT_DEVICE_TIME);
+            device = manager.allocateDevice(WAIT_DEVICE_TIME, deviceOptions);
             if (device == null) {
                 System.out.println("Could not find device to test");
                 throw new DeviceNotAvailableException();

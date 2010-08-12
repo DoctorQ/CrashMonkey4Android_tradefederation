@@ -16,9 +16,10 @@
 package com.android.tradefed.util;
 
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
-import com.android.tradefed.util.ConditionPriorityBlockingQueue.Matcher;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import java.util.Comparator;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 
@@ -119,7 +120,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
     }
 
     /**
-     * Test {@link ConditionPriorityBlockingQueue#take(Matcher)} when object that matches is not
+     * Test {@link ConditionPriorityBlockingQueue#take(IMatcher)} when object that matches is not
      * initially present.
      */
     public void testTake_matcher_delayedAdd() throws InterruptedException {
@@ -143,7 +144,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
     }
 
     /**
-     * Test {@link ConditionPriorityBlockingQueue#take(Matcher)} when multiple threads are waiting
+     * Test {@link ConditionPriorityBlockingQueue#take(IMatcher)} when multiple threads are waiting
      */
     public void testTake_multiple_matchers() throws InterruptedException {
         final Integer one = new Integer(1);
@@ -202,14 +203,22 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
     }
 
     /**
-     * Test {@link ConditionPriorityBlockingQueue#poll(Matcher)} when queue is empty.
+     * Test {@link ConditionPriorityBlockingQueue#poll(IMatcher)} when queue is empty.
      */
     public void testPoll_condition_empty() {
         assertNull(mQueue.poll(new OneMatcher()));
     }
 
     /**
-     * Test {@link ConditionPriorityBlockingQueue#poll(Matcher)} when object matches, and one
+     * Test {@link ConditionPriorityBlockingQueue#poll(long, TimeUnit, IMatcher)} when queue is
+     * empty.
+     */
+    public void testPoll_time_empty() throws InterruptedException {
+        assertNull(mQueue.poll(100, TimeUnit.MILLISECONDS, new OneMatcher()));
+    }
+
+    /**
+     * Test {@link ConditionPriorityBlockingQueue#poll(IMatcher)} when object matches, and one
      * doesn't.
      */
     public void testPoll_condition() {
@@ -222,7 +231,20 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
     }
 
     /**
-     * Test {@link ConditionPriorityBlockingQueue#poll(Matcher)} when object matches, and one
+     * Test {@link ConditionPriorityBlockingQueue#poll(long, TimeUnit, IMatcher)} when object
+     * matches, and one doesn't.
+     */
+    public void testPoll_time_condition() throws InterruptedException {
+        Integer one = new Integer(1);
+        Integer two = new Integer(2);
+        mQueue.add(one);
+        mQueue.add(two);
+        assertEquals(one, mQueue.poll(100, TimeUnit.MILLISECONDS, new OneMatcher()));
+        assertNull(mQueue.poll(100, TimeUnit.MILLISECONDS, new OneMatcher()));
+    }
+
+    /**
+     * Test {@link ConditionPriorityBlockingQueue#poll(IMatcher)} when object matches, and one
      * doesn't, using FIFO ordering.
      */
     public void testPoll_fifo_condition() {
@@ -266,7 +288,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
 
     }
 
-    private static class OneMatcher implements Matcher<Integer> {
+    private static class OneMatcher implements IMatcher<Integer> {
 
         public boolean matches(Integer element) {
             return element == 1;

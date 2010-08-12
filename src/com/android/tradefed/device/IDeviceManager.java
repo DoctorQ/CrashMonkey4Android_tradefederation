@@ -49,11 +49,21 @@ public interface IDeviceManager {
     /**
      * Request a device for testing, waiting for timeout ms until one becomes available.
      *
-     * @param timeout
-     * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before
-     * one became available
+     * @param timeout max time in ms to wait for a device to become available.
+     * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before one
+     *         became available
      */
     public ITestDevice allocateDevice(long timeout);
+
+    /**
+     * Request a device for testing that meets certain criteria.
+     *
+     * @param timeout max time in ms to wait for a device to become available.
+     * @param options the {@link DeviceSelectionOptions} the device should meet.
+     * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before one
+     *         became available
+     */
+    public ITestDevice allocateDevice(long timeout, DeviceSelectionOptions options);
 
     /**
      * Return a device to the pool

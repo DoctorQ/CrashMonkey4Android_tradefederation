@@ -16,7 +16,7 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.command.CommandScheduler.CommandOptions;
-import com.android.tradefed.command.CommandScheduler.DeviceSelectionOptions;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
@@ -204,18 +204,18 @@ public class CommandSchedulerTest extends TestCase {
     }
 
     /**
-     * Test{@link CommandScheduler#run()} when config is matched to a not specific device serial
+     * Test{@link CommandScheduler#run()} when config is matched to a exclude specific device serial
      * number.
      * <p/>
      * Adds two configs to run, and verify they both run on the other device
      */
-    public void testRun_configNotSerial() throws Exception {
+    public void testRun_configExcludeSerial() throws Exception {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 4);
         // allocate and free a device to get its serial
         ITestDevice dev = mMockManager.allocateDevice();
-        mDeviceOptions.addNotSerial(dev.getSerialNumber());
+        mDeviceOptions.addExcludeSerial(dev.getSerialNumber());
         ITestDevice expectedDevice = mMockManager.allocateDevice();
         mMockInvocation.setExpectedSerial(expectedDevice.getSerialNumber());
         replayMocks();

@@ -22,8 +22,10 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -32,7 +34,6 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,12 +52,15 @@ public class DeviceManager implements IDeviceManager {
     /** max wait time for device to become available when becoming online */
     private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 2*60*1000;
 
+    /** a {@link DeviceSelectionOptions} that matches any device */
+    private static final DeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
+
     private static DeviceManager sInstance;
 
     /** A thread-safe map that tracks the devices currently allocated for testing.*/
     private Map<String, IManagedTestDevice> mAllocatedDeviceMap;
     /** A FIFO, thread-safe queue for holding devices visible on adb available for testing */
-    private LinkedBlockingQueue<IDevice> mAvailableDeviceQueue;
+    private ConditionPriorityBlockingQueue<IDevice> mAvailableDeviceQueue;
     private IAndroidDebugBridge mAdbBridge;
     private final ManagedDeviceListener mManagedDeviceListener;
     private final FastbootMonitor mFastbootMonitor;
@@ -66,6 +70,23 @@ public class DeviceManager implements IDeviceManager {
 
     private Set<IFastbootListener> mFastbootListeners;
 
+    private static class DeviceMatcher implements IMatcher<IDevice> {
+
+        private DeviceSelectionOptions mOptions;
+
+        DeviceMatcher(DeviceSelectionOptions options) {
+            mOptions = options;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean matches(IDevice device) {
+            return DeviceSelectionMatcher.matches(device, mOptions);
+        }
+
+    }
+
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
@@ -73,8 +94,7 @@ public class DeviceManager implements IDeviceManager {
     DeviceManager() {
         // use Hashtable since it is synchronized
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
-        // use LinkedBlockingQueue since it supports unlimited capacity
-        mAvailableDeviceQueue = new LinkedBlockingQueue<IDevice>();
+        mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
         mCheckDeviceSet = Collections.synchronizedSet(new HashSet<String>());
         mAdbBridge = createAdbBridge();
         // assume "adb" is in PATH
@@ -162,12 +182,8 @@ public class DeviceManager implements IDeviceManager {
     }
 
     private void addAvailableDevice(IDevice device) {
-        try {
-            mAvailableDeviceQueue.put(device);
-        } catch (InterruptedException e) {
-            Log.e(LOG_TAG, "interrupted while adding device");
-            Log.e(LOG_TAG, e);
-        }
+        mAvailableDeviceQueue.add(device);
+
     }
 
     /**
@@ -210,7 +226,18 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public ITestDevice allocateDevice(long timeout) {
-        IDevice allocatedDevice = pollAvailableDevice(timeout);
+        IDevice allocatedDevice = pollAvailableDevice(timeout, ANY_DEVICE_OPTIONS);
+        if (allocatedDevice == null) {
+            return null;
+        }
+        return createAllocatedDevice(allocatedDevice);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public ITestDevice allocateDevice(long timeout, DeviceSelectionOptions options) {
+        IDevice allocatedDevice = pollAvailableDevice(timeout, options);
         if (allocatedDevice == null) {
             return null;
         }
@@ -222,12 +249,14 @@ public class DeviceManager implements IDeviceManager {
      * necessary until an IDevice becomes available.
      *
      * @param timeout the number of ms to wait for device
+     * @param options the {@link DeviceSelectionOptions} the returned device must meet
      *
      * @return the {@link IDevice} or <code>null</code> if interrupted
      */
-    private IDevice pollAvailableDevice(long timeout) {
+    private IDevice pollAvailableDevice(long timeout, DeviceSelectionOptions options) {
         try {
-            return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS);
+            return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,
+                    new DeviceMatcher(options));
         } catch (InterruptedException e) {
             Log.w(LOG_TAG, "interrupted while polling for device");
             return null;

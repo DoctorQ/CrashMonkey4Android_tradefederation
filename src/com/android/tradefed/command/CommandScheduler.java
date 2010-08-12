@@ -16,6 +16,7 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
@@ -23,6 +24,8 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceSelectionMatcher;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
@@ -30,7 +33,7 @@ import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
-import com.android.tradefed.util.ConditionPriorityBlockingQueue.Matcher;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import java.lang.UnsupportedOperationException;
 import java.util.ArrayList;
@@ -126,84 +129,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     /**
-     * Container for for device selection criteria.
-     */
-    public static class DeviceSelectionOptions {
-
-        @Option(name="serial", shortName='s', description=
-            "run this test on a specific device with given serial number(s)")
-        private Collection<String> mSerials = new ArrayList<String>();
-
-        @Option(name="exclude-serial", description=
-            "run this test on any device except those with this serial number(s)")
-        private Collection<String> mNotSerials = new ArrayList<String>();
-
-        @Option(name="product-type", description=
-            "run this test on device with this product type(s)")
-        private Collection<String> mProductTypes = new ArrayList<String>();
-
-        /**
-         * Add a serial number to the device selection options.
-         *
-         * @param serialNumber
-         */
-        public void addSerial(String serialNumber) {
-            mSerials.add(serialNumber);
-        }
-
-        /**
-         * Add a serial number to exclusion list.
-         *
-         * @param serialNumber
-         */
-        public void addNotSerial(String serialNumber) {
-            mNotSerials.add(serialNumber);
-        }
-
-        /**
-         * Add a product type to the device selection options.
-         *
-         * @param serialNumber
-         */
-        public void addProductType(String productType) {
-            mProductTypes.add(productType);
-        }
-
-        /**
-         * Gets a copy of the serial numbers
-         *
-         * @return a {@link Collection} of serial numbers
-         */
-        public Collection<String> getSerials() {
-            return copyCollection(mSerials);
-        }
-
-        /**
-         * Gets a copy of the serial numbers exclusion list
-         *
-         * @return a {@link Collection} of serial numbers
-         */
-        public Collection<String> getNotSerials() {
-            return copyCollection(mNotSerials);
-        }
-
-        /**
-         * Gets a copy of the product type list
-         *
-         * @return a {@link Collection} of product types
-         */
-        public Collection<String> getProductTypes() {
-            return copyCollection(mProductTypes);
-        }
-
-        private Collection<String> copyCollection(Collection<String> original) {
-            Collection<String> listCopy = new ArrayList<String>(original.size());
-            listCopy.addAll(original);
-            return listCopy;
-        }
-    }
-
-    /**
      * Represents one config to be executed
      */
     private static class ConfigCommand {
@@ -272,10 +197,10 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Class that matches a device against a {@link ConfigCommand}
      */
-    private static class DeviceMatcher implements Matcher<ConfigCommand> {
+    private static class DeviceCmdMatcher implements IMatcher<ConfigCommand> {
         private final ITestDevice mDevice;
 
-        DeviceMatcher(ITestDevice device) {
+        DeviceCmdMatcher(ITestDevice device) {
             mDevice = device;
         }
 
@@ -284,33 +209,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         public boolean matches(ConfigCommand cmd) {
             DeviceSelectionOptions deviceOptions = cmd.getDeviceOptions();
-            Collection<String> serials = deviceOptions.getSerials();
-            Collection<String> notSerials = deviceOptions.getNotSerials();
-            Collection<String> productTypes = deviceOptions.getProductTypes();
-
-            if (!serials.isEmpty() &&
-                    !serials.contains(mDevice.getSerialNumber())) {
-                return false;
-            }
-            if (notSerials.contains(mDevice.getSerialNumber())) {
-                return false;
-            }
-            if (!productTypes.isEmpty() &&
-                    !productTypes.contains(getDeviceProductType(mDevice))) {
-                return false;
-            }
-            return true;
-        }
-
-        private String getDeviceProductType(ITestDevice device) {
-            try {
-                return device.getProductType();
-            } catch (DeviceNotAvailableException e) {
-                Log.w(LOG_TAG, String.format(
-                        "Tried to retrieve product type for device %s but it is unavailable",
-                        device.getSerialNumber()));
-                return "unknown";
-            }
+            return DeviceSelectionMatcher.matches(mDevice.getIDevice(), deviceOptions);
         }
     }
 
@@ -461,7 +360,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 // ignore
             }
         }
-        System.out.println("All done");
+        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "All done");
         exit(manager);
     }
 
@@ -524,7 +423,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
         ConfigCommand cmd = null;
         try {
-            cmd = mConfigQueue.take(new DeviceMatcher(device));
+            cmd = mConfigQueue.take(new DeviceCmdMatcher(device));
             if (cmd.getCommandOptions().isLoopMode()) {
                 returnConfigToQueue(cmd);
             }

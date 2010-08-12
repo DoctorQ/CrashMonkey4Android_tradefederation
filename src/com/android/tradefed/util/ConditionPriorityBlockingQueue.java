@@ -16,10 +16,12 @@
 package com.android.tradefed.util;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -29,14 +31,14 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @see {@link PriorityBlockingQueue}
  */
-public class ConditionPriorityBlockingQueue<T> {
+public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
 
     /**
      * An interface for determining if elements match some sort of condition.
      *
      * @param <T>
      */
-    public static interface Matcher<T> {
+    public static interface IMatcher<T> {
         /**
          * Determine if given <var>element</var> meets required condition
          *
@@ -47,11 +49,11 @@ public class ConditionPriorityBlockingQueue<T> {
     }
 
     /**
-     * A {@link Matcher} that matches any object.
+     * A {@link IMatcher} that matches any object.
      *
      * @param <T>
      */
-    public static class AlwaysMatch<T> implements Matcher<T> {
+    public static class AlwaysMatch<T> implements IMatcher<T> {
 
         /**
          * {@inheritDoc}
@@ -62,10 +64,10 @@ public class ConditionPriorityBlockingQueue<T> {
     }
 
     private static class ConditionMatcherPair<T> {
-        private final Matcher<T> mMatcher;
+        private final IMatcher<T> mMatcher;
         private final Condition mCondition;
 
-        ConditionMatcherPair(Matcher<T> m, Condition c) {
+        ConditionMatcherPair(IMatcher<T> m, Condition c) {
             mMatcher = m;
             mCondition = c;
         }
@@ -77,7 +79,7 @@ public class ConditionPriorityBlockingQueue<T> {
     /** the global lock */
     private final ReentrantLock mLock = new ReentrantLock(true);
     /**
-     * List of {@link Matcher}'s that are waiting for an object to be added to queue that meets
+     * List of {@link IMatcher}'s that are waiting for an object to be added to queue that meets
      * their criteria
      */
     private final List<ConditionMatcherPair<T>> mWaitingMatcherList;
@@ -114,12 +116,13 @@ public class ConditionPriorityBlockingQueue<T> {
     }
 
     /**
-     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T
-     * in the queue where <var>matcher.matches(T)</var> is <code>true</code>.
+     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
+     * the queue where <var>matcher.matches(T)</var> is <code>true</code>.
      *
+     * @param matcher the {@link IMatcher} to use to evaluate elements
      * @return the minimum matched element or <code>null</code> if there are no matching elements
      */
-    public T poll(Matcher<T> matcher) {
+    public T poll(IMatcher<T> matcher) {
         mLock.lock();
         try {
             // reference to the current min object
@@ -135,6 +138,65 @@ public class ConditionPriorityBlockingQueue<T> {
                 mList.remove(minObject);
             }
             return minObject;
+        } finally {
+            mLock.unlock();
+        }
+    }
+
+    /**
+     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
+     * the queue where <var>matcher.matches(T)</var> is <code>true</code>.
+     * <p/>
+     * Blocks up to <var>timeout</var> time for an element to become available.
+     *
+     * @param timeout the amount of time to wait for an element to become available
+     * @param unit the {@link TimeUnit} of timeout
+     * @param matcher the {@link IMatcher} to use to evaluate elements
+     * @return the minimum matched element or <code>null</code> if there are no matching elements
+     */
+    public T poll(long timeout, TimeUnit unit, IMatcher<T> matcher) throws InterruptedException {
+        Long nanos = unit.toNanos(timeout);
+        return blockingPoll(nanos, matcher);
+    }
+
+    /**
+     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
+     * the queue where <var>matcher.matches(T)</var> is <code>true</code>.
+     * <p/>
+     * Blocks up to <var>nanos</var> ns time for an element to become available. If <var>nanos</var>
+     * is <code>null</code> will block indefinitely.
+     *
+     * @param nanos the amount of time in ns to wait for an element to become available. If
+     *            <code>null</code> will wait indefinitely
+     * @param matcher the {@link IMatcher} to use to evaluate elements
+     * @return the minimum matched element or <code>null</code> if there are no matching elements
+     * @throws InterruptedException
+     */
+    private T blockingPoll(Long nanos, IMatcher<T> matcher) throws InterruptedException {
+        mLock.lockInterruptibly();
+        try {
+            T matchedObj = null;
+            Condition myCondition = mLock.newCondition();
+            ConditionMatcherPair<T> myMatcherPair = new ConditionMatcherPair<T>(matcher,
+                    myCondition);
+            mWaitingMatcherList.add(myMatcherPair);
+            try {
+                while ((matchedObj = poll(matcher)) == null && (nanos == null || nanos > 0)) {
+                    if (nanos != null) {
+                        nanos = myCondition.awaitNanos(nanos);
+                    } else {
+                        myCondition.await();
+                    }
+                }
+            } catch (InterruptedException ie) {
+                // TODO: do we need to propagate to non-interrupted thread?
+                throw ie;
+            } finally {
+                mWaitingMatcherList.remove(myMatcherPair);
+            }
+
+            assert matchedObj != null;
+            return matchedObj;
         } finally {
             mLock.unlock();
         }
@@ -165,8 +227,10 @@ public class ConditionPriorityBlockingQueue<T> {
     }
 
     /**
-     * Retrieves and removes the head of this queue, waiting if necessary until an element becomes
-     * available.
+     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
+     * the queue.
+     * <p/>
+     * Blocks indefinitely for an element to become available.
      *
      * @return the head of this queue
      * @throws InterruptedException if interrupted while waiting
@@ -179,33 +243,12 @@ public class ConditionPriorityBlockingQueue<T> {
      * Retrieves and removes the first element T in the queue where <var>matcher.matches(T)</var> is
      * <code>true</code>, waiting if necessary until such an element becomes available.
      *
+     * @param matcher the {@link IMatcher} to use to evaluate elements
      * @return the matched element
      * @throws InterruptedException if interrupted while waiting
      */
-    public T take(Matcher<T> matcher) throws InterruptedException {
-        mLock.lockInterruptibly();
-        try {
-            T matchedObj = null;
-            Condition myCondition = mLock.newCondition();
-            ConditionMatcherPair<T> myMatcherPair = new ConditionMatcherPair<T>(matcher,
-                    myCondition);
-            mWaitingMatcherList.add(myMatcherPair);
-            try {
-                while ((matchedObj = poll(matcher)) == null) {
-                    myCondition.await();
-                }
-            } catch (InterruptedException ie) {
-                // TODO: do we need to propagate to non-interrupted thread?
-                throw ie;
-            } finally {
-                mWaitingMatcherList.remove(myMatcherPair);
-            }
-
-            assert matchedObj != null;
-            return matchedObj;
-        } finally {
-            mLock.unlock();
-        }
+    public T take(IMatcher<T> matcher) throws InterruptedException {
+        return blockingPoll(null, matcher);
     }
 
     /**
@@ -241,5 +284,41 @@ public class ConditionPriorityBlockingQueue<T> {
      */
     public void clear() {
         mList.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Iterator<T> iterator() {
+        return mList.iterator();
+    }
+
+    /**
+     * Determine if an object is currently contained in this queue.
+     *
+     * @param object the object to find
+     * @return <code>true</code> if given object is contained in queue. <code>false></code>
+     *         otherwise.
+     */
+    public boolean contains(T object) {
+        return mList.contains(object);
+    }
+
+    /**
+     * @return the number of elements in queue
+     */
+    public int size() {
+        return mList.size();
+    }
+
+    /**
+     * Removes an item from this queue.
+     *
+     * @param object the object to remove
+     * @return <code>true</code> if given object was removed from queue. <code>false></code>
+     *         otherwise.
+     */
+    public boolean remove(T object) {
+        return mList.remove(object);
     }
 }
