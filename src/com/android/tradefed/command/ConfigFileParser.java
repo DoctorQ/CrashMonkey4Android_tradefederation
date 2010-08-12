@@ -15,7 +15,6 @@
  */
 package com.android.tradefed.command;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 
@@ -23,7 +22,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.lang.IllegalArgumentException;
 
 /**
  * Parser for file that contains set of configs.
