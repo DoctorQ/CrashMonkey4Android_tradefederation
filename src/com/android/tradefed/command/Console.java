@@ -19,7 +19,6 @@ package com.android.tradefed.command;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-
 import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
@@ -27,16 +26,12 @@ import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 
-import java.lang.UnsupportedOperationException;
-
-import java.io.BufferedReader;
-// not importing java.io.Console because of class name conflict
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.InputStreamReader;
 import java.io.IOException;
-
 import java.util.Collection;
+
+// not importing java.io.Console because of class name conflict
 
 /**
  * Main TradeFederation console providing user with the interface to interact
