@@ -208,7 +208,7 @@ class TestDevice implements IManagedTestDevice {
      */
     public String getProductType() throws DeviceNotAvailableException {
         String productType = getIDevice().getProperty("ro.product.board");
-        if (productType == null) {
+        if (productType == null || productType.length() == 0) {
             // this is likely because ddms hasn't processed all the properties yet, query this
             // property directly
             if (getDeviceState() == TestDeviceState.FASTBOOT) {
@@ -219,7 +219,13 @@ class TestDevice implements IManagedTestDevice {
             } else {
                 Log.w(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying", getSerialNumber()));
-                return executeShellCommand("getprop ro.product.board");
+                productType = executeShellCommand("getprop ro.product.board").trim();
+                if (productType == null || productType.length() == 0) {
+                    // last ditch effort; try ro.product.device
+                    productType = executeShellCommand("getprop ro.product.device").trim();
+                    Log.w(LOG_TAG, String.format("Fell back to ro.product.device because " +
+                            "ro.product.board is unset. product type is %s.", productType));
+                }
             }
         }
         return productType;
