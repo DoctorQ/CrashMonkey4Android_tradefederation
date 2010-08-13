@@ -16,18 +16,16 @@
 
 package com.android.tradefed.targetsetup;
 
-import com.android.tradefed.targetsetup.BuildInfo;
-import com.android.tradefed.targetsetup.IBuildInfo;
-
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * A {@link IBuildInfo} that represents an Android application and its test package.
+ * A {@link IBuildInfo} that represents an Android application and its test package(s).
  */
 public class AppBuildInfo extends BuildInfo {
 
-    private File mAppPackageFile = null;
-    private File mTestPackageFile = null;
+    private List<File> mAppPackageFiles = new ArrayList<File>();
 
     /**
      * Creates a {@link AppBuildInfo}.
@@ -41,45 +39,28 @@ public class AppBuildInfo extends BuildInfo {
     }
 
     /**
-     * Get the local app apk file.
+     * Gets a copy of the list of local app apk file(s).
      */
-    public File getAppPackageFile() {
-        return mAppPackageFile;
+    public List<File> getAppPackageFiles() {
+        List<File> listCopy = new ArrayList<File>(mAppPackageFiles.size());
+        listCopy.addAll(mAppPackageFiles);
+        return listCopy;
     }
 
     /**
-     * Set the local app apk file.
+     * Adds the local apk file.
      */
-    public void setAppPackageFile(File appPackageFile) {
-        mAppPackageFile = appPackageFile;
-    }
-
-    /**
-     * Get the test package apk file.
-     */
-    public File getTestPackageFile() {
-        return mTestPackageFile;
-    }
-
-    /**
-     * Set the local tests apk file.
-     */
-    public void setTestPackageFile(File testPackageFile) {
-        mTestPackageFile = testPackageFile;
+    public void addAppPackageFile(File appPackageFile) {
+        mAppPackageFiles.add(appPackageFile);
     }
 
     /**
      * Removes all temporary files
      */
     public void cleanUp() {
-        if (mAppPackageFile != null) {
-            mAppPackageFile.delete();
-            mAppPackageFile = null;
+        for (File appPackageFile : mAppPackageFiles) {
+            appPackageFile.delete();
         }
-        if (mTestPackageFile != null) {
-            mTestPackageFile.delete();
-            mTestPackageFile = null;
-        }
+        mAppPackageFiles.clear();
     }
-
 }

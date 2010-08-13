@@ -20,6 +20,10 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * A {@link ITargetPreparer} that installs an apk and its tests.
  */
@@ -27,11 +31,9 @@ public class AppSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "AppSetup";
 
-    @Option(name="app-package-name", description="the package name of app")
-    private String mAppPackageName = null;
-
-    @Option(name="test-package-name", description="the package name of tests")
-    private String mTestPackageName= null;
+    @Option(name="app-package-name", description="the package name(s) of app and tests. " +
+            "Used for device cleanup of old packages before starting tests.")
+    private Collection<String> mAppPackageNames = new ArrayList<String>();
 
     @Option(name="reboot", description="reboot device during setup")
     private boolean mReboot = true;
@@ -44,21 +46,24 @@ public class AppSetup implements ITargetPreparer {
         if (!(buildInfo instanceof AppBuildInfo)) {
             throw new IllegalArgumentException("Provided buildInfo is not a AppBuildInfo");
         }
-        if (mAppPackageName == null || mTestPackageName == null) {
+        if (mAppPackageNames.size() == 0) {
             throw new IllegalArgumentException(
                     "Missing app-package-name or test-package-name options");
         }
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        device.uninstallPackage(mAppPackageName);
-        device.uninstallPackage(mTestPackageName);
+        for (String packageName : mAppPackageNames) {
+            device.uninstallPackage(packageName);
+        }
+
         if (mReboot) {
             // reboot device to get a clean state
             device.reboot();
         }
         AppBuildInfo appBuild = (AppBuildInfo)buildInfo;
-        device.installPackage(appBuild.getAppPackageFile(), true);
-        device.installPackage(appBuild.getTestPackageFile(), true);
+        for (File apkFile : appBuild.getAppPackageFiles()) {
+            device.installPackage(apkFile, true);
+        }
 
-        // TODO: consider adding 'cleanup' step that would uninstall apks when test is finished
     }
+
 }
