@@ -49,8 +49,9 @@ public class DeviceManager implements IDeviceManager {
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
     private static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
-    /** max wait time for device to become available when becoming online */
-    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 2*60*1000;
+    /** time to monitor device adb connection before declaring it available for testing */
+    // TODO: 5 seconds is a bit annoyingly long. Try to reduce in future
+    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 5*1000;
 
     /** a {@link DeviceSelectionOptions} that matches any device */
     private static final DeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
@@ -64,7 +65,7 @@ public class DeviceManager implements IDeviceManager {
     private IAndroidDebugBridge mAdbBridge;
     private final ManagedDeviceListener mManagedDeviceListener;
     private final FastbootMonitor mFastbootMonitor;
-    private Set<String> mCheckDeviceSet;
+    private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
 
     private boolean mEnableLogcat = true;
 
@@ -95,7 +96,7 @@ public class DeviceManager implements IDeviceManager {
         // use Hashtable since it is synchronized
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
-        mCheckDeviceSet = Collections.synchronizedSet(new HashSet<String>());
+        mCheckDeviceMap = new Hashtable<String, IDeviceStateMonitor>();
         mAdbBridge = createAdbBridge();
         // assume "adb" is in PATH
         // TODO: make this configurable
@@ -142,13 +143,14 @@ public class DeviceManager implements IDeviceManager {
      * @param device
      */
     private void checkAndAddAvailableDevice(final IDevice device) {
-        if (mCheckDeviceSet.contains(device.getSerialNumber())) {
+        if (mCheckDeviceMap.containsKey(device.getSerialNumber())) {
             // device already being checked, ignore
             Log.d(LOG_TAG, String.format("Already checking new device %s, ignoring",
                     device.getSerialNumber()));
             return;
         }
-        mCheckDeviceSet.add(device.getSerialNumber());
+        final IDeviceStateMonitor monitor = createStateMonitor(device);
+        mCheckDeviceMap.put(device.getSerialNumber(), monitor);
 
         final String threadName = String.format("Check device %s", device.getSerialNumber());
         Thread checkThread = new Thread(threadName) {
@@ -156,17 +158,23 @@ public class DeviceManager implements IDeviceManager {
             public void run() {
                 Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
                         device.getSerialNumber()));
-                IDeviceStateMonitor monitor = createStateMonitor(device);
-                if (monitor.waitForDeviceAvailable(CHECK_WAIT_DEVICE_AVAIL_MS) != null) {
-                    Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
-                            "Detected new device %s", device.getSerialNumber()));
-                    addAvailableDevice(device);
-                } else {
+                // Ensure the device adb connection is stable before allocating for testing.
+                // To do so, wait a small amount to ensure device does not disappear from adb
+                boolean isAvail = false;
+                if (!monitor.waitForDeviceNotAvailable(CHECK_WAIT_DEVICE_AVAIL_MS)) {
+                    if (monitor.getDeviceState().equals(TestDeviceState.ONLINE)) {
+                        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
+                                "Detected new device %s", device.getSerialNumber()));
+                        addAvailableDevice(device);
+                        isAvail = true;
+                    }
+                }
+                if (!isAvail) {
                     Log.e(LOG_TAG, String.format(
-                            "Device %s is not responding, skip adding to available pool",
+                            "Device %s adb connection is not stable, skip adding to available pool",
                             device.getSerialNumber()));
                 }
-                mCheckDeviceSet.remove(device.getSerialNumber());
+                mCheckDeviceMap.remove(device.getSerialNumber());
             }
         };
         checkThread.start();
@@ -386,9 +394,12 @@ public class DeviceManager implements IDeviceManager {
                 if (testDevice != null) {
                     TestDeviceState newState = TestDeviceState.getStateByDdms(device.getState());
                     testDevice.setDeviceState(newState);
+                } else if (mCheckDeviceMap.containsKey(device.getSerialNumber())) {
+                    IDeviceStateMonitor monitor = mCheckDeviceMap.get(device.getSerialNumber());
+                    monitor.setState(TestDeviceState.getStateByDdms(device.getState()));
                 } else if (!mAvailableDeviceQueue.contains(device) &&
                         device.getState() == IDevice.DeviceState.ONLINE) {
-                            checkAndAddAvailableDevice(device);
+                    checkAndAddAvailableDevice(device);
                 }
             }
         }
@@ -404,6 +415,9 @@ public class DeviceManager implements IDeviceManager {
                 if (isValidDeviceSerial(device.getSerialNumber()) &&
                         device.getState() == IDevice.DeviceState.ONLINE) {
                     checkAndAddAvailableDevice(device);
+                } else if (mCheckDeviceMap.containsKey(device.getSerialNumber())) {
+                    IDeviceStateMonitor monitor = mCheckDeviceMap.get(device.getSerialNumber());
+                    monitor.setState(TestDeviceState.getStateByDdms(device.getState()));
                 }
             } else {
                 // this device is known already. However DDMS will allocate a new IDevice, so need
@@ -432,6 +446,10 @@ public class DeviceManager implements IDeviceManager {
                     disconnectedDevice.getSerialNumber());
             if (testDevice != null) {
                 testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+            } else if (mCheckDeviceMap.containsKey(disconnectedDevice.getSerialNumber())) {
+                IDeviceStateMonitor monitor = mCheckDeviceMap.get(
+                        disconnectedDevice.getSerialNumber());
+                monitor.setState(TestDeviceState.NOT_AVAILABLE);
             }
         }
     }

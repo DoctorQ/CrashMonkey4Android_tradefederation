@@ -459,6 +459,7 @@ public class TestDeviceTest extends TestCase {
     public void testRunInstrumentationTests() throws Exception {
         IRemoteAndroidTestRunner mockRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
         Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(0);
+        mockRunner.setMaxtimeToOutputResponse(EasyMock.anyInt());
         // expect runner.run command to be called
         mockRunner.run(listeners);
         EasyMock.replay(mockRunner);
@@ -474,6 +475,7 @@ public class TestDeviceTest extends TestCase {
         Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
         ITestRunListener listener = EasyMock.createMock(ITestRunListener.class);
         listeners.add(listener);
+        mockRunner.setMaxtimeToOutputResponse(EasyMock.anyInt());
         mockRunner.run(listeners);
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
@@ -498,6 +500,7 @@ public class TestDeviceTest extends TestCase {
         Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
         ITestRunListener listener = EasyMock.createMock(ITestRunListener.class);
         listeners.add(listener);
+        mockRunner.setMaxtimeToOutputResponse(EasyMock.anyInt());
         mockRunner.run(listeners);
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
