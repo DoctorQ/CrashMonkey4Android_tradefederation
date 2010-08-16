@@ -201,14 +201,28 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < waitTime) {
             final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-            final String cmd = "cat /proc/mounts";
-            String externalStore = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            final CollectingOutputReceiver bitBucket = new CollectingOutputReceiver();
+            final long number = System.currentTimeMillis();
+            final String externalStore = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+
+            final String testFile = String.format("'%s/%d'", externalStore, number);
+            final String testString = String.format("number %d one", number);
+            final String writeCmd = String.format("echo '%s' > %s", testString, testFile);
+            final String checkCmd = String.format("cat %s", testFile);
+            final String cleanupCmd = String.format("rm %s", testFile);
+            String cmd = null;
             if (externalStore != null) {
                 try {
-                    getIDevice().executeShellCommand(cmd, receiver, MAX_OP_TIME);
+                    cmd = writeCmd;
+                    getIDevice().executeShellCommand(writeCmd, bitBucket, MAX_OP_TIME);
+                    cmd = checkCmd;
+                    getIDevice().executeShellCommand(checkCmd, receiver, MAX_OP_TIME);
+                    cmd = cleanupCmd;
+                    getIDevice().executeShellCommand(cleanupCmd, bitBucket, MAX_OP_TIME);
+
                     String output = receiver.getOutput();
-                    Log.v(LOG_TAG, String.format("%s returned %s", cmd, output));
-                    if (output.contains(externalStore)) {
+                    Log.v(LOG_TAG, String.format("%s returned %s", checkCmd, output));
+                    if (output.contains(testString)) {
                         return true;
                     }
                 } catch (IOException e) {
@@ -220,7 +234,6 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
                 } catch (ShellCommandUnresponsiveException e) {
                     Log.i(LOG_TAG, String.format("%s failed: %s", cmd, e.getMessage()));
                 }
-
             } else {
                 Log.w(LOG_TAG, String.format("Failed to get external store mount point for %s",
                         getSerialNumber()));
