@@ -22,6 +22,8 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.device.DeviceManager;
+import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.QuotationAwareTokenizer;
@@ -129,11 +131,11 @@ public class Console {
 
             String input = "";
             boolean shouldExit = false;
-            Thread.sleep(1500);  // Try to let preliminary messages scroll past
+            Thread.sleep(500);  // Try to let preliminary messages scroll past
 
             while (!shouldExit) {
                 input = getConsoleInput();
-                System.err.println("Got input line: " + input);
+                // System.err.println("Got input line: " + input);
                 String[] tokens = QuotationAwareTokenizer.tokenizeLine(input);
 
                 if (tokens.length == 0) {
@@ -150,7 +152,10 @@ public class Console {
                 if ("exit".equals(cmd) || "q".equals(cmd)) {
                     shouldExit = true;
                 } else if ("?".equals(cmd) || "help".equals(cmd) || "h".equals(cmd)) {
-                    mTerminal.printf("Muahahahaha!  Type 'exit' to exit.\n");
+                    mTerminal.printf("Not-so-helpful help:\n" +
+                            "'q' == 'exit'\n" +
+                            "'l i' == 'list invocations'\n" +
+                            "'l d' == 'list devices'\n");
                 } else if ("list".equals(cmd) || "l".equals(cmd)) {
                     if ("i".equals(index(tokens, 1)) || "invocations".equals(index(tokens, 1))) {
                         Collection<ITestInvocation> invs = mScheduler.listInvocations();
@@ -158,9 +163,19 @@ public class Console {
                         for (ITestInvocation inv : invs) {
                             System.err.println("Got invocation: " + inv);
                         }
+                    } else if ("d".equals(index(tokens, 1)) || "devices".equals(index(tokens, 1))) {
+                        IDeviceManager manager = DeviceManager.getInstance();
+                        Collection<String> devices = null;
+
+                        devices = manager.getAvailableDevices();
+                        mTerminal.printf("Available devices:   %s\n", devices);
+                        devices = manager.getUnavailableDevices();
+                        mTerminal.printf("Unavailable devices: %s\n", devices);
+                        devices = manager.getAllocatedDevices();
+                        mTerminal.printf("Allocated devices:   %s\n", devices);
                     }
                 } else {
-                    mTerminal.printf("Unknown command '%s'.  Type ? for help.\n", cmd);
+                    mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", cmd);
                 }
 
                 Thread.sleep(100);
