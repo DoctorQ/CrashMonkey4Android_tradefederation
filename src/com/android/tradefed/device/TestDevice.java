@@ -717,8 +717,7 @@ class TestDevice implements IManagedTestDevice {
             }
             CommandResult result = getRunUtil().runTimedCmd(timeout, fullCmd);
             mFastbootLock.release();
-            // a fastboot command will always time out if device not available
-            if (result.getStatus() != CommandStatus.TIMED_OUT) {
+            if (!isRecoveryNeeded(result)) {
                 return result;
             }
             recoverDeviceFromBootloader();
@@ -726,6 +725,30 @@ class TestDevice implements IManagedTestDevice {
         throw new DeviceUnresponsiveException(String.format("Attempted fastboot %s multiple "
                 + "times on device %s without communication success. Aborting.", cmdArgs[0],
                 getSerialNumber()));
+    }
+
+    /**
+     * Evaluate the given fastboot result to determine if recovery mode needs to be entered
+     *
+     * @param fastbootResult the {@link CommandResult} from a fastboot command
+     * @return <code>true</code> if recovery mode should be entered, <code>false</code> otherwise.
+     */
+    private boolean isRecoveryNeeded(CommandResult fastbootResult) {
+        if (fastbootResult.getStatus().equals(CommandStatus.TIMED_OUT)) {
+            // fastboot commands always time out if devices is not present
+            return true;
+        } else {
+            // check for specific error messages in result that indicate bad device communication
+            // and recovery mode is needed
+            if (fastbootResult.getStderr().contains("data transfer failure (Protocol error)") ||
+                    fastbootResult.getStderr().contains("status read failed (No such device)")) {
+                Log.w(LOG_TAG, String.format(
+                        "Bad fastboot response from device %s. stderr: %s. Entering recovery",
+                        getSerialNumber(), fastbootResult.getStderr()));
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
