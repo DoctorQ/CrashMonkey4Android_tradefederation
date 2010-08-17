@@ -18,8 +18,12 @@ package com.android.tradefed.config;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.ILeveledLogOutput;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.PrintStream;
 
 import junit.framework.TestCase;
@@ -60,10 +64,31 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
-     * Test that a config xml defined in this test jar can be read
+     * Test that a config xml defined in this test jar can be read as a built-in
      */
     public void testGetConfiguration_extension() throws ConfigurationException {
         assertConfigValid("test-config");
+    }
+
+    /**
+     * Test specifying a config xml by file path
+     */
+    public void testGetConfiguration_xmlpath() throws ConfigurationException, IOException {
+        // extract the test-config.xml into a tmp file
+        BufferedInputStream configStream = new BufferedInputStream(getClass().getResourceAsStream(
+                "/config/test-config.xml"));
+        File tmpFile = File.createTempFile("test-config", ".xml");
+        tmpFile.deleteOnExit();
+        BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(tmpFile));
+        int readByte = -1;
+        while ((readByte = configStream.read()) != -1) {
+            outStream.write(readByte);
+        }
+        configStream.close();
+        outStream.close();
+        assertConfigValid(tmpFile.getAbsolutePath());
+        // check reading it again - should grab the cached version
+        assertConfigValid(tmpFile.getAbsolutePath());
     }
 
     /**
@@ -89,19 +114,6 @@ public class ConfigurationFactoryTest extends TestCase {
             mFactory.getConfiguration("non existent");
             fail("did not throw ConfigurationException");
         } catch (ConfigurationException e) {
-            // expected
-        }
-    }
-
-    /**
-     * Placeholder Test method for {@link ConfigurationFactory#createConfigurationFromXML(File)}.
-     */
-    public void testCreateConfigurationFromXML() throws ConfigurationException {
-        try {
-            // TODO: use a mock File
-            mFactory.createConfigurationFromXML(new File("mockFile"));
-            fail("did not throw UnsupportedOperationException");
-        } catch (UnsupportedOperationException e) {
             // expected
         }
     }

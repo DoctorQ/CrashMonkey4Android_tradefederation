@@ -17,7 +17,9 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Collection;
@@ -72,24 +74,32 @@ public class ConfigurationFactory implements IConfigurationFactory {
         return def;
     }
 
+    /**
+     * Loads a configuration.
+     *
+     * @param name the name of a built-in configuration to load or a file path to configuration xml
+     *            to load
+     * @return the loaded {@link ConfigurationDef}
+     * @throws ConfigurationException if a configuration with given name/file path cannot be loaded
+     *             or parsed
+     */
     private ConfigurationDef loadConfiguration(String name) throws ConfigurationException {
         Log.i(LOG_TAG, String.format("Loading configuration '%s'", name));
         InputStream configStream = getClass().getResourceAsStream(
                 String.format("/config/%s.xml", name));
         if (configStream == null) {
-            throw new ConfigurationException(String.format("Could not find configuration '%s'",
-                    name));
+            // now try to load from file
+            try {
+                configStream = new FileInputStream(name);
+            } catch (FileNotFoundException e) {
+                throw new ConfigurationException(String.format("Could not find configuration '%s'",
+                        name));
+            }
         }
+        // buffer input for performance - just in case config file is large
+        BufferedInputStream bufStream = new BufferedInputStream(configStream);
         ConfigurationXmlParser parser = new ConfigurationXmlParser();
-        return parser.parse(name, configStream);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public IConfiguration createConfigurationFromXML(File xmlFile)
-            throws ConfigurationException {
-        throw new UnsupportedOperationException();
+        return parser.parse(name, bufStream);
     }
 
     /**
@@ -140,7 +150,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
      * {@inheritDoc}
      */
     public void printHelp(String[] args, PrintStream out, Class<?>... additionalSources) {
-        out.println("Usage: [options] <configuration_name>");
+        out.println("Usage: [options] <configuration_name OR configuration xml file path>");
         out.println();
         // expected args is either just "--help", or "--help <configname>"
         if (args.length > 1) {

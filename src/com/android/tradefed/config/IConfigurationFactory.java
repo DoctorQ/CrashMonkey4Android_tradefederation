@@ -16,7 +16,6 @@
 
 package com.android.tradefed.config;
 
-import java.io.File;
 import java.io.PrintStream;
 
 /**
@@ -25,27 +24,19 @@ import java.io.PrintStream;
 public interface IConfigurationFactory {
 
     /**
-     * Gets the built-in {@link IConfiguration} with given name.
+     * Gets a {@link IConfiguration}
      *
-     * @param name the unique name of the {@link IConfiguration}
+     * @param name the unique name of a built-in {@link IConfiguration} or a file path to a
+     *            configuration xml
      * @return the {@link IConfiguration}
      * @throws ConfigurationException if the {@link IConfiguration} could not be loaded.
      */
     public IConfiguration getConfiguration(String name) throws ConfigurationException;
 
     /**
-     * Create the {@link IConfiguration} from given XML file.
-     *
-     * @param xmlFile the {@link File} to read configuration from
-     * @return the loaded {@link IConfiguration}.
-     * @throws {@link ConfigurationException} if configuration could not be loaded
-     */
-    public IConfiguration createConfigurationFromXML(File xmlFile) throws ConfigurationException;
-
-    /**
      * Create the {@link IConfiguration} from command line arguments.
      * <p/>
-     * Expected format is [options] <configuration name>.
+     * Expected format is [options] <configuration name OR file path>.
      *
      * @param args the command line arguments
      * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have
@@ -58,7 +49,7 @@ public interface IConfigurationFactory {
      * Create the {@link IConfiguration} and populate additional {@link Option} objects from command
      * line arguments.
      * <p/>
-     * Expected format is [options] <configuration name>.
+     * Expected format is [options] <configuration name OR file path>.
      *
      * @param args the command line arguments
      * @param additionalOptionSources additional objects with {@link Option} fields to set
