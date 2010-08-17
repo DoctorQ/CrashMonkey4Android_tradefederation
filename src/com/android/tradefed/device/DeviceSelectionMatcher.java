@@ -49,6 +49,11 @@ public class DeviceSelectionMatcher {
     }
 
     private static String getDeviceProductType(IDevice device) {
-        return device.getProperty("ro.product.board");
+        String type = device.getProperty("ro.product.board");
+        if(type == null || type.isEmpty()) {
+            // last-chance fallback to ro.product.device, which may be set if ro.product.board isn't
+            type = device.getProperty("ro.product.device");
+        }
+        return type;
     }
 }
