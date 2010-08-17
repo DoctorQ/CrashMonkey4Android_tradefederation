@@ -309,7 +309,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
             IFileEntry nextDirectory = nativeTestDirectory.findChild(pathSubcomponent);
 
             if (nextDirectory == null) {
-                Log.e(LOG_TAG, String.format("Cound not find subfolder %s in %s!", pathSubcomponent,
+                Log.w(LOG_TAG, String.format("Cound not find subfolder %s in %s!", pathSubcomponent,
                         nativeTestDirectory.getFullEscapedPath()));
                 return;
             }
