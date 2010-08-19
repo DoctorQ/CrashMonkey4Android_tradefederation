@@ -85,5 +85,13 @@ public interface ICommandScheduler {
      * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
      */
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException;
+
+    /**
+     * Get a list of current configurations.
+     *
+     * @return A list of current configurations, pre-serialized
+     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     */
+    public Collection<String> listConfigs() throws UnsupportedOperationException;
 }
 

@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
@@ -523,7 +524,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     public Collection<ITestInvocation> listInvocations() throws UnsupportedOperationException {
-        Collection<ITestInvocation> invs = new HashSet<ITestInvocation>(mInvocationThreads.size());
+        Collection<ITestInvocation> invs = new ArrayList<ITestInvocation>(mInvocationThreads.size());
 
         if (mInvocationThreads == null) {
             return null;
@@ -542,4 +543,21 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Collection<String> listConfigs() throws UnsupportedOperationException {
+        Iterator<ConfigCommand> configIter = mConfigQueue.iterator();
+        Collection<String> stringConfigs = new ArrayList<String>();
+        ConfigCommand config;
+
+        while (configIter.hasNext()) {
+            config = configIter.next();
+            stringConfigs.add(getArgString(config.getArgs()));
+        }
+
+        return stringConfigs;
+    }
+
 }

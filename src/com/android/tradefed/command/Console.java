@@ -155,13 +155,15 @@ public class Console {
                     mTerminal.printf("Not-so-helpful help:\n" +
                             "'q' == 'exit'\n" +
                             "'l i' == 'list invocations'\n" +
-                            "'l d' == 'list devices'\n");
+                            "'l d' == 'list devices'\n" +
+                            "'l c' == 'list configs'\n");
                 } else if ("list".equals(cmd) || "l".equals(cmd)) {
                     if ("i".equals(index(tokens, 1)) || "invocations".equals(index(tokens, 1))) {
                         Collection<ITestInvocation> invs = mScheduler.listInvocations();
+                        int counter = 1;
 
                         for (ITestInvocation inv : invs) {
-                            System.err.println("Got invocation: " + inv);
+                            mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
                         }
                     } else if ("d".equals(index(tokens, 1)) || "devices".equals(index(tokens, 1))) {
                         IDeviceManager manager = DeviceManager.getInstance();
@@ -173,6 +175,13 @@ public class Console {
                         mTerminal.printf("Unavailable devices: %s\n", devices);
                         devices = manager.getAllocatedDevices();
                         mTerminal.printf("Allocated devices:   %s\n", devices);
+                    } else if ("c".equals(index(tokens, 1)) || "configs".equals(index(tokens, 1))) {
+                        Collection<String> configs = mScheduler.listConfigs();
+                        int counter = 1;
+
+                        for (String config : configs) {
+                            mTerminal.printf("Got config %d: %s\n", counter++, config);
+                        }
                     }
                 } else {
                     mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", cmd);
