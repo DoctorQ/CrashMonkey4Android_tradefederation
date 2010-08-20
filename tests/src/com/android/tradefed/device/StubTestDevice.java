@@ -231,7 +231,8 @@ public class StubTestDevice implements IManagedTestDevice {
         return null;
     }
 
-    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException {
+    public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException {
         // ignore
         return false;
     }

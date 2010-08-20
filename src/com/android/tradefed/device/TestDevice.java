@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
+import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -26,7 +27,6 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
@@ -1178,14 +1178,22 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException {
+    public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Connecting to wifi network %s on %s", wifiSsid,
                 getSerialNumber()));
         WifiHelper wifi = new WifiHelper(this);
         wifi.enableWifi();
         // TODO: return false here if failed?
         wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
-        Integer networkId = wifi.addOpenNetwork(wifiSsid);
+
+        Integer networkId = null;
+        if (wifiPsk != null) {
+            networkId = wifi.addWpaPskNetwork(wifiSsid, wifiPsk);
+        } else {
+            networkId = wifi.addOpenNetwork(wifiSsid);
+        }
+
         if (networkId == null) {
             Log.e(LOG_TAG, String.format("Failed to add wifi network %s on %s", wifiSsid,
                     getSerialNumber()));

@@ -232,6 +232,32 @@ class WifiHelper {
     }
 
     /**
+     * Adds the WPA-PSK security network identified by ssid.
+     *
+     * @param ssid the ssid of network to add.
+     * @param psk the WPA-PSK passphrase to use
+     * @return an integer number identifying the profile created in wpa_supplicant configuration.
+     *         <code>null</code> if an error occured.
+     * @throws DeviceNotAvailableException
+     */
+    Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
+        Integer networkId = addOpenNetwork(ssid);
+        if (networkId == null) {
+            return null;
+        }
+        if (!callWpaCliChecked(String.format("set_network %d key_mgmt WPA-PSK", networkId))) {
+            removeNetwork(networkId);
+            return null;
+        }
+        String setPskCmd = String.format("set_network %d psk '\"%s\"'", networkId, psk);
+        if (!callWpaCliChecked(setPskCmd)) {
+            removeNetwork(networkId);
+            return null;
+        }
+         return networkId;
+    }
+
+    /**
      * Associate with the wifi network identified by the provided integer.
      *
      * @param networkId the network id identifying its profile in wpa_supplicant configuration,

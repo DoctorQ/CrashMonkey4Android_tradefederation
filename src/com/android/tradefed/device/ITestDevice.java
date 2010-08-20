@@ -271,12 +271,14 @@ public interface ITestDevice {
      * adb needs to be running as root.
      *
      * @param wifiSsid the wifi ssid to connect to
+     * @param wifiPsk PSK passphrase or null if unencrypted
      * @return <code>true</code> if connected to wifi network successfully. <code>false</code>
      *         otherwise
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      *             recovered.
      */
-    public boolean connectToWifiNetwork(String wifiSsid) throws DeviceNotAvailableException;
+    public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException;
 
     /**
      * Disconnects from a wifi network.
