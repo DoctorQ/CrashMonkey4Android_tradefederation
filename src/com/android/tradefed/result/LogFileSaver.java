@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -87,9 +88,11 @@ public class LogFileSaver implements ILogFileSaver {
             }
         } else {
             if (buildReportDir.mkdirs()) {
-                // TODO: make parent directories writable too
-                buildReportDir.setWritable(true);
-                buildReportDir.setReadable(true);
+                if (!FileUtil.setGroupReadWritable(buildReportDir)) {
+                    Log.w(LOG_TAG, String.format(
+                            "Failed to make  build-specific output dir %s group writable.",
+                            buildReportDir.getAbsolutePath()));
+                }
                 return buildReportDir;
             } else {
                 Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +
