@@ -19,6 +19,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
@@ -55,29 +56,13 @@ public class FileLogger implements ILeveledLogOutput {
     }
 
     /**
-     * Constructor for creating a temporary log file in the system's default temp directory,
-     * that will be deleted on program exit.
-     *
-     * @throws ConfigurationException if unable to create log file
-     */
-    public FileLogger() throws ConfigurationException  {
-        this(true);
-    }
-
-    /**
      * Constructor for creating a temporary log file in the system's default temp directory
      *
-     * @param deleteLogOnExit <code>true</code> if log file should be deleted on program exit
      * @throws ConfigurationException if unable to create log file
      */
-    public FileLogger(boolean deleteLogOnExit) throws ConfigurationException {
+    public FileLogger() throws ConfigurationException {
         try {
-            mTempLogFile = File.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
-            // delete the temp file on exit rather than on close, so log is available in case
-            // program fails before logs are collected
-            if (deleteLogOnExit) {
-                mTempLogFile.deleteOnExit();
-            }
+            mTempLogFile = FileUtil.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
         }
         catch (IOException e) {
@@ -182,7 +167,11 @@ public class FileLogger implements ILeveledLogOutput {
         // set mLogWriter to null first before closing, to prevent "write" calls after "close"
         BufferedWriter writer = mLogWriter;
         mLogWriter = null;
-        writer.flush();
-        writer.close();
+        try {
+            writer.flush();
+            writer.close();
+        } finally {
+            mTempLogFile.delete();
+        }
     }
 }

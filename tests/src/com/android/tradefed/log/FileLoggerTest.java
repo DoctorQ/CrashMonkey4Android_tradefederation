@@ -42,13 +42,10 @@ public class FileLoggerTest extends TestCase {
     public void testCreateLogger() throws ConfigurationException, SecurityException {
         FileLogger logger = new FileLogger();
         String tempFile = logger.getFilename();
-        logger.closeLog();
         File logFile = new File(tempFile);
         assertTrue(logFile.exists());
-
-        // clean up after ourselves
-        boolean deleted = logFile.delete();
-        assertTrue(deleted);
+        logger.closeLog();
+        assertFalse(logFile.exists());
     }
 
     /**

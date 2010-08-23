@@ -89,20 +89,6 @@ public class LogRegistryTest extends TestCase {
     }
 
     /**
-     * Tests that {@link LogRegistry#closeLog} calls into the underlying logger's closeLog method.
-     */
-    public void testCloseLog() {
-      ILeveledLogOutput mockLogger = EasyMock.createMock(ILeveledLogOutput.class);
-      LogRegistry logRegistry = LogRegistry.getLogRegistry();
-      logRegistry.registerLogger(mockLogger);
-      mockLogger.closeLog();
-
-      EasyMock.replay(mockLogger);
-      logRegistry.closeLog();
-      logRegistry.unregisterLogger();
-    }
-
-    /**
      * Tests for ensuring new threads spawned without an explicit ThreadGroup will inherit the
      * same logger as the parent's logger.
      */

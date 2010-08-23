@@ -260,6 +260,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 deviceState = FreeDeviceState.UNAVAILABLE;
             } catch (ConfigurationException e) {
                 Log.e(LOG_TAG, e);
+            } catch (FatalHostError e) {
+                Log.logAndDisplay(LogLevel.ERROR, LOG_TAG, String.format(
+                        "Fatal error occurred: %s, shutting down", e.getMessage()));
+                if (e.getCause() != null) {
+                    Log.e(LOG_TAG, e.getCause());
+                }
+                shutdown();
             } catch (Throwable e) {
                 Log.e(LOG_TAG, e);
             } finally {
@@ -288,7 +295,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          * <li>Thread is running the invocation: Do nothing - wait for it to complete normally
          * </ol>
          */
-        public void shutdown() {
+        public void shutdownInvocation() {
             if (getInvocation() == null && mIsStarted) {
                 interrupt();
             }
@@ -508,13 +515,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     public synchronized void shutdown() {
-        mShutDown = true;
-        mConfigQueue.clear();
-        if (mConfigTimer != null) {
-            mConfigTimer.cancel();
-        }
-        for (InvocationThread invThread : mInvocationThreads) {
-            invThread.shutdown();
+        if (!mShutDown) {
+            mShutDown = true;
+            mConfigQueue.clear();
+            if (mConfigTimer != null) {
+                mConfigTimer.cancel();
+            }
+            for (InvocationThread invThread : mInvocationThreads) {
+                invThread.shutdownInvocation();
+            }
         }
     }
 

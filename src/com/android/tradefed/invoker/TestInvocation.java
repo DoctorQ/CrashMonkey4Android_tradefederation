@@ -17,6 +17,7 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
@@ -92,17 +93,17 @@ public class TestInvocation implements ITestInvocation {
                 Log.i(LOG_TAG, "No build to test");
             }
         } catch (TargetSetupError e) {
-            handleError(listeners, e);
-        } catch (IllegalArgumentException e) {
-            handleError(listeners, e);
+            Log.e(LOG_TAG, e);
         } catch (ConfigurationException e) {
-            handleError(listeners, e);
+            Log.e(LOG_TAG, e);
         } catch (DeviceNotAvailableException e) {
             // already logged, just catch and rethrow to prevent uncaught exception logic
             throw e;
+        } catch (FatalHostError e) {
+            throw e;
         } catch (Throwable e) {
             Log.e(LOG_TAG, "Uncaught exception!");
-            handleError(listeners, e);
+            Log.e(LOG_TAG, e);
             // TODO: consider re-throwing ?
         } finally {
             if (logger != null) {
@@ -177,13 +178,17 @@ public class TestInvocation implements ITestInvocation {
             status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, e);
             throw e;
+        } catch (FatalHostError e) {
+            error = e;
+            status = InvocationStatus.FAILED;
+            throw e;
         } catch (Throwable e) {
             error = e;
             status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, "Unexpected exception!");
             Log.e(LOG_TAG, e);
-            // TODO: consider re-throwing
-            // throw e;
+            // TODO: rethrow?
+            //throw e;
         } finally {
             for (ITestInvocationListener listener : listeners) {
                 if (device != null) {
@@ -216,20 +221,6 @@ public class TestInvocation implements ITestInvocation {
      */
     LogRegistry getLogRegistry() {
         return LogRegistry.getLogRegistry();
-    }
-
-    /**
-     * Handle an exception that occurred during test run
-     * @param listener
-     */
-    private void handleError(List<ITestInvocationListener> listeners, Throwable e) {
-        Log.e(LOG_TAG, e);
-        if (listeners != null) {
-            for (ITestInvocationListener listener : listeners) {
-                // TODO: pass in elapsedTime
-                listener.invocationFailed(0, e.getMessage(), e);
-            }
-        }
     }
 
     /**

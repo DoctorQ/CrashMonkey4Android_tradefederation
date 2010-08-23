@@ -46,24 +46,28 @@ public class AppSetup implements ITargetPreparer {
         if (!(buildInfo instanceof AppBuildInfo)) {
             throw new IllegalArgumentException("Provided buildInfo is not a AppBuildInfo");
         }
-        if (mAppPackageNames.size() == 0) {
-            throw new IllegalArgumentException(
-                    "Missing app-package-name or test-package-name options");
-        }
-        Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        for (String packageName : mAppPackageNames) {
-            device.uninstallPackage(packageName);
-        }
-
-        if (mReboot) {
-            // reboot device to get a clean state
-            device.reboot();
-        }
         AppBuildInfo appBuild = (AppBuildInfo)buildInfo;
-        for (File apkFile : appBuild.getAppPackageFiles()) {
-            device.installPackage(apkFile, true);
-        }
+        try {
+            if (mAppPackageNames.size() == 0) {
+                throw new IllegalArgumentException(
+                        "Missing app-package-name or test-package-name options");
+            }
+            Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
+            for (String packageName : mAppPackageNames) {
+                device.uninstallPackage(packageName);
+            }
 
+            if (mReboot) {
+                // reboot device to get a clean state
+                device.reboot();
+            }
+
+            for (File apkFile : appBuild.getAppPackageFiles()) {
+                device.installPackage(apkFile, true);
+            }
+        } finally {
+            appBuild.cleanUp();
+        }
     }
 
 }

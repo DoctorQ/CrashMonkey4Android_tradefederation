@@ -17,6 +17,7 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
@@ -218,6 +219,33 @@ public class TestInvocationTest extends TestCase {
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
         setupNormalInvoke(test);
         mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+        verifyMocks(test);
+    }
+
+    /**
+     * Test the invoke scenario where test run throws {@link FatalHostError}
+     *
+     * @throws Exception if unexpected error occurs
+     */
+    public void testInvoke_fatalError() throws Exception {
+        FatalHostError exception = new FatalHostError("error");
+        IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
+        test.run(mListeners);
+        EasyMock.expectLastCall().andThrow(exception);
+        mMockTestListener.invocationStarted(mMockBuildInfo);
+        mMockTestListener.invocationFailed(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                EasyMock.eq(exception));
+        mMockBuildProvider.buildNotTested(mMockBuildInfo);
+        EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
+        mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
+            (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
+        setupNormalInvoke(test);
+        try {
+            mTestInvocation.invoke(mMockDevice, mMockConfiguration);
+            fail("FatalHostError was not rethrown");
+        } catch (FatalHostError e)  {
+            // expected
+        }
         verifyMocks(test);
     }
 

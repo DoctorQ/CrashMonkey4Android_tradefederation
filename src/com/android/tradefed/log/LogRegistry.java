@@ -19,9 +19,10 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.util.FileUtil;
 
-import java.lang.Thread;
-import java.lang.ThreadGroup;
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -49,7 +50,7 @@ public class LogRegistry implements ILogOutput {
      */
     LogRegistry() {
         try {
-            mGlobalLogger = new FileLogger(false /* don't delete file on exit */);
+            mGlobalLogger = new FileLogger();
         } catch (ConfigurationException e) {
             System.err.println("Failed to create global logger");
             throw new IllegalStateException(e);
@@ -139,17 +140,6 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Performs any cleanup necessary and closes the associated log for this thread. Note
-     * this only closes, and does not unregister the logger from the LogRegistry.
-     */
-    public void closeLog() {
-        ILeveledLogOutput log = mLogTable.get(getCurrentThreadGroup());
-        if (log != null) {
-            log.closeLog();
-        }
-    }
-
-    /**
      * Closes and removes all logs being managed by this LogRegistry.
      */
     public void closeAndRemoveAllLogs() {
@@ -160,6 +150,21 @@ public class LogRegistry implements ILogOutput {
             log.closeLog();
             iter.remove();
         }
+        saveGlobalLog();
         mGlobalLogger.closeLog();
+    }
+
+    /**
+     * Saves global logger contents to a tmp file.
+     */
+    public void saveGlobalLog() {
+        try {
+            File tradefedLog = FileUtil.createTempFile("tradefed_global_log_", ".txt");
+            FileUtil.writeToFile(mGlobalLogger.getLog(), tradefedLog);
+            System.out.println(String.format("Saved global log to %s",
+                    tradefedLog.getAbsolutePath()));
+        } catch (IOException e) {
+            // ignore
+        }
     }
 }

@@ -18,6 +18,7 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.targetsetup.BuildInfo;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -33,6 +34,7 @@ public class XmlResultReporterTest extends TestCase {
 
     private XmlResultReporter mResultReporter;
     private ByteArrayOutputStream mOutputStream;
+    private File mReportDir;
 
     /**
      * {@inheritDoc}
@@ -54,9 +56,16 @@ public class XmlResultReporterTest extends TestCase {
             }
         };
         // TODO: use mock file dir instead
-        File reportDir = File.createTempFile("foo", "txt");
-        reportDir.delete();
-        mResultReporter.setReportDir(reportDir);
+        mReportDir = FileUtil.createTempDir("foo");
+        mResultReporter.setReportDir(mReportDir);
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        if (mReportDir != null) {
+            FileUtil.recursiveDelete(mReportDir);
+        }
+        super.tearDown();
     }
 
     /**

@@ -45,6 +45,7 @@ import com.android.tradefed.testtype.TestTimeoutListenerTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
 import com.android.tradefed.util.ConditionPriorityBlockingQueueTest;
+import com.android.tradefed.util.FileUtilTest;
 import com.android.tradefed.util.RunUtilTest;
 
 import junit.framework.Test;
@@ -90,6 +91,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(XmlDefsParserTest.class);
         addTestSuite(XmlDefsTestTest.class);
         addTestSuite(RunUtilTest.class);
+        addTestSuite(FileUtilTest.class);
     }
 
     public static Test suite() {

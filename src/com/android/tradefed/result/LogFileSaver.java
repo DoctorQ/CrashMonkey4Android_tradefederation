@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -50,9 +49,7 @@ public class LogFileSaver implements ILogFileSaver {
         File buildDir = createBuildDir(buildInfo, rootDir);
         // now create unique directory within the buildDir
         try {
-            mRootDir = File.createTempFile("inv_", "", buildDir);
-            mRootDir.delete();
-            mRootDir.mkdirs();
+            mRootDir = FileUtil.createTempDir("inv_", buildDir);
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Unable to create unique directory in %s",
                     buildDir.getAbsolutePath()));
@@ -107,36 +104,12 @@ public class LogFileSaver implements ILogFileSaver {
      */
     public File saveLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException {
-        BufferedInputStream bufInput = null;
-        OutputStream outStream = null;
-        try {
-            // add underscore to end of data name to make generated name more readable
-            File logFile = File.createTempFile(dataName + "_", "." + dataType.getFileExt(),
-                    mRootDir);
-            bufInput = new BufferedInputStream(dataStream);
-            outStream = new BufferedOutputStream(new FileOutputStream(logFile));
-            int inputByte = -1;
-            while ((inputByte = bufInput.read()) != -1) {
-                outStream.write(inputByte);
-            }
-            Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
-            return logFile;
-        } finally {
-            if (bufInput != null) {
-                try {
-                    bufInput.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            if (outStream != null) {
-                try {
-                    outStream.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-        }
+        // add underscore to end of data name to make generated name more readable
+        File logFile = FileUtil.createTempFile(dataName + "_", "." + dataType.getFileExt(),
+                mRootDir);
+        FileUtil.writeToFile(dataStream, logFile);
+        Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
+        return logFile;
     }
 
     /**
@@ -148,8 +121,8 @@ public class LogFileSaver implements ILogFileSaver {
         ZipOutputStream outStream = null;
         try {
             // add underscore to end of data name to make generated name more readable
-            File logFile = File.createTempFile(dataName + "_", "." + LogDataType.ZIP.getFileExt(),
-                    mRootDir);
+            File logFile = FileUtil.createTempFile(dataName + "_", "."
+                    + LogDataType.ZIP.getFileExt(), mRootDir);
             bufInput = new BufferedInputStream(dataStream);
             outStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(
                     logFile)));

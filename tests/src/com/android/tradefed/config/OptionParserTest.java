@@ -16,6 +16,8 @@
 
 package com.android.tradefed.config;
 
+import com.android.tradefed.util.FileUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -449,9 +451,13 @@ public class OptionParserTest extends TestCase {
      */
     public void testSetOptionValue_file() throws ConfigurationException, IOException {
         AllTypesOptionSource optionSource = new AllTypesOptionSource();
-        File tmpFile = File.createTempFile("testSetOptionValue_file", "txt");
-        assertSetOptionValue(optionSource, "file", tmpFile.getAbsolutePath());
-        assertEquals(tmpFile.getAbsolutePath(), optionSource.mFile.getAbsolutePath());
+        File tmpFile = FileUtil.createTempFile("testSetOptionValue_file", "txt");
+        try {
+            assertSetOptionValue(optionSource, "file", tmpFile.getAbsolutePath());
+            assertEquals(tmpFile.getAbsolutePath(), optionSource.mFile.getAbsolutePath());
+        } finally {
+            tmpFile.delete();
+        }
     }
 
     /**

@@ -34,6 +34,7 @@ import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.result.StubTestListener;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -1146,7 +1147,7 @@ class TestDevice implements IManagedTestDevice {
                 mPreviousTmpFile.delete();
             }
             mPreviousTmpFile = mTmpFile;
-            mTmpFile = File.createTempFile(String.format("logcat_%s_", getSerialNumber()),
+            mTmpFile = FileUtil.createTempFile(String.format("logcat_%s_", getSerialNumber()),
                     ".txt");
             Log.i(LOG_TAG, String.format("Created tmp logcat file %s",
                     mTmpFile.getAbsolutePath()));

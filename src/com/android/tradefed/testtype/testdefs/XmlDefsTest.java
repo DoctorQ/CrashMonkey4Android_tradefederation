@@ -25,6 +25,7 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParser.ParseException;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -115,6 +116,8 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
             } catch (ParseException e) {
                 Log.e(LOG_TAG, String.format("Could not parse test def file %s: %s",
                         testDefFile.getAbsolutePath(), e.getMessage()));
+            } finally {
+                testDefFile.delete();
             }
         }
         for (InstrumentationTestDef def : parser.getTestDefs()) {
@@ -149,10 +152,9 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
         Collection<File> files = new ArrayList<File>();
         for (String remoteFilePath : remoteFilePaths) {
             try {
-                File tmpFile = File.createTempFile("test_defs_", ".xml");
+                File tmpFile = FileUtil.createTempFile("test_defs_", ".xml");
                 getDevice().pullFile(remoteFilePath, tmpFile);
                 files.add(tmpFile);
-                tmpFile.deleteOnExit();
             } catch (IOException e) {
                 Log.e(LOG_TAG, "Failed to create temp file");
                 Log.e(LOG_TAG, e);

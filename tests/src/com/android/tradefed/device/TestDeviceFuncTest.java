@@ -22,13 +22,13 @@ import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.FileUtil;
 
 import org.easymock.EasyMock;
 
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
@@ -106,7 +106,7 @@ public class TestDeviceFuncTest extends DeviceTestCase {
 
             assertTrue(mTestDevice.pushFile(tmpFile, deviceFilePath));
             assertTrue(mTestDevice.doesFileExist(deviceFilePath));
-            tmpDestFile = File.createTempFile("tmp", "txt");
+            tmpDestFile = FileUtil.createTempFile("tmp", "txt");
             assertTrue(mTestDevice.pullFile(deviceFilePath, tmpDestFile));
             assertTrue(compareFiles(tmpFile, tmpDestFile));
         } finally {
@@ -119,15 +119,19 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         }
     }
 
-    private File createTempTestFile(File dir) throws IOException, FileNotFoundException {
-        File tmpFile;
-        final String fileContents = "this is the test file contents";
-        tmpFile = File.createTempFile("tmp", ".txt", dir);
-        FileOutputStream stream = new FileOutputStream(tmpFile);
-        stream.write(fileContents.getBytes());
-        stream.close();
-        tmpFile.deleteOnExit();
-        return tmpFile;
+    private File createTempTestFile(File dir) throws IOException {
+        File tmpFile = null;
+        try {
+            final String fileContents = "this is the test file contents";
+            tmpFile = FileUtil.createTempFile("tmp", ".txt", dir);
+            FileUtil.writeToFile(fileContents, tmpFile);
+            return tmpFile;
+        } catch (IOException e) {
+            if (tmpFile != null) {
+                tmpFile.delete();
+            }
+            throw e;
+        }
     }
 
     /**
@@ -164,18 +168,20 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
      */
     public void testSyncFiles() throws IOException, DeviceNotAvailableException {
+        String expectedDeviceFilePath = null;
+        String externalStorePath = null;
+
         // create temp dir with one temp file
-        File tmpDir = File.createTempFile("tmp", null);
-        tmpDir.delete();
-        tmpDir.mkdir();
-        File tmpFile = createTempTestFile(tmpDir);
-        // set last modified to 10 minutes ago
-        tmpFile.setLastModified(System.currentTimeMillis() - 10*60*1000);
-        String externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        assertNotNull(externalStorePath);
-        String expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
-                tmpDir.getName(), tmpFile.getName());
+        File tmpDir = FileUtil.createTempDir("tmp");
         try {
+            File tmpFile = createTempTestFile(tmpDir);
+            // set last modified to 10 minutes ago
+            tmpFile.setLastModified(System.currentTimeMillis() - 10*60*1000);
+            externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            assertNotNull(externalStorePath);
+            expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
+                    tmpDir.getName(), tmpFile.getName());
+
             assertTrue(mTestDevice.syncFiles(tmpDir, externalStorePath));
             assertTrue(mTestDevice.doesFileExist(expectedDeviceFilePath));
 
@@ -206,8 +212,11 @@ public class TestDeviceFuncTest extends DeviceTestCase {
                     expectedDeviceFilePath));
             assertTrue(tmpFileContents.contains(testString));
         } finally {
-            mTestDevice.executeShellCommand(String.format("rm -r %s/%s", externalStorePath,
-                    expectedDeviceFilePath));
+            if (expectedDeviceFilePath != null && externalStorePath != null) {
+                mTestDevice.executeShellCommand(String.format("rm -r %s/%s", externalStorePath,
+                        expectedDeviceFilePath));
+            }
+            FileUtil.recursiveDelete(tmpDir);
         }
     }
 

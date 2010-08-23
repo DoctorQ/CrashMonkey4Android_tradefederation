@@ -37,9 +37,4 @@ public class StubLogRegistry extends LogRegistry {
     public void printLog(LogLevel logLevel, String tag, String message) {
         Log.printLog(logLevel, tag, message);
     }
-
-    @Override
-    public void closeLog() {
-        // ignore
-    }
 }

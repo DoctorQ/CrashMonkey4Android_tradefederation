@@ -21,6 +21,7 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.util.FileUtil;
 
 import org.kxml2.io.KXmlSerializer;
 
@@ -169,7 +170,7 @@ public class XmlResultReporter extends CollectingTestListener {
      * Creates the output stream to use for test results. Exposed for mocking.
      */
     OutputStream createOutputResultStream(File reportDir) throws IOException {
-        File reportFile = File.createTempFile(TEST_RESULT_FILE_PREFIX, TEST_RESULT_FILE_SUFFIX,
+        File reportFile = FileUtil.createTempFile(TEST_RESULT_FILE_PREFIX, TEST_RESULT_FILE_SUFFIX,
                 reportDir);
         Log.i(LOG_TAG, String.format("Created xml report file at %s",
                 reportFile.getAbsolutePath()));

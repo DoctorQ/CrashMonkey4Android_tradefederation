@@ -172,6 +172,25 @@ public class CommandSchedulerTest extends TestCase {
         verifyMocks();
     }
 
+
+    /**
+     * Verify that scheduler goes into shutdown mode when a {@link FatalHostError} is thrown.
+     */
+    public void testRun_fatalError() throws Exception {
+        mMockInvocation.setException(new FatalHostError("error"));
+        String[] args = new String[] {};
+        mMockManager.setNumDevices(2);
+        setCreateConfigExpectations(args, 2);
+        replayMocks();
+        mScheduler.addConfig(args);
+        mScheduler.start();
+        // no need to call shutdown explicitly - scheduler should shutdown by itself
+        mScheduler.join();
+        assertEquals("allocated device was not returned to queue", 2,
+                mMockManager.getAvailableDevices().size());
+        verifyMocks();
+    }
+
     /**
      * Test{@link CommandScheduler#run()} when config is matched to a specific device serial number
      * <p/>
@@ -263,9 +282,14 @@ public class CommandSchedulerTest extends TestCase {
         private int mInvokeCount = 0;
         private String mExpectedSerial = null;
         private boolean mMatched = true;
+        private RuntimeException mException = null;
 
         public MockInvocation() {
 
+        }
+
+        public void setException(RuntimeException e) {
+            mException = e;
         }
 
         public void setExpectedSerial(String expectedDeviceSerial) {
@@ -278,6 +302,9 @@ public class CommandSchedulerTest extends TestCase {
         public void invoke(ITestDevice device, IConfiguration config)
                 throws DeviceNotAvailableException {
             mInvokeCount++;
+            if (mException != null) {
+                throw mException;
+            }
             if (mExpectedSerial != null && !device.getSerialNumber().equals(mExpectedSerial)) {
                 mMatched = false;
             }

@@ -17,13 +17,12 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.util.FileUtil;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 
 import junit.framework.TestCase;
@@ -75,20 +74,17 @@ public class ConfigurationFactoryTest extends TestCase {
      */
     public void testGetConfiguration_xmlpath() throws ConfigurationException, IOException {
         // extract the test-config.xml into a tmp file
-        BufferedInputStream configStream = new BufferedInputStream(getClass().getResourceAsStream(
-                "/config/test-config.xml"));
-        File tmpFile = File.createTempFile("test-config", ".xml");
-        tmpFile.deleteOnExit();
-        BufferedOutputStream outStream = new BufferedOutputStream(new FileOutputStream(tmpFile));
-        int readByte = -1;
-        while ((readByte = configStream.read()) != -1) {
-            outStream.write(readByte);
+        InputStream configStream = getClass().getResourceAsStream(
+                "/config/test-config.xml");
+        File tmpFile = FileUtil.createTempFile("test-config", ".xml");
+        try {
+            FileUtil.writeToFile(configStream, tmpFile);
+            assertConfigValid(tmpFile.getAbsolutePath());
+            // check reading it again - should grab the cached version
+            assertConfigValid(tmpFile.getAbsolutePath());
+        } finally {
+            tmpFile.delete();
         }
-        configStream.close();
-        outStream.close();
-        assertConfigValid(tmpFile.getAbsolutePath());
-        // check reading it again - should grab the cached version
-        assertConfigValid(tmpFile.getAbsolutePath());
     }
 
     /**

@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.tradefed.targetsetup.BuildInfo;
 import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
@@ -38,6 +39,20 @@ import junit.framework.TestCase;
  */
 public class LogFileSaverTest extends TestCase {
 
+    private File mRootDir;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mRootDir = FileUtil.createTempDir("tmpdir");
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        FileUtil.recursiveDelete(mRootDir);
+        super.tearDown();
+    }
+
     /**
      * Test that a unique directory is created
      */
@@ -46,17 +61,16 @@ public class LogFileSaverTest extends TestCase {
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
         EasyMock.replay(mockBuild);
-        File rootDir = createUniqueTmpDir();
-        ILogFileSaver saver = new LogFileSaver(mockBuild, rootDir);
+        ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir);
         File generatedDir = saver.getFileDir();
         File buildDir = generatedDir.getParentFile();
         // ensure a directory with name == build number is parent of generated directory
         assertEquals(Integer.toString(buildId), buildDir.getName());
         // ensure parent directory is rootDir
-        assertEquals(0, rootDir.compareTo(buildDir.getParentFile()));
+        assertEquals(0, mRootDir.compareTo(buildDir.getParentFile()));
 
         // now create a new log saver,
-        ILogFileSaver newsaver = new LogFileSaver(mockBuild, rootDir);
+        ILogFileSaver newsaver = new LogFileSaver(mockBuild, mRootDir);
         File newgeneratedDir = newsaver.getFileDir();
         // ensure a new dir is created
         assertTrue(generatedDir.compareTo(newgeneratedDir) != 0);
@@ -74,8 +88,7 @@ public class LogFileSaverTest extends TestCase {
         BufferedReader logFileReader = null;
         try {
             // TODO: would be nice to create a mock file output to make this test not use disk I/O
-            File tmpDir = createUniqueTmpDir();
-            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), tmpDir);
+            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), mRootDir);
             final String testData = "Here's some test data, blah";
             ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
             logFile = saver.saveLogData("testSaveLogData", LogDataType.TEXT, mockInput);
@@ -103,8 +116,7 @@ public class LogFileSaverTest extends TestCase {
         ZipInputStream zipFileStream = null;
         try {
             // TODO: would be nice to create a mock file output to make this test not use disk I/O
-            File tmpDir = createUniqueTmpDir();
-            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), tmpDir);
+            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), mRootDir);
             final String testData = "Here's some test data, blah";
             ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
             logFile = saver.saveAndZipLogData("testSaveLogData", LogDataType.TEXT, mockInput);
@@ -124,15 +136,5 @@ public class LogFileSaverTest extends TestCase {
                 logFile.delete();
             }
         }
-    }
-
-    private File createUniqueTmpDir() throws IOException {
-        // create a tmp file, then delete it, and recreate a dir with same name to ensure
-        // uniqueness
-        File tmpDir = File.createTempFile("tmpdir", "");
-        tmpDir.delete();
-        tmpDir.mkdir();
-        tmpDir.deleteOnExit();
-        return tmpDir;
     }
 }
