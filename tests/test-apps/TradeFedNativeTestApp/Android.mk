@@ -26,7 +26,9 @@ LOCAL_SRC_FILES := TradeFedNativeTestApp_test.cpp
 # All gtests in all files should be compiled into one binary
 # The standard naming should conform to: <module_being_tested>tests
 # For example, for libjingle, use libjingletests
-LOCAL_MODULE := nativetestapp
+LOCAL_MODULE := tfnativetests
+
+LOCAL_MODULE_TAGS := optional
 
 include $(BUILD_NATIVE_TEST)
 
