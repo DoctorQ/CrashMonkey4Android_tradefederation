@@ -39,8 +39,8 @@ import java.util.Map;
  * parameter type is otherwise supported by the option setter. The collection field should be
  * initialized with an appropriate collection instance.
  * <p/>
- * Fields processed include public, protected, default (package) access, and private fields, but
- * excludes inherited fields.
+ * All fields will be processed, including public, protected, default (package) access, private and
+ * inherited fields.
  * <p/>
  *
  * ported from dalvik.runner.OptionParser
@@ -200,6 +200,20 @@ class OptionSetter {
     private void addOptionsForObject(Object optionSource, Map<String, OptionField> optionMap)
             throws ConfigurationException {
         final Class<?> optionClass = optionSource.getClass();
+        addOptionsForClass(optionSource, optionMap, optionClass);
+    }
+
+    /**
+     * Recursive method that adds all option fields (both declared and inherited) to the
+     * <var>optionMap</var> for provided <var>optionClass</var>
+     *
+     * @param optionSource
+     * @param optionMap
+     * @param optionClass
+     * @throws ConfigurationException
+     */
+    private void addOptionsForClass(Object optionSource, Map<String, OptionField> optionMap,
+            final Class<?> optionClass) throws ConfigurationException {
         for (Field field : optionClass.getDeclaredFields()) {
             if (field.isAnnotationPresent(Option.class)) {
                 final Option option = field.getAnnotation(Option.class);
@@ -212,6 +226,10 @@ class OptionSetter {
                     addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
                 }
             }
+        }
+        Class<?> superClass = optionClass.getSuperclass();
+        if (superClass != null) {
+            addOptionsForClass(optionSource, optionMap, superClass);
         }
     }
 

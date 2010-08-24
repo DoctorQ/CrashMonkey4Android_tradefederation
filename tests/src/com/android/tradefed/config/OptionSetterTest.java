@@ -28,7 +28,7 @@ import junit.framework.TestCase;
 /**
  * Unit tests for {@link OptionSetter}.
  */
-public class OptionParserTest extends TestCase {
+public class OptionSetterTest extends TestCase {
 
     /** Option source with generic type. */
     private static class GenericTypeOptionSource {
@@ -117,10 +117,24 @@ public class OptionParserTest extends TestCase {
         private File mFile = null;
     }
 
+    private static class ParentOptionSource {
+        @Option(name = "string")
+        private String mString = null;
+
+        protected String getParentString() {
+            return mString;
+        }
+    }
+
+    private static class ChildOptionSource extends ParentOptionSource {
+        @Option(name = "child-string")
+        private String mChildString = null;
+    }
+
     /**
      * Test creating an {@link OptionSetter} for a source with invalid option type.
      */
-    public void testOptionParser_noType() {
+    public void testOptionSetter_noType() {
         try {
             new OptionSetter(new GenericTypeOptionSource());
             fail("ConfigurationException not thrown");
@@ -132,7 +146,7 @@ public class OptionParserTest extends TestCase {
     /**
      * Test creating an {@link OptionSetter} for a source with duplicate names.
      */
-    public void testOptionParser_duplicateOptions() {
+    public void testOptionSetter_duplicateOptions() {
         try {
             new OptionSetter(new AllTypesOptionSource(), new DuplicateOptionSource());
             fail("ConfigurationException not thrown");
@@ -144,7 +158,7 @@ public class OptionParserTest extends TestCase {
     /**
      * Test creating an {@link OptionSetter} for a Collection with no type.
      */
-    public void testOptionParser_unparamType() {
+    public void testOptionSetter_unparamType() {
         try {
             new OptionSetter(new CollectionTypeOptionSource());
             fail("ConfigurationException not thrown");
@@ -156,13 +170,25 @@ public class OptionParserTest extends TestCase {
     /**
      * Test creating an {@link OptionSetter} for a non collection option with generic type
      */
-    public void testOptionParser_genericType() {
+    public void testOptionSetter_genericType() {
         try {
             new OptionSetter(new NonCollectionGenericTypeOptionSource());
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
         }
+    }
+
+    /**
+     * Test creating an {@link OptionSetter} for class with inherited options
+     */
+    public void testOptionSetter_inheritedOptions() throws ConfigurationException {
+        ChildOptionSource source = new ChildOptionSource();
+        OptionSetter setter = new OptionSetter(source);
+        setter.setOptionValue("string", "parent");
+        setter.setOptionValue("child-string", "child");
+        assertEquals("parent", source.getParentString());
+        assertEquals("child", source.mChildString);
     }
 
     /**

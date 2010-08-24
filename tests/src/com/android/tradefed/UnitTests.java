@@ -23,7 +23,7 @@ import com.android.tradefed.config.ConfigurationDefTest;
 import com.android.tradefed.config.ConfigurationFactoryTest;
 import com.android.tradefed.config.ConfigurationTest;
 import com.android.tradefed.config.ConfigurationXmlParserTest;
-import com.android.tradefed.config.OptionParserTest;
+import com.android.tradefed.config.OptionSetterTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
 import com.android.tradefed.device.TestDeviceTest;
@@ -66,7 +66,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(ConfigFileParserTest.class);
         addTestSuite(ConfigurationTest.class);
         addTestSuite(ArgsOptionParserTest.class);
-        addTestSuite(OptionParserTest.class);
+        addTestSuite(OptionSetterTest.class);
         addTestSuite(ConfigurationDefTest.class);
         addTestSuite(ConfigurationFactoryTest.class);
         addTestSuite(ConfigurationXmlParserTest.class);
