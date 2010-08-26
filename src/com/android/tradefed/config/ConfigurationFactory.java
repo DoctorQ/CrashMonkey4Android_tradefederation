@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -118,13 +119,18 @@ public class ConfigurationFactory implements IConfigurationFactory {
         if (args.length == 0) {
             throw new ConfigurationException("Configuration to run was not specified");
         }
-        IConfiguration config = getConfiguration(getConfigNameFromArgs(args));
+        final String configName = getConfigNameFromArgs(args);
+        IConfiguration config = getConfiguration(configName);
         Collection<Object> optionObjects = config.getAllConfigurationObjects();
         for (Object optionObj : additionalOptionSources) {
             optionObjects.add(optionObj);
         }
         ArgsOptionParser parser = new ArgsOptionParser(optionObjects);
-        parser.parse(args);
+        List<String> unprocessedArgs = parser.parse(args);
+        if (unprocessedArgs.size() != 1 || !unprocessedArgs.get(0).equals(configName)) {
+            throw new ConfigurationException(String.format(
+                    "Invalid arguments provided. Unprocessed arguments: %s", unprocessedArgs));
+        }
         return config;
     }
 

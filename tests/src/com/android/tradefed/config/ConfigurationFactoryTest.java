@@ -139,6 +139,21 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
+     * Test {@link ConfigurationFactory#createConfigurationFromArgs(String[])} when extra positional
+     * arguments are supplied
+     */
+    public void testCreateConfigurationFromArgs_unprocessedArgs() throws ConfigurationException {
+        try {
+            mFactory.createConfigurationFromArgs(new String[] {"--log-level",
+                    LogLevel.VERBOSE.getStringValue(), "blah",
+                    ConfigurationFactory.HOST_TEST_CONFIG});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
      * Test {@link ConfigurationFactory#printHelp(String[], PrintStream))} with no args specified
      */
     public void testPrintHelp() {
