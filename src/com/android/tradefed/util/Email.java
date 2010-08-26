@@ -17,16 +17,11 @@
 package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.LogLevel;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.lang.IllegalArgumentException;
-import java.lang.Process;
-import java.lang.ProcessBuilder;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Iterator;
 
 /**

@@ -172,7 +172,6 @@ public class CommandSchedulerTest extends TestCase {
         verifyMocks();
     }
 
-
     /**
      * Verify that scheduler goes into shutdown mode when a {@link FatalHostError} is thrown.
      */
@@ -253,6 +252,22 @@ public class CommandSchedulerTest extends TestCase {
                 mMockManager.getAvailableDevices().size());
         assertTrue(mMockInvocation.matchedExpectedDevice());
         verifyMocks();
+    }
+
+    /**
+     * Test {@link CommandScheduler#shutdown()} when no devices are available.
+     */
+    public void testShutdown() throws Exception {
+        mMockManager.setNumDevices(0);
+        mScheduler.start();
+        while (!mScheduler.isAlive()) {
+            Thread.sleep(10);
+        }
+        // hack - sleep a bit more to ensure allocateDevices is called
+        Thread.sleep(50);
+        mScheduler.shutdown();
+        mScheduler.join();
+        // test will hang if not successful
     }
 
     /**

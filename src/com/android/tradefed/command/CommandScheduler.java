@@ -64,7 +64,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
     /** timer for scheduling the configurations so invocations honor the mMinLoopTime constraint */
     private Timer mConfigTimer;
-    private boolean mShutDown = false;
+    private boolean mShutdown = false;
 
     /**
      * Container for common options for each config.
@@ -303,12 +303,11 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     /**
-     * Creates a {@link CommandScheduler}
+     * Creates a {@link CommandScheduler}.
      */
     CommandScheduler() {
         mConfigQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
         mInvocationThreads = new HashSet<InvocationThread>();
-
     }
 
     /**
@@ -345,31 +344,38 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     public void run() {
         mConfigTimer = new Timer("config timer");
         IDeviceManager manager = getDeviceManager();
-        while (!mShutDown) {
+        while (!isShutdown()) {
             Log.d(LOG_TAG, "Waiting for device to test");
             // Spawn off a thread for each allocated device.
             // The retrieval of a config to run on the device is done on this separate thread, to
             // prevent configs which only run on a specific device from blocking the rest
             final ITestDevice device = manager.allocateDevice();
-            if (device == null) {
-                break;
+            if (device != null) {
+                InvocationThread invThread = startInvocation(manager, device);
+                addInvocationThread(invThread);
             }
-            InvocationThread invThread = startInvocation(manager, device);
-            addInvocationThread(invThread);
         }
         Log.i(LOG_TAG, "Waiting for invocation threads to complete");
-        List<InvocationThread> threadListCopy = new ArrayList<InvocationThread>(
-                mInvocationThreads.size());
-        threadListCopy.addAll(mInvocationThreads);
+        List<InvocationThread> threadListCopy;
+        synchronized (this) {
+            threadListCopy = new ArrayList<InvocationThread>(
+                    mInvocationThreads.size());
+            threadListCopy.addAll(mInvocationThreads);
+        }
         for (Thread thread : threadListCopy) {
-            try {
-                thread.join();
-            } catch (InterruptedException e) {
-                // ignore
-            }
+            waitForThread(thread);
         }
         Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "All done");
         exit(manager);
+    }
+
+    private void waitForThread(Thread thread) {
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            // ignore
+            waitForThread(thread);
+        }
     }
 
     private void exit(IDeviceManager manager) {
@@ -426,7 +432,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * @return the {@link ConfigCommand} or <code>null</code>
      */
     private ConfigCommand dequeueConfigCommand(ITestDevice device) {
-        if (mShutDown) {
+        if (isShutdown()) {
             return null;
         }
         ConfigCommand cmd = null;
@@ -511,22 +517,28 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         mInvocationThreads.add(invThread);
     }
 
+    private synchronized boolean isShutdown() {
+        return mShutdown;
+    }
+
     /**
      * {@inheritDoc}
      */
     public synchronized void shutdown() {
-        if (!mShutDown) {
-            mShutDown = true;
+        if (!mShutdown) {
+            mShutdown = true;
             mConfigQueue.clear();
             if (mConfigTimer != null) {
                 mConfigTimer.cancel();
             }
+            // interrupt current thread in case its blocked on allocateDevice call
+            interrupt();
+
             for (InvocationThread invThread : mInvocationThreads) {
                 invThread.shutdownInvocation();
             }
         }
     }
-
 
     // Implementations of the optional managment interfaces
     /**
