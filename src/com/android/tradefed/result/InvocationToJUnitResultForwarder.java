@@ -221,8 +221,16 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void invocationBuildError(long elapsedTime, String message) {
+    public void invocationFailed(Throwable cause) {
         // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getSummary() {
+        // ignore
+        return null;
     }
 
     /**
@@ -243,13 +251,6 @@ import junit.framework.TestResult;
      * {@inheritDoc}
      */
     public void testRunStarted(String name, int numTests) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void invocationFailed(long elapsedTime, String message, Throwable cause) {
         // ignore
     }
 

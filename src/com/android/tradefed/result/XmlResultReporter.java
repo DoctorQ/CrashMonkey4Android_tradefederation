@@ -87,17 +87,7 @@ public class XmlResultReporter extends CollectingTestListener {
     @Override
     public void invocationEnded(long elapsedTime) {
         if (mReportDir != null) {
-            generateReport(mLogFileSaver.getFileDir(), elapsedTime);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void invocationFailed(long elapsedTime, String message, Throwable e) {
-        if (mReportDir != null) {
-            generateReport(mLogFileSaver.getFileDir(), elapsedTime);
+            generateSummary(mLogFileSaver.getFileDir(), elapsedTime);
         }
     }
 
@@ -123,7 +113,7 @@ public class XmlResultReporter extends CollectingTestListener {
     /**
      * Creates a report file and populates it with the report data from the completed tests.
      */
-    private void generateReport(File reportDir, long elapsedTime) {
+    private void generateSummary(File reportDir, long elapsedTime) {
         String timestamp = getTimestamp();
 
         OutputStream stream = null;
