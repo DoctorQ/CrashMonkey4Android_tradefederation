@@ -27,6 +27,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 /**
  * A helper class for file related operations
@@ -218,5 +221,25 @@ public class FileUtil {
             }
         }
         rootDir.delete();
+    }
+
+    /**
+     * Utility method to extract entire contents of zip file into given directory
+     *
+     * @param zipFile the {@link ZipFile} to extract
+     * @param destDir the local dir to extract file to
+     * @throws IOException if failed to extract file
+     */
+    public static void extractZip(ZipFile zipFile, File destDir) throws IOException {
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            File childFile = new File(destDir, entry.getName());
+            if (entry.isDirectory()) {
+                childFile.mkdirs();
+            } else {
+                FileUtil.writeToFile(zipFile.getInputStream(entry), childFile);
+            }
+        }
     }
 }

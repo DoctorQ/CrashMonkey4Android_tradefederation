@@ -131,4 +131,8 @@ public class FileUtilTest extends TestCase {
         assertFalse(childDir.exists());
         assertFalse(tmpParentDir.exists());
     }
+
+    public void testExtractZip() throws IOException {
+        // TODO: implement this - maybe create a zip programmatically than extract it ?
+    }
 }
