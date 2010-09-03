@@ -23,7 +23,7 @@ import java.io.InputStream;
 /**
  * Listener for test results from the test invocation.
  * <p/>
- * A test invocation can itself include multiple test runs, so the sequence of calls would be
+ * A test invocation can itself include multiple test runs, so the sequence of calls will be
  *  - invocationStarted(BuildInfo)
  *  - testRunStarted
  *  - testStarted
@@ -37,7 +37,9 @@ import java.io.InputStream;
  *  ...
  *  - testRunEnded
  *  - [testRunLog+]
- *  - invocationEnded()
+ *  - [invocationFailed]
+ *  - invocationEnded
+ *  - getSummary
  * <p/>
  * Note that this is re-using the {@link com.android.ddmlib.testrunner.ITestRunListener}
  * because it's a generic interface. The results being reported are not necessarily device specific.
@@ -73,28 +75,25 @@ public interface ITestInvocationListener extends ITestRunListener {
     public void testLog(String dataName, LogDataType dataType, InputStream dataStream);
 
     /**
-     * Reports the end of the test invocation.
+     * Reports that the invocation has terminated, whether successfully or due to some error
+     * condition.
      *
      * @param elapsedTime the elapsed time of the invocation in ms
      */
     public void invocationEnded(long elapsedTime);
 
     /**
-     * Reports an incomplete invocation due to a fatal error in the build (ie the build failed to
-     * launch properly)
+     * Reports an incomplete invocation due to some error condition.
      *
-     * @param elapsedTime the elapsed time of the invocation in ms
-     * @param message a more detaled error description
-     */
-    public void invocationBuildError(long elapsedTime, String message);
-
-    /**
-     * Reports an incomplete invocation due to a fatal error in the test environment.
-     *
-     * @param elapsedTime the elapsed time of the invocation in ms
-     * @param message a {@link String} error description
      * @param cause the {@link Throwable} cause of the failure
      */
-    public void invocationFailed(long elapsedTime, String message, Throwable cause);
+    public void invocationFailed(Throwable cause);
+
+    /**
+     * Allows the InvocationListener to return a summary.
+     *
+     * @return A {@link TestSummary} summarizing the run, or null
+     */
+    public String getSummary();
 
 }

@@ -27,6 +27,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
@@ -39,6 +40,7 @@ import com.android.tradefed.targetsetup.TargetSetupError;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -96,15 +98,6 @@ public class TestInvocation implements ITestInvocation {
             Log.e(LOG_TAG, e);
         } catch (ConfigurationException e) {
             Log.e(LOG_TAG, e);
-        } catch (DeviceNotAvailableException e) {
-            // already logged, just catch and rethrow to prevent uncaught exception logic
-            throw e;
-        } catch (FatalHostError e) {
-            throw e;
-        } catch (Throwable e) {
-            Log.e(LOG_TAG, "Uncaught exception!");
-            Log.e(LOG_TAG, e);
-            // TODO: consider re-throwing ?
         } finally {
             if (logger != null) {
               logger.closeLog();
@@ -150,9 +143,8 @@ public class TestInvocation implements ITestInvocation {
             ITestDevice device, List<ITestInvocationListener> listeners, ITargetPreparer preparer,
             List<Test> tests, IBuildInfo info, ILeveledLogOutput logger)
             throws DeviceNotAvailableException {
-        Throwable error = null;
-        InvocationStatus status = InvocationStatus.SUCCESS;
         long startTime = System.currentTimeMillis();
+        long elapsedTime = -1;
         logStartInvocation(info, device);
         for (ITestInvocationListener listener : listeners) {
             listener.invocationStarted(info);
@@ -165,53 +157,66 @@ public class TestInvocation implements ITestInvocation {
             preparer.setUp(device, info);
             runTests(config, device, info, tests, listeners);
         } catch (BuildError e) {
-            error = e;
-            status = InvocationStatus.BUILD_ERROR;
             Log.w(LOG_TAG, String.format("Build %d failed on device %s", info.getBuildId(),
                     device.getSerialNumber()));
+            reportFailure(e, listeners, buildProvider, info);
         } catch (TargetSetupError e) {
-            error = e;
-            status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, e);
+            reportFailure(e, listeners, buildProvider, info);
         } catch (DeviceNotAvailableException e) {
-            error = e;
-            status = InvocationStatus.FAILED;
             Log.e(LOG_TAG, e);
+            reportFailure(e, listeners, buildProvider, info);
             throw e;
-        } catch (FatalHostError e) {
-            error = e;
-            status = InvocationStatus.FAILED;
-            throw e;
-        } catch (Throwable e) {
-            error = e;
-            status = InvocationStatus.FAILED;
-            Log.e(LOG_TAG, "Unexpected exception!");
+        } catch (RuntimeException e) {
+            Log.e(LOG_TAG, "Unexpected runtime exception!");
             Log.e(LOG_TAG, e);
-            // TODO: rethrow?
-            //throw e;
+            reportFailure(e, listeners, buildProvider, info);
+            throw e;
         } finally {
+            elapsedTime = System.currentTimeMillis() - startTime;
+            List<String> summaries = new ArrayList<String>(listeners.size());
             for (ITestInvocationListener listener : listeners) {
                 if (device != null) {
                     listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
                 }
                 listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-                switch (status) {
-                    case SUCCESS:
-                        listener.invocationEnded(System.currentTimeMillis() - startTime);
-                        break;
-                    case BUILD_ERROR:
-                        listener.invocationBuildError(System.currentTimeMillis() - startTime,
-                                error.getMessage());
-                        break;
-                    case FAILED:
-                        listener.invocationFailed(System.currentTimeMillis() - startTime,
-                                error.getMessage(), error);
-                        buildProvider.buildNotTested(info);
-                        break;
+
+                /*
+                 * For InvocationListeners (as opposed to SummaryListeners), we call
+                 * invocationEnded() followed by getSummary().  If getSummary returns a non-null
+                 * value, we gather it to pass to the SummaryListeners below.
+                 */
+                if (!(listener instanceof ITestSummaryListener)) {
+                    listener.invocationEnded(elapsedTime);
+                    String summary = listener.getSummary();
+                    if (summary != null) {
+                        summaries.add(summary);
+                    }
+                }
+            }
+
+            /*
+             * For SummaryListeners (as opposed to InvocationListeners), we now call putSummary()
+             * followed by invocationEnded().  This means that the SummaryListeners will have
+             * access to the summaries (if any) when invocationEnded is called.
+             */
+            for (ITestInvocationListener listener : listeners) {
+                if (listener instanceof ITestSummaryListener) {
+                    ((ITestSummaryListener) listener).putSummary(summaries);
+                    listener.invocationEnded(elapsedTime);
                 }
             }
         }
+    }
 
+    private void reportFailure(Throwable exception, List<ITestInvocationListener> listeners,
+            IBuildProvider buildProvider, IBuildInfo info) {
+        for (ITestInvocationListener listener : listeners) {
+            listener.invocationFailed(exception);
+        }
+        if (!(exception instanceof BuildError)) {
+            buildProvider.buildNotTested(info);
+        }
     }
 
     /**

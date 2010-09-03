@@ -18,6 +18,7 @@ package com.android.tradefed.result;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -218,15 +219,16 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void invocationFailed(long elapsedTime, String message, Throwable cause) {
+    public void invocationFailed(Throwable cause) {
         // ignore
     }
 
     /**
      * {@inheritDoc}
      */
-    public void invocationBuildError(long elapsedTime, String message) {
+    public String getSummary() {
         // ignore
+        return null;
     }
 
     /**
