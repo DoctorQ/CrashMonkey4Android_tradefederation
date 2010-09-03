@@ -254,14 +254,13 @@ public class ArgsOptionParser extends OptionSetter {
      */
     public static String getOptionHelp(final Class<?> optionClass) {
         StringBuilder out = new StringBuilder();
+        Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(optionClass);
         String eol = System.getProperty("line.separator");
-        for (Field field : optionClass.getDeclaredFields()) {
-            if (field.isAnnotationPresent(Option.class)) {
-                final Option option = field.getAnnotation(Option.class);
-                out.append(String.format("    %s%s: %s", OPTION_NAME_PREFIX,
-                        option.name(), option.description()));
-                out.append(eol);
-            }
+        for (Field field : optionFields) {
+            final Option option = field.getAnnotation(Option.class);
+            out.append(String.format("    %s%s: %s", OPTION_NAME_PREFIX,
+                    option.name(), option.description()));
+            out.append(eol);
         }
         return out.toString();
     }

@@ -20,6 +20,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -197,14 +198,8 @@ class OptionSetter {
         return optionMap;
     }
 
-    private void addOptionsForObject(Object optionSource, Map<String, OptionField> optionMap)
-            throws ConfigurationException {
-        final Class<?> optionClass = optionSource.getClass();
-        addOptionsForClass(optionSource, optionMap, optionClass);
-    }
-
     /**
-     * Recursive method that adds all option fields (both declared and inherited) to the
+     * Adds all option fields (both declared and inherited) to the
      * <var>optionMap</var> for provided <var>optionClass</var>
      *
      * @param optionSource
@@ -212,24 +207,51 @@ class OptionSetter {
      * @param optionClass
      * @throws ConfigurationException
      */
-    private void addOptionsForClass(Object optionSource, Map<String, OptionField> optionMap,
-            final Class<?> optionClass) throws ConfigurationException {
+    private void addOptionsForObject(Object optionSource, Map<String, OptionField> optionMap)
+            throws ConfigurationException {
+        Collection<Field> optionFields = getOptionFieldsForClass(optionSource.getClass());
+        for (Field field : optionFields) {
+            final Option option = field.getAnnotation(Option.class);
+            addNameToMap(optionMap, optionSource, option.name(), field);
+            if (option.shortName() != Option.NO_SHORT_NAME) {
+                addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()), field);
+            }
+            if (isBooleanField(field)) {
+                // add the corresponding "no" option to make boolean false
+                addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
+            }
+        }
+    }
+
+    /**
+     * Gets a list of all {@link Option} fields (both declared and inherited) for given class.
+     *
+     * @param optionClass the {@link Class} to search
+     * @return a {@link Collection} of fields annotated with {@link Option}
+     */
+    protected static Collection<Field> getOptionFieldsForClass(final Class<?> optionClass) {
+        Collection<Field> fieldList = new ArrayList<Field>();
+        buildOptionFieldsForClass(optionClass, fieldList);
+        return fieldList;
+    }
+
+    /**
+     * Recursive method that adds all option fields (both declared and inherited) to the
+     * <var>optionFields</var> for provided <var>optionClass</var>
+     *
+     * @param optionClass
+     * @param optionFields
+     */
+    private static void buildOptionFieldsForClass(final Class<?> optionClass,
+            Collection<Field> optionFields) {
         for (Field field : optionClass.getDeclaredFields()) {
             if (field.isAnnotationPresent(Option.class)) {
-                final Option option = field.getAnnotation(Option.class);
-                addNameToMap(optionMap, optionSource, option.name(), field);
-                if (option.shortName() != Option.NO_SHORT_NAME) {
-                    addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()), field);
-                }
-                if (isBooleanField(field)) {
-                    // add the corresponding "no" option to make boolean false
-                    addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
-                }
+                optionFields.add(field);
             }
         }
         Class<?> superClass = optionClass.getSuperclass();
         if (superClass != null) {
-            addOptionsForClass(optionSource, optionMap, superClass);
+            buildOptionFieldsForClass(superClass, optionFields);
         }
     }
 

@@ -30,8 +30,10 @@ public class ArgsOptionParserTest extends TestCase {
     private static class OneOptionSource {
 
         private static final String DEFAULT_VALUE = "default";
+        private static final String OPTION_NAME = "my_option";
+        private static final String OPTION_DESC = "option description";
 
-        @Option(name="my_option", shortName='o')
+        @Option(name=OPTION_NAME, shortName='o', description=OPTION_DESC)
         private String mMyOption = DEFAULT_VALUE;
     }
 
@@ -59,6 +61,19 @@ public class ArgsOptionParserTest extends TestCase {
 
         @Option(name="my_boolean", shortName='b')
         private boolean mMyBool = DEFAULT_BOOL;
+    }
+
+    /**
+     * An option source that has a superclass with options
+     */
+    private static class InheritedOptionSource extends OneOptionSource {
+
+        private static final String OPTION_NAME = "my_sub_option";
+        private static final String OPTION_DESC = "sub description";
+
+        @SuppressWarnings("unused")
+        @Option(name=OPTION_NAME, description=OPTION_DESC)
+        private String mMySubOption = "";
     }
 
     /**
@@ -203,5 +218,16 @@ public class ArgsOptionParserTest extends TestCase {
        } catch (ConfigurationException e) {
            // expected
        }
+   }
+
+   /**
+    * Test that help text is displayed for all fields
+    */
+   public void testGetOptionHelp() {
+       String help = ArgsOptionParser.getOptionHelp(InheritedOptionSource.class);
+       assertTrue(help.contains(InheritedOptionSource.OPTION_NAME));
+       assertTrue(help.contains(InheritedOptionSource.OPTION_DESC));
+       assertTrue(help.contains(OneOptionSource.OPTION_NAME));
+       assertTrue(help.contains(OneOptionSource.OPTION_DESC));
    }
 }
