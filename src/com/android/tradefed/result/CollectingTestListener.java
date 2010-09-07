@@ -226,7 +226,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public String getSummary() {
+    public TestSummary getSummary() {
         // ignore
         return null;
     }

@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.File;
@@ -228,7 +229,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public String getSummary() {
+    public TestSummary getSummary() {
         // ignore
         return null;
     }

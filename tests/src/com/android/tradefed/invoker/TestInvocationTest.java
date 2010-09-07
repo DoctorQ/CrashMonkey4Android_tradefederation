@@ -31,6 +31,7 @@ import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.targetsetup.BuildError;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
@@ -58,7 +59,7 @@ import junit.framework.TestCase;
 public class TestInvocationTest extends TestCase {
 
     private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
-    private static final String mSummaryUrl = "http://www.url.com/report.txt";
+    private static final TestSummary mSummary = new TestSummary("http://www.url.com/report.txt");
 
     /** The {@link TestInvocation} under test, with all dependencies mocked out */
     private TestInvocation mTestInvocation;
@@ -74,7 +75,7 @@ public class TestInvocationTest extends TestCase {
     private ILeveledLogOutput mMockLogger;
     private IDeviceRecovery mMockRecovery;
     private List<ITestInvocationListener> mListeners;
-    private Capture<List<String>> mUriCapture;
+    private Capture<List<TestSummary>> mUriCapture;
 
     @Override
     protected void setUp() throws Exception {
@@ -113,7 +114,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockBuildInfo.getBuildId()).andStubReturn(1);
         EasyMock.expect(mMockBuildInfo.getBuildAttributes()).andStubReturn(EMPTY_MAP);
         EasyMock.expect(mMockBuildInfo.getTestTarget()).andStubReturn("");
-        mUriCapture = new Capture<List<String>>();
+        mUriCapture = new Capture<List<TestSummary>>();
 
         // create the BaseTestInvocation to test
         mTestInvocation = new TestInvocation() {
@@ -406,7 +407,7 @@ public class TestInvocationTest extends TestCase {
 
         // invocationEnded, getSummary (mMockTestListener)
         mMockTestListener.invocationEnded(EasyMock.anyLong());
-        EasyMock.expect(mMockTestListener.getSummary()).andReturn(mSummaryUrl);
+        EasyMock.expect(mMockTestListener.getSummary()).andReturn(mSummary);
 
         // putSummary, invocationEnded (mMockSummaryListener)
         mMockSummaryListener.putSummary(EasyMock.capture(mUriCapture));
@@ -423,9 +424,9 @@ public class TestInvocationTest extends TestCase {
 
     private void verifySummaryListener() {
         // Check that we captured the expected uris List
-        List<String> uris = mUriCapture.getValue();
-        assertEquals(1, uris.size());
-        assertEquals(mSummaryUrl, uris.get(0));
+        List<TestSummary> summaries = mUriCapture.getValue();
+        assertEquals(1, summaries.size());
+        assertEquals(mSummary, summaries.get(0));
     }
 
     /**

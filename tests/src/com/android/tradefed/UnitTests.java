@@ -35,6 +35,7 @@ import com.android.tradefed.result.CollectingTestListenerTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
 import com.android.tradefed.result.TestResultForwarderTest;
+import com.android.tradefed.result.TestSummaryTest;
 import com.android.tradefed.result.XmlResultReporterTest;
 import com.android.tradefed.targetsetup.DeviceFlasherTest;
 import com.android.tradefed.targetsetup.DeviceSetupTest;
@@ -84,6 +85,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(LogFileSaverTest.class);
         addTestSuite(TestResultForwarderTest.class);
+        addTestSuite(TestSummaryTest.class);
         addTestSuite(XmlResultReporterTest.class);
         addTestSuite(DeviceFlasherTest.class);
         addTestSuite(DeviceSetupTest.class);

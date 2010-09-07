@@ -31,6 +31,8 @@ import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.TestSummary;
+import com.android.tradefed.result.TestSummary.TypedString;
 import com.android.tradefed.targetsetup.BuildError;
 import com.android.tradefed.targetsetup.BuildInfo;
 import com.android.tradefed.targetsetup.IBuildInfo;
@@ -174,7 +176,7 @@ public class TestInvocation implements ITestInvocation {
             throw e;
         } finally {
             elapsedTime = System.currentTimeMillis() - startTime;
-            List<String> summaries = new ArrayList<String>(listeners.size());
+            List<TestSummary> summaries = new ArrayList<TestSummary>(listeners.size());
             for (ITestInvocationListener listener : listeners) {
                 if (device != null) {
                     listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
@@ -188,7 +190,7 @@ public class TestInvocation implements ITestInvocation {
                  */
                 if (!(listener instanceof ITestSummaryListener)) {
                     listener.invocationEnded(elapsedTime);
-                    String summary = listener.getSummary();
+                    TestSummary summary = listener.getSummary();
                     if (summary != null) {
                         summaries.add(summary);
                     }

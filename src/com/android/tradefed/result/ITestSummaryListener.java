@@ -16,17 +16,18 @@
 package com.android.tradefed.result;
 
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.TestSummary;
 
 import java.util.List;
 
 public interface ITestSummaryListener extends ITestInvocationListener {
     /**
-     * Passes a {@link List} of non-null {@link String}s which may have been returned from any
+     * Passes a {@link List} of non-null {@link TestSummary}s which may have been returned from any
      * {@link ITestInvocationListener}s instantiated as part of the configuration.
      *
-     * @param uris A {@link List} of non-null URIs from {@link ITestInvocationListener}s that are
-     *        part of the current configuration
+     * @param summaries A {@link List} of non-null {@link TestSummary}s from
+     *        {@link ITestInvocationListener}s that are part of the current configuration.
      */
-    public void putSummary(List<String> uris);
+    public void putSummary(List<TestSummary> summaries);
 
 }

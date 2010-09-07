@@ -94,6 +94,6 @@ public interface ITestInvocationListener extends ITestRunListener {
      *
      * @return A {@link TestSummary} summarizing the run, or null
      */
-    public String getSummary();
+    public TestSummary getSummary();
 
 }
