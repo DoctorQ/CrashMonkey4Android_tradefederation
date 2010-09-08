@@ -18,6 +18,7 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,6 +33,12 @@ import java.util.Iterator;
 public class Email {
     private static final String LOG_TAG = "Email";
     private static final String mailer = "/usr/bin/mailx";
+
+    private String mSender = null;
+
+    public void setSender(String sender) {
+        mSender = sender;
+    }
 
     /**
      * This is a sad excuse for an email message.
@@ -128,6 +135,7 @@ public class Email {
      */
     Process run(String[] cmd) throws IOException {
         ProcessBuilder pb = new ProcessBuilder(cmd);
+        pb.redirectErrorStream(true);
         return pb.start();
     }
 
@@ -167,6 +175,17 @@ public class Email {
 
         cmd.addAll(msg.getTo());
 
+        if (mSender != null) {
+            // Sender in the headers:
+            cmd.add("-a");
+            cmd.add(String.format("From: %s", mSender));
+            // sendmail options are denoted with a double-hyphen
+            cmd.add("--");
+            // Envelope Sender
+            cmd.add("-f");
+            cmd.add(mSender);
+        }
+
         Log.i(LOG_TAG, String.format("About to send email with command: %s", cmd));
         String[] strArray = new String[cmd.size()];
         Process mailerProc = run(cmd.toArray(strArray));
@@ -178,6 +197,27 @@ public class Email {
          */
         mailerStdin.write(msg.getBody().getBytes("UTF-8"));
         mailerStdin.flush();
+        mailerStdin.close();
+
+        int retValue;
+        try {
+            retValue = mailerProc.waitFor();
+        } catch (InterruptedException e) {
+            // ignore, but set retValue to something bogus
+            retValue = -12345;
+        }
+        if (retValue != 0) {
+            Log.e(LOG_TAG, String.format("Mailer finished with non-zero return value: %d", retValue));
+            BufferedInputStream mailerStdout = new BufferedInputStream(mailerProc.getInputStream());
+            StringBuilder stdout = new StringBuilder();
+            int theByte;
+            while((theByte = mailerStdout.read()) != -1) {
+                stdout.append((char)theByte);
+            }
+            Log.e(LOG_TAG, "Mailer output was: " + stdout.toString());
+        } else {
+            Log.v(LOG_TAG, "Mailer returned successfully.");
+        }
     }
 }
 

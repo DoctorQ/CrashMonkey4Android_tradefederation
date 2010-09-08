@@ -192,6 +192,7 @@ public class TestInvocation implements ITestInvocation {
                     listener.invocationEnded(elapsedTime);
                     TestSummary summary = listener.getSummary();
                     if (summary != null) {
+                        summary.setSource(listener.getClass().getName());
                         summaries.add(summary);
                     }
                 }

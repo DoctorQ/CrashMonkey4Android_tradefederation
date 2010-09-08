@@ -61,6 +61,10 @@ public class TestSummary {
         public String getString() {
             return mString;
         }
+
+        public String toString() {
+            return String.format("%s: %s", mType.toString(), mString);
+        }
     }
 
     /**
