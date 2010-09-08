@@ -44,7 +44,7 @@ public class DeviceSetupTest extends TestCase {
     private DeviceSetup mDeviceSetup;
     private ITestDevice mMockDevice;
     private IDevice mMockIDevice;
-    private DeviceBuildInfo mMockBuildInfo;
+    private IDeviceBuildInfo mMockBuildInfo;
     private File mTmpDir;
 
     /**
@@ -111,7 +111,7 @@ public class DeviceSetupTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceSetupr#setUp(ITestDevice, IBuildInfo)} when a non DeviceBuildInfo type
+     * Test {@link DeviceSetupr#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
      * is provided
      */
     public void testSetUp_nonDevice() throws Exception {

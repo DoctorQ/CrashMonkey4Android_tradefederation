@@ -50,12 +50,12 @@ public interface IDeviceFlasher {
      * online and available before proceeding with testing.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link DeviceBuildInfo} to flash
+     * @param deviceBuild the {@link IDeviceBuildInfo} to flash
      *
      * @throws TargetSetupError if failed to flash build
      * @throws DeviceNotAvailableException if device becomes unresponsive
      */
-    public void flash(ITestDevice device, DeviceBuildInfo deviceBuild) throws TargetSetupError,
+    public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException;
 
 }

@@ -17,7 +17,6 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
@@ -28,7 +27,6 @@ import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ITestSummaryListener;
-import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;

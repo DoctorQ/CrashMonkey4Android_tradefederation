@@ -138,10 +138,10 @@ public class DeviceSetup implements ITargetPreparer {
         if (mSkipFlash) {
             device.reboot();
         } else {
-            if (!(buildInfo instanceof DeviceBuildInfo)) {
-                throw new IllegalArgumentException("Provided buildInfo is not a DeviceBuildInfo");
+            if (!(buildInfo instanceof IDeviceBuildInfo)) {
+                throw new IllegalArgumentException("Provided buildInfo is not a IDeviceBuildInfo");
             }
-            DeviceBuildInfo deviceBuild = (DeviceBuildInfo)buildInfo;
+            IDeviceBuildInfo deviceBuild = (IDeviceBuildInfo)buildInfo;
 
             IDeviceFlasher flasher = createFlasher(device);
             flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));

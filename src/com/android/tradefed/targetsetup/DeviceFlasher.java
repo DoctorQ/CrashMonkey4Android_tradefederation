@@ -62,7 +62,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
     /**
      * {@inheritDoc}
      */
-    public void flash(ITestDevice device, DeviceBuildInfo deviceBuild) throws TargetSetupError,
+    public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
         try {
             Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
@@ -87,13 +87,13 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * Downloads extra flashing image files needed
      *
      * @param device the {@link ITestDevice} to download resources for
-     * @param localBuild the {@link DeviceBuildInfo} to populate. Assumes device image file is
+     * @param localBuild the {@link IDeviceBuildInfo} to populate. Assumes device image file is
      * already set
      *
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to retrieve resources
      */
-    private void downloadFlashingResources(ITestDevice device, DeviceBuildInfo localBuild)
+    private void downloadFlashingResources(ITestDevice device, IDeviceBuildInfo localBuild)
             throws TargetSetupError, DeviceNotAvailableException {
         IFlashingResourcesParser resourceParser = createFlashingResourcesParser(localBuild);
 
@@ -131,11 +131,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      *
      * @param resourceParser the {@link IFlashingResourcesParser}
      * @param retriever the {@link IFlashingResourcesRetriever}
-     * @param localBuild the {@link DeviceBuildInfo}
+     * @param localBuild the {@link IDeviceBuildInfo}
      * @throws TargetSetupError
      */
     protected void downloadExtraImageFiles(IFlashingResourcesParser resourceParser,
-            IFlashingResourcesRetriever retriever, DeviceBuildInfo localBuild)
+            IFlashingResourcesRetriever retriever, IDeviceBuildInfo localBuild)
             throws TargetSetupError {
     }
 
@@ -144,11 +144,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * <p/>
      * Exposed for unit testing.
      *
-     * @param localBuild the {@link DeviceBuildInfo} to parse
+     * @param localBuild the {@link IDeviceBuildInfo} to parse
      * @return
      * @throws TargetSetupError
      */
-    protected IFlashingResourcesParser createFlashingResourcesParser(DeviceBuildInfo localBuild)
+    protected IFlashingResourcesParser createFlashingResourcesParser(IDeviceBuildInfo localBuild)
             throws TargetSetupError {
         return new FlashingResourcesParser(localBuild.getDeviceImageFile());
     }
@@ -159,11 +159,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * Will only flash bootloader if current version on device != required version.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link DeviceBuildInfo} that contains the bootloader image to flash
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the bootloader image to flash
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash bootloader
      */
-    protected void checkAndFlashBootloader(ITestDevice device, DeviceBuildInfo deviceBuild)
+    protected void checkAndFlashBootloader(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         String currentBootloaderVersion = getImageVersion(device, "bootloader");
         if (deviceBuild.getBootloaderVersion() != null &&
@@ -221,11 +221,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * on device != required version
      *
      * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link DeviceBuildInfo} that contains the baseband image to flash
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the baseband image to flash
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash baseband
      */
-    protected void checkAndFlashBaseband(ITestDevice device, DeviceBuildInfo deviceBuild)
+    protected void checkAndFlashBaseband(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         String currentBasebandVersion = getImageVersion(device, "baseband");
         if (deviceBuild.getBasebandVersion() != null &&
@@ -276,11 +276,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * Flash the test userdata image on device.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link DeviceBuildInfo} that contains the userdata to flash
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the userdata to flash
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash user data
      */
-    protected void flashUserData(ITestDevice device, DeviceBuildInfo deviceBuild)
+    protected void flashUserData(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         switch (mUserDataFlashOption) {
             case FLASH: {
@@ -307,11 +307,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * Flash the system image on device.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link DeviceBuildInfo} to flash
+     * @param deviceBuild the {@link IDeviceBuildInfo} to flash
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if fastboot command fails
      */
-    protected void flashSystem(ITestDevice device, DeviceBuildInfo deviceBuild)
+    protected void flashSystem(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         Log.i(LOG_TAG, String.format("Flashing %s with update %s", device.getSerialNumber(),
                 deviceBuild.getDeviceImageFile().getAbsolutePath()));

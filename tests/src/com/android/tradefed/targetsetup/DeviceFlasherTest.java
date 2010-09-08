@@ -39,7 +39,7 @@ public class DeviceFlasherTest extends TestCase {
     private static final String TEST_STRING = "foo";
     private DeviceFlasher mFlasher;
     private ITestDevice mMockDevice;
-    private DeviceBuildInfo mMockBuildInfo;
+    private IDeviceBuildInfo mMockBuildInfo;
     private IFlashingResourcesRetriever mMockRetriever;
     private IFlashingResourcesParser mMockParser;
 
@@ -61,14 +61,14 @@ public class DeviceFlasherTest extends TestCase {
         mFlasher = new DeviceFlasher(mMockRetriever) {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
-                    DeviceBuildInfo localBuild) {
+                    IDeviceBuildInfo localBuild) {
                 return mMockParser;
             }
         };
     }
 
     /**
-     * Test {@link DeviceFlasher#flash(ITestDevice, DeviceBuildInfo)} when device is not available.
+     * Test {@link DeviceFlasher#flash(ITestDevice, IDeviceBuildInfo)} when device is not available.
      */
     public void testFlash_deviceNotAvailable() throws DeviceNotAvailableException  {
        try {
@@ -86,7 +86,7 @@ public class DeviceFlasherTest extends TestCase {
     }
 
     /**
-     * Test DeviceFlasher#flash(ITestDevice, DeviceBuildInfo)} when required board info is not
+     * Test DeviceFlasher#flash(ITestDevice, IDeviceBuildInfo)} when required board info is not
      * present.
      */
     public void testFlash_missingBoard() throws DeviceNotAvailableException  {
@@ -134,7 +134,7 @@ public class DeviceFlasherTest extends TestCase {
         DeviceFlasher flasher = getFlasherWithParserData(
                 String.format("require version-baseband=%s", newBasebandVersion));
 
-        DeviceBuildInfo build = new DeviceBuildInfo(1234, "target", "build-name");
+        IDeviceBuildInfo build = new DeviceBuildInfo(1234, "target", "build-name");
         build.setBasebandImage(new File("tmp"), newBasebandVersion);
         flasher.checkAndFlashBaseband(mockDevice, build);
         EasyMock.verify(mockDevice);
@@ -179,7 +179,7 @@ public class DeviceFlasherTest extends TestCase {
         return new DeviceFlasher(EasyMock.createNiceMock(IFlashingResourcesRetriever.class)) {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
-                    DeviceBuildInfo localBuild) throws TargetSetupError {
+                    IDeviceBuildInfo localBuild) throws TargetSetupError {
                 BufferedReader reader = new BufferedReader(new StringReader(androidInfoData));
                 try {
                     return new FlashingResourcesParser(reader);

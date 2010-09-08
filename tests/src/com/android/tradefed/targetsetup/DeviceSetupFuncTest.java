@@ -35,7 +35,7 @@ public class DeviceSetupFuncTest extends DeviceTestCase {
     private static final String LOG_TAG = "DeviceSetupFuncTest";
     private IDeviceFlasher mMockFlasher;
     private DeviceSetup mDeviceSetup;
-    private DeviceBuildInfo mMockBuildInfo;
+    private IDeviceBuildInfo mMockBuildInfo;
 
     /**
      * {@inheritDoc}
@@ -46,7 +46,7 @@ public class DeviceSetupFuncTest extends DeviceTestCase {
 
         mMockFlasher = new IDeviceFlasher() {
 
-            public void flash(ITestDevice device, DeviceBuildInfo deviceBuild)
+            public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
                     throws TargetSetupError {
                 // reboot device under test to simulate a flash
                 try {

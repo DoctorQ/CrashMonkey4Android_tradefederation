@@ -15,15 +15,14 @@
  */
 package com.android.tradefed.result;
 
+import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.targetsetup.IBuildInfo;
+
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.tradefed.targetsetup.IBuildInfo;
 
 /**
  * A thread-safe {@link ITestInvocationListener} that will collect all test results.

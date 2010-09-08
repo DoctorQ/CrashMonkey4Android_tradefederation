@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * A {@link IBuildInfo} that represents a complete Android device build and (optionally) its tests.
  */
-public class DeviceBuildInfo extends BuildInfo {
+public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
 
     private Map<String, ImageFile> mImageFileMap;
 
@@ -68,9 +68,7 @@ public class DeviceBuildInfo extends BuildInfo {
     }
 
     /**
-     * Helper method to retrieve an image file with given name.
-     * @param imageName
-     * @return the image file or <code>null</code> if not found
+     * {@inheritDoc}
      */
     public File getImageFile(String imageName) {
         ImageFile imgFileRecord = mImageFileMap.get(imageName);
@@ -81,9 +79,7 @@ public class DeviceBuildInfo extends BuildInfo {
     }
 
     /**
-     * Helper method to retrieve an image file version with given name.
-     * @param imageName
-     * @return the image version or <code>null</code> if not found
+     * {@inheritDoc}
      */
     public String getImageVersion(String imageName) {
         ImageFile imgFileRecord = mImageFileMap.get(imageName);
@@ -94,11 +90,7 @@ public class DeviceBuildInfo extends BuildInfo {
     }
 
     /**
-     * Stores an image file with given name in this build info
-     *
-     * @param imageName the unique name of the image
-     * @param file the local image {@link File}
-     * @param version the image file version
+     * {@inheritDoc}
      */
     public void setImageFile(String imageName, File file, String version) {
         mImageFileMap.put(imageName, new ImageFile(file, version));
@@ -106,88 +98,91 @@ public class DeviceBuildInfo extends BuildInfo {
 
 
     /**
-     * Get the local device image zip file.
+     * {@inheritDoc}
      */
     public File getDeviceImageFile() {
         return getImageFile(DEVICE_IMAGE_NAME);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setDeviceImageFile(File deviceImageFile) {
         setImageFile(DEVICE_IMAGE_NAME, deviceImageFile, Integer.toString(getBuildId()));
     }
 
     /**
-     * Get the local test userdata image file.
+     * {@inheritDoc}
      */
     public File getUserDataImageFile() {
         return getImageFile(USERDATA_IMAGE_NAME);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setUserDataImageFile(File userDataFile) {
         setImageFile(USERDATA_IMAGE_NAME, userDataFile, Integer.toString(getBuildId()));
     }
 
     /**
-     * Get the local tests zip file.
+     * {@inheritDoc}
      */
     public File getTestsZipFile() {
         return getImageFile(TESTZIP_IMAGE_NAME);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void setTestsZipFile(File testsZipFile) {
         setImageFile(TESTZIP_IMAGE_NAME, testsZipFile, Integer.toString(getBuildId()));
     }
 
     /**
-     * Get the local baseband image file.
+     * {@inheritDoc}
      */
     public File getBasebandImageFile() {
         return getImageFile(BASEBAND_IMAGE_NAME);
     }
 
     /**
-     * Get the baseband version.
+     * {@inheritDoc}
      */
     public String getBasebandVersion() {
         return getImageVersion(BASEBAND_IMAGE_NAME);
     }
 
     /**
-     * Set the baseband image for the device build.
-     *
-     * @param basebandFile the baseband image {@link File}
-     * @param version the version of the baseband
+     * {@inheritDoc}
      */
     public void setBasebandImage(File basebandFile, String version) {
         setImageFile(BASEBAND_IMAGE_NAME, basebandFile, version);
     }
 
     /**
-     * Get the local bootloader image file.
+     * {@inheritDoc}
      */
     public File getBootloaderImageFile() {
         return getImageFile(BOOTLOADER_IMAGE_NAME);
     }
 
     /**
-     * Get the bootloader version.
+     * {@inheritDoc}
      */
     public String getBootloaderVersion() {
         return getImageVersion(BOOTLOADER_IMAGE_NAME);
     }
 
     /**
-     * Set the bootloader image for the device build.
-     *
-     * @param bootloaderImgFile the bootloader image {@link File}
-     * @param version the version of the bootloader
+     * {@inheritDoc}
      */
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
         setImageFile(BOOTLOADER_IMAGE_NAME, bootloaderImgFile, version);
     }
 
     /**
-     * Removes all temporary files
+     * {@inheritDoc}
      */
     public void cleanUp() {
         for (ImageFile fileRecord : mImageFileMap.values()) {
