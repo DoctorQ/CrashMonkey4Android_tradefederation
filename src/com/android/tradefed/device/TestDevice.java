@@ -208,20 +208,34 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public String getProductType() throws DeviceNotAvailableException {
+        return internalGetProductType(MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * {@see getProductType()}
+     *
+     * @param retryAttempts The number of times to try calling {@see recoverDevice()} if the
+     *        device's product type cannot be found.
+     */
+    private String internalGetProductType(int retryAttempts)
+            throws DeviceNotAvailableException {
         String productType = getIDevice().getProperty("ro.product.board");
-        if (productType == null || productType.length() == 0) {
-            // this is likely because ddms hasn't processed all the properties yet, query this
-            // property directly
+        if (productType == null || productType.isEmpty()) {
+            /* DDMS may not have processes all of the properties yet, or the device may be in
+             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
+             * directly.
+             */
             if (getDeviceState() == TestDeviceState.FASTBOOT) {
                 Log.w(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying in fastboot",
                         getSerialNumber()));
-                return getFastbootProduct();
+                productType = getFastbootProduct();
             } else {
                 Log.w(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying", getSerialNumber()));
                 productType = executeShellCommand("getprop ro.product.board").trim();
-                if (productType == null || productType.length() == 0) {
+
+                if (productType.isEmpty()) {
                     // last ditch effort; try ro.product.device
                     productType = executeShellCommand("getprop ro.product.device").trim();
                     Log.w(LOG_TAG, String.format("Fell back to ro.product.device because " +
@@ -229,13 +243,28 @@ class TestDevice implements IManagedTestDevice {
                 }
             }
         }
+
+        // Things will likely break if we don't have a valid product type.  Try recovery (in case
+        // the device is only partially booted for some reason), and if that doesn't help, bail.
+        if (productType == null || productType.isEmpty()) {
+            if (retryAttempts > 0) {
+                recoverDevice();
+                productType = internalGetProductType(retryAttempts - 1);
+            }
+
+            if (productType.isEmpty()) {
+                throw new DeviceNotAvailableException(String.format(
+                        "Could not determine product type for device %s.", getSerialNumber()));
+            }
+        }
+
         return productType;
     }
 
     private String getFastbootProduct() throws DeviceNotAvailableException {
         CommandResult result = executeFastbootCommand("getvar", "product");
         if (result.getStatus() == CommandStatus.SUCCESS) {
-            Pattern fastbootProductPattern = Pattern.compile("product:\\s+(\\w+)");
+            Pattern fastbootProductPattern = Pattern.compile("product:[ ]+(\\w+)");
             // fastboot is weird, and may dump the output on stderr instead of stdout
             String resultText = result.getStdout();
             if (resultText == null || resultText.length() < 1) {

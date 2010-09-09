@@ -121,6 +121,41 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
+     * Verify that {@link TestDevice#getProductType()} throws an exception if requesting a product
+     * type directly fails while the device is in fastboot.
+     */
+    public void testGetProductType_fastbootFail() throws DeviceNotAvailableException {
+        mMockIDevice.getProperty((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andReturn((String)null);
+        CommandResult fastbootResult = new CommandResult();
+        fastbootResult.setStatus(CommandStatus.SUCCESS);
+        // output of this cmd goes to stderr
+        fastbootResult.setStdout("");
+        fastbootResult.setStderr("product: \n" + "finished. total time: 0.001s");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject())).andReturn(
+                fastbootResult);
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRunUtil);
+        TestDevice testDevice = new TestDevice(mMockIDevice, mMockMonitor) {
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
+            }
+        };
+        testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        try {
+            String type = testDevice.getProductType();
+            fail(String.format("DeviceNotAvailableException not thrown; productType was '%s'",
+                    type));
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
+    }
+
+    /**
      * Test {@link TestDevice#getProductType()} when device is in adb and IDevice has not cached
      * product type property
      */
@@ -129,7 +164,7 @@ public class TestDeviceTest extends TestCase {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null);
         final String expectedOutput = "nexusone";
-        mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
+        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.board"),
                 (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
         EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
             @Override
@@ -141,6 +176,46 @@ public class TestDeviceTest extends TestCase {
         });
         EasyMock.replay(mMockIDevice);
         assertEquals(expectedOutput, mTestDevice.getProductType());
+    }
+
+    /**
+     * Verify that {@link TestDevice#getProductType()} throws an exception if requesting a product
+     * type directly still fails.
+     */
+    public void testGetProductType_adbFail() throws DeviceNotAvailableException, IOException,
+            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+        mMockIDevice.getProperty((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andReturn((String)null);
+        // direct query fails: getprop ro.product.board --> ""
+        final String expectedOutput = "";
+        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.board"),
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                    int timeout) {
+                byte[] inputData = expectedOutput.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
+        // last-ditch query fails: getprop ro.product.device --> ""
+        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.device"),
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                    int timeout) {
+                byte[] inputData = expectedOutput.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
+        EasyMock.replay(mMockIDevice);
+        try {
+            mTestDevice.getProductType();
+            fail("DeviceNotAvailableException not thrown");
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
     }
 
     /**
