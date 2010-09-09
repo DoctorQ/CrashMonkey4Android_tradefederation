@@ -334,7 +334,7 @@ public interface ITestDevice {
     public boolean enableAdbRoot() throws DeviceNotAvailableException;
 
     /**
-     * Blocks for the device to be responsive and available for testing.
+     * Waits for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait
      * @throws DeviceNotAvailableException if device is still unresponsive after waitTime expires.
@@ -342,7 +342,7 @@ public interface ITestDevice {
     public void waitForDeviceAvailable(final long waitTime) throws DeviceNotAvailableException;
 
     /**
-     * Waits for the device to be responsive and available for testing. Uses default boot timeout.
+     * Waits for the device to be responsive and available for testing.  Uses default timeout.
      *
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.
@@ -351,6 +351,18 @@ public interface ITestDevice {
 
     /**
      * Blocks until device is visible via adb.
+     * <p/>
+     * Note the device may not necessarily be responsive to commands on completion. Use
+     * {@link #waitForDeviceAvailable()} instead.
+     *
+     * @param waitTime the time in ms to wait
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public void waitForDeviceOnline(final long waitTime) throws DeviceNotAvailableException;
+
+    /**
+     * Blocks until device is visible via adb.  Uses default timeout
      * <p/>
      * Note the device may not necessarily be responsive to commands on completion. Use
      * {@link #waitForDeviceAvailable()} instead.
