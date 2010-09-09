@@ -175,6 +175,12 @@ class OptionSetter {
             field.setAccessible(true);
             if (Collection.class.isAssignableFrom(field.getType())) {
                 Collection collection = (Collection)field.get(optionField.mOptionSource);
+                if (collection == null) {
+                    throw new ConfigurationException(String.format("internal error: no storage " +
+                            "allocated for field '%s' (used for option '%s') in class '%s'",
+                            field.getName(), optionName,
+                            optionField.mOptionSource.getClass().getName()));
+                }
                 collection.add(value);
             } else {
                 field.set(optionField.mOptionSource, value);

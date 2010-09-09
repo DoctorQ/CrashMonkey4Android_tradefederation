@@ -25,9 +25,12 @@ import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.util.Email;
 import com.android.tradefed.util.Email.Message;
 
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Iterator;
 
 /**
  * A simple result reporter that sends emails for test results.
@@ -39,7 +42,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     private String mSender = null;
 
     @Option(name="destination", description="One or more destination addresses")
-    private List<String> mDestinations = null;
+    private Collection<String> mDestinations = new HashSet<String>();
 
     private List<TestSummary> mSummaries = null;
     private long mElapsedTime = -1;
@@ -102,7 +105,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     public void invocationEnded(long elapsedTime) {
         mElapsedTime = elapsedTime;
 
-        if (mDestinations == null || mDestinations.isEmpty()) {
+        if (mDestinations.isEmpty()) {
             Log.e(LOG_TAG, "Failed to send email because no destination addresses were set.");
             return;
         }
@@ -113,7 +116,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
         Message msg = new Message();
         msg.setSubject(generateEmailSubject());
         msg.setBody(generateEmailBody());
-        ListIterator<String> toAddress = mDestinations.listIterator();
+        Iterator<String> toAddress = mDestinations.iterator();
         while (toAddress.hasNext()) {
             msg.addTo(toAddress.next());
         }
