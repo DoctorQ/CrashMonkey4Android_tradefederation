@@ -55,6 +55,10 @@ public class DeviceFlasher implements IDeviceFlasher  {
         mUserDataFlashOption = flashOption;
     }
 
+    protected UserDataFlashOption getUserDataFlashOption() {
+        return mUserDataFlashOption;
+    }
+
     /**
      * {@inheritDoc}
      */
