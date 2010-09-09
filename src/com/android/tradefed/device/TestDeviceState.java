@@ -50,6 +50,10 @@ public enum TestDeviceState {
      * Returns the {@link TestDeviceState} corresponding to the {@link DeviceState}.
      */
     static TestDeviceState getStateByDdms(DeviceState ddmsState) {
+        if (ddmsState == null) {
+            return TestDeviceState.NOT_AVAILABLE;
+        }
+
         switch (ddmsState) {
             case ONLINE:
                 return TestDeviceState.ONLINE;
