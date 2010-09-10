@@ -30,7 +30,6 @@ import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;
-import com.android.tradefed.result.TestSummary.TypedString;
 import com.android.tradefed.targetsetup.BuildError;
 import com.android.tradefed.targetsetup.BuildInfo;
 import com.android.tradefed.targetsetup.IBuildInfo;
