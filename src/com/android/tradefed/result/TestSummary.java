@@ -62,6 +62,7 @@ public class TestSummary {
             return mString;
         }
 
+        @Override
         public String toString() {
             return String.format("%s: %s", mType.toString(), mString);
         }

@@ -16,21 +16,15 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.testrunner.ITestRunListener;
-import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.result.CollectingTestListener;
-import com.android.tradefed.result.ITestSummaryListener;
-import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.util.Email;
 import com.android.tradefed.util.Email.Message;
 
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
-import java.util.Iterator;
 
 /**
  * A simple result reporter that sends emails for test results.
@@ -45,7 +39,6 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     private Collection<String> mDestinations = new HashSet<String>();
 
     private List<TestSummary> mSummaries = null;
-    private long mElapsedTime = -1;
 
     /**
      * {@inheritDoc}
@@ -102,9 +95,8 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationEnded(long elapsedTime) {
-        mElapsedTime = elapsedTime;
-
         if (mDestinations.isEmpty()) {
             Log.e(LOG_TAG, "Failed to send email because no destination addresses were set.");
             return;
