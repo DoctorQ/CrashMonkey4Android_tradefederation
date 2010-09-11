@@ -72,6 +72,7 @@ public class DeviceSetupTest extends TestCase {
         mDeviceSetup.setDeviceBootTime(100);
         // expect this call
         mMockFlasher.setUserDataFlashOption(UserDataFlashOption.FLASH);
+        mDeviceSetup.setMinExternalStoreSpace(-1);
         mTmpDir = FileUtil.createTempDir("tmp");
     }
 
@@ -99,12 +100,15 @@ public class DeviceSetupTest extends TestCase {
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
-        mMockDevice.preBootSetup();
         mMockDevice.waitForDeviceAvailable();
+        EasyMock.expect(mMockDevice.enableAdbRoot()).andReturn(Boolean.TRUE);
         mMockDevice.postBootSetup();
         EasyMock.expect(mMockDevice.clearErrorDialogs()).andReturn(Boolean.TRUE);
-        EasyMock.expect(mMockDevice.getExternalStoreFreeSpace()).andReturn(1000L);
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("1");
+        // expect push of local.prop file to change system properties
+        EasyMock.expect(mMockDevice.pushFile((File)EasyMock.anyObject(),
+                EasyMock.contains("local.prop"))).andReturn(Boolean.TRUE);
+        mMockDevice.reboot();
         // expect a bunch of shell commands - no need to verify which ones
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
                 andReturn("").anyTimes();
@@ -127,15 +131,9 @@ public class DeviceSetupTest extends TestCase {
      * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when free space check fails.
      */
     public void testSetup_freespace() throws Exception {
-        mMockFlasher.flash(mMockDevice, mMockBuildInfo);
-        mMockDevice.waitForDeviceOnline();
-        mMockDevice.preBootSetup();
-        mMockDevice.waitForDeviceAvailable();
-        mMockDevice.postBootSetup();
+        doSetupExpectations();
+        mDeviceSetup.setMinExternalStoreSpace(500);
         EasyMock.expect(mMockDevice.getExternalStoreFreeSpace()).andReturn(1L);
-        EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("1");
-        EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
-                andReturn("").anyTimes();
         EasyMock.replay(mMockFlasher, mMockDevice);
         try {
             mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
@@ -151,7 +149,6 @@ public class DeviceSetupTest extends TestCase {
     public void testSetup_buildError() throws Exception {
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
-        mMockDevice.preBootSetup();
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
                 andReturn("").anyTimes();

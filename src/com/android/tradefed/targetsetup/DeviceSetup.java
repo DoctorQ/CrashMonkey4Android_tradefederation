@@ -60,6 +60,15 @@ public class DeviceSetup implements ITargetPreparer {
             "Must be used with --local-data-path")
     private String mRemoteDataPath = null;
 
+    @Option(name="disable-dialing", description="set disable dialing property on boot")
+    private boolean mDisableDialing = true;
+
+    @Option(name="set-monkey", description="set ro.monkey on boot")
+    private boolean mSetMonkey = true;
+
+    @Option(name="audio-silent", description="set ro.audio.silent on boot")
+    private boolean mSetAudioSilent = true;
+
     @Option(name="disable-dalvik-verifier", description="disable the dalvik verifier on device. "
         + "Allows package-private framework tests to run.")
     private boolean mDisableDalvikVerifier = false;
@@ -121,6 +130,15 @@ public class DeviceSetup implements ITargetPreparer {
     }
 
     /**
+     * Sets the minimum external store space
+     * <p/>
+     * Exposed for unit testing
+     */
+    void setMinExternalStoreSpace(int minKBytes) {
+        mMinExternalStoreSpace = minKBytes;
+    }
+
+    /**
      * Gets the {@link IRunUtil} instance to use.
      * <p/>
      * Exposed for unit testing
@@ -147,11 +165,12 @@ public class DeviceSetup implements ITargetPreparer {
             flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
             flasher.flash(device, deviceBuild);
             device.waitForDeviceOnline();
-            device.preBootSetup();
+            // TODO: consider optimizing this into setup steps that can be performed before device
+            // boots
             waitForBootComplete(device, buildInfo.getBuildId());
             device.waitForDeviceAvailable();
         }
-        postBootSetup(device);
+        configureDevice(device);
     }
 
     /**
@@ -185,17 +204,18 @@ public class DeviceSetup implements ITargetPreparer {
     }
 
     /**
-     * Do setup steps to be performed before device fully boots
+     * Configure device for testing based on provided {@link Option}'s
      *
      * @param device
      */
-    protected void postBootSetup(ITestDevice device) throws DeviceNotAvailableException,
+    protected void configureDevice(ITestDevice device) throws DeviceNotAvailableException,
             TargetSetupError {
 
-        device.postBootSetup();
+        device.enableAdbRoot();
 
-        // keep screen on
-        device.executeShellCommand("svc power stayon true");
+        configureSystemProperties(device);
+
+        keepScreenOn(device);
 
         connectToWifi(device);
 
@@ -203,9 +223,63 @@ public class DeviceSetup implements ITargetPreparer {
 
         checkExternalStoreSpace(device);
 
-        disableDalvikVerifer(device);
+        // postBootSetup will disable keyguard - this must be done before attempting to clear error
+        // dialogs
+        device.postBootSetup();
 
         device.clearErrorDialogs();
+    }
+
+    /**
+     * Configures device system properties.
+     * <p/>
+     * Device will be rebooted if any property is changed.
+     *
+     * @param device
+     * @throws TargetSetupError
+     * @throws DeviceNotAvailableException
+     */
+    private void configureSystemProperties(ITestDevice device) throws TargetSetupError,
+            DeviceNotAvailableException {
+        // build the local.prop file contents with properties to change
+        StringBuilder propertyBuilder = new StringBuilder();
+        if (mDisableDialing) {
+            propertyBuilder.append("ro.telephony.disable-call=true\n");
+        }
+        if (mSetMonkey) {
+            propertyBuilder.append("ro.monkey=1\n");
+        }
+        if (mSetAudioSilent) {
+            propertyBuilder.append("ro.audio.silent=1\n");
+        }
+        if (mDisableDalvikVerifier) {
+            propertyBuilder.append("dalvik.vm.dexopt-flags = v=n");
+        }
+        if (propertyBuilder.length() > 0) {
+            // create a local.prop file, and push it to /data/local.prop
+            File localFile = createTempFile("local.prop", propertyBuilder.toString());
+            try {
+                boolean result = device.pushFile(localFile, "/data/local.prop");
+                if (!result) {
+                    throw new TargetSetupError(String.format("Failed to push file to %s",
+                            device.getSerialNumber()));
+                }
+            } finally {
+                localFile.delete();
+            }
+            Log.i(LOG_TAG, String.format(
+                    "Setup requires system property change. Reboot of %s required",
+                    device.getSerialNumber()));
+            device.reboot();
+        }
+    }
+
+    /**
+     * @param device
+     * @throws DeviceNotAvailableException
+     */
+    private void keepScreenOn(ITestDevice device) throws DeviceNotAvailableException {
+        device.executeShellCommand("svc power stayon true");
     }
 
     /**
@@ -270,36 +344,6 @@ public class DeviceSetup implements ITargetPreparer {
                         mLocalDataFile.getAbsolutePath(), fullRemotePath,
                         device.getSerialNumber()));
             }
-        }
-    }
-
-    /**
-     * Disable the dalvik verifier on device if specified.
-     * <p/>
-     * Note: Device needs to be rebooted for this change to take effect.
-     *
-     * @param device the {@link ITestDevice}
-     * @throws TargetSetupError if internal error occurred
-     * @throws DeviceNotAvailableException if device is not available
-     */
-    private void disableDalvikVerifer(ITestDevice device) throws TargetSetupError,
-            DeviceNotAvailableException {
-        if (mDisableDalvikVerifier) {
-            Log.i(LOG_TAG, String.format("Disabling dalvik verifier on %s",
-                    device.getSerialNumber()));
-            // create a local.prop file, and push it to /data/local.prop
-            File localFile = createTempFile("local.prop", "dalvik.vm.dexopt-flags = v=n");
-            try {
-                boolean result = device.pushFile(localFile, "/data/local.prop");
-                if (!result) {
-                    throw new TargetSetupError(String.format("Failed to push file to %s",
-                            device.getSerialNumber()));
-                }
-            } finally {
-                localFile.delete();
-            }
-            // need to reboot device for prop change to take effect
-            device.reboot();
         }
     }
 
