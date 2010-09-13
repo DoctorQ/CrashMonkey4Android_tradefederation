@@ -465,27 +465,21 @@ public class TestDeviceTest extends TestCase {
      * Verify that output of 'adb shell df' command is parsed correctly.
      */
     public void testGetExternalStoreFreeSpace() throws Exception {
-        final String mntPoint = "/mnt/sdcard";
-        final String expectedCmd = "df " + mntPoint;
         final String dfOutput =
             "/mnt/sdcard: 3864064K total, 1282880K used, 2581184K available (block size 32768)";
+        assertGetExternalStoreFreeSpace(dfOutput, 2581184);
+    }
 
-        EasyMock.expect(mMockMonitor.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
-                mntPoint);
-        // expect shell command to be called, and return the test df output
-        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(
-              new MockDevice() {
-                  @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                          int timeout) {
-                      byte[] inputData = dfOutput.getBytes();
-                      receiver.addOutput(inputData, 0, inputData.length);
-                  }
-              });
-        EasyMock.replay(mMockIDevice, mMockMonitor);
-        assertEquals(2581184, mTestDevice.getExternalStoreFreeSpace());
+    /**
+     * Unit test for {@link TestDevice#getExternalStoreFreeSpace()}.
+     * <p/>
+     * Verify that the table-based output of 'adb shell df' command is parsed correctly.
+     */
+    public void testGetExternalStoreFreeSpace_table() throws Exception {
+        final String dfOutput =
+            "Filesystem             Size   Used   Free   Blksize\n" +
+            "/mnt/sdcard              3G   787M     2G   4096";
+        assertGetExternalStoreFreeSpace(dfOutput, 2 * 1024 * 1024);
     }
 
     /**
@@ -494,27 +488,36 @@ public class TestDeviceTest extends TestCase {
      * Verify behavior when 'df' command returns unexpected content
      */
     public void testGetExternalStoreFreeSpace_badOutput() throws Exception {
-        final String mntPoint = "/mnt/sdcard";
-        final String expectedCmd = "df " + mntPoint;
         final String dfOutput =
             "/mnt/sdcard: blaH";
+        assertGetExternalStoreFreeSpace(dfOutput, 0);
+    }
 
+    /**
+     * Helper method to verify the {@link TestDevice#getExternalStoreFreeSpace()} method under
+     * different conditions.
+     *
+     * @param dfOutput the test output to inject
+     * @param expectedFreeSpaceKB the expected free space
+     */
+    private void assertGetExternalStoreFreeSpace(final String dfOutput, long expectedFreeSpaceKB)
+            throws Exception {
+        final String mntPoint = "/mnt/sdcard";
+        final String expectedCmd = "df " + mntPoint;
         EasyMock.expect(mMockMonitor.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
                 mntPoint);
         // expect shell command to be called, and return the test df output
-        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd), (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(
-              new MockDevice() {
-                  @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                          int timeout) {
-                      byte[] inputData = dfOutput.getBytes();
-                      receiver.addOutput(inputData, 0, inputData.length);
-                  }
-              });
+        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd),
+                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver, int timeout) {
+                byte[] inputData = dfOutput.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
         EasyMock.replay(mMockIDevice, mMockMonitor);
-        assertEquals(0, mTestDevice.getExternalStoreFreeSpace());
+        assertEquals(expectedFreeSpaceKB, mTestDevice.getExternalStoreFreeSpace());
     }
 
     /**

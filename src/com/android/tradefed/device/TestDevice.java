@@ -492,8 +492,34 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("Checking free space for %s", getSerialNumber()));
         String externalStorePath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         String output = executeShellCommand(String.format("df %s", externalStorePath));
+        Long available = parseFreeSpaceFromAvailable(output);
+        if (available != null) {
+            return available;
+        }
+        available = parseFreeSpaceFromFree(externalStorePath, output);
+        if (available != null) {
+            return available;
+        }
+
+        Log.e(LOG_TAG, String.format(
+                "free space command output \"%s\" did not match expected patterns", output));
+        return 0;
+    }
+
+    /**
+     * Parses a partitions available space from the legacy output of a 'df' command.
+     * <p/>
+     * Assumes output format of:
+     * <br>/
+     * <code>
+     * [partition]: 15659168K total, 51584K used, 15607584K available (block size 32768)
+     * </code>
+     * @param dfOutput the output of df command to parse
+     * @return the available space in kilobytes or <code>null</code> if output could not be parsed
+     */
+    private Long parseFreeSpaceFromAvailable(String dfOutput) {
         final Pattern freeSpacePattern = Pattern.compile("(\\d+)K available");
-        Matcher patternMatcher = freeSpacePattern.matcher(output);
+        Matcher patternMatcher = freeSpacePattern.matcher(dfOutput);
         if (patternMatcher.find()) {
             String freeSpaceString = patternMatcher.group(1);
             try {
@@ -502,9 +528,43 @@ class TestDevice implements IManagedTestDevice {
                 // fall through
             }
         }
-        Log.e(LOG_TAG, String.format(
-                "free space command output \"%s\" did not match expected pattern ", output));
-        return 0;
+        return null;
+    }
+
+    /**
+     * Parses a partitions available space from the 'table-formatted' output of a 'df' command.
+     * <p/>
+     * Assumes output format of:
+     * <br/>
+     * <code>
+     * Filesystem             Size   Used   Free   Blksize
+     * <br/>
+     * [partition]:              3G   790M  2G     4096
+     * </code>
+     * @param dfOutput the output of df command to parse
+     * @return the available space in kilobytes or <code>null</code> if output could not be parsed
+     */
+    private Long parseFreeSpaceFromFree(String externalStorePath, String dfOutput) {
+        Long freeSpace = null;
+        final Pattern freeSpaceTablePattern = Pattern.compile(String.format(
+                //fs   Size         Used         Free
+                "%s\\s+[\\w\\d]+\\s+[\\w\\d]+\\s+(\\d+)(\\w)", externalStorePath));
+        Matcher tablePatternMatcher = freeSpaceTablePattern.matcher(dfOutput);
+        if (tablePatternMatcher.find()) {
+            String numericValueString = tablePatternMatcher.group(1);
+            String unitType = tablePatternMatcher.group(2);
+            try {
+                freeSpace = Long.parseLong(numericValueString);
+                if (unitType.equals("M")) {
+                    freeSpace = freeSpace * 1024;
+                } else if (unitType.equals("G")) {
+                    freeSpace = freeSpace * 1024 * 1024;
+                }
+            } catch (NumberFormatException e) {
+                // fall through
+            }
+        }
+        return freeSpace;
     }
 
     /**
