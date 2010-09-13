@@ -21,9 +21,10 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_JAVA_RESOURCE_DIRS := res
 
-LOCAL_MODULE := TradeFed
+LOCAL_MODULE := tradefed
 
-LOCAL_STATIC_JAVA_LIBRARIES := ddmlib junit kxml2-2.3.0
+LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0
+LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 
