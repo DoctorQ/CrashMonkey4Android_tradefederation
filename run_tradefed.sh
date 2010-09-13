@@ -20,4 +20,4 @@
 # Currently fixed to linux
 lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
-java -cp $lib_path/TradeFed.jar com.android.tradefed.command.Command "$@"
+java -cp $lib_path/ddmlib-prebuilt.jar:$lib_path/tradefed.jar com.android.tradefed.command.Command "$@"
