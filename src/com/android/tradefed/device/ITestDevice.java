@@ -382,24 +382,6 @@ public interface ITestDevice {
     public boolean waitForDeviceNotAvailable(final long waitTime);
 
     /**
-     * Perform instructions to configure device for testing that must be done after every boot.
-     * <p/>
-     * Should be called once device is online, but before device is fully booted/available
-     * <p/>
-     * In normal circumstances this method doesn't need to be called explicitly, as
-     * implementations should perform these steps automatically when performing a reboot.
-     * <p/>
-     * Where it may need to be called is when device reboots due to other events (eg when a
-     * fastboot update command has completed)
-     * <p/>
-     * TODO: consider hiding this method and handle fastboot update case automagically
-     *
-     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
-     */
-    public void preBootSetup() throws DeviceNotAvailableException;
-
-    /**
      * Perform instructions to configure device for testing that after every boot.
      * <p/>
      * Should be called after device is fully booted/available

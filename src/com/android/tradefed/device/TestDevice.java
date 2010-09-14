@@ -97,15 +97,6 @@ class TestDevice implements IManagedTestDevice {
     @Option(name="enable-root", description="enable adb root on boot")
     private boolean mEnableAdbRoot = true;
 
-    @Option(name="disable-dialing", description="set disable dialing property on boot")
-    private boolean mDisableDialing = true;
-
-    @Option(name="set-monkey", description="set ro.monkey on boot")
-    private boolean mSetMonkey = true;
-
-    @Option(name="audio-silent", description="set ro.audio.silent on boot")
-    private boolean mSetAudioSilent = true;
-
     @Option(name="disable-keyguard", description="attempt to disable keyguard once complete")
     private boolean mDisableKeyguard = true;
 
@@ -956,14 +947,8 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
-        if (!hasPrebootSetupRun()) {
-            Log.i(LOG_TAG, String.format("Preboot setup missing on device %s after recovery. " +
-                    "Rebooting to ensure proper setup", getSerialNumber()));
-            reboot();
-        } else {
-            // this might be a runtime reset - still need to run post boot setup steps
-            postBootSetup();
-        }
+        // this might be a runtime reset - still need to run post boot setup steps
+        postBootSetup();
     }
 
     /**
@@ -1391,64 +1376,10 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void preBootSetup() throws DeviceNotAvailableException  {
-        Log.i(LOG_TAG, String.format("Performing prebootsetup on %s", getSerialNumber()));
-        // TODO: it may be a problem if any of these commands cause device to enter recovery,
-        // Recovery mode will wait until device is fully booted, and some of these properties can
-        // only be set before device is fully booted.
-        // May need to have an alternate recovery mode for only waiting till device is online
-        if (mEnableAdbRoot) {
-            enableAdbRoot();
-        }
-        if (mSetAudioSilent) {
-            // mute the master volume--this has to be done as early as possible
-            executeShellCommand("setprop ro.audio.silent 1");
-        }
-        if (mSetMonkey) {
-            executeShellCommand("setprop ro.monkey 1");
-        }
-        if (mDisableDialing) {
-            executeShellCommand("setprop ro.telephony.disable-call true");
-        }
-    }
-
-    /**
-     * Determines if device has run all the necessary preboot setup steps
-     *
-     * @return <code>true</code> if all pre-boot setup settings are properly in place
-     * @throws DeviceNotAvailableException
-     */
-    boolean hasPrebootSetupRun() throws DeviceNotAvailableException {
-        Log.i(LOG_TAG, String.format("Checking prebootsetup on %s", getSerialNumber()));
-        // just attempt to enable adb root regardless
-        if (mEnableAdbRoot) {
-            enableAdbRoot();
-        }
-        if (mSetAudioSilent) {
-            String result = executeShellCommand("getprop ro.audio.silent");
-            if (!result.contains("1")) {
-                return false;
-            }
-        }
-        if (mSetMonkey) {
-            String result = executeShellCommand("getprop ro.monkey");
-            if (!result.contains("1")) {
-                return false;
-            }
-        }
-        if (mDisableDialing) {
-            String result = executeShellCommand("getprop ro.telephony.disable-call");
-            if (!result.contains("true")) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void postBootSetup() throws DeviceNotAvailableException  {
+        if (mEnableAdbRoot) {
+            enableAdbRoot();
+        }
         if (mDisableKeyguard) {
             Log.i(LOG_TAG, String.format("Attempting to disable keyguard on %s using %s",
                     getSerialNumber(), mDisableKeyguardCmd));
@@ -1524,19 +1455,12 @@ class TestDevice implements IManagedTestDevice {
             doAdbReboot(null);
             waitForDeviceNotAvailable("reboot", getCommandTimeout());
         }
-        if (mMonitor.waitForDeviceOnline() != null) {
-            preBootSetup();
-            if (mMonitor.waitForDeviceAvailable() != null) {
-                postBootSetup();
-                return;
-            }
+        if (mMonitor.waitForDeviceAvailable() != null) {
+            postBootSetup();
+            return;
+        } else {
+            recoverDevice();
         }
-        // TODO: wrap reboot in a deviceAction to prevent this
-        Log.e(LOG_TAG, String.format(
-                "Device not available after reboot. Setup steps might be skipped",
-                getSerialNumber()));
-
-        recoverDevice();
     }
 
     /**

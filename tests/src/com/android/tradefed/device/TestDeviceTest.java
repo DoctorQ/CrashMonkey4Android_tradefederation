@@ -80,10 +80,15 @@ public class TestDeviceTest extends TestCase {
                 } catch (AdbCommandRejectedException e) {
                 }
             }
+
             @Override
-            boolean hasPrebootSetupRun() {
-                // preboot setup is too complicated to mock out correctly, so just return true
-                return true;
+            public void postBootSetup() {
+                // too annoying to mock out postBootSetup actions everyone, so do nothing
+            }
+
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
             }
         };
         mTestDevice.setRecovery(mMockRecovery);
