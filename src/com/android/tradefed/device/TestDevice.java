@@ -243,7 +243,7 @@ class TestDevice implements IManagedTestDevice {
                 productType = internalGetProductType(retryAttempts - 1);
             }
 
-            if (productType.isEmpty()) {
+            if (productType == null || productType.isEmpty()) {
                 throw new DeviceNotAvailableException(String.format(
                         "Could not determine product type for device %s.", getSerialNumber()));
             }
@@ -940,10 +940,12 @@ class TestDevice implements IManagedTestDevice {
 
     /**
      * Attempts to recover device communication.
+     * <p/>
+     * Exposed for testing.
      *
      * @throws DeviceNotAvailableException if device is not longer available
      */
-    private void recoverDevice() throws DeviceNotAvailableException {
+    void recoverDevice() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
