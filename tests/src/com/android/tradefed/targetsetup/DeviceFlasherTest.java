@@ -16,8 +16,12 @@
 
 package com.android.tradefed.targetsetup;
 
+import com.android.ddmlib.FileListingService;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IFileListingService;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.IFileListingService.IFileEntry;
+import com.android.tradefed.targetsetup.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 
@@ -42,6 +46,7 @@ public class DeviceFlasherTest extends TestCase {
     private IDeviceBuildInfo mMockBuildInfo;
     private IFlashingResourcesRetriever mMockRetriever;
     private IFlashingResourcesParser mMockParser;
+    private IFileListingService mMockFileService;
 
     /**
      * {@inheritDoc}
@@ -57,6 +62,7 @@ public class DeviceFlasherTest extends TestCase {
         mMockBuildInfo.setUserDataImageFile(new File(TEST_STRING));
         mMockRetriever = EasyMock.createNiceMock(IFlashingResourcesRetriever.class);
         mMockParser = EasyMock.createNiceMock(IFlashingResourcesParser.class);
+        mMockFileService = EasyMock.createMock(IFileListingService.class);
 
         mFlasher = new DeviceFlasher(mMockRetriever) {
             @Override
@@ -64,7 +70,18 @@ public class DeviceFlasherTest extends TestCase {
                     IDeviceBuildInfo localBuild) {
                 return mMockParser;
             }
+
+            @Override
+            void extractZip(IDeviceBuildInfo deviceBuild, File unzipDir) {
+                // skip
+            }
+
+            @Override
+            File[] getTestsZipDataFiles(File hostDir) {
+                return new File[] {new File("foo")};
+            }
         };
+        mFlasher.setUserDataFlashOption(UserDataFlashOption.RETAIN);
     }
 
     /**
@@ -138,6 +155,62 @@ public class DeviceFlasherTest extends TestCase {
         build.setBasebandImage(new File("tmp"), newBasebandVersion);
         flasher.checkAndFlashBaseband(mockDevice, build);
         EasyMock.verify(mockDevice);
+    }
+
+    /**
+     * Test flashing of user data with a tests zip
+     * @throws TargetSetupError
+     */
+    public void testFlashUserData_testsZip() throws DeviceNotAvailableException, TargetSetupError {
+        mFlasher.setUserDataFlashOption(UserDataFlashOption.TESTS_ZIP);
+        EasyMock.expect(mMockDevice.getFileListingService()).andReturn(mMockFileService);
+
+        // TODO: need to make it much simpler to mock a file system layout
+        // what the following code attempts to do is mock the following layout
+        // /data
+        //      /media
+        //      /app
+        IFileEntry rootMockEntry = EasyMock.createMock(IFileEntry.class);
+        EasyMock.expect(mMockFileService.getRoot()).andReturn(rootMockEntry).anyTimes();
+        IFileEntry dataMockEntry = EasyMock.createMock(IFileEntry.class);
+        EasyMock.expect(mMockFileService.getChildren(rootMockEntry, false, null)).andReturn(
+                new IFileEntry[] {rootMockEntry});
+        EasyMock.expect(rootMockEntry.findChild(FileListingService.DIRECTORY_DATA)).andReturn(
+                dataMockEntry);
+        IFileEntry appMockEntry = EasyMock.createMock(IFileEntry.class);
+        EasyMock.expect(appMockEntry.getName()).andReturn("app").anyTimes();
+        EasyMock.expect(appMockEntry.getFullEscapedPath()).andReturn("app").anyTimes();
+        IFileEntry mediaMockEntry = EasyMock.createMock(IFileEntry.class);
+        EasyMock.expect(mediaMockEntry.getName()).andReturn("media").anyTimes();
+        EasyMock.expect(mediaMockEntry.getFullEscapedPath()).andReturn("media").anyTimes();
+
+
+        EasyMock.expect(mMockFileService.getChildren(dataMockEntry, false, null)).andReturn(
+                new IFileEntry[] {appMockEntry, mediaMockEntry}).times(2);
+
+        // expect
+        mMockDevice.rebootUntilOnline();
+        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+
+        // expect 'rm app' but not 'rm media'
+        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r app"))).andReturn(
+                "");
+        EasyMock.expect(
+                mMockDevice.syncFiles((File)EasyMock.anyObject(),
+                        EasyMock.contains(FileListingService.DIRECTORY_DATA))).andReturn(
+                Boolean.TRUE);
+
+        // expect chmod operations
+        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains(
+                "chown system.system app app/*"))).andReturn("");
+
+        // expect
+        mMockDevice.rebootIntoBootloader();
+
+        EasyMock.replay(mMockDevice, mMockFileService, rootMockEntry, dataMockEntry, appMockEntry,
+                mediaMockEntry);
+        mFlasher.flashUserData(mMockDevice, mMockBuildInfo);
+        EasyMock.verify(mMockDevice, mMockFileService);
     }
 
     /**

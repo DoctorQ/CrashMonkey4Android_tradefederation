@@ -145,7 +145,13 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     public void reboot() throws DeviceNotAvailableException {
         // ignore
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void rebootUntilOnline() throws DeviceNotAvailableException {
+        // ignore
     }
 
     /**
@@ -153,7 +159,6 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     public void rebootIntoBootloader() throws DeviceNotAvailableException {
         // ignore
-
     }
 
     /**
@@ -161,7 +166,6 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     public void waitForDevice(long time) throws DeviceNotAvailableException {
         // ignore
-
     }
 
     /**
@@ -301,5 +305,13 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     public void setRecovery(IDeviceRecovery recovery) {
         // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public IFileListingService getFileListingService() {
+        // ignore
+        return null;
     }
 }

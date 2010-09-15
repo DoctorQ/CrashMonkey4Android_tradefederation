@@ -81,7 +81,7 @@ public class DeviceSetup implements ITargetPreparer {
     private boolean mSkipFlash = false;
 
     @Option(name="userdata-flash", description=
-        "specify handling of userdata partition. One of FLASH (default), WIPE, SKIP")
+        "specify handling of userdata partition. One of FLASH (default), TESTS_ZIP, WIPE, SKIP")
     private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
 
     /**

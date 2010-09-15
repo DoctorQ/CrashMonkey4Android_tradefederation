@@ -32,6 +32,8 @@ public interface IDeviceFlasher {
         FLASH,
         /** wipe the device's userdata partition */
         WIPE,
+        /** push the contents of the tests zip file onto the device's userdata partition */
+        TESTS_ZIP,
         /** leave the userdata partition as is */
         RETAIN;
     }

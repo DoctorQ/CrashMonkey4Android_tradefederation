@@ -260,6 +260,11 @@ public interface ITestDevice {
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException;
 
     /**
+     * Retrieve a {@link IFileListingService} for this device
+     */
+    public IFileListingService getFileListingService();
+
+    /**
      * Grabs a snapshot stream of the logcat data.
      */
     public InputStream getLogcat();
@@ -320,6 +325,13 @@ public interface ITestDevice {
      * @throws DeviceNotAvailableException if device is not available after reboot
      */
     public void reboot() throws DeviceNotAvailableException;
+
+    /**
+     * An alternate to {@link #reboot()} that only blocks until device is online ie visible to adb.
+     *
+     * @throws DeviceNotAvailableException if device is not available after reboot
+     */
+    public void rebootUntilOnline() throws DeviceNotAvailableException;
 
     /**
      * Turns on adb root.

@@ -28,7 +28,7 @@ import java.util.Vector;
  */
 public class FileListingServiceWrapper implements IFileListingService {
 
-    IDevice mDevice = null;
+    private final FileListingService mService;
 
     /**
      * A wrapper that directs {@link IFileListingService.IFileEntry} calls to the 'real'
@@ -91,6 +91,13 @@ public class FileListingServiceWrapper implements IFileListingService {
         public boolean isAppFileName() {
             return mFileEntry.isAppFileName();
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        public String getName() {
+            return mFileEntry.getName();
+        }
     }
 
     /**
@@ -100,13 +107,13 @@ public class FileListingServiceWrapper implements IFileListingService {
         if (device == null) {
             throw new IllegalArgumentException("Null device passed in.");
         }
-        mDevice = device;
+        mService = device.getFileListingService();
     }
 
     /**
      * Gets an IFileListingService for the given device.
      */
-    public static IFileListingService getFileListingSericeForDevice(IDevice device) {
+    public static IFileListingService getFileListingServiceForDevice(IDevice device) {
         if (device == null) {
             return null;
         }
@@ -117,7 +124,7 @@ public class FileListingServiceWrapper implements IFileListingService {
      * {@inheritDoc}
      */
     public IFileEntry getRoot() {
-        return FileEntryWrapper.getIFileEntry(mDevice.getFileListingService().getRoot());
+        return FileEntryWrapper.getIFileEntry(mService.getRoot());
     }
 
     /**
@@ -126,7 +133,7 @@ public class FileListingServiceWrapper implements IFileListingService {
     public IFileEntry[] getChildren(IFileEntry fileEntry, boolean useCache,
             final IListingReceiver receiver) {
         Vector<IFileEntry> entriesVector = new Vector<IFileEntry>();
-        FileEntry[] entries = mDevice.getFileListingService().getChildren(fileEntry.getFileEntry(),
+        FileEntry[] entries = mService.getChildren(fileEntry.getFileEntry(),
                 useCache, receiver);
         for (FileEntry fe : entries) {
             entriesVector.add(FileEntryWrapper.getIFileEntry(fe));

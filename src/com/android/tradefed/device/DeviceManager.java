@@ -16,6 +16,7 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
@@ -97,6 +98,8 @@ public class DeviceManager implements IDeviceManager {
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
         mCheckDeviceMap = new Hashtable<String, IDeviceStateMonitor>();
+        // TODO: Temporarily increase default timeout as workaround for syncFiles timeouts
+        DdmPreferences.setTimeOut(30*1000);
         mAdbBridge = createAdbBridge();
         // assume "adb" is in PATH
         // TODO: make this configurable
