@@ -92,6 +92,7 @@ public class GTestResultParser extends MultiLineReceiver {
     private long mTotalRunTime = 0;
     private boolean mTestInProgress = false;
     private boolean mTestRunInProgress = false;
+    private final String mTestRunName;
     private final Collection<ITestRunListener> mTestListeners;
 
     /** True if start of test has already been reported to listener. */
@@ -187,18 +188,24 @@ public class GTestResultParser extends MultiLineReceiver {
     /**
      * Creates the GTestResultParser.
      *
+     * @param runName the test run name to provide to
+     *            {@link ITestRunListener#testRunStarted(String, int)}
      * @param listeners informed of test results as the tests are executing
      */
-    public GTestResultParser(Collection<ITestRunListener> listeners) {
+    public GTestResultParser(String testRunName, Collection<ITestRunListener> listeners) {
+        mTestRunName = testRunName;
         mTestListeners = new ArrayList<ITestRunListener>(listeners);
     }
 
     /**
      * Creates the GTestResultParser for a single listener.
      *
+     * @param runName the test run name to provide to
+     *            {@link ITestRunListener#testRunStarted(String, int)}
      * @param listener informed of test results as the tests are executing
      */
-    public GTestResultParser(ITestRunListener listener) {
+    public GTestResultParser(String testRunName, ITestRunListener listener) {
+        mTestRunName = testRunName;
         mTestListeners = new ArrayList<ITestRunListener>(1);
         mTestListeners.add(listener);
     }
@@ -330,7 +337,7 @@ public class GTestResultParser extends MultiLineReceiver {
         // if start test run not reported yet
         if (!mTestRunStartReported) {
             for (ITestRunListener listener : mTestListeners) {
-                listener.testRunStarted(mNumTestsExpected);
+                listener.testRunStarted(mTestRunName, mNumTestsExpected);
             }
             mTestRunStartReported = true;
         }

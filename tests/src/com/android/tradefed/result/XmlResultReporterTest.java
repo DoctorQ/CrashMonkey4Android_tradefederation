@@ -75,11 +75,11 @@ public class XmlResultReporterTest extends TestCase {
      */
     public void testEmptyGeneration() {
         final String expectedOutput = "<?xml version='1.0' encoding='UTF-8' ?>" +
-            "<testsuite name=\"todo\" tests=\"0\" failures=\"0\" errors=\"0\" time=\"1\" " +
+            "<testsuite name=\"test\" tests=\"0\" failures=\"0\" errors=\"0\" time=\"1\" " +
             "timestamp=\"ignore\" hostname=\"localhost\"> " +
             "<properties />" +
             "</testsuite>";
-        mResultReporter.invocationStarted(new BuildInfo());
+        mResultReporter.invocationStarted(new BuildInfo(1, "test", "test"));
         mResultReporter.invocationEnded(1);
         assertEquals(expectedOutput, getOutput());
     }
@@ -91,8 +91,10 @@ public class XmlResultReporterTest extends TestCase {
         Map<String, String> emptyMap = Collections.emptyMap();
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         mResultReporter.invocationStarted(new BuildInfo());
+        mResultReporter.testRunStarted("run", 1);
         mResultReporter.testStarted(testId);
         mResultReporter.testEnded(testId, emptyMap);
+        mResultReporter.testRunEnded(3, emptyMap);
         mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare
@@ -110,9 +112,11 @@ public class XmlResultReporterTest extends TestCase {
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         final String trace = "this is a trace";
         mResultReporter.invocationStarted(new BuildInfo());
+        mResultReporter.testRunStarted("run", 1);
         mResultReporter.testStarted(testId);
         mResultReporter.testFailed(TestFailure.FAILURE, testId, trace);
         mResultReporter.testEnded(testId, emptyMap);
+        mResultReporter.testRunEnded(3, emptyMap);
         mResultReporter.invocationEnded(1);
         String output =  getOutput();
         // TODO: consider doing xml based compare

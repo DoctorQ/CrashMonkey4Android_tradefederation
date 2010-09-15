@@ -67,7 +67,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 TestAppConstants.PASSED_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.PASSED_TEST_METHOD);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testEnded(EasyMock.eq(expectedTest),
                     (Map<String, String>)EasyMock.anyObject());
@@ -87,7 +87,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 TestAppConstants.FAILED_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.FAILED_TEST_METHOD);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         // TODO: add stricter checking on stackTrace
         mMockListener.testFailed(EasyMock.eq(TestFailure.FAILURE), EasyMock.eq(expectedTest),
@@ -110,7 +110,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 TestAppConstants.CRASH_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.CRASH_TEST_METHOD);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
@@ -135,7 +135,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setTestTimeout(timeout);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
@@ -158,7 +158,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
@@ -210,7 +210,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                 TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
@@ -267,7 +267,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setTestTimeout(1000);
         CollectingTestListener listener = new CollectingTestListener();
         mInstrumentationTest.run(listener);
-        assertEquals(TestAppConstants.TOTAL_TEST_CLASS_TESTS, listener.getTestResults().size());
+        assertEquals(TestAppConstants.TOTAL_TEST_CLASS_TESTS, listener.getNumTotalTests());
         assertEquals(TestAppConstants.TOTAL_TEST_CLASS_PASSED_TESTS, listener.getNumPassedTests());
     }
 }

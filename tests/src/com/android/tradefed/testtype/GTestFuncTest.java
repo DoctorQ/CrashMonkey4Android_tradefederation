@@ -63,7 +63,7 @@ public class GTestFuncTest extends DeviceTestCase {
         Map<String, String> emptyMap = Collections.emptyMap();
         mGTest.setRunTestsInAllSubdirectories(false);
         Log.i(LOG_TAG, "testRun");
-        mMockListener.testRunStarted(7);
+        mMockListener.testRunStarted(NATIVE_TESTAPP_MODULE_NAME, 7);
         String[][] allTests = {
                 {"FibonacciTest", "testRecursive_One"},
                 {"FibonacciTest", "testRecursive_Ten"},
@@ -105,7 +105,7 @@ public class GTestFuncTest extends DeviceTestCase {
     private void doNativeTestAppRunSingleTestFailure(TestIdentifier testId) {
         Map<String, String> emptyMap = Collections.emptyMap();
         mGTest.setModuleName(NATIVE_TESTAPP_MODULE_NAME);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(NATIVE_TESTAPP_MODULE_NAME, 1);
         mMockListener.testStarted(EasyMock.eq(testId));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(testId),
                 EasyMock.isA(String.class));

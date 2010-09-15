@@ -16,68 +16,58 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.InputStream;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
- * A thread-safe {@link ITestInvocationListener} that will collect all test results.
+ * A {@link ITestInvocationListener} that will collect all test results.
+ * <p/>
+ * Although the data structures used in this object are thread-safe, the
+ * {@link ITestInvocationListener} callbacks must be called in the correct order.
  */
 public class CollectingTestListener implements ITestInvocationListener {
-
-    public enum TestStatus {
-        /** Test error */
-        ERROR,
-        /** Test failed. */
-        FAILURE,
-        /** Test passed */
-        PASSED
-    }
-
-    /**
-     * Container for a result of a single test.
-     */
-    public static class TestResult {
-        private final TestStatus mStatus;
-        private final String mStackTrace;
-
-        TestResult(TestStatus status, String trace) {
-            mStatus = status;
-            mStackTrace = trace;
-        }
-
-        TestResult(TestStatus status) {
-            this(status, null);
-        }
-
-        /**
-         * Get the {@link TestStatus} result of the test.
-         */
-        public TestStatus getStatus() {
-            return mStatus;
-        }
-
-        /**
-         * Get the associated {@link String} stack trace. Should be <code>null</code> if
-         * {@link #getStatus()} is {@link TestStatus.PASSED}.
-         */
-        public String getStackTrace() {
-            return mStackTrace;
-        }
-    }
 
     // Stores the test results
     // Uses a synchronized map to make thread safe.
     // Uses a LinkedHashmap to have predictable iteration order
-    private Map<TestIdentifier, TestResult> mTestResults =
-        Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
-    private Map<String, String> mRunMetrics = null;
-    private boolean mIsRunComplete = false;
-    private boolean mIsRunFailed = false;
+    private Map<String, TestRunResult> mRunResultsMap =
+        Collections.synchronizedMap(new LinkedHashMap<String, TestRunResult>());
+    private TestRunResult mCurrentResults = null;
+
+    // cached test constants
+    private Integer mNumTotalTests = null;
+    private Integer mNumPassedTests = null;
+    private Integer mNumFailedTests = null;
+    private Integer mNumErrorTests = null;
+
+    /**
+     * {@inheritDoc}
+     */
+    public void invocationStarted(IBuildInfo buildInfo) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void testRunStarted(String name, int numTests) {
+        if (mRunResultsMap.containsKey(name)) {
+            // rerun of previous run. Add test results to it
+            mCurrentResults = mRunResultsMap.get(name);
+        } else {
+            // new run
+            mCurrentResults = new TestRunResult(name);
+            mRunResultsMap.put(name, mCurrentResults);
+        }
+        mCurrentResults.setRunComplete(false);
+        mCurrentResults.setRunFailed(false);
+    }
 
     /**
      * {@inheritDoc}
@@ -90,9 +80,12 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("testEnded called before testRunStarted");
+        }
         // only record test pass if failure not already recorded
-        if (!mTestResults.containsKey(test)) {
-            mTestResults.put(test, new TestResult(TestStatus.PASSED));
+        if (!mCurrentResults.getTestResults().containsKey(test)) {
+            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.PASSED));
         }
     }
 
@@ -100,112 +93,126 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("testFailed called before testRunStarted");
+        }
         if (status.equals(TestFailure.ERROR)) {
-            mTestResults.put(test, new TestResult(TestStatus.ERROR, trace));
+            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.ERROR, trace));
         } else {
-            mTestResults.put(test, new TestResult(TestStatus.FAILURE, trace));
+            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.FAILURE, trace));
         }
     }
 
     /**
      * {@inheritDoc}
      */
-    public synchronized void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-        mIsRunComplete = true;
-        mRunMetrics = runMetrics;
+    public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("testRunEnded called before testRunStarted");
+        }
+        mCurrentResults.setRunComplete(true);
+        mCurrentResults.setMetrics(runMetrics);
+        mCurrentResults.addElapsedTime(elapsedTime);
     }
 
     /**
      * {@inheritDoc}
      */
-    public synchronized void testRunFailed(String errorMessage) {
-        mIsRunComplete = true;
-        mIsRunFailed = true;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testRunStarted(int testCount) {
-        // ignore
+    public void testRunFailed(String errorMessage) {
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("testRunFailed called before testRunStarted");
+        }
+        mCurrentResults.setRunComplete(true);
+        mCurrentResults.setRunFailed(true);
     }
 
     /**
      * {@inheritDoc}
      */
     public void testRunStopped(long elapsedTime) {
-        mIsRunComplete = true;
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("testRunStopped called before testRunStarted");
+        }
+        mCurrentResults.setRunComplete(true);
+        mCurrentResults.addElapsedTime(elapsedTime);
     }
 
     /**
-     * Return true if test run has completed.
+     * Gets the results for the current test run.
      */
-    public synchronized boolean isRunComplete() {
-        return mIsRunComplete;
+    public TestRunResult getCurrentRunResults() {
+        return mCurrentResults;
     }
 
     /**
-     * Return true if test run failed before completing.
+     * Gets the results for all test runs.
      */
-    public synchronized  boolean isRunFailure() {
-        return mIsRunFailed;
+    public Collection<TestRunResult> getRunResults() {
+        return mRunResultsMap.values();
     }
 
     /**
-     * Gets the map of test run metrics
+     * Gets the total number of tests for all runs.
      */
-    public Map<String, String> getRunMetrics() {
-        return mRunMetrics;
+    public int getNumTotalTests() {
+        if (!areTestCountsCalculated()) {
+            calculateTestCounts();
+        }
+        return mNumTotalTests;
     }
 
     /**
-     * Gets the map of test results.
-     */
-    public Map<TestIdentifier, TestResult> getTestResults() {
-        return mTestResults;
-    }
-
-    /**
-     * Gets the set of tests executed.
-     */
-    public Set<TestIdentifier> getTests() {
-        return mTestResults.keySet();
-    }
-
-    /**
-     * Gets the number of passed tests.
-     */
-    public int getNumPassedTests() {
-        return getNumTestsWithStatus(TestStatus.PASSED);
-    }
-
-    /**
-     * Gets the number of failed tests.
+     * Gets the total number of failed tests for all runs.
      */
     public int getNumFailedTests() {
-        return getNumTestsWithStatus(TestStatus.FAILURE);
+        if (!areTestCountsCalculated()) {
+            calculateTestCounts();
+        }
+        return mNumFailedTests;
     }
 
     /**
-     * Gets the number of test with {@link TestStatus.ERROR} status.
+     * Gets the total number of error tests for all runs.
      */
     public int getNumErrorTests() {
-        return getNumTestsWithStatus(TestStatus.ERROR);
+        if (!areTestCountsCalculated()) {
+            calculateTestCounts();
+        }
+        return mNumErrorTests;
     }
 
+    /**
+     * Gets the total number of passed tests for all runs.
+     */
+    public int getNumPassedTests() {
+        if (!areTestCountsCalculated()) {
+            calculateTestCounts();
+        }
+        return mNumPassedTests;
+    }
+
+    /**
+     * @returns true if invocation had any failed or error tests.
+     */
     public boolean hasFailedTests() {
         return getNumErrorTests() > 0 || getNumFailedTests() > 0;
     }
 
-    private int getNumTestsWithStatus(TestStatus status) {
-        // TODO: consider caching these values
-        int count = 0;
-        for (TestResult result : getTestResults().values()) {
-            if (status.equals(result.getStatus())) {
-                count++;
-            }
+    private synchronized boolean areTestCountsCalculated() {
+        return mNumTotalTests != null;
+    }
+
+    private synchronized void calculateTestCounts() {
+        mNumTotalTests = 0;
+        mNumPassedTests = 0;
+        mNumFailedTests = 0;
+        mNumErrorTests = 0;
+        for (TestRunResult runResult : getRunResults()) {
+            mNumTotalTests += runResult.getNumTests();
+            mNumPassedTests += runResult.getNumPassedTests();
+            mNumFailedTests += runResult.getNumFailedTests();
+            mNumErrorTests += runResult.getNumErrorTests();
         }
-        return count;
     }
 
     /**
@@ -233,21 +240,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void invocationStarted(IBuildInfo buildInfo) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testRunStarted(String name, int numTests) {
         // ignore
     }
 }

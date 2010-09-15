@@ -30,7 +30,6 @@ import com.android.tradefed.result.ITestInvocationListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Vector;
 
@@ -223,7 +222,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
     /**
      * Returns the IFileListingService for this device; exposed for unit testing
      */
-    protected IFileListingService getFileListingService() {
+    IFileListingService getFileListingService() {
         if (mDevice == null) {
             throw new NullPointerException("Trying to get FileListingService when no Device set!");
         }
@@ -233,18 +232,20 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
 
     /**
      * Executes all native tests in a folder as well as in all subfolders recursively.
+     * <p/>
+     * Exposed for unit testing.
      *
      * @param rootEntry The root folder to begin searching for native tests
      * @param testDevice The device to run tests on
-     * @param outputReceiver The output receiver where the shell output will be piped to
+     * @param listeners the run listeners
      * @return true if any tests ran, false otherwise
      * @throws DeviceNotAvailableException
      */
-    protected boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
-            IShellOutputReceiver outputReceiver) throws DeviceNotAvailableException {
+    boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
+            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
 
         Vector<IFileEntry> folders = new Vector<IFileEntry>();
-        Vector<String> files = new Vector<String>();
+        Vector<IFileEntry> files = new Vector<IFileEntry>();
         boolean testsRan = false;
 
         IFileListingService fileListingService = getFileListingService();
@@ -253,36 +254,49 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         IFileEntry[] children = fileListingService.getChildren(rootEntry, true, null);
 
         for (IFileEntry file : children) {
-            String binaryPath = file.getFullEscapedPath();
             if (file.isDirectory()) {
                 folders.add(file);
             }
             else if (!file.isAppFileName()) {
                 // they shouldn't be here anyway, but in case we find one, don't execute .apks!
-                files.add(binaryPath);
+                files.add(file);
             }
         }
 
         if (mRunAllTestsInAllSubdirectories) {
             // First recursively run tests in all subdirectories
-            Iterator<IFileEntry> folderIter = folders.iterator();
-            while (folderIter.hasNext()) {
-                IFileEntry nextFolder = folderIter.next();
-                testsRan |= doRunAllTestsInSubdirectory(nextFolder, testDevice, outputReceiver);
+            for (IFileEntry folder : folders) {
+                testsRan |= doRunAllTestsInSubdirectory(folder, testDevice, listeners);
             }
         }
 
         // Then run any actual tests in the current directory
-        Iterator<String> it = files.iterator();
-        while (it.hasNext()) {
-            String fullPath = it.next();
+        for (IFileEntry file : files) {
+            IShellOutputReceiver resultParser = createResultParser(file.getName(), listeners);
+            String fullPath = file.getFullEscapedPath();
             String flags = getAllGTestFlags();
             // force file to be executable
             testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
-            testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), outputReceiver);
+            testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser);
             testsRan = true;
         }
         return testsRan;
+    }
+
+    /**
+     * Factory method for creating a {@link IShellOutputReceiver} that parses test output and
+     * forwards results to listeners.
+     * <p/>
+     * Exposed so unit tests can mock
+     *
+     * @param listeners
+     * @param runName
+     * @return a {@link IShellOutputReceiver}
+     */
+    IShellOutputReceiver createResultParser(String runName,
+            Collection<ITestRunListener> listeners) {
+        GTestResultParser resultParser = new GTestResultParser(runName, listeners);
+        return resultParser;
     }
 
     /**
@@ -296,8 +310,6 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
-
-        GTestResultParser resultParser = new GTestResultParser(convertListeners(listeners));
 
         IFileListingService fileListingService = getFileListingService();
 
@@ -317,7 +329,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
                 nativeTestDirectory = nextDirectory;
             }
         }
-        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, resultParser);
+        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
     }
 
     /**

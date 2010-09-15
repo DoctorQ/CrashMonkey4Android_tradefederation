@@ -20,6 +20,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.util.FileUtil;
 
@@ -80,12 +81,14 @@ public class XmlResultReporter extends CollectingTestListener {
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
     private ILogFileSaver mLogFileSaver;
+    private IBuildInfo mBuildInfo;
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void invocationEnded(long elapsedTime) {
+        super.invocationEnded(elapsedTime);
         if (mReportDir != null) {
             generateSummary(mLogFileSaver.getFileDir(), elapsedTime);
         }
@@ -96,18 +99,12 @@ public class XmlResultReporter extends CollectingTestListener {
      */
     @Override
     public void invocationStarted(IBuildInfo buildInfo) {
+        super.invocationStarted(buildInfo);
         if (mReportDir == null) {
             throw new IllegalArgumentException(String.format("missing %s", REPORT_DIR_NAME));
         }
         mLogFileSaver = new LogFileSaver(buildInfo, mReportDir);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void testRunStarted(String name, int numTests) {
-        // ignore for now
+        mBuildInfo = buildInfo;
     }
 
     /**
@@ -128,7 +125,7 @@ public class XmlResultReporter extends CollectingTestListener {
             printTestResults(serializer, timestamp, elapsedTime);
             serializer.endDocument();
             String msg = String.format("XML test result file generated at %s. Total tests %d, " +
-                    "Failed %d, Error %d", reportDir.getAbsolutePath(), getTestResults().size(),
+                    "Failed %d, Error %d", reportDir.getAbsolutePath(), getNumTotalTests(),
                     getNumFailedTests(), getNumErrorTests());
             Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg);
         } catch (IOException e) {
@@ -169,10 +166,9 @@ public class XmlResultReporter extends CollectingTestListener {
 
     void printTestResults(KXmlSerializer serializer, String timestamp, long elapsedTime)
             throws IOException {
-        Map<TestIdentifier, TestResult>  results = getTestResults();
         serializer.startTag(ns, TESTSUITE);
-        serializer.attribute(ns, ATTR_NAME, "todo");
-        serializer.attribute(ns, ATTR_TESTS, Integer.toString(results.size()));
+        serializer.attribute(ns, ATTR_NAME, mBuildInfo.getTestTarget());
+        serializer.attribute(ns, ATTR_TESTS, Integer.toString(getNumTotalTests()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(getNumFailedTests()));
         serializer.attribute(ns, ATTR_ERRORS, Integer.toString(getNumErrorTests()));
         serializer.attribute(ns, ATTR_TIME, Long.toString(elapsedTime));
@@ -181,8 +177,12 @@ public class XmlResultReporter extends CollectingTestListener {
         serializer.startTag(ns, PROPERTIES);
         serializer.endTag(ns, PROPERTIES);
 
-        for (TestIdentifier test : results.keySet()) {
-            print(serializer, test, results.get(test));
+        for (TestRunResult runResult : getRunResults()) {
+            // TODO: add test run summaries as TESTSUITES ?
+            Map<TestIdentifier, TestResult> testResults = runResult.getTestResults();
+            for (Map.Entry<TestIdentifier, TestResult> testEntry : testResults.entrySet()) {
+                print(serializer, testEntry.getKey(), testEntry.getValue());
+            }
         }
 
         serializer.endTag(ns, TESTSUITE);

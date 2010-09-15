@@ -201,12 +201,12 @@ public class InstrumentationTestTest extends TestCase {
                     Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
                 // perform call back on listeners to show empty run
                 for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(0);
+                    listener.testRunStarted(TEST_PACKAGE_VALUE, 0);
                     listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
             }
         });
-        mMockListener.testRunStarted(0);
+        mMockListener.testRunStarted(TEST_PACKAGE_VALUE, 0);
         mMockListener.testRunEnded(1, EMPTY_STRING_MAP);
         // expect normal mode to be turned off
         mMockRemoteRunner.setLogOnly(false);
@@ -240,7 +240,7 @@ public class InstrumentationTestTest extends TestCase {
                     Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
                 // perform call back on listeners to show run of two tests
                 for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(2);
+                    listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
                     listener.testStarted(test1);
                     listener.testEnded(test1, emptyMap);
                     listener.testStarted(test2);
@@ -260,7 +260,7 @@ public class InstrumentationTestTest extends TestCase {
                     Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
                 // perform call back on listeners to show run failed - only one test
                 for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(2);
+                    listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
                     listener.testStarted(test1);
                     listener.testEnded(test1, emptyMap);
                     listener.testRunFailed(runErrorMsg);
@@ -277,7 +277,7 @@ public class InstrumentationTestTest extends TestCase {
                     Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
                 // perform call back on listeners to show run failed - only one test
                 for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(1);
+                    listener.testRunStarted(TEST_PACKAGE_VALUE, 1);
                     listener.testStarted(test2);
                     listener.testEnded(test2, emptyMap);
                     listener.testRunEnded(1, EMPTY_STRING_MAP);
@@ -285,11 +285,11 @@ public class InstrumentationTestTest extends TestCase {
             }
         });
 
-        mMockListener.testRunStarted(2);
+        mMockListener.testRunStarted(TEST_PACKAGE_VALUE, 2);
         mMockListener.testStarted(test1);
         mMockListener.testEnded(test1, emptyMap);
         mMockListener.testRunFailed(runErrorMsg);
-        mMockListener.testRunStarted(1);
+        mMockListener.testRunStarted(TEST_PACKAGE_VALUE, 1);
         mMockListener.testStarted(test2);
         mMockListener.testEnded(test2, emptyMap);
         mMockListener.testRunEnded(1, EMPTY_STRING_MAP);

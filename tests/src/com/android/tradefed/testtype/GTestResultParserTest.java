@@ -38,6 +38,7 @@ import junit.framework.TestCase;
  */
 public class GTestResultParserTest extends TestCase {
     private static final String TEST_TYPE_DIR = "testtype";
+    private static final String TEST_MODULE_NAME = "module";
     private static final String GTEST_OUTPUT_FILE_1 = "gtest_output1.txt";
     private static final String GTEST_OUTPUT_FILE_2 = "gtest_output2.txt";
     private static final String GTEST_OUTPUT_FILE_3 = "gtest_output3.txt";
@@ -80,7 +81,7 @@ public class GTestResultParserTest extends TestCase {
     public void testParseSimpleFile() throws Exception {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_1);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
-        mockRunListener.testRunStarted(11);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 11);
         // 11 passing test cases in this run
         for (int i=0; i<11; ++i) {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
@@ -89,7 +90,7 @@ public class GTestResultParserTest extends TestCase {
         }
         mockRunListener.testRunEnded(3, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
     }
 
@@ -100,7 +101,7 @@ public class GTestResultParserTest extends TestCase {
     public void testParseSimpleFileNoTimes() throws Exception {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_2);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
-        mockRunListener.testRunStarted(53);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 53);
         // 53 passing test cases in this run
         for (int i=0; i<53; ++i) {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
@@ -109,7 +110,7 @@ public class GTestResultParserTest extends TestCase {
         }
         mockRunListener.testRunEnded(0, EMPTY_MAP);
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
     }
 
@@ -119,10 +120,10 @@ public class GTestResultParserTest extends TestCase {
     public void testParseNoTests() throws Exception {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_3);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
-        mockRunListener.testRunStarted(0);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 0);
         mockRunListener.testRunEnded(0, EMPTY_MAP);
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
     }
 
@@ -133,7 +134,7 @@ public class GTestResultParserTest extends TestCase {
     public void testParseLargerFile() throws Exception {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_4);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
-        mockRunListener.testRunStarted(268);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 268);
         // 268 passing test cases in this run
         for (int i=0; i<268; ++i) {
             mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
@@ -142,7 +143,7 @@ public class GTestResultParserTest extends TestCase {
         }
         mockRunListener.testRunEnded(325, EMPTY_MAP);  //time
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
     }
 
@@ -156,7 +157,7 @@ public class GTestResultParserTest extends TestCase {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_5);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
         // 13 test cases in this run
-        mockRunListener.testRunStarted(13);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 13);
         mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
         mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject(),
                     (Map<String, String>)EasyMock.anyObject());
@@ -194,7 +195,7 @@ public class GTestResultParserTest extends TestCase {
 
         mockRunListener.testRunEnded(8, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
         EasyMock.verify(mockRunListener);
     }
@@ -207,7 +208,7 @@ public class GTestResultParserTest extends TestCase {
         String[] contents =  readInFile(GTEST_OUTPUT_FILE_6);
         ITestRunListener mockRunListener = EasyMock.createMock(ITestRunListener.class);
         // 10 test cases in this run
-        mockRunListener.testRunStarted(10);
+        mockRunListener.testRunStarted(TEST_MODULE_NAME, 10);
         mockRunListener.testStarted((TestIdentifier)EasyMock.anyObject());
         mockRunListener.testEnded((TestIdentifier)EasyMock.anyObject(),
                     (Map<String, String>)EasyMock.anyObject());
@@ -238,7 +239,7 @@ public class GTestResultParserTest extends TestCase {
 
         mockRunListener.testRunEnded(10, EMPTY_MAP);  // time
         EasyMock.replay(mockRunListener);
-        GTestResultParser resultParser = new GTestResultParser(mockRunListener);
+        GTestResultParser resultParser = new GTestResultParser(TEST_MODULE_NAME, mockRunListener);
         resultParser.processNewLines(contents);
         EasyMock.verify(mockRunListener);
     }

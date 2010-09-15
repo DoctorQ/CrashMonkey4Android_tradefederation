@@ -54,15 +54,6 @@ public interface ITestInvocationListener extends ITestRunListener {
     public void invocationStarted(IBuildInfo buildInfo);
 
     /**
-     * An alternate {@link #testRunStarted(int)} that provides a name for the test run.
-     *
-     * @param name {@link String} name of the test run, unique per invocation
-     *
-     * TODO: not sure this is needed
-     */
-    public void testRunStarted(String name, int numTests);
-
-    /**
      * Provides the associated log or debug data from the test invocation.
      * <p/>
      * Must be called before {@link #invocationFailed(String, Throwable)} or

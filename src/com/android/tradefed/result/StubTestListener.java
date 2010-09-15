@@ -56,7 +56,7 @@ public class StubTestListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
-    public void testRunStarted(int testCount) {
+    public void testRunStarted(String runName, int testCount) {
         // ignore
     }
 

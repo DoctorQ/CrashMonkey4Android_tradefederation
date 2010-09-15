@@ -29,6 +29,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -313,9 +314,10 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);
         mDevice.runInstrumentationTests(mRunner, mListeners);
-        if (testTracker.isRunFailure() || !testTracker.isRunComplete()) {
+        TestRunResult runResult = testTracker.getCurrentRunResults();
+        if (runResult.isRunFailure() || !runResult.isRunComplete()) {
             // get the delta incomplete tests
-            expectedTests.removeAll(testTracker.getTests());
+            expectedTests.removeAll(runResult.getTests());
             InstrumentationListTest testRerunner = new InstrumentationListTest(mPackageName,
                     mRunnerName, expectedTests);
             testRerunner.setDevice(getDevice());
@@ -389,8 +391,9 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
             listeners.add(listener);
             try {
                 mDevice.runInstrumentationTests(mRunner, listeners);
-                mTests = listener.getTests();
-                return !listener.isRunFailure() && listener.isRunComplete();
+                TestRunResult runResults = listener.getCurrentRunResults();
+                mTests = runResults.getTests();
+                return !runResults.isRunFailure() && runResults.isRunComplete();
             } catch (DeviceNotAvailableException e) {
                 // TODO: should throw this immediately if it occurs, rather than continuing to
                 // retry

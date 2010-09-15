@@ -250,7 +250,7 @@ public class TestInvocation implements ITestInvocation {
                 ((IRemoteTest)test).run(listeners);
             } else {
                 for (ITestInvocationListener listener : listeners) {
-                    listener.testRunStarted(test.countTestCases());
+                    listener.testRunStarted(test.getClass().getName(), test.countTestCases());
                 }
                 long startTime = System.currentTimeMillis();
                 // forward the JUnit results to the invocation listener

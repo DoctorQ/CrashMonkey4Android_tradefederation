@@ -38,7 +38,7 @@ public class TestTimeoutListenerTest extends TestCase {
         TestTimeoutListener listener = new TestTimeoutListener(1000, callback);
         final TestIdentifier test = new TestIdentifier("Foo", "testFoo");
         Map<String, String> emptyMap = Collections.emptyMap();
-        listener.testRunStarted(1);
+        listener.testRunStarted("foo", 1);
         listener.testStarted(test);
         listener.testEnded(test, emptyMap);
         listener.testRunEnded(0, emptyMap);
@@ -51,7 +51,7 @@ public class TestTimeoutListenerTest extends TestCase {
         ITimeoutCallback callback = EasyMock.createStrictMock(ITimeoutCallback.class);
         TestTimeoutListener listener = new TestTimeoutListener(100, callback);
         final TestIdentifier test = new TestIdentifier("Foo", "testFoo");
-        listener.testRunStarted(1);
+        listener.testRunStarted("fooRun", 1);
         listener.testStarted(test);
         listener.testRunFailed("");
         // wait for longer than original timeout, to ensure callback is not called
@@ -67,7 +67,7 @@ public class TestTimeoutListenerTest extends TestCase {
         final TestIdentifier test = new TestIdentifier("Foo", "testFoo");
         callback.testTimeout(test);
         EasyMock.replay(callback);
-        listener.testRunStarted(1);
+        listener.testRunStarted("foo", 1);
         listener.testStarted(test);
         // wait for longer than original timeout, to ensure callback is not called
         Thread.sleep(200);

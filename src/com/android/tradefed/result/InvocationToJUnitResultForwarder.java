@@ -91,9 +91,9 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testRunStarted(int testCount) {
+    public void testRunStarted(String runName, int testCount) {
         // TODO: no run started method on TestResult - would be good to propagate this up
-        Log.i(LOG_TAG, String.format("run started: %d tests", testCount));
+        Log.i(LOG_TAG, String.format("run %s started: %d tests", runName, testCount));
     }
 
     /**
@@ -245,13 +245,6 @@ import junit.framework.TestResult;
      * {@inheritDoc}
      */
     public void testRunFailed(String errorMessage, File log) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testRunStarted(String name, int numTests) {
         // ignore
     }
 
