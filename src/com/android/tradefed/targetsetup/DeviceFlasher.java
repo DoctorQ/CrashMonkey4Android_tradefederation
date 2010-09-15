@@ -160,10 +160,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
      *
      * @param device the {@link ITestDevice} to flash
      * @param deviceBuild the {@link IDeviceBuildInfo} that contains the bootloader image to flash
+     * @return <code>true</code> if bootloader was flashed, <code>false</code> if it was skipped
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash bootloader
      */
-    protected void checkAndFlashBootloader(ITestDevice device, IDeviceBuildInfo deviceBuild)
+    protected boolean checkAndFlashBootloader(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         String currentBootloaderVersion = getImageVersion(device, "bootloader");
         if (deviceBuild.getBootloaderVersion() != null &&
@@ -171,9 +172,11 @@ public class DeviceFlasher implements IDeviceFlasher  {
             Log.i(LOG_TAG, String.format("Flashing bootloader %s",
                     deviceBuild.getBootloaderVersion()));
             flashBootloader(device, deviceBuild.getBootloaderImageFile());
+            return true;
         } else {
             Log.i(LOG_TAG, String.format("Bootloader is already version %s, skipping flashing",
                     currentBootloaderVersion));
+            return false;
         }
     }
 
