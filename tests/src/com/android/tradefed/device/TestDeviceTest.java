@@ -52,6 +52,7 @@ public class TestDeviceTest extends TestCase {
     private IDevice mMockIDevice;
     private IShellOutputReceiver mMockReceiver;
     private TestDevice mTestDevice;
+    private TestDevice mRecoveryTestDevice;
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
     private IRunUtil mMockRunUtil;
@@ -68,6 +69,8 @@ public class TestDeviceTest extends TestCase {
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
+
+        // A TestDevice with a no-op recoverDevice() implementation
         mTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
             @Override
             public void reboot() {
@@ -90,10 +93,42 @@ public class TestDeviceTest extends TestCase {
             IRunUtil getRunUtil() {
                 return mMockRunUtil;
             }
+
+            @Override
+            void recoverDevice() throws DeviceNotAvailableException {
+                // ignore
+            }
         };
         mTestDevice.setRecovery(mMockRecovery);
         mTestDevice.setCommandTimeout(100);
         mTestDevice.setLogStartDelay(-1);
+
+        // TestDevice with intact recoverDevice()
+        mRecoveryTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
+            @Override
+            public void reboot() {
+                // reboot is too complicated to mock out correctly, so just do a adb reboot command
+                // without any of the other associated commands
+                try {
+                    mMockIDevice.reboot(null);
+                } catch (IOException e) {
+                } catch (TimeoutException e) {
+                } catch (AdbCommandRejectedException e) {
+                }
+            }
+            @Override
+            public void postBootSetup() {
+                // too annoying to mock out postBootSetup actions everyone, so do nothing
+            }
+
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
+            }
+        };
+        mRecoveryTestDevice.setRecovery(mMockRecovery);
+        mRecoveryTestDevice.setCommandTimeout(100);
+        mRecoveryTestDevice.setLogStartDelay(-1);
     }
 
     /**
@@ -115,14 +150,8 @@ public class TestDeviceTest extends TestCase {
                 fastbootResult);
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRunUtil);
-        TestDevice testDevice = new TestDevice(mMockIDevice, mMockMonitor) {
-            @Override
-            IRunUtil getRunUtil() {
-                return mMockRunUtil;
-            }
-        };
-        testDevice.setDeviceState(TestDeviceState.FASTBOOT);
-        assertEquals("nexusone", testDevice.getProductType());
+        mRecoveryTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        assertEquals("nexusone", mRecoveryTestDevice.getProductType());
     }
 
     /**
@@ -131,7 +160,7 @@ public class TestDeviceTest extends TestCase {
      */
     public void testGetProductType_fastbootFail() throws DeviceNotAvailableException {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null);
+        EasyMock.expectLastCall().andReturn((String)null).anyTimes();
         CommandResult fastbootResult = new CommandResult();
         fastbootResult.setStatus(CommandStatus.SUCCESS);
         // output of this cmd goes to stderr
@@ -141,18 +170,12 @@ public class TestDeviceTest extends TestCase {
                 mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
                         (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
                         (String)EasyMock.anyObject(), (String)EasyMock.anyObject())).andReturn(
-                fastbootResult);
+                fastbootResult).anyTimes();
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRunUtil);
-        TestDevice testDevice = new TestDevice(mMockIDevice, mMockMonitor) {
-            @Override
-            IRunUtil getRunUtil() {
-                return mMockRunUtil;
-            }
-        };
-        testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        mTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
         try {
-            String type = testDevice.getProductType();
+            String type = mTestDevice.getProductType();
             fail(String.format("DeviceNotAvailableException not thrown; productType was '%s'",
                     type));
         } catch (DeviceNotAvailableException e) {
@@ -190,7 +213,7 @@ public class TestDeviceTest extends TestCase {
     public void testGetProductType_adbFail() throws DeviceNotAvailableException, IOException,
             TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null);
+        EasyMock.expectLastCall().andReturn((String)null).anyTimes();
         // direct query fails: getprop ro.product.board --> ""
         final String expectedOutput = "";
         mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.board"),
@@ -202,7 +225,7 @@ public class TestDeviceTest extends TestCase {
                 byte[] inputData = expectedOutput.getBytes();
                 receiver.addOutput(inputData, 0, inputData.length);
             }
-        });
+        }).anyTimes();
         // last-ditch query fails: getprop ro.product.device --> ""
         mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.device"),
                 (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
@@ -213,7 +236,7 @@ public class TestDeviceTest extends TestCase {
                 byte[] inputData = expectedOutput.getBytes();
                 receiver.addOutput(inputData, 0, inputData.length);
             }
-        });
+        }).anyTimes();
         EasyMock.replay(mMockIDevice);
         try {
             mTestDevice.getProductType();
@@ -377,7 +400,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
         try {
-            mTestDevice.executeShellCommand(testCommand, mMockReceiver);
+            mRecoveryTestDevice.executeShellCommand(testCommand, mMockReceiver);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
@@ -567,7 +590,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(listener, mockRunner, mMockIDevice, mMockRecovery);
         try {
-            mTestDevice.runInstrumentationTests(mockRunner, listeners);
+            mRecoveryTestDevice.runInstrumentationTests(mockRunner, listeners);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
