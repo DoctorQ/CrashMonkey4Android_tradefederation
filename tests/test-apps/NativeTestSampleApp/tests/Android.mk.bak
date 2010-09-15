@@ -14,6 +14,9 @@
 
 # Makefile to build device-based native tests for a test static library.
 
+# TODO: build of this sample is disabled since it dependent on the platform
+# long-term need to build this against prebuilt NDK
+#
 # GTest does not build on the simulator because it depends on STLport.
 ifneq ($(TARGET_SIMULATOR),true)
 
