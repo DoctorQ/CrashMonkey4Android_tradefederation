@@ -23,6 +23,7 @@ LOCAL_JAVA_RESOURCE_DIRS := res
 
 LOCAL_MODULE := tradefed
 
+LOCAL_MODULE_TAGS := optional
 LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0
 LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt
 

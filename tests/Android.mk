@@ -22,7 +22,7 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 LOCAL_JAVA_RESOURCE_DIRS := res
 
 LOCAL_MODULE := tradefed-tests
-
+LOCAL_MODULE_TAGS := optional
 LOCAL_STATIC_JAVA_LIBRARIES := easymock
 LOCAL_JAVA_LIBRARIES := tradefed ddmlib-prebuilt
 
