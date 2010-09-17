@@ -20,16 +20,15 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
-import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.StubLogRegistry;
-import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ITestSummaryListener;
+import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.targetsetup.BuildError;
@@ -223,19 +222,18 @@ public class TestInvocationTest extends TestCase {
 
     /**
      * Test the {@link TestInvocation#invoke(IDevice, IConfiguration)} scenario where the
-     * test is a {@link IDeviceTest} and a {@link IConfigurationReceiver}
+     * test is a {@link IDeviceTest}
      */
-    public void testInvoke_deviceConfigTest() throws Exception {
-         DeviceConfigTest mockDeviceConfigTest = EasyMock.createMock(DeviceConfigTest.class);
+    public void testInvoke_deviceTest() throws Exception {
+         DeviceConfigTest mockDeviceTest = EasyMock.createMock(DeviceConfigTest.class);
          EasyMock.expect(mMockConfiguration.getTests()).andReturn(createTestList(
-                 mockDeviceConfigTest));
-         mockDeviceConfigTest.setDevice(mMockDevice);
-         mockDeviceConfigTest.setConfiguration(mMockConfiguration);
-         mockDeviceConfigTest.run(mListeners);
+                 mockDeviceTest));
+         mockDeviceTest.setDevice(mMockDevice);
+         mockDeviceTest.run(mListeners);
          setupMockSuccessListeners();
-         setupNormalInvoke(mockDeviceConfigTest);
+         setupNormalInvoke(mockDeviceTest);
          mTestInvocation.invoke(mMockDevice, mMockConfiguration);
-         verifyMocks(mockDeviceConfigTest);
+         verifyMocks(mockDeviceTest);
          verifySummaryListener();
     }
 
@@ -459,7 +457,7 @@ public class TestInvocationTest extends TestCase {
     /**
      * Interface for testing device config pass through.
      */
-    private interface DeviceConfigTest extends IRemoteTest, IConfigurationReceiver, IDeviceTest {
+    private interface DeviceConfigTest extends IRemoteTest, IDeviceTest {
 
     }
 }

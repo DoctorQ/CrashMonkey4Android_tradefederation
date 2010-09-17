@@ -71,13 +71,22 @@ public class Configuration implements IConfiguration {
     Configuration() {
         this(new HashMap<String, List<Object>>());
     }
+
     /**
      * Create a {@link Configuration}.
      *
-     * @param configObjects the config object name to object list map
+     * @param configObjects the config object name to object list map. This {@link IConfiguration}
+     *            will be injected into any object in the map that is a
+     *            {@link IConfigurationReceiver}
      */
-    Configuration(Map<String, List<Object>> configObjects) {
-        mConfigMap = configObjects;
+    Configuration(Map<String, List<Object>> configObjectMap) {
+        mConfigMap = configObjectMap;
+        for (List<Object> configObjectList : configObjectMap.values()) {
+            for (Object configObject : configObjectList)
+                if (configObject instanceof IConfigurationReceiver) {
+                    ((IConfigurationReceiver)configObject).setConfiguration(this);
+                }
+        }
     }
 
     /**
@@ -96,6 +105,9 @@ public class Configuration implements IConfiguration {
             mConfigMap.put(name, objList);
         }
         objList.add(configObject);
+        if (configObject instanceof IConfigurationReceiver) {
+            ((IConfigurationReceiver)configObject).setConfiguration(this);
+        }
     }
 
     /**
@@ -188,5 +200,14 @@ public class Configuration implements IConfiguration {
             objectsCopy.addAll(objectList);
         }
         return objectsCopy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void injectOptionValue(String optionName, String valueText)
+            throws ConfigurationException {
+        OptionSetter optionSetter = new OptionSetter(getAllConfigurationObjects());
+        optionSetter.setOptionValue(optionName, valueText);
     }
 }

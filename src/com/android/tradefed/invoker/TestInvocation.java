@@ -19,7 +19,6 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
-import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
@@ -245,9 +244,6 @@ public class TestInvocation implements ITestInvocation {
         for (Test test : tests) {
             if (test instanceof IDeviceTest) {
                 ((IDeviceTest)test).setDevice(device);
-            }
-            if (test instanceof IConfigurationReceiver) {
-                ((IConfigurationReceiver)test).setConfiguration(config);
             }
             if (test instanceof IRemoteTest) {
                 // run as a remote test, so results are forwarded directly to TestInvocationListener
