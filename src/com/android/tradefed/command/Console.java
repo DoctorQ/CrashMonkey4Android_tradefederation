@@ -86,6 +86,15 @@ public class Console {
         mFile = file;
     }
 
+    /**
+     * Sets the terminal instance to use
+     * <p/>
+     * Exposed for unit testing
+     */
+    void setTerminal(java.io.Console terminal) {
+        mTerminal = terminal;
+    }
+
     private String getConsoleInput() throws IOException {
         String line = mTerminal.readLine(CONSOLE_PROMPT);
 
@@ -127,12 +136,12 @@ public class Console {
                 Log.logAndDisplay(LogLevel.INFO, LOG_TAG,
                         "Running indefinitely in non-interactive mode.");
                 mScheduler.join();
+                cleanUp();
                 return;
             }
 
             String input = "";
             boolean shouldExit = false;
-            Thread.sleep(500);  // Try to let preliminary messages scroll past
 
             while (!shouldExit) {
                 input = getConsoleInput();
@@ -219,7 +228,7 @@ public class Console {
         } finally {
             // Manually exit, since there may be other threads hanging around, keeping the runtime
             // alive
-            exit();
+            cleanUp();
         }
     }
 
@@ -232,13 +241,16 @@ public class Console {
     }
 
     /**
-     * Closes the logs and exits the program.
+     * Closes the logs and does any other necessary cleanup before the returning from the main
+     * function.
      * <p/>
      * Exposed so unit tests can mock out.
      */
-    void exit() {
+    void cleanUp() {
         LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
-        System.exit(0);
+        // Show which threads are still alive, for debugging in case one holds the JVM alive
+        dumpStacks();
+        //System.exit(0);
     }
 
     /**

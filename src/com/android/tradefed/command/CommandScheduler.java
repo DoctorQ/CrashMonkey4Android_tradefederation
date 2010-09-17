@@ -308,6 +308,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     CommandScheduler() {
         mConfigQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
         mInvocationThreads = new HashSet<InvocationThread>();
+        // Don't hold TF alive if there are no other threads running
+        setDaemon(true);
     }
 
     /**

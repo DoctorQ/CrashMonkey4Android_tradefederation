@@ -41,7 +41,7 @@ public class ConsoleTest extends TestCase {
             }
 
             @Override
-            void exit() {
+            void cleanUp() {
                 // do nothing
             }
         };
@@ -76,6 +76,8 @@ public class ConsoleTest extends TestCase {
         mMockScheduler.start();
         mMockScheduler.join();
         EasyMock.replay(mMockScheduler);
+        // This should force the console to drop into non-interactive mode
+        mConsole.setTerminal(null);
         mConsole.run(new String[] {});
         EasyMock.verify(mMockScheduler);
     }
