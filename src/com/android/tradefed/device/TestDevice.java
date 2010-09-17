@@ -568,6 +568,14 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public IFileListingService getFileListingService() {
+        return FileListingServiceWrapper.getFileListingServiceForDevice(
+                getIDevice());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Syncing %s to %s on device %s",
@@ -1448,6 +1456,35 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void reboot() throws DeviceNotAvailableException {
+        doReboot();
+        if (mMonitor.waitForDeviceAvailable() != null) {
+            postBootSetup();
+            return;
+        } else {
+            recoverDevice();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void rebootUntilOnline() throws DeviceNotAvailableException {
+        doReboot();
+        if (mMonitor.waitForDeviceOnline() != null) {
+            if (mEnableAdbRoot) {
+                enableAdbRoot();
+            }
+            return;
+        } else {
+            // TODO: change this into a recoverDeviceUntilOnline type method
+            recoverDevice();
+        }
+    }
+
+    /**
+     * @throws DeviceNotAvailableException
+     */
+    private void doReboot() throws DeviceNotAvailableException {
         if (TestDeviceState.FASTBOOT == getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s in fastboot. Rebooting to userspace.",
                     getSerialNumber()));
@@ -1456,12 +1493,6 @@ class TestDevice implements IManagedTestDevice {
             Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
             doAdbReboot(null);
             waitForDeviceNotAvailable("reboot", getCommandTimeout());
-        }
-        if (mMonitor.waitForDeviceAvailable() != null) {
-            postBootSetup();
-            return;
-        } else {
-            recoverDevice();
         }
     }
 

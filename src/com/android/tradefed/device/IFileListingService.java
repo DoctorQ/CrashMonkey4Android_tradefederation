@@ -53,6 +53,11 @@ public interface IFileListingService {
          * Wrapper for {@link FileListingService.FileEntry#isAppFileName()}.
          */
         public boolean isAppFileName();
+
+        /**
+         * @return
+         */
+        public String getName();
     }
 
     /**

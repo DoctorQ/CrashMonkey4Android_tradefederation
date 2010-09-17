@@ -227,7 +227,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         if (mDevice == null) {
             throw new NullPointerException("Trying to get FileListingService when no Device set!");
         }
-        return FileListingServiceWrapper.getFileListingSericeForDevice(
+        return FileListingServiceWrapper.getFileListingServiceForDevice(
                 mDevice.getIDevice());
     }
 
