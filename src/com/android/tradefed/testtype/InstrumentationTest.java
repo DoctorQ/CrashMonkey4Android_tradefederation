@@ -34,6 +34,7 @@ import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -90,6 +91,10 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     @Option(name = "log-delay",
             description="Delay in msec between each test when collecting test information")
     private int mTestDelay = 10;
+
+    @Option(name = "install-file",
+            description="Optional file path to apk file that contains the tests.")
+    private File mInstallFile = null;
 
     private ITestDevice mDevice = null;
 
@@ -202,6 +207,15 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     }
 
     /**
+     * Set the optional file to install that contains the tests.
+     *
+     * @param installFile the installable {@link File}
+     */
+    public void setInstallFile(File installFile) {
+        mInstallFile = installFile;
+    }
+
+    /**
      * Get the {@link RunUtil} instance to use.
      * <p/>
      * Exposed for unit testing.
@@ -248,7 +262,13 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-        doTestRun(listeners);
+        if (mInstallFile != null) {
+            mDevice.installPackage(mInstallFile, true);
+            doTestRun(listeners);
+            mDevice.uninstallPackage(mPackageName);
+        } else {
+            doTestRun(listeners);
+        }
     }
 
     /**
