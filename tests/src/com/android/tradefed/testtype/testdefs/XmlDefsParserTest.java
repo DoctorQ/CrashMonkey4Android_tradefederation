@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.testtype.testdefs;
 
-import com.android.tradefed.testtype.testdefs.XmlDefsParser.ParseException;
+import com.android.tradefed.util.xml.AbstractXmlParser.ParseException;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

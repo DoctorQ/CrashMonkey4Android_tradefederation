@@ -15,43 +15,24 @@
  */
 package com.android.tradefed.testtype.testdefs;
 
-import com.android.ddmlib.Log;
+import com.android.tradefed.util.xml.AbstractXmlParser;
 
 import org.xml.sax.Attributes;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 /**
  * Parses a test_defs.xml file.
  * <p/>
  * See development/testrunner/test_defs.xsd for expected format
  */
-class XmlDefsParser {
-
-    private static final String LOG_TAG = "XmlDefsParser";
+class XmlDefsParser extends AbstractXmlParser {
 
     private Map<String, InstrumentationTestDef> mTestDefsMap;
-
-    /**
-     * Thrown if test defs input could not be parsed
-     */
-    @SuppressWarnings("serial")
-    public static class ParseException extends Exception {
-        public ParseException(Throwable cause) {
-            super(cause);
-        }
-    }
 
     /**
      * SAX callback object. Handles parsing data from the xml tags.
@@ -81,39 +62,18 @@ class XmlDefsParser {
     }
 
     /**
-     * Parses out test_defs data contained in given input.
-     * <p/>
-     * Currently performs limited error checking.
-     *
-     * @param xmlInput
-     * @throws ParseException if input could not be parsed
-     */
-    void parse(InputStream xmlInput) throws ParseException  {
-        try {
-            SAXParserFactory parserFactory = SAXParserFactory.newInstance();
-            parserFactory.setNamespaceAware(true);
-            SAXParser parser;
-            parser = parserFactory.newSAXParser();
-
-            DefsHandler defsHandler = new DefsHandler();
-            parser.parse(new InputSource(xmlInput), defsHandler);
-        } catch (ParserConfigurationException e) {
-            Log.e(LOG_TAG, e);
-            throw new ParseException(e);
-        } catch (SAXException e) {
-            Log.e(LOG_TAG, e);
-            throw new ParseException(e);
-        } catch (IOException e) {
-            Log.e(LOG_TAG, e);
-            throw new ParseException(e);
-        }
-    }
-
-    /**
      * Gets the list of parsed test definitions. The element order should be consistent with the
      * order of elements in the parsed input.
      */
     public Collection<InstrumentationTestDef> getTestDefs() {
         return mTestDefsMap.values();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected DefaultHandler createXmlHandler() {
+        return new DefsHandler();
     }
 }

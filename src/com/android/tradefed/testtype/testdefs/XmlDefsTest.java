@@ -24,8 +24,8 @@ import com.android.tradefed.testtype.AbstractRemoteTest;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.InstrumentationTest;
-import com.android.tradefed.testtype.testdefs.XmlDefsParser.ParseException;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.xml.AbstractXmlParser.ParseException;
 
 import java.io.File;
 import java.io.FileInputStream;
