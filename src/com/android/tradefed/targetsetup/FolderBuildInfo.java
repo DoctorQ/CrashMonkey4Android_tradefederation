@@ -50,6 +50,7 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void cleanUp() {
         if (mRootDir != null) {
             FileUtil.recursiveDelete(mRootDir);

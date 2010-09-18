@@ -78,4 +78,12 @@ public class BuildInfo implements IBuildInfo {
     public void addBuildAttribute(String attributeName, String attributeValue) {
         mBuildAttributes.put(attributeName, attributeValue);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void cleanUp() {
+        // ignore
+    }
 }

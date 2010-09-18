@@ -184,6 +184,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void cleanUp() {
         for (ImageFile fileRecord : mImageFileMap.values()) {
             fileRecord.getImageFile().delete();

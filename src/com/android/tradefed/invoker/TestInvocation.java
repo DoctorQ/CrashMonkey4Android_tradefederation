@@ -172,38 +172,10 @@ public class TestInvocation implements ITestInvocation {
             throw e;
         } finally {
             elapsedTime = System.currentTimeMillis() - startTime;
-            List<TestSummary> summaries = new ArrayList<TestSummary>(listeners.size());
-            for (ITestInvocationListener listener : listeners) {
-                if (device != null) {
-                    listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
-                }
-                listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-
-                /*
-                 * For InvocationListeners (as opposed to SummaryListeners), we call
-                 * invocationEnded() followed by getSummary().  If getSummary returns a non-null
-                 * value, we gather it to pass to the SummaryListeners below.
-                 */
-                if (!(listener instanceof ITestSummaryListener)) {
-                    listener.invocationEnded(elapsedTime);
-                    TestSummary summary = listener.getSummary();
-                    if (summary != null) {
-                        summary.setSource(listener.getClass().getName());
-                        summaries.add(summary);
-                    }
-                }
-            }
-
-            /*
-             * For SummaryListeners (as opposed to InvocationListeners), we now call putSummary()
-             * followed by invocationEnded().  This means that the SummaryListeners will have
-             * access to the summaries (if any) when invocationEnded is called.
-             */
-            for (ITestInvocationListener listener : listeners) {
-                if (listener instanceof ITestSummaryListener) {
-                    ((ITestSummaryListener) listener).putSummary(summaries);
-                    listener.invocationEnded(elapsedTime);
-                }
+            try {
+                reportInvocationEnded(device, listeners, logger, elapsedTime);
+            } finally {
+                info.cleanUp();
             }
         }
     }
@@ -217,6 +189,44 @@ public class TestInvocation implements ITestInvocation {
             buildProvider.buildNotTested(info);
         }
     }
+
+    private void reportInvocationEnded(ITestDevice device, List<ITestInvocationListener> listeners,
+            ILeveledLogOutput logger, long elapsedTime) {
+        List<TestSummary> summaries = new ArrayList<TestSummary>(listeners.size());
+        for (ITestInvocationListener listener : listeners) {
+            if (device != null) {
+                listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
+            }
+            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
+
+            /*
+             * For InvocationListeners (as opposed to SummaryListeners), we call
+             * invocationEnded() followed by getSummary().  If getSummary returns a non-null
+             * value, we gather it to pass to the SummaryListeners below.
+             */
+            if (!(listener instanceof ITestSummaryListener)) {
+                listener.invocationEnded(elapsedTime);
+                TestSummary summary = listener.getSummary();
+                if (summary != null) {
+                    summary.setSource(listener.getClass().getName());
+                    summaries.add(summary);
+                }
+            }
+        }
+
+        /*
+         * For SummaryListeners (as opposed to InvocationListeners), we now call putSummary()
+         * followed by invocationEnded().  This means that the SummaryListeners will have
+         * access to the summaries (if any) when invocationEnded is called.
+         */
+        for (ITestInvocationListener listener : listeners) {
+            if (listener instanceof ITestSummaryListener) {
+                ((ITestSummaryListener) listener).putSummary(summaries);
+                listener.invocationEnded(elapsedTime);
+            }
+        }
+    }
+
 
     /**
      * Gets the {@link LogRegistry} to use.

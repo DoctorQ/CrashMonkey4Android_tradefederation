@@ -88,7 +88,7 @@ public class TestInvocationTest extends TestCase {
         // Use strict mocks here since the order of Listener calls is important
         mMockTestListener = EasyMock.createStrictMock(ITestInvocationListener.class);
         mMockSummaryListener = EasyMock.createStrictMock(ITestSummaryListener.class);
-        mMockBuildInfo = EasyMock.createNiceMock(IBuildInfo.class);
+        mMockBuildInfo = EasyMock.createMock(IBuildInfo.class);
         mMockLogger = EasyMock.createNiceMock(ILeveledLogOutput.class);
 
         EasyMock.expect(mMockConfiguration.getBuildProvider()).andReturn(mMockBuildProvider);
@@ -325,6 +325,8 @@ public class TestInvocationTest extends TestCase {
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         EasyMock.expect(mMockConfiguration.getTests()).andReturn(createTestList(test));
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
+        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
+                (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
         EasyMock.expectLastCall().andThrow(exception);
         setupMockFailureListeners(exception);
@@ -335,6 +337,7 @@ public class TestInvocationTest extends TestCase {
                 .times(mListeners.size());
 
         mMockLogger.closeLog();
+        mMockBuildInfo.cleanUp();
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
@@ -352,6 +355,8 @@ public class TestInvocationTest extends TestCase {
     private void setupNormalInvoke(Test test) throws Exception {
         EasyMock.expect(mMockConfiguration.getTests()).andReturn(createTestList(test));
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
+        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
+                (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
 
         EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]))
@@ -361,6 +366,7 @@ public class TestInvocationTest extends TestCase {
                 .times(mListeners.size());
 
         mMockLogger.closeLog();
+        mMockBuildInfo.cleanUp();
         replayMocks(test);
     }
 
@@ -434,7 +440,7 @@ public class TestInvocationTest extends TestCase {
         // note: intentionally exclude configuration and logger from verification - don't care
         // what methods are called
         EasyMock.verify(mockTest, mMockTestListener, mMockSummaryListener, mMockPreparer,
-                mMockBuildProvider);
+                mMockBuildProvider, mMockBuildInfo);
     }
 
     /**

@@ -57,6 +57,7 @@ public class AppBuildInfo extends BuildInfo {
     /**
      * Removes all temporary files
      */
+    @Override
     public void cleanUp() {
         for (File appPackageFile : mAppPackageFiles) {
             appPackageFile.delete();

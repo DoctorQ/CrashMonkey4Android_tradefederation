@@ -169,6 +169,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void cleanUp() {
         mDeviceBuild.cleanUp();
         mFolderBuildInfo.cleanUp();

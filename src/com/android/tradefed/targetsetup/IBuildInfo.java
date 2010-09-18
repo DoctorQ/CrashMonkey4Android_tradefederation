@@ -52,4 +52,9 @@ public interface IBuildInfo {
      */
     public void addBuildAttribute(String attributeName, String attributeValue);
 
+    /**
+     * Clean up any temporary build files
+     */
+    public void cleanUp();
+
 }

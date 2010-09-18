@@ -79,24 +79,19 @@ public class DeviceFlasher implements IDeviceFlasher  {
      */
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
-        try {
-            Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
-                    device.getSerialNumber(), deviceBuild.getBuildId()));
 
-            device.rebootIntoBootloader();
+        Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
+                device.getSerialNumber(), deviceBuild.getBuildId()));
 
-            downloadFlashingResources(device, deviceBuild);
+        device.rebootIntoBootloader();
 
-            checkAndFlashBootloader(device, deviceBuild);
-            checkAndFlashBaseband(device, deviceBuild);
-            flashUserData(device, deviceBuild);
-            eraseCache(device);
-            flashSystem(device, deviceBuild);
+        downloadFlashingResources(device, deviceBuild);
 
-        } finally {
-            // TODO: move this to a more generic location
-            deviceBuild.cleanUp();
-        }
+        checkAndFlashBootloader(device, deviceBuild);
+        checkAndFlashBaseband(device, deviceBuild);
+        flashUserData(device, deviceBuild);
+        eraseCache(device);
+        flashSystem(device, deviceBuild);
     }
 
     /**
