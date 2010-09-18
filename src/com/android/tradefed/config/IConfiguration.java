@@ -120,6 +120,18 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
+     * Inject a option value into the set of configuration objects.
+     * <p/>
+     * Useful to provide values for options that are generated dynamically.
+     *
+     * @param optionName the option name
+     * @param optionValue the option value
+     * @throws ConfigurationException if failed to set the option's value
+     */
+    public void injectOptionValue(String optionName, String optionValue)
+            throws ConfigurationException;
+
+    /**
      * Gets a copy of the list of all configuration objects.
      *
      * @return a {@link Collection} of all configuration objects

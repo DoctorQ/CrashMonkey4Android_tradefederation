@@ -23,7 +23,10 @@ import com.android.tradefed.targetsetup.ITargetPreparer;
 
 import org.easymock.EasyMock;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -208,5 +211,30 @@ public class ConfigurationTest extends TestCase {
         mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener2);
         assertTrue(mConfig.getTestInvocationListeners().contains(listener1));
         assertTrue(mConfig.getTestInvocationListeners().contains(listener2));
+    }
+
+    /**
+     * Test {@link Configuration#Configuration(java.util.Map)} with a {@link IConfigurationReceiver}
+     * .
+     */
+    public void testConfiguration_configReceiver() throws ConfigurationException {
+        final IConfigurationReceiver mockConfigReceiver = EasyMock.createMock(
+                IConfigurationReceiver.class);
+        mockConfigReceiver.setConfiguration((IConfiguration)EasyMock.anyObject());
+        EasyMock.replay(mockConfigReceiver);
+        Map<String, List<Object>> configMap = new HashMap<String, List<Object>>();
+        List<Object> configList = new ArrayList<Object>(1);
+        configList.add(mockConfigReceiver);
+        configMap.put("foo", configList);
+        new Configuration(configMap);
+        EasyMock.verify(mockConfigReceiver);
+    }
+
+    /**
+     * Test {@link Configuration#injectOptionValue(String, String)}
+     */
+    public void testInjectOptionValue() throws ConfigurationException {
+        mConfig.injectOptionValue(OPTION_NAME, Boolean.toString(true));
+        assertTrue(mConfigObject.getBool());
     }
 }
