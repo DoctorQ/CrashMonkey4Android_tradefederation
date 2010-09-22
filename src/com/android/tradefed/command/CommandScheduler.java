@@ -78,7 +78,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         private long mMinLoopTime = 60 * 1000;
 
         @Option(name="loop", description="keep running continuously")
-        private boolean mLoopMode = false;
+        private boolean mLoopMode = true;
 
         /**
          * Set the help mode for the config.
