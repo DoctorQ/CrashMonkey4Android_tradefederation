@@ -260,9 +260,15 @@ public interface ITestDevice {
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException;
 
     /**
-     * Retrieve a {@link IFileListingService} for this device
+     * Retrieve a reference to a remote file on device.
+     *
+     * @param path the absolute file path. Can be with a leading slash (ie "/system") or without (ie
+     *            "system")
+     * @return the {@link IFileEntry} or <code>null</code> if file at given <var>path</var> cannot
+     *         be found
+     * @throws DeviceNotAvailableException
      */
-    public IFileListingService getFileListingService();
+    public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException;
 
     /**
      * Grabs a snapshot stream of the logcat data.

@@ -91,6 +91,7 @@ class TestDevice implements IManagedTestDevice {
     private TestDeviceState mState = TestDeviceState.ONLINE;
     private Semaphore mFastbootLock = new Semaphore(1);
     private LogCatReceiver mLogcatReceiver;
+    private IFileEntry mRootFile = null;
 
     // TODO: TestDevice is not loaded from configuration yet, so these options are currently fixed
 
@@ -568,9 +569,14 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public IFileListingService getFileListingService() {
-        return FileListingServiceWrapper.getFileListingServiceForDevice(
-                getIDevice());
+    @Override
+    public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException {
+        String[] pathComponents = path.split(FileListingService.FILE_SEPARATOR);
+        if (mRootFile == null) {
+            FileListingService service = getIDevice().getFileListingService();
+            mRootFile = new FileEntryWrapper(this, service.getRoot());
+        }
+        return FileEntryWrapper.getDescendant(mRootFile, Arrays.asList(pathComponents));
     }
 
     /**
@@ -591,7 +597,7 @@ class TestDevice implements IManagedTestDevice {
         if (!doesFileExist(deviceFilePath)) {
             executeShellCommand(String.format("mkdir %s", deviceFilePath));
         }
-        FileEntry remoteFileEntry = getFileEntryFromPath(deviceFilePath);
+        IFileEntry remoteFileEntry = getFileEntry(deviceFilePath);
         if (remoteFileEntry == null) {
             Log.e(LOG_TAG, String.format("Could not find remote file entry %s ", deviceFilePath));
             return false;
@@ -601,48 +607,22 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Finds a {@link FileEntry} corresponding to a remote device file path.
-     *
-     * @param deviceFilePath the absolute remote file path to find
-     * @return the {@link FileEntry} or <code>null</code>
-     * @throws DeviceNotAvailableException
-     */
-    private FileEntry getFileEntryFromPath(String deviceFilePath)
-            throws DeviceNotAvailableException {
-        FileListingService service = getIDevice().getFileListingService();
-        FileEntry entry = service.getRoot();
-        String[] segs = deviceFilePath.split("/");
-        for (String seg : segs) {
-            if (seg.length() > 0) {
-                buildFileCache(entry, service);
-                entry = entry.findChild(seg);
-                if (entry == null) {
-                    return null;
-                }
-            }
-        }
-        return entry;
-    }
-
-    /**
      * Recursively sync newer files.
      *
      * @param localFileDir the local {@link File} directory to sync
-     * @param remoteFileEntry the remote destination {@link FileEntry}
+     * @param remoteFileEntry the remote destination {@link IFileEntry}
      * @return <code>true</code> if files were synced successfully
      * @throws DeviceNotAvailableException
      */
-    private boolean syncFiles(File localFileDir, final FileEntry remoteFileEntry)
+    private boolean syncFiles(File localFileDir, final IFileEntry remoteFileEntry)
             throws DeviceNotAvailableException {
         Log.d(LOG_TAG, String.format("Syncing %s to %s on %s", localFileDir.getAbsolutePath(),
                 remoteFileEntry.getFullPath(), getSerialNumber()));
         // find newer files to sync
         File[] localFiles = localFileDir.listFiles(new NoHiddenFilesFilter());
         ArrayList<String> filePathsToSync = new ArrayList<String>();
-        FileListingService service = getIDevice().getFileListingService();
-        buildFileCache(remoteFileEntry, service);
         for (File localFile : localFiles) {
-            FileEntry entry = remoteFileEntry.findChild(localFile.getName());
+            IFileEntry entry = remoteFileEntry.findChild(localFile.getName());
             if (entry == null) {
                 Log.d(LOG_TAG, String.format("Detected missing file path %s",
                         localFile.getAbsolutePath()));
@@ -672,7 +652,8 @@ class TestDevice implements IManagedTestDevice {
                 boolean status = false;
                 try {
                     syncService = getIDevice().getSyncService();
-                    syncService.push(files, remoteFileEntry, SyncService.getNullProgressMonitor());
+                    syncService.push(files, remoteFileEntry.getFileEntry(),
+                            SyncService.getNullProgressMonitor());
                     status = true;
                 } catch (SyncException e) {
                     Log.w(LOG_TAG, String.format(
@@ -692,24 +673,36 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Queries the file listing service for a given directory, to ensure listing service has up to
-     * date children entries for remoteFileEntry
+     * Queries the file listing service for a given directory
      *
      * @param remoteFileEntry
      * @param service
      * @throws DeviceNotAvailableException
      */
-    private void buildFileCache(final FileEntry remoteFileEntry, final FileListingService service)
+     FileEntry[] getFileChildren(final FileEntry remoteFileEntry)
             throws DeviceNotAvailableException {
-        // build file cache
         // time this operation because its known to hang
-        DeviceAction action = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException {
-                service.getChildren(remoteFileEntry, true, null);
-                return true;
-            }
-        };
+        FileQueryAction action = new FileQueryAction(remoteFileEntry,
+                getIDevice().getFileListingService());
         performDeviceAction("buildFileCache", action, MAX_RETRY_ATTEMPTS);
+        return action.mFileContents;
+    }
+
+    private class FileQueryAction implements DeviceAction {
+
+        FileEntry[] mFileContents = null;
+        private FileEntry mRemoteFileEntry;
+        private FileListingService mService;
+
+        FileQueryAction(FileEntry remoteFileEntry, FileListingService service) {
+            mRemoteFileEntry = remoteFileEntry;
+            mService = service;
+        }
+
+        public boolean run() throws TimeoutException, IOException {
+            mFileContents = mService.getChildren(mRemoteFileEntry, false, null);
+            return true;
+        }
     }
 
     /**
@@ -727,7 +720,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * Return <code>true</code> if local file is newer than remote file.
      */
-    private boolean isNewer(File localFile, FileEntry entry) {
+    private boolean isNewer(File localFile, IFileEntry entry) {
         // remote times are in GMT timezone
         final String entryTimeString = String.format("%s %s GMT", entry.getDate(), entry.getTime());
         try {

@@ -16,22 +16,19 @@
 
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.FileListingServiceWrapper;
-import com.android.tradefed.device.IFileListingService;
+import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.device.IFileListingService.IFileEntry;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Vector;
 
 /**
  * A Test that runs a native test package on given device.
@@ -39,6 +36,8 @@ import java.util.Vector;
 public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "GTest";
+    static final String DEFAULT_NATIVETEST_PATH = "data/nativetest";
+
     private ITestDevice mDevice = null;
     /** controls whether to run all tests in all subdirectories or just tests in the root dir */
     private boolean mRunAllTestsInAllSubdirectories = true;
@@ -46,7 +45,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
 
     @Option(name = "native-test-device-path",
       description="The path on the device where native tests are located.")
-    private String nativeTestDevicePath = "data/nativetest";
+    private String mNativeTestDevicePath = DEFAULT_NATIVETEST_PATH;
 
     @Option(name = "module-name",
             description="The name of the native test module to run.")
@@ -187,12 +186,10 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
      * @return the {@link String} of all the GTest flags that should be passed to the GTest
      */
     private String getAllGTestFlags() {
-
-        String flags = String.format("%s %s",
-                GTEST_FLAG_PRINT_TIME, getGTestFilters());
+        String flags = String.format("%s %s", GTEST_FLAG_PRINT_TIME, getGTestFilters());
 
         if (mRunDisabledTests) {
-          flags = String.format("%s %s", flags, GTEST_FLAG_RUN_DISABLED_TESTS);
+            flags = String.format("%s %s", flags, GTEST_FLAG_RUN_DISABLED_TESTS);
         }
         return flags;
     }
@@ -202,32 +199,13 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
      *
      * @return The path on the device where the native tests live.
      */
-    private String[] getTestPath() {
-        nativeTestDevicePath = nativeTestDevicePath.trim();
-
-        // Discard the initial "/" if it was included
-        if (nativeTestDevicePath.startsWith("/")) {
-          nativeTestDevicePath = nativeTestDevicePath.substring(1);
-        }
-
-        String[] pathComponents = nativeTestDevicePath.split("/");
+    private String getTestPath() {
+        StringBuilder testPath = new StringBuilder(mNativeTestDevicePath);
         if (mTestModule != null) {
-            ArrayList<String> list = new ArrayList<String>(Arrays.asList(pathComponents));
-            list.add(mTestModule);
-            return list.toArray(new String[pathComponents.length + 1]);
+            testPath.append(FileListingService.FILE_SEPARATOR);
+            testPath.append(mTestModule);
         }
-        return pathComponents;
-    }
-
-    /**
-     * Returns the IFileListingService for this device; exposed for unit testing
-     */
-    IFileListingService getFileListingService() {
-        if (mDevice == null) {
-            throw new NullPointerException("Trying to get FileListingService when no Device set!");
-        }
-        return FileListingServiceWrapper.getFileListingServiceForDevice(
-                mDevice.getIDevice());
+        return testPath.toString();
     }
 
     /**
@@ -238,49 +216,28 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
      * @param rootEntry The root folder to begin searching for native tests
      * @param testDevice The device to run tests on
      * @param listeners the run listeners
-     * @return true if any tests ran, false otherwise
      * @throws DeviceNotAvailableException
      */
-    boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
+    void doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
 
-        Vector<IFileEntry> folders = new Vector<IFileEntry>();
-        Vector<IFileEntry> files = new Vector<IFileEntry>();
-        boolean testsRan = false;
-
-        IFileListingService fileListingService = getFileListingService();
-
-        // Get the full directory contents of the native test folder
-        IFileEntry[] children = fileListingService.getChildren(rootEntry, true, null);
-
-        for (IFileEntry file : children) {
-            if (file.isDirectory()) {
-                folders.add(file);
+        if (rootEntry.isDirectory() && mRunAllTestsInAllSubdirectories) {
+            // recursively run tests in all subdirectories
+            for (IFileEntry childEntry : rootEntry.getChildren(true)) {
+                doRunAllTestsInSubdirectory(childEntry, testDevice, listeners);
             }
-            else if (!file.isAppFileName()) {
-                // they shouldn't be here anyway, but in case we find one, don't execute .apks!
-                files.add(file);
-            }
-        }
-
-        if (mRunAllTestsInAllSubdirectories) {
-            // First recursively run tests in all subdirectories
-            for (IFileEntry folder : folders) {
-                testsRan |= doRunAllTestsInSubdirectory(folder, testDevice, listeners);
-            }
-        }
-
-        // Then run any actual tests in the current directory
-        for (IFileEntry file : files) {
-            IShellOutputReceiver resultParser = createResultParser(file.getName(), listeners);
-            String fullPath = file.getFullEscapedPath();
+        } else {
+            // assume every file is a valid gtest binary.
+            IShellOutputReceiver resultParser = createResultParser(rootEntry.getName(), listeners);
+            String fullPath = rootEntry.getFullEscapedPath();
             String flags = getAllGTestFlags();
+            Log.i(LOG_TAG, String.format("Running gtest %s %s on %s", fullPath, flags,
+                    mDevice.getSerialNumber()));
             // force file to be executable
             testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
             testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser);
-            testsRan = true;
         }
-        return testsRan;
+
     }
 
     /**
@@ -301,33 +258,18 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
 
     /**
      * {@inheritDoc}
-     *
-     * @throws DeviceNotAvailableException
      */
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         // @TODO: add support for rerunning tests
-
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
 
-        IFileListingService fileListingService = getFileListingService();
-
-        IFileEntry nativeTestDirectory = fileListingService.getRoot();
-
-        // recurse down the path until we find the test folder
-        for (String pathSubcomponent : getTestPath()) {
-            fileListingService.getChildren(nativeTestDirectory, false, null);
-            IFileEntry nextDirectory = nativeTestDirectory.findChild(pathSubcomponent);
-
-            if (nextDirectory == null) {
-                Log.w(LOG_TAG, String.format("Cound not find subfolder %s in %s!", pathSubcomponent,
-                        nativeTestDirectory.getFullEscapedPath()));
-                return;
-            }
-            else {
-                nativeTestDirectory = nextDirectory;
-            }
+        String testPath = getTestPath();
+        IFileEntry nativeTestDirectory = mDevice.getFileEntry(testPath);
+        if (nativeTestDirectory == null) {
+            Log.w(LOG_TAG, String.format("Could not find native test directory %s in %s!",
+                    testPath, mDevice.getSerialNumber()));
         }
         doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
     }

@@ -310,8 +310,8 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public IFileListingService getFileListingService() {
-        // ignore
+    @Override
+    public IFileEntry getFileEntry(String path) {
         return null;
     }
 }

@@ -15,19 +15,18 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IFileListingService;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.device.IFileListingService.IFileEntry;
+import com.android.tradefed.device.MockFileUtil;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Vector;
 
 import junit.framework.TestCase;
 
@@ -37,285 +36,134 @@ import junit.framework.TestCase;
  */
 public class GTestTest extends TestCase {
     private ITestInvocationListener mMockInvocationListener = null;
-    private IFileEntry mMockRootFileEntry = null;
     private IShellOutputReceiver mMockReceiver = null;
-    private IFileListingService mMockFileListingService = null;
     private ITestDevice mMockITestDevice = null;
     private Collection<ITestRunListener> mMockListeners;
+    private GTest mGTest;
 
     /**
      * Helper to initialize the various EasyMocks we'll need.
      */
-    private void initializeMocks() {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
         mMockInvocationListener = EasyMock.createMock(ITestInvocationListener.class);
         mMockListeners = new ArrayList<ITestRunListener>(1);
         mMockListeners.add(mMockInvocationListener);
-        mMockRootFileEntry = EasyMock.createMock(IFileEntry.class);
         mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
-        mMockFileListingService = EasyMock.createMock(IFileListingService.class);
         mMockITestDevice = EasyMock.createMock(ITestDevice.class);
+        EasyMock.expect(mMockITestDevice.getSerialNumber()).andStubReturn("serial");
+        mGTest = new GTest() {
+            @Override
+            IShellOutputReceiver createResultParser(String runName,
+                    Collection<ITestRunListener> listeners) {
+                return mMockReceiver;
+            }
+        };
+        mGTest.setDevice(mMockITestDevice);
     }
 
     /**
      * Helper that replays all mocks.
      */
     private void replayMocks() {
-      EasyMock.replay(mMockInvocationListener, mMockRootFileEntry, mMockFileListingService,
-              mMockITestDevice, mMockReceiver);
+      EasyMock.replay(mMockInvocationListener, mMockITestDevice, mMockReceiver);
     }
 
     /**
      * Helper that verifies all mocks.
      */
     private void verifyMocks() {
-      EasyMock.verify(mMockRootFileEntry, mMockFileListingService, mMockITestDevice,
-              mMockReceiver);
+      EasyMock.verify(mMockInvocationListener, mMockITestDevice, mMockReceiver);
     }
 
     /**
-     * Helper that returns an array of a given number of IFileEntry's.
-     *
-     * @param numberOfEntries The number of IFileEntry's to create in the array
-     */
-    private IFileEntry[] createArrayOfFileEntries(int numberOfEntries) {
-        Vector<IFileEntry> returnArray = new Vector<IFileEntry>();
-        for (int i=0; i<numberOfEntries; ++i) {
-            returnArray.add(EasyMock.createMock(IFileEntry.class));
-        }
-        return returnArray.toArray(new IFileEntry[returnArray.size()]);
-    }
-
-    /**
-     * Test the run method retrieves the correct location for native tests.
+     * Test the run method for a couple tests
      */
     public void testRun() throws DeviceNotAvailableException {
-        final String[] nativeTestPath = {"data", "nativetest"};
+        final String nativeTestPath = GTest.DEFAULT_NATIVETEST_PATH;
+        final String test1 = "test1";
+        final String test2 = "test2";
 
-        initializeMocks();
-
-        IFileEntry[] iFileEntries = {mMockRootFileEntry};
-
-        EasyMock.expect(mMockFileListingService.getRoot()).andReturn(mMockRootFileEntry);
-        for (String s : nativeTestPath) {
-            EasyMock.expect(mMockFileListingService.getChildren(mMockRootFileEntry, false,
-                    null)).andReturn(iFileEntries);
-            EasyMock.expect(mMockRootFileEntry.findChild(EasyMock.matches(s))).andReturn(
-                    mMockRootFileEntry);
-        }
+        MockFileUtil.setMockDirContents(mMockITestDevice, nativeTestPath, test1, test2);
+        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                .andReturn("")
+                .times(2);
+        mMockITestDevice.executeShellCommand(EasyMock.contains(test1),
+                EasyMock.same(mMockReceiver));
+        mMockITestDevice.executeShellCommand(EasyMock.contains(test2),
+                EasyMock.same(mMockReceiver));
 
         replayMocks();
-        GTest gtest = new GTest() {
-            @Override
-            protected IFileListingService getFileListingService() {
-                return mMockFileListingService;
-            }
-            // Stubbed - test this method separately
-            @Override
-            protected boolean doRunAllTestsInSubdirectory(IFileEntry rootEntry,
-                    ITestDevice testDevice, Collection<ITestRunListener> listeners) {
-              return false;
-            }
-        };
-        gtest.setDevice(mMockITestDevice);
-        gtest.run(mMockInvocationListener);
+
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
     }
 
     /**
-     * Test the doRunAllTestsInSubdirectory method for files only.
+     * Test the run method when module name is specified
      */
-    public void testDoRunAllTestsInSubdirectory_FilesOnly() throws DeviceNotAvailableException {
-        initializeMocks();
+    public void testRun_moduleName() throws DeviceNotAvailableException {
+        final String module = "test1";
+        final String modulePath = String.format("%s%s%s",
+                GTest.DEFAULT_NATIVETEST_PATH, FileListingService.FILE_SEPARATOR, module);
+        MockFileUtil.setMockDirContents(mMockITestDevice, modulePath, new String[] {});
 
-        String[] childrensPath = {
-                "path/to/first/file",
-                "path/to/second/file",
-                "thirdPath",
-                "path/to/fourth",
-                "path/to/apkFile.apk"};
+        mGTest.setModuleName(module);
 
-        IFileEntry[] children = createArrayOfFileEntries(childrensPath.length);
-        GTest gtest = new GTest() {
-            @Override
-            IFileListingService getFileListingService() {
-                return mMockFileListingService;
-            }
-
-            @Override
-            IShellOutputReceiver createResultParser(String runName,
-                    Collection<ITestRunListener> listeners) {
-                return mMockReceiver;
-            }
-        };
-
-        EasyMock.expect(mMockFileListingService.getChildren(mMockRootFileEntry, true, null)
-                ).andReturn(children);
-
-        for (int i=0; i< children.length; ++i) {
-            EasyMock.expect(children[i].isDirectory()).andReturn(false);
-            if (childrensPath[i].endsWith(".apk")) {
-                EasyMock.expect(children[i].isAppFileName()).andReturn(true);
-            }
-            else {
-                EasyMock.expect(children[i].getFullEscapedPath()).andReturn(childrensPath[i]);
-                EasyMock.expect(children[i].isAppFileName()).andReturn(false);
-                EasyMock.expect(children[i].getName()).andReturn("name");
-                EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
-                        .andReturn("");
-                mMockITestDevice.executeShellCommand(EasyMock.startsWith(childrensPath[i]),
-                        EasyMock.same(mMockReceiver));
-            }
-            EasyMock.replay(children[i]);
-        }
+        // expect test1 to be executed
+        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                .andReturn("");
+        mMockITestDevice.executeShellCommand(EasyMock.contains(modulePath),
+                EasyMock.same(mMockReceiver));
 
         replayMocks();
 
-        gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockListeners);
-
-        for (IFileEntry file : children) {
-            EasyMock.verify(file);
-        }
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
     }
 
     /**
-     * Test the doRunAllTestsInSubdirectory for a 1-level subdirectory and files.
+     * Test the run method for a test in a subdirectory
      */
-    public void testDoRunAllTestsInSubdirectory_Directories() throws DeviceNotAvailableException  {
-        initializeMocks();
+    public void testRun_nested() throws DeviceNotAvailableException {
+        final String nativeTestPath = GTest.DEFAULT_NATIVETEST_PATH;
+        final String subFolderName = "subFolder";
+        final String test1 = "test1";
+        final String test1Path = String.format("%s%s%s%s%s", nativeTestPath,
+                FileListingService.FILE_SEPARATOR,
+                subFolderName,
+                FileListingService.FILE_SEPARATOR, test1);
 
-        String[] children1Paths = {
-                "path/to/directory2"};
-
-        String[] children2Paths = {
-                "pathto/file1",
-                "pathto/file2",
-                "pathto/file3"};
-
-        // Setup the file hierarchy
-        IFileEntry[] directory1Children = createArrayOfFileEntries(children1Paths.length);
-        IFileEntry[] directory2Children = createArrayOfFileEntries(children2Paths.length);
-
-        GTest gtest = new GTest() {
-            @Override
-            IFileListingService getFileListingService() {
-                return mMockFileListingService;
-            }
-
-            @Override
-            IShellOutputReceiver createResultParser(String runName,
-                    Collection<ITestRunListener> listeners) {
-                return mMockReceiver;
-            }
-        };
-
-        EasyMock.expect(mMockFileListingService.getChildren(mMockRootFileEntry, true, null)
-                ).andReturn(directory1Children);
-
-        // Processing Directory 1's children, which are all directories
-        for (IFileEntry directory : directory1Children) {
-            EasyMock.expect(directory.isDirectory()).andReturn(true);
-            EasyMock.replay(directory);
-        }
-
-        // Set directory2 to be a sub-directory of directory1Children[0]
-        IFileEntry directory2FileEntry = directory1Children[0];
-        EasyMock.expect(mMockFileListingService.getChildren(directory2FileEntry, true, null)
-            ).andReturn(directory2Children);
-
-        // Processing Directory 2's children (3 files)
-        for (int i=0; i< directory2Children.length; ++i) {
-            EasyMock.expect(directory2Children[i].getFullEscapedPath()).andReturn(children2Paths[i]);
-            EasyMock.expect(directory2Children[i].isDirectory()).andReturn(false);
-            EasyMock.expect(directory2Children[i].isAppFileName()).andReturn(false);
-            EasyMock.expect(directory2Children[i].getName()).andReturn("name");
-            EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
-                    .andReturn("");
-            mMockITestDevice.executeShellCommand(EasyMock.startsWith(children2Paths[i]),
-                    EasyMock.same(mMockReceiver));
-            EasyMock.replay(directory2Children[i]);
-        }
+        MockFileUtil.setMockDirPath(mMockITestDevice, nativeTestPath, subFolderName, test1);
+        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                .andReturn("");
+        mMockITestDevice.executeShellCommand(EasyMock.contains(test1Path),
+                EasyMock.same(mMockReceiver));
 
         replayMocks();
 
-        gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockListeners);
-
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
-        for (IFileEntry file : directory1Children) {
-            EasyMock.verify(file);
-        }
-        for (IFileEntry file : directory2Children) {
-            EasyMock.verify(file);
-        }
-    }
-
-    /**
-     * Helper that returns a GTest object with the getFileListingService implementation stubbed out.
-     *
-     * @return A new GTest with the getFileListingService stubbed out
-     */
-    private GTest getStubbedMockGTest() {
-      return new GTest() {
-          @Override
-          IFileListingService getFileListingService() {
-              return mMockFileListingService;
-          }
-
-          @Override
-          IShellOutputReceiver createResultParser(String runName,
-                  Collection<ITestRunListener> listeners) {
-              return mMockReceiver;
-          }
-      };
     }
 
     /**
      * Helper function to do the actual filtering test.
      *
-     * @param gtest The GTest to run the test on, with the positive/negative filters already set
      * @param filterString The string to search for in the Mock, to verify filtering was called
      * @throws DeviceNotAvailableException
      */
-    private void doTestFilter(GTest gtest, String filterString) throws DeviceNotAvailableException {
-        initializeMocks();
+    private void doTestFilter(String filterString) throws DeviceNotAvailableException {
+        // configure the mock file system to have a single test
+        MockFileUtil.setMockDirContents(mMockITestDevice, GTest.DEFAULT_NATIVETEST_PATH, "test1");
 
-        String[] childrensPath = {
-                "file1",
-                "sub/file2",
-                "file3",
-                "path/to/some/random-file"};
-
-        IFileEntry[] children = createArrayOfFileEntries(childrensPath.length);
-        EasyMock.expect(mMockFileListingService.getChildren(mMockRootFileEntry, true, null)
-                ).andReturn(children);
-
-        for (int i=0; i<children.length; ++i) {
-            EasyMock.expect(children[i].getFullEscapedPath()).andReturn(childrensPath[i]);
-            EasyMock.expect(children[i].isDirectory()).andReturn(false);
-            EasyMock.expect(children[i].isAppFileName()).andReturn(false);
-            EasyMock.expect(children[i].getName()).andReturn("name");
-        }
-
-        for (int i=0; i<children.length; ++i) {
-            EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
                     .andReturn("");
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
                     EasyMock.same(mMockReceiver));
-        }
-
-        for (IFileEntry file : children) {
-            EasyMock.replay(file);
-        }
         replayMocks();
+        mGTest.run(mMockInvocationListener);
 
-        gtest.doRunAllTestsInSubdirectory(mMockRootFileEntry, mMockITestDevice,
-                mMockListeners);
-
-        for (IFileEntry file : children) {
-            EasyMock.verify(file);
-        }
         verifyMocks();
     }
 
@@ -323,38 +171,32 @@ public class GTestTest extends TestCase {
      * Test the positive filtering of test methods.
      */
     public void testPositiveFilter() throws DeviceNotAvailableException {
-        GTest gtest = getStubbedMockGTest();
-
         String posFilter = "abbccc";
-        gtest.setTestNamePositiveFilter(posFilter);
+        mGTest.setTestNamePositiveFilter(posFilter);
 
-        doTestFilter(gtest, posFilter);
+        doTestFilter(posFilter);
     }
 
     /**
      * Test the negative filtering of test methods.
      */
     public void testNegativeFilter() throws DeviceNotAvailableException {
-        GTest gtest = getStubbedMockGTest();
-
         String negFilter = "*don?tRunMe*";
-        gtest.setTestNameNegativeFilter(negFilter);
+        mGTest.setTestNameNegativeFilter(negFilter);
 
-        doTestFilter(gtest, "-*." + negFilter);
+        doTestFilter("-*." + negFilter);
     }
 
     /**
      * Test simultaneous positive and negative filtering of test methods.
      */
     public void testPositiveAndNegativeFilter() throws DeviceNotAvailableException {
-        GTest gtest = getStubbedMockGTest();
-
-        String posFilter = "pleaseRunMe";
+         String posFilter = "pleaseRunMe";
         String negFilter = "dontRunMe";
-        gtest.setTestNamePositiveFilter(posFilter);
-        gtest.setTestNameNegativeFilter(negFilter);
+        mGTest.setTestNamePositiveFilter(posFilter);
+        mGTest.setTestNameNegativeFilter(negFilter);
 
         String filter = String.format("%s-*.%s", posFilter, negFilter);
-        doTestFilter(gtest, filter);
+        doTestFilter(filter);
     }
 }

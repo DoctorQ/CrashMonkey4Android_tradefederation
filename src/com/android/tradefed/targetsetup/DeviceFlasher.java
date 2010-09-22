@@ -19,9 +19,8 @@ package com.android.tradefed.targetsetup;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.Log;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IFileListingService;
+import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.device.IFileListingService.IFileEntry;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -42,7 +41,6 @@ public class DeviceFlasher implements IDeviceFlasher  {
 
     private static final String LOG_TAG = "DeviceFlasher";
     public static final String BASEBAND_IMAGE_NAME = "radio";
-
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
     /**
@@ -345,15 +343,12 @@ public class DeviceFlasher implements IDeviceFlasher  {
         device.executeShellCommand("stop");
 
         Log.d(LOG_TAG, String.format("Cleaning %s", FileListingService.DIRECTORY_DATA));
-        IFileListingService service = device.getFileListingService();
-        // build file cache TODO: simplify this logic
-        service.getChildren(service.getRoot(), false, null);
-        IFileEntry dataEntry = service.getRoot().findChild(FileListingService.DIRECTORY_DATA);
+        IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
         if (dataEntry == null) {
             throw new TargetSetupError(String.format("Could not find %s folder on %s",
                     FileListingService.DIRECTORY_DATA, device.getSerialNumber()));
         }
-        for (IFileEntry dataSubDir : service.getChildren(dataEntry, false, null)) {
+        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
             if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
                 device.executeShellCommand(String.format("rm -r %s",
                         dataSubDir.getFullEscapedPath()));
@@ -375,7 +370,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
             }
 
             // after push, everything in /data is owned by root, need to revert to system
-            for (IFileEntry dataSubDir : service.getChildren(dataEntry, false, null)) {
+            for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
                 if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
                     // change owner to system, no -R support
                     device.executeShellCommand(String.format("chown system.system %s %s/*",
