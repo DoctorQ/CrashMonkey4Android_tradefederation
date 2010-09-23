@@ -46,8 +46,13 @@ import java.util.regex.Pattern;
 class ConfigFileParser {
     private static final String LOG_TAG = "ConfigFileParser";
 
-    /** A pattern that matches valid macro usages and captures the name of the macro */
-    private static final Pattern mMacroPattern = Pattern.compile("([a-z_]+)\\(\\)");
+    /**
+     * A pattern that matches valid macro usages and captures the name of the macro.
+     * Macro names must start with an alpha character, and may contain alphanumerics, underscores,
+     * or hyphens.
+     */
+    private static final Pattern mMacroPattern = Pattern.compile("([a-z][a-z0-9_-]*)\\(\\)",
+            Pattern.CASE_INSENSITIVE);
 
     private Map<String, ConfigLine> mMacros = new HashMap<String, ConfigLine>();
     private Map<String, List<ConfigLine>> mLongMacros = new HashMap<String, List<ConfigLine>>();

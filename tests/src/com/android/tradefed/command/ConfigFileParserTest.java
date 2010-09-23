@@ -123,7 +123,7 @@ public class ConfigFileParserTest extends TestCase {
 
     // Macro-related tests
     public void testSimpleMacro() throws IOException, ConfigurationException {
-        mMockFileData = "MACRO test = verify\ntest()";
+        mMockFileData = "MACRO TeSt = verify\nTeSt()";
         String[] expectedArgs = new String[] {"verify"};
 
         mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs));
@@ -152,6 +152,20 @@ public class ConfigFileParserTest extends TestCase {
      */
     public void testSimpleMacro_underscoreName() throws IOException, ConfigurationException {
         mMockFileData = "MACRO under_score = verify\nunder_score()";
+        String[] expectedArgs = new String[] {"verify"};
+
+        mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs));
+
+        EasyMock.replay(mMockScheduler);
+        mCommandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Ensure that parsing of names with embedded hyphens works properly.
+     */
+    public void testSimpleMacro_hyphenName() throws IOException, ConfigurationException {
+        mMockFileData = "MACRO hyphen-nated = verify\nhyphen-nated()";
         String[] expectedArgs = new String[] {"verify"};
 
         mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs));
