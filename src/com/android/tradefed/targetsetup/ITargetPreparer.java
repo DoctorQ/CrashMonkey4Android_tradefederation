@@ -21,16 +21,19 @@ import com.android.tradefed.device.ITestDevice;
 /**
  * Prepares the test environment for the test run.
  * <p/>
- * For example, installs software, tweaks env settings for testing, launches targets etc
+ * For example, installs software, tweaks env settings for testing, launches targets etc.
  * <p/>
- * TODO: this class could use a better name
+ * Note that multiple {@link ITargetPreparer} can specified in a configuration. It is recommended
+ * that each ITargetPreparer clearly document its expected environment pre-setup and post-setUp.
+ * e.g. a ITargetPreparer that configures a device for testing must be run after the ITargetPreparer
+ * that installs software.
  */
 public interface ITargetPreparer {
 
     /**
      * Perform the target setup for testing.
      *
-     * @param device the {@link ITestDevice} to prepare
+     * @param device the {@link ITestDevice} to prepare.
      * @param buildInfo data about the build under test.
      * @throws TargetSetupError if fatal error occurred setting up environment
      * @throws DeviceNotAvailableException if device became unresponsive

@@ -31,7 +31,9 @@ import java.io.IOException;
 
 /**
  * A {@link ITargetPreparer} that flashes an image on physical Android hardware, and prepares
- * device for testing
+ * device for testing.
+ * <p/>
+ * TODO: split flashing and device setup into separate {@link ITargetPreparer}s.
  */
 public class DeviceSetup implements ITargetPreparer {
 

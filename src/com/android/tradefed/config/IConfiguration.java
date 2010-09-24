@@ -46,13 +46,13 @@ public interface IConfiguration {
     public IBuildProvider getBuildProvider() throws ConfigurationException;
 
     /**
-     * Gets the {@link ITargetPreparer} from the configuration.
+     * Gets the {@link ITargetPreparer}s from the configuration.
      *
-     * @return the {@link IBuildProvider} provided in the configuration
+     * @return the {@link ITargetPreparer}s provided in order in the configuration
      * @throws ConfigurationException if config object could not be fully loaded, or was not the
      * correct type
      */
-    public ITargetPreparer getTargetPreparer() throws ConfigurationException;
+    public List<ITargetPreparer> getTargetPreparers() throws ConfigurationException;
 
     /**
      * Gets the {@link Test}s to run from the configuration.

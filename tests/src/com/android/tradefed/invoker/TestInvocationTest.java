@@ -92,7 +92,9 @@ public class TestInvocationTest extends TestCase {
         mMockLogger = EasyMock.createNiceMock(ILeveledLogOutput.class);
 
         EasyMock.expect(mMockConfiguration.getBuildProvider()).andReturn(mMockBuildProvider);
-        EasyMock.expect(mMockConfiguration.getTargetPreparer()).andReturn(mMockPreparer);
+        List<ITargetPreparer> preparers = new ArrayList<ITargetPreparer>(1);
+        preparers.add(mMockPreparer);
+        EasyMock.expect(mMockConfiguration.getTargetPreparers()).andReturn(preparers);
 
         mListeners = new ArrayList<ITestInvocationListener>(1);
         mListeners.add(mMockTestListener);

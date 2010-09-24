@@ -80,14 +80,14 @@ public class TestInvocation implements ITestInvocation {
             logRegistry.registerLogger(logger);
 
             IBuildProvider buildProvider = config.getBuildProvider();
-            ITargetPreparer preparer = config.getTargetPreparer();
+            List<ITargetPreparer> preparers = config.getTargetPreparers();
             IDeviceRecovery recovery = config.getDeviceRecovery();
             device.setRecovery(recovery);
             List<Test> tests = config.getTests();
             IBuildInfo info = buildProvider.getBuild();
             if (info != null) {
                 listeners = config.getTestInvocationListeners();
-                performInvocation(config, buildProvider, device, listeners, preparer, tests, info,
+                performInvocation(config, buildProvider, device, listeners, preparers, tests, info,
                         logger);
             } else {
                 Log.i(LOG_TAG, "No build to test");
@@ -131,16 +131,16 @@ public class TestInvocation implements ITestInvocation {
      * @param buildProvider the {@link IBuildProvider}
      * @param device the {@link ITestDevice} to use. May be <code>null</code>
      * @param listener the {@link ITestInvocationListener} to report results to
-     * @param preparer the {@link ITargetPreparer}
+     * @param preparers the {@link ITargetPreparer}s, to be called in order.
      * @param test the {@link Test} to run
      * @param info the {@link IBuildInfo}
      * @param logger the {@link ILeveledLogOutput}
      * @throws DeviceNotAvailableException
      */
     private void performInvocation(IConfiguration config, IBuildProvider buildProvider,
-            ITestDevice device, List<ITestInvocationListener> listeners, ITargetPreparer preparer,
-            List<Test> tests, IBuildInfo info, ILeveledLogOutput logger)
-            throws DeviceNotAvailableException {
+            ITestDevice device, List<ITestInvocationListener> listeners,
+            List<ITargetPreparer> preparers, List<Test> tests, IBuildInfo info,
+            ILeveledLogOutput logger) throws DeviceNotAvailableException {
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
         logStartInvocation(info, device);
@@ -152,7 +152,9 @@ public class TestInvocation implements ITestInvocation {
             if (device != null) {
                 info.addBuildAttribute("device_serial", device.getSerialNumber());
             }
-            preparer.setUp(device, info);
+            for (ITargetPreparer preparer : preparers) {
+                preparer.setUp(device, info);
+            }
             runTests(config, device, info, tests, listeners);
         } catch (BuildError e) {
             Log.w(LOG_TAG, String.format("Build %d failed on device %s", info.getBuildId(),

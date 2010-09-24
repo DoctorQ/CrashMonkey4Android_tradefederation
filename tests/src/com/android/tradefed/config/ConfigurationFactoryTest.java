@@ -96,7 +96,7 @@ public class ConfigurationFactoryTest extends TestCase {
         assertNotNull(config.getBuildProvider());
         assertNotNull(config.getDeviceRecovery());
         assertNotNull(config.getLogOutput());
-        assertNotNull(config.getTargetPreparer());
+        assertNotNull(config.getTargetPreparers());
         assertNotNull(config.getTests());
         assertNotNull(config.getTestInvocationListeners());
     }

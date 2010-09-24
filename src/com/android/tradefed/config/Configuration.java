@@ -113,6 +113,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IBuildProvider getBuildProvider() throws ConfigurationException {
         return (IBuildProvider)getConfigurationObject(BUILD_PROVIDER_NAME,
                 IBuildProvider.class);
@@ -121,8 +122,10 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
-    public ITargetPreparer getTargetPreparer() throws ConfigurationException {
-        return (ITargetPreparer)getConfigurationObject(TARGET_PREPARER_NAME,
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<ITargetPreparer> getTargetPreparers() throws ConfigurationException {
+        return (List<ITargetPreparer>)getConfigurationObjectList(TARGET_PREPARER_NAME,
                 ITargetPreparer.class);
     }
 
@@ -130,6 +133,7 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @SuppressWarnings("unchecked")
+    @Override
     public List<Test> getTests() throws ConfigurationException {
         return (List<Test>)getConfigurationObjectList(TEST_NAME, Test.class);
     }
@@ -137,6 +141,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDeviceRecovery getDeviceRecovery() throws ConfigurationException {
         return (IDeviceRecovery)getConfigurationObject(DEVICE_RECOVERY_NAME,
                 IDeviceRecovery.class);
@@ -145,6 +150,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ILeveledLogOutput getLogOutput() throws ConfigurationException {
         return (ILeveledLogOutput)getConfigurationObject(LOGGER_NAME,
                 ILeveledLogOutput.class);
@@ -154,11 +160,16 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @SuppressWarnings("unchecked")
+    @Override
     public List<ITestInvocationListener> getTestInvocationListeners() throws ConfigurationException {
         return (List<ITestInvocationListener>)getConfigurationObjectList(RESULT_REPORTER_NAME,
                 ITestInvocationListener.class);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public List<?> getConfigurationObjectList(String name, Class<?> expectedType)
         throws ConfigurationException {
         List<Object> configObjects = mConfigMap.get(name);
@@ -180,6 +191,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Object getConfigurationObject(String name, Class<?> expectedType)
             throws ConfigurationException {
         List<?> configObjects = getConfigurationObjectList(name, expectedType);
@@ -194,6 +206,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<Object> getAllConfigurationObjects() {
         Collection<Object> objectsCopy = new ArrayList<Object>();
         for (List<Object> objectList : mConfigMap.values()) {
@@ -205,6 +218,7 @@ public class Configuration implements IConfiguration {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void injectOptionValue(String optionName, String valueText)
             throws ConfigurationException {
         OptionSetter optionSetter = new OptionSetter(getAllConfigurationObjects());

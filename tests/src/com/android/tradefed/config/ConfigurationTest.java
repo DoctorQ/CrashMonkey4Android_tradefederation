@@ -159,10 +159,13 @@ public class ConfigurationTest extends TestCase {
     /**
      * Test method for {@link Configuration#getTargetPreparer()}.
      */
-    public void testGetTargetPreparer() throws ConfigurationException {
+    public void testGetTargetPreparers() throws ConfigurationException {
         final ITargetPreparer prep = EasyMock.createMock(ITargetPreparer.class);
+        final ITargetPreparer prep2 = EasyMock.createMock(ITargetPreparer.class);
         mConfig.addObject(Configuration.TARGET_PREPARER_NAME, prep);
-        assertEquals(prep, mConfig.getTargetPreparer());
+        mConfig.addObject(Configuration.TARGET_PREPARER_NAME, prep2);
+        assertEquals(prep, mConfig.getTargetPreparers().get(0));
+        assertEquals(prep2, mConfig.getTargetPreparers().get(1));
     }
 
     /**
