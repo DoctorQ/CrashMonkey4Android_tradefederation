@@ -81,6 +81,22 @@ public interface ITestDevice {
         throws DeviceNotAvailableException;
 
     /**
+     * Executes a adb shell command, with more parameters to control command behavior.
+     *
+     * @see {@link IDevice#executeShellCommand(String, IShellOutputReceiver, int)}
+     * @param command the adb shell command to run
+     * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
+     * @param maxTimeToOutputShellResponse the maximum amount of time during which the command is
+     *            allowed to not output any response.
+     * @param retryAttempts the maximum number of times to re-attempt command if it fails due to a
+     *            exception
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+            int maxTimeToOutputShellResponse, int retryAttempts) throws DeviceNotAvailableException;
+
+    /**
      * Helper method which executes a adb shell command and returns output as a {@link String}.
      *
      * @param command the adb shell command to run
@@ -262,8 +278,8 @@ public interface ITestDevice {
     /**
      * Retrieve a reference to a remote file on device.
      *
-     * @param path the absolute file path. Can be with a leading slash (ie "/system") or without (ie
-     *            "system")
+     * @param path the file path to retrieve. Can be an absolute path or path relative to '/'. (ie
+     *            both "/system" and "system" syntax is supported)
      * @return the {@link IFileEntry} or <code>null</code> if file at given <var>path</var> cannot
      *         be found
      * @throws DeviceNotAvailableException

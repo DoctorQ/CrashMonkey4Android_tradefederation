@@ -314,4 +314,14 @@ public class StubTestDevice implements IManagedTestDevice {
     public IFileEntry getFileEntry(String path) {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void executeShellCommand(String command, IShellOutputReceiver receiver,
+            int maxTimeToOutputShellResponse, int retryAttempts)
+            throws DeviceNotAvailableException {
+        // ignore
+    }
 }
