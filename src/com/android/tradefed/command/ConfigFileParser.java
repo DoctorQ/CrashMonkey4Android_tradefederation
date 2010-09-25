@@ -16,7 +16,6 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 
@@ -29,7 +28,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -55,6 +53,7 @@ class ConfigFileParser {
     private Map<String, List<ConfigLine>> mLongMacros = new HashMap<String, List<ConfigLine>>();
     private List<ConfigLine> mLines = new LinkedList<ConfigLine>();
 
+    @SuppressWarnings("serial")
     private class ConfigLine extends LinkedList<String> {
         ConfigLine() {
             super();
