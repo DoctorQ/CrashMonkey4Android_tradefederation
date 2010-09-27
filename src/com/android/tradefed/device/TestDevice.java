@@ -288,6 +288,23 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public void executeShellCommand(final String command, final IShellOutputReceiver receiver,
+            final int maxTimeToOutputShellResponse, int retryAttempts)
+            throws DeviceNotAvailableException {
+        DeviceAction action = new DeviceAction() {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
+                    ShellCommandUnresponsiveException {
+                getIDevice().executeShellCommand(command, receiver, maxTimeToOutputShellResponse);
+                return true;
+            }
+        };
+        performDeviceAction(String.format("shell %s", command), action, retryAttempts);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String executeShellCommand(String command) throws DeviceNotAvailableException {
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         executeShellCommand(command, receiver);
