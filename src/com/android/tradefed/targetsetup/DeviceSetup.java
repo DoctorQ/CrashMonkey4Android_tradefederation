@@ -155,9 +155,7 @@ public class DeviceSetup implements ITargetPreparer {
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException, BuildError {
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        if (mSkipFlash) {
-            device.reboot();
-        } else {
+        if (!mSkipFlash) {
             if (!(buildInfo instanceof IDeviceBuildInfo)) {
                 throw new IllegalArgumentException("Provided buildInfo is not a IDeviceBuildInfo");
             }
