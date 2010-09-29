@@ -139,8 +139,20 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the results for the current test run.
+     * <p/>
+     * Its intended to be called once test run is complete (ie {@link #testRunEnded(long, Map)} has
+     * been called). Calling this method before the run has even started
+     * (ie before {@link #testRunStarted(String, int)} has been called) is invalid, and will
+     * produce a {@link IllegalStateException}.
+     *
+     * @return the {@link TestRunResult} representing data collected during last test run
+     * @throws IllegalStateException if no test run data has been collected. This can occur if this
+     *             method is called before {@link #testRunStarted(String, int))} has been called.
      */
     public TestRunResult getCurrentRunResults() {
+        if (mCurrentResults == null) {
+            throw new IllegalStateException("no current results");
+        }
         return mCurrentResults;
     }
 

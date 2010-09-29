@@ -332,36 +332,15 @@ class TestDevice implements IManagedTestDevice {
                 }
             }
         } catch (IOException e) {
-            Log.w(LOG_TAG, String.format("IOException %s when running tests %s on %s",
-                    e.toString(), runner.getPackageName(), getSerialNumber()));
-            for (ITestRunListener listener : listeners) {
-                listener.testRunFailed("lost connection with device");
-            }
-
-            // TODO: no attempt tracking here. Would be good to catch scenario where repeated
-            // test runs fail even though recovery is succeeding
+            // TODO: no attempt tracking for exceptions. Would be good to catch scenario where
+            // repeated test runs fail even though recovery is succeeding
             recoverDevice();
         } catch (ShellCommandUnresponsiveException e) {
-            Log.w(LOG_TAG, String.format(
-                    "ShellCommandUnresponsiveException %s when running tests %s on %s",
-                    e.toString(), runner.getPackageName(), getSerialNumber()));
-            for (ITestRunListener listener : listeners) {
-                listener.testRunFailed("device unresponsive");
-            }
+            recoverDevice();
         } catch (TimeoutException e) {
-            Log.w(LOG_TAG, String.format(
-                    "TimeoutException when running tests %s on %s",
-                    runner.getPackageName(), getSerialNumber()));
-            for (ITestRunListener listener : listeners) {
-                listener.testRunFailed("timeout");
-            }
+            recoverDevice();
         } catch (AdbCommandRejectedException e) {
-            Log.w(LOG_TAG, String.format(
-                    "AdbCommandRejectedException %s when running tests %s on %s",
-                    e.getMessage(), runner.getPackageName(), getSerialNumber()));
-            for (ITestRunListener listener : listeners) {
-                listener.testRunFailed(e.getMessage());
-            }
+            recoverDevice();
         }
     }
 

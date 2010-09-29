@@ -165,6 +165,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testEnded(EasyMock.eq(expectedTest),
                     (Map<String, String>)EasyMock.anyObject());
         mMockListener.testRunFailed((String)EasyMock.anyObject());
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         // fork off a thread to do the reboot
         Thread rebootThread = new Thread() {
@@ -217,6 +218,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testEnded(EasyMock.eq(expectedTest),
                     (Map<String, String>)EasyMock.anyObject());
         mMockListener.testRunFailed((String)EasyMock.anyObject());
+        mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         // fork off a thread to do the runtime reset
         Thread resetThread = new Thread() {
