@@ -19,5 +19,16 @@ package com.android.tradefed.result;
  * A helper enum to represent the invocation status
  */
 public enum InvocationStatus {
-    SUCCESS, FAILED, BUILD_ERROR
+    SUCCESS, FAILED, BUILD_ERROR;
+
+    Throwable mThrowable = null;
+
+
+    public void setThrowable(Throwable t) {
+        mThrowable = t;
+    }
+
+    public Throwable getThrowable() {
+        return mThrowable;
+    }
 }
