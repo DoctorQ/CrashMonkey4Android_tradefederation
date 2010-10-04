@@ -15,15 +15,6 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.testrunner.ITestRunListener;
-
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
-
 import junit.framework.TestCase;
 
 /**
@@ -32,9 +23,7 @@ import junit.framework.TestCase;
 public class NativeStressTestParserTest extends TestCase {
 
     private static final String RUN_NAME = "run-name";
-    private ITestRunListener mMockListener;
     private NativeStressTestParser mParser;
-    private Capture<Map<String, String>> mCapturedMetricMap;
 
     /**
      * {@inheritDoc}
@@ -42,15 +31,7 @@ public class NativeStressTestParserTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mMockListener = EasyMock.createMock(ITestRunListener.class);
-        Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
-        listeners.add(mMockListener);
-        mParser = new NativeStressTestParser(RUN_NAME, listeners);
-        mCapturedMetricMap = new Capture<Map<String, String>>();
-        // expect this call
-        mMockListener.testRunStarted(RUN_NAME, 0);
-        mMockListener.testRunEnded(EasyMock.anyLong(), EasyMock.capture(mCapturedMetricMap));
-        EasyMock.replay(mMockListener);
+        mParser = new NativeStressTestParser(RUN_NAME);
     }
 
     /**
@@ -81,7 +62,7 @@ public class NativeStressTestParserTest extends TestCase {
      * Expect 1 iterations to be reported
      */
     public void testParse_oneIteration() {
-        mParser.processNewLines(new String[] {"==== pass 0", "Successfully completed 1 passes"});
+        mParser.processNewLines(new String[] {"==== Completed pass: 0"});
         mParser.done();
         verifyExpectedIterations(1);
     }
@@ -92,55 +73,35 @@ public class NativeStressTestParserTest extends TestCase {
      * Expect 2 iterations to be reported
      */
     public void testParse_whitespace() {
-        mParser.processNewLines(new String[] {"====pass0", "====   pass   1",
-                "Successfully completed 2 passes"});
+        mParser.processNewLines(new String[] {"====Completedpass:0succeeded",
+                "====  Completed  pass:   1  "});
         mParser.done();
         verifyExpectedIterations(2);
     }
 
     /**
-     * Test that non-sequential iteration data is handled
-     * <p/>
-     * Expect the missing iterations to be ignored: ie the final iteration count will be reported
-     */
-    public void testParse_skippedIteration() {
-        mParser.processNewLines(new String[] {"==== pass 1", "==== pass 49",
-                "Successfully completed 50 passes"});
-        mParser.done();
-        verifyExpectedIterations(50);
-    }
-
-    /**
-     * Test that a run where 'Successfully completed' output is missing.
-     * <p/>
-     * Expect the last valid iteration count will be reported
-     */
-    public void testParse_missingComplete() {
-        mParser.processNewLines(new String[] {"==== pass 0", "==== pass 1"});
-        mParser.done();
-        verifyExpectedIterations(1);
-    }
-
-    /**
      * Test that an invalid iteration value is ignored
-     * <p/>
-     * Expect the last valid iteration count will be reported
      */
     public void testParse_invalidIterationValue() {
-        mParser.processNewLines(new String[] {"==== pass 0", "==== pass 1", "==== pass b"});
+        mParser.processNewLines(new String[] {"==== Completed pass: 0", "==== Completed pass: 1",
+                "==== Completed pass: b", "Successfully completed 3 passes"});
+        mParser.done();
+        verifyExpectedIterations(2);
+    }
+
+    /**
+     * Test that failed iterations are ignored
+     */
+    public void testParse_failedIteration() {
+        mParser.processNewLines(new String[] {"==== Completed pass: 0", "==== pass: 1 failed"});
         mParser.done();
         verifyExpectedIterations(1);
     }
 
     /**
-     * Verify the metrics passed to {@link ITestRunListener#testRunEnded(long, Map)}
+     * Verify the iteration count collected by the parser
      */
     private void verifyExpectedIterations(int iterations) {
-        EasyMock.verify(mMockListener);
-        Map<String, String> receivedMetrics = mCapturedMetricMap.getValue();
-        // expect AVG_ITERATION_TIME_KEY and ITERATION_KEY metrics
-        assertEquals(2, receivedMetrics.size());
-        assertEquals(Integer.toString(iterations), receivedMetrics.get(
-                NativeStressTestParser.ITERATION_KEY));
+        assertEquals(iterations, mParser.getIterationsCompleted());
     }
 }

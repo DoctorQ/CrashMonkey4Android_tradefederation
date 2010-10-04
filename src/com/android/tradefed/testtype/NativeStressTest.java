@@ -17,7 +17,6 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.FileListingService;
-import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
@@ -28,7 +27,9 @@ import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Test that runs a native stress test executable on given device.
@@ -40,6 +41,11 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
 
     private static final String LOG_TAG = "NativeStressTest";
     static final String DEFAULT_TEST_PATH = "data/nativestresstest";
+
+    // The metrics key names to report to listeners
+    // TODO: these key names are temporary
+    static final String AVG_ITERATION_TIME_KEY = "avg-iteration-time";
+    static final String ITERATION_KEY = "iterations";
 
     private ITestDevice mDevice = null;
 
@@ -53,8 +59,12 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
     private String mTestModule = null;
 
     @Option(name = "iterations",
-            description="The number of stress test iterations to run.")
+            description="The number of stress test iterations per run.")
     private int mNumIterations = -1;
+
+    @Option(name = "runs",
+            description="The number of stress test runs to perform. Default 1.")
+    private int mNumRuns = 1;
 
     @Option(name = "max-iteration-time", description =
         "The maximum time to allow for one stress test iteration in ms. Default is 5 min.")
@@ -95,6 +105,20 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
     }
 
     /**
+     * Set the number of iterations to execute per run
+     */
+    void setNumIterations(int iterations) {
+        mNumIterations = iterations;
+    }
+
+    /**
+     * Set the number of runs to execute
+     */
+    void setNumRuns(int runs) {
+        mNumRuns = runs;
+    }
+
+    /**
      * Gets the path where native stress tests live on the device.
      *
      * @return The path on the device where the native tests live.
@@ -126,34 +150,65 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
             }
         } else {
             // assume every file is a valid stress test binary.
-            IShellOutputReceiver resultParser = createResultParser(rootEntry.getName(),
-                    listeners);
+            // use name of file as run name
+            NativeStressTestParser resultParser = createResultParser(rootEntry.getName());
             String fullPath = rootEntry.getFullEscapedPath();
             Log.i(LOG_TAG, String.format("Running native stress test %s on %s", fullPath,
                     mDevice.getSerialNumber()));
             // force file to be executable
             testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
-            // -s is start iteration, -e means end iteration
-            // use maxShellOutputResponseTime to enforce the max iteration time
-            // it won't be exact, but should be close
-            testDevice.executeShellCommand(String.format("%s -s 0 -e %d", fullPath,
-                    mNumIterations-1), resultParser, mMaxIterationTime, 1);
+            int startIteration = 0;
+            int endIteration = mNumIterations - 1;
+            long startTime = System.currentTimeMillis();
+            for (ITestRunListener listener : listeners) {
+                listener.testRunStarted(resultParser.getRunName(), 0);
+            }
+            try {
+                for (int i = 0; i < mNumRuns; i++) {
+                    // -s is start iteration, -e means end iteration
+                    // use maxShellOutputResponseTime to enforce the max iteration time
+                    // it won't be exact, but should be close
+                    testDevice.executeShellCommand(String.format("%s -s %d -e %d", fullPath,
+                            startIteration, endIteration), resultParser, mMaxIterationTime, 1);
+                    // iteration count is also used as a random seed value, so want use different
+                    // values for each run
+                    startIteration += mNumIterations;
+                    endIteration += mNumIterations;
+                }
+                // TODO: is catching exceptions, and reporting testRunFailed necessary?
+            } finally {
+                reportTestCompleted(startTime, listeners, resultParser);
+            }
+
+        }
+    }
+
+    private void reportTestCompleted(long startTime, Collection<ITestRunListener> listeners,
+            NativeStressTestParser parser) {
+        final long elapsedTime = System.currentTimeMillis() - startTime;
+        int iterationsComplete = parser.getIterationsCompleted();
+        float avgIterationTime = iterationsComplete > 0 ? elapsedTime / iterationsComplete : 0;
+        Map<String, String> metricMap = new HashMap<String, String>(2);
+        Log.i(LOG_TAG, String.format(
+                "Stress test %s is finished. Num iterations %d, avg time %f ms",
+                parser.getRunName(), iterationsComplete, avgIterationTime));
+        metricMap.put(ITERATION_KEY, Integer.toString(iterationsComplete));
+        metricMap.put(AVG_ITERATION_TIME_KEY, Float.toString(avgIterationTime));
+        for (ITestRunListener listener : listeners) {
+            listener.testRunEnded(elapsedTime, metricMap);
         }
     }
 
     /**
-     * Factory method for creating a {@link NativeStressTestParser} that parses test output and
-     * forwards results to listeners.
+     * Factory method for creating a {@link NativeStressTestParser} that parses test output
      * <p/>
-     * Exposed so unit tests can mock
+     * Exposed so unit tests can mock.
      *
-     * @param listeners
      * @param runName
-     * @return a {@link IShellOutputReceiver}
+     * @return a {@link NativeStressTestParser}
      */
-    IShellOutputReceiver createResultParser(String runName,
-            Collection<ITestRunListener> listeners) {
-        return new NativeStressTestParser(runName, listeners);
+    NativeStressTestParser createResultParser(String runName) {
+        return new NativeStressTestParser(runName);
     }
 
     /**
