@@ -39,6 +39,11 @@ public class ConsoleTest extends TestCase {
             void initLogging() {
                 // do nothing
             }
+
+            @Override
+            void exit() {
+                // do nothing
+            }
         };
      }
 

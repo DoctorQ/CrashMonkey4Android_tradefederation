@@ -210,7 +210,7 @@ public class Console {
         } finally {
             // Manually exit, since there may be other threads hanging around, keeping the runtime
             // alive
-            System.exit(0);
+            exit();
         }
     }
 
@@ -220,6 +220,16 @@ public class Console {
     void initLogging() {
         DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
         Log.setLogOutput(LogRegistry.getLogRegistry());
+    }
+
+    /**
+     * Closes the logs and exits the program.
+     * <p/>
+     * Exposed so unit tests can mock out.
+     */
+    void exit() {
+        LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
+        System.exit(0);
     }
 
     /**

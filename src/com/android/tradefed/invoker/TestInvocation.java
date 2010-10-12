@@ -58,7 +58,7 @@ import junit.framework.TestResult;
 public class TestInvocation implements ITestInvocation {
 
     private static final String LOG_TAG = "TestInvocation";
-    static final String TRADEFED_LOG_NAME = "tradefed_log";
+    static final String TRADEFED_LOG_NAME = "host_log";
     static final String DEVICE_LOG_NAME = "device_logcat";
 
     /**
@@ -74,10 +74,8 @@ public class TestInvocation implements ITestInvocation {
             throws DeviceNotAvailableException {
         List<ITestInvocationListener> listeners = null;
         ILeveledLogOutput logger = null;
-        LogRegistry logRegistry = getLogRegistry();
         try {
             logger = config.getLogOutput();
-            logRegistry.registerLogger(logger);
 
             IBuildProvider buildProvider = config.getBuildProvider();
             List<ITargetPreparer> preparers = config.getTargetPreparers();
@@ -98,9 +96,8 @@ public class TestInvocation implements ITestInvocation {
             Log.e(LOG_TAG, e);
         } finally {
             if (logger != null) {
-              logger.closeLog();
+                logger.closeLog();
             }
-            logRegistry.unregisterLogger();
         }
     }
 
@@ -143,6 +140,7 @@ public class TestInvocation implements ITestInvocation {
             ILeveledLogOutput logger) throws DeviceNotAvailableException {
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
+        getLogRegistry().registerLogger(logger);
         logStartInvocation(info, device);
         for (ITestInvocationListener listener : listeners) {
             listener.invocationStarted(info);
@@ -200,6 +198,9 @@ public class TestInvocation implements ITestInvocation {
                 listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
             }
             listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
+            // once tradefed log is reported, all further log calls for this invocation can get lost
+            // unregister logger so future log calls get directed to the tradefed global log
+            getLogRegistry().unregisterLogger();
 
             /*
              * For InvocationListeners (as opposed to SummaryListeners), we call
