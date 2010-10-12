@@ -104,7 +104,7 @@ public interface IRunUtil {
     /**
      * Helper method to sleep for given time, ignoring any exceptions.
      *
-     * @param time ms to sleep
+     * @param time ms to sleep. values less than or equal to 0 will be ignored
      */
     public void sleep(long time);
 
