@@ -270,6 +270,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         if (nativeTestDirectory == null) {
             Log.w(LOG_TAG, String.format("Could not find native test directory %s in %s!",
                     testPath, mDevice.getSerialNumber()));
+            return;
         }
         doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
     }
