@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -104,15 +105,59 @@ class OptionSetter {
     }
 
     private final Collection<Object> mOptionSources;
-    private final Map<String, OptionField> mOptionMap;
+    private final Map<String, OptionFieldsForName> mOptionMap;
 
-    private static class OptionField {
-        final Object mOptionSource;
-        final Field mField;
+    /**
+     * Container for the list of option fields with given name.
+     * <p/>
+     * Used to enforce constraint that fields with same name can exist in different option sources,
+     * but not the same option source
+     */
+    private class OptionFieldsForName implements Iterable<Map.Entry<Object, Field>> {
 
-        OptionField(Object optionSource, Field field) {
-            mOptionSource = optionSource;
-            mField = field;
+        private Map<Object, Field> mSourceFieldMap = new HashMap<Object, Field>();
+
+        void addField(String name, Object source, Field field) throws ConfigurationException {
+            if (size() > 0) {
+                Handler existingFieldHandler = getHandler(getFirstField().getType());
+                Handler newFieldHandler = getHandler(field.getType());
+                if (!existingFieldHandler.equals(newFieldHandler)) {
+                    throw new ConfigurationException(String.format(
+                            "@Option field with name '%s' in class '%s' is defined with a " +
+                            "different type than same option in class '%s'",
+                            name, source.getClass().getName(),
+                            getFirstObject().getClass().getName()));
+                }
+            }
+            if (mSourceFieldMap.put(source, field) != null) {
+                throw new ConfigurationException(String.format(
+                        "@Option field with name '%s' is defined more than once in class '%s'",
+                        name, source.getClass().getName()));
+            }
+        }
+
+        public int size() {
+            return mSourceFieldMap.size();
+        }
+
+        public Field getFirstField() throws ConfigurationException {
+            if (size() <= 0) {
+                // should never happen
+                throw new ConfigurationException("no option fields found");
+            }
+            return mSourceFieldMap.values().iterator().next();
+        }
+
+        public Object getFirstObject() throws ConfigurationException {
+            if (size() <= 0) {
+                // should never happen
+                throw new ConfigurationException("no option fields found");
+            }
+            return mSourceFieldMap.keySet().iterator().next();
+        }
+
+        public Iterator<Map.Entry<Object, Field>> iterator() {
+            return mSourceFieldMap.entrySet().iterator();
         }
     }
 
@@ -133,13 +178,13 @@ class OptionSetter {
         mOptionMap = makeOptionMap();
     }
 
-    private OptionField fieldForArg(String name) throws ConfigurationException {
-        OptionField field = mOptionMap.get(name);
-        if (field == null) {
+    private OptionFieldsForName fieldsForArg(String name) throws ConfigurationException {
+        OptionFieldsForName fields = mOptionMap.get(name);
+        if (fields == null || fields.size() == 0) {
             throw new ConfigurationException(String.format("Could not find option with name %s",
                     name));
         }
-        return field;
+        return fields;
     }
 
     /**
@@ -150,7 +195,7 @@ class OptionSetter {
      * @throws ConfigurationException if field could not be found
      */
     public String getTypeForOption(String name) throws ConfigurationException {
-        return fieldForArg(name).mField.getType().getSimpleName().toLowerCase();
+        return fieldsForArg(name).getFirstField().getType().getSimpleName().toLowerCase();
     }
 
     /**
@@ -161,43 +206,49 @@ class OptionSetter {
      */
     @SuppressWarnings("unchecked")
     public void setOptionValue(String optionName, String valueText) throws ConfigurationException {
-        OptionField optionField = fieldForArg(optionName);
-        Field field = optionField.mField;
-        Handler handler = getHandler(field.getGenericType());
-        Object value = handler.translate(valueText);
-        if (value == null) {
-            final String type = field.getType().getSimpleName().toLowerCase();
-            throw new ConfigurationException(
-                    String.format("Couldn't convert '%s' to a %s for option '%s'", valueText, type,
-                            optionName));
-        }
-        try {
-            field.setAccessible(true);
-            if (Collection.class.isAssignableFrom(field.getType())) {
-                Collection collection = (Collection)field.get(optionField.mOptionSource);
-                if (collection == null) {
-                    throw new ConfigurationException(String.format("internal error: no storage " +
-                            "allocated for field '%s' (used for option '%s') in class '%s'",
-                            field.getName(), optionName,
-                            optionField.mOptionSource.getClass().getName()));
-                }
-                collection.add(value);
-            } else {
-                field.set(optionField.mOptionSource, value);
+        OptionFieldsForName optionFields = fieldsForArg(optionName);
+        for (Map.Entry<Object, Field> fieldEntry : optionFields) {
+
+            Object optionSource = fieldEntry.getKey();
+            Field field = fieldEntry.getValue();
+            Handler handler = getHandler(field.getGenericType());
+            Object value = handler.translate(valueText);
+            if (value == null) {
+                final String type = field.getType().getSimpleName().toLowerCase();
+                throw new ConfigurationException(
+                        String.format("Couldn't convert '%s' to a %s for option '%s'", valueText,
+                                type, optionName));
             }
-        } catch (IllegalAccessException e) {
-            throw new ConfigurationException(String.format(
-                    "internal error when setting option '%s'", optionName), e);
+            try {
+                field.setAccessible(true);
+                if (Collection.class.isAssignableFrom(field.getType())) {
+                    Collection collection = (Collection)field.get(optionSource);
+                    if (collection == null) {
+                        throw new ConfigurationException(String.format(
+                                "internal error: no storage allocated for field '%s' (used for " +
+                                "option '%s') in class '%s'",
+                                field.getName(), optionName, optionSource.getClass().getName()));
+                    }
+                    collection.add(value);
+                } else {
+                    field.set(optionSource, value);
+                }
+            } catch (IllegalAccessException e) {
+                throw new ConfigurationException(String.format(
+                        "internal error when setting option '%s'", optionName), e);
+            }
         }
     }
 
     /**
      * Cache the available options and report any problems with the options themselves right away.
-     * @return a {@link Map} of {@link Option} field name to {@link OptionField}
+     *
+     * @return a {@link Map} of {@link Option} field name to {@link OptionField}s
      * @throws ConfigurationException if any {@link Option} are incorrectly specified
      */
-    private Map<String, OptionField> makeOptionMap() throws ConfigurationException {
-        final Map<String, OptionField> optionMap = new HashMap<String, OptionField>();
+    private Map<String, OptionFieldsForName> makeOptionMap() throws ConfigurationException {
+        final Map<String, OptionFieldsForName> optionMap =
+                new HashMap<String, OptionFieldsForName>();
         for (Object objectSource: mOptionSources) {
             addOptionsForObject(objectSource, optionMap);
         }
@@ -205,16 +256,16 @@ class OptionSetter {
     }
 
     /**
-     * Adds all option fields (both declared and inherited) to the
-     * <var>optionMap</var> for provided <var>optionClass</var>
+     * Adds all option fields (both declared and inherited) to the <var>optionMap</var> for
+     * provided <var>optionClass</var>.
      *
      * @param optionSource
      * @param optionMap
      * @param optionClass
      * @throws ConfigurationException
      */
-    private void addOptionsForObject(Object optionSource, Map<String, OptionField> optionMap)
-            throws ConfigurationException {
+    private void addOptionsForObject(Object optionSource,
+            Map<String, OptionFieldsForName> optionMap) throws ConfigurationException {
         Collection<Field> optionFields = getOptionFieldsForClass(optionSource.getClass());
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
@@ -262,7 +313,7 @@ class OptionSetter {
     }
 
     public boolean isBooleanOption(String name) throws ConfigurationException {
-        Field field = fieldForArg(name).mField;
+        Field field = fieldsForArg(name).getFirstField();
         return isBooleanField(field);
     }
 
@@ -270,16 +321,17 @@ class OptionSetter {
         return getHandler(field.getGenericType()).isBoolean();
     }
 
-    private void addNameToMap(Map<String, OptionField> optionMap, Object optionSource, String name,
-            Field field) throws ConfigurationException {
-        OptionField optionField = new OptionField(optionSource, field);
-        if (optionMap.put(name, optionField) != null) {
-            throw new ConfigurationException("found multiple @Options sharing the name '" + name
-                    + "'");
+    private void addNameToMap(Map<String, OptionFieldsForName> optionMap, Object optionSource,
+            String name, Field field) throws ConfigurationException {
+        OptionFieldsForName fields = optionMap.get(name);
+        if (fields == null) {
+            fields = new OptionFieldsForName();
+            optionMap.put(name, fields);
         }
+        fields.addField(name, optionSource, field);
         if (getHandler(field.getGenericType()) == null) {
-            throw new ConfigurationException("unsupported @Option field type '" + field.getType()
-                    + "'");
+            throw new ConfigurationException(String.format("unsupported @Option field type '%s'",
+                    field.getType()));
         }
     }
 

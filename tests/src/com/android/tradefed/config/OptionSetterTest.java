@@ -56,11 +56,31 @@ public class OptionSetterTest extends TestCase {
         private MyGeneric<String> mMyOption;
     }
 
-    /** Option source with an option with same name as AllTypesOptionSource. */
+    /** Option source with options with same name. */
     private static class DuplicateOptionSource {
         @SuppressWarnings("unused")
         @Option(name = "string", shortName = 's')
         private String mMyOption;
+
+        @SuppressWarnings("unused")
+        @Option(name = "string", shortName = 's')
+        private String mMyDuplicateOption;
+    }
+
+    /** Option source with an option with same name as AllTypesOptionSource. */
+    private static class SharedOptionSource {
+        @SuppressWarnings("unused")
+        @Option(name = "string", shortName = 's')
+        private String mMyOption;
+    }
+
+    /**
+     * Option source with an option with same name as AllTypesOptionSource, but a different type.
+     */
+    private static class SharedOptionWrongTypeSource {
+        @SuppressWarnings("unused")
+        @Option(name = "string", shortName = 's')
+        private int mMyOption;
     }
 
     /** option source with all supported types. */
@@ -144,11 +164,35 @@ public class OptionSetterTest extends TestCase {
     }
 
     /**
-     * Test creating an {@link OptionSetter} for a source with duplicate names.
+     * Test creating an {@link OptionSetter} for a source with duplicate option names.
      */
     public void testOptionSetter_duplicateOptions() {
         try {
-            new OptionSetter(new AllTypesOptionSource(), new DuplicateOptionSource());
+            new OptionSetter(new DuplicateOptionSource());
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test option with same name can be used in multiple option sources.
+     */
+    public void testOptionSetter_sharedOptions() throws ConfigurationException {
+        AllTypesOptionSource object1 = new AllTypesOptionSource();
+        SharedOptionSource object2 = new SharedOptionSource();
+        OptionSetter setter = new OptionSetter(object1, object2);
+        setter.setOptionValue("string", "test");
+        assertEquals("test", object1.mString);
+        assertEquals("test", object2.mMyOption);
+    }
+
+    /**
+     * Test that multiple options with same name must have the same type.
+     */
+    public void testOptionSetter_sharedOptionsDiffType() throws ConfigurationException {
+        try {
+            new OptionSetter(new AllTypesOptionSource(), new SharedOptionWrongTypeSource());
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
