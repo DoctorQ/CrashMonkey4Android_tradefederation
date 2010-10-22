@@ -281,6 +281,9 @@ class WifiHelper {
         if (!callWpaCliChecked("reconnect")) {
             return false;
         }
+        if (!callWpaCliChecked("save_config")) {
+            return false;
+        }
         return true;
     }
 
