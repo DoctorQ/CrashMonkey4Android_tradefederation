@@ -286,7 +286,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         long elapsedTime = System.currentTimeMillis() - startTime;
         IFastbootListener listener = new StubFastbootListener();
         mMgr.addFastbootListener(listener);
-        boolean result =  waitForDeviceState(TestDeviceState.FASTBOOT, time - elapsedTime);
+        long waitTime = time - elapsedTime;
+        if (waitTime < 0) {
+            // wait at least 200ms
+            waitTime = 200;
+        }
+        boolean result =  waitForDeviceState(TestDeviceState.FASTBOOT, waitTime);
         mMgr.removeFastbootListener(listener);
         return result;
     }
