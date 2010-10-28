@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Map;
 
 // not importing java.io.Console because of class name conflict
 
@@ -156,7 +157,8 @@ public class Console {
                             "'q' == 'exit'\n" +
                             "'l i' == 'list invocations'\n" +
                             "'l d' == 'list devices'\n" +
-                            "'l c' == 'list configs'\n");
+                            "'l c' == 'list configs'\n" +
+                            "'d s' == 'dump stack'\n");
                 } else if ("list".equals(cmd) || "l".equals(cmd)) {
                     if ("i".equals(index(tokens, 1)) || "invocations".equals(index(tokens, 1))) {
                         Collection<ITestInvocation> invs = mScheduler.listInvocations();
@@ -182,6 +184,13 @@ public class Console {
                         for (String config : configs) {
                             mTerminal.printf("Got config %d: %s\n", counter++, config);
                         }
+                    }
+                } else if ("dump".equals(cmd) || "d".equals(cmd)) {
+                    if ("s".equals(index(tokens, 1)) || "stack".equals(index(tokens, 1))) {
+                        dumpStacks();
+                    } else {
+                        mTerminal.printf("Unknown dump argument '%s'.  Enter 'help' for help.\n",
+                                index(tokens, 1));
                     }
                 } else {
                     mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", cmd);
@@ -248,6 +257,21 @@ public class Console {
         System.out.println("Run TradeFederation console.");
         System.out.println("Options:");
         System.out.print(ArgsOptionParser.getOptionHelp(this.getClass()));
+    }
+
+    private void dumpStacks() {
+        Map<Thread, StackTraceElement[]> threadMap = Thread.getAllStackTraces();
+        for (Map.Entry<Thread, StackTraceElement[]> threadEntry : threadMap.entrySet()) {
+            dumpThreadStack(threadEntry.getKey(), threadEntry.getValue());
+        }
+    }
+
+    private void dumpThreadStack(Thread thread, StackTraceElement[] trace) {
+        mTerminal.printf("%s\n", thread);
+        for (int i=0; i < trace.length; i++) {
+            mTerminal.printf("\t%s\n", trace[i]);
+        }
+        mTerminal.printf("\n", "");
     }
 
     public static void main(final String[] mainArgs) {
