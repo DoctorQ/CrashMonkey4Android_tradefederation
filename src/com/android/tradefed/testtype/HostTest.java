@@ -21,6 +21,7 @@ import com.android.tradefed.device.ITestDevice;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
+import junit.framework.TestSuite;
 
 /**
  * A test runner for host based tests
@@ -85,12 +86,10 @@ public class HostTest implements IDeviceTest {
             if (mMethodName != null) {
                 // run a single test method
                 testCase.setName(mMethodName);
-            } else {
+            } else if (!(test instanceof DeviceTestCase)) {
                 // wrap the test in a suite, because the JUnit TestCase.run implementation can
                 // only run a single method
-                DeviceTestSuite testSuite = new DeviceTestSuite();
-                testSuite.addTestSuite(classObj);
-                testSuite.setDevice(mDevice);
+                TestSuite testSuite = new TestSuite(classObj);
                 test = testSuite;
             }
         }
