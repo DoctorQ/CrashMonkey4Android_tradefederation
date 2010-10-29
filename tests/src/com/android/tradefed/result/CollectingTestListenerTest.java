@@ -90,11 +90,16 @@ public class CollectingTestListenerTest extends TestCase {
      */
     public void testReRun() {
         final TestIdentifier test1 = injectTestRun("run", "testFoo1");
+        assertEquals(1, mCollectingTestListener.getNumTotalTests());
+        assertEquals(1, mCollectingTestListener.getNumPassedTests());
+        TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
+        assertEquals(1, runResult.getNumPassedTests());
+
         final TestIdentifier test2 = injectTestRun("run", "testFoo2");
         assertEquals(2, mCollectingTestListener.getNumTotalTests());
         assertEquals(2, mCollectingTestListener.getNumPassedTests());
         assertEquals(1, mCollectingTestListener.getRunResults().size());
-        TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
+        runResult = mCollectingTestListener.getCurrentRunResults();
         assertEquals(2, runResult.getNumPassedTests());
         assertTrue(runResult.getTests().contains(test1));
         assertTrue(runResult.getTests().contains(test2));

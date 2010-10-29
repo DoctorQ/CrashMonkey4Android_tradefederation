@@ -41,10 +41,9 @@ public class CollectingTestListener implements ITestInvocationListener {
     private TestRunResult mCurrentResults = null;
 
     // cached test constants
-    private Integer mNumTotalTests = null;
-    private Integer mNumPassedTests = null;
-    private Integer mNumFailedTests = null;
-    private Integer mNumErrorTests = null;
+    private int mNumPassedTests = 0;
+    private int mNumFailedTests = 0;
+    private int mNumErrorTests = 0;
 
     /**
      * {@inheritDoc}
@@ -84,8 +83,8 @@ public class CollectingTestListener implements ITestInvocationListener {
             throw new IllegalStateException("testEnded called before testRunStarted");
         }
         // only record test pass if failure not already recorded
-        if (!mCurrentResults.getTestResults().containsKey(test)) {
-            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.PASSED));
+        if (mCurrentResults.addResult(test, new TestResult(TestStatus.PASSED))) {
+            mNumPassedTests++;
         }
     }
 
@@ -97,9 +96,13 @@ public class CollectingTestListener implements ITestInvocationListener {
             throw new IllegalStateException("testFailed called before testRunStarted");
         }
         if (status.equals(TestFailure.ERROR)) {
-            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.ERROR, trace));
+            if (mCurrentResults.addResult(test, new TestResult(TestStatus.ERROR, trace))) {
+                mNumErrorTests++;
+            }
         } else {
-            mCurrentResults.getTestResults().put(test, new TestResult(TestStatus.FAILURE, trace));
+            if (mCurrentResults.addResult(test, new TestResult(TestStatus.FAILURE, trace))) {
+                mNumFailedTests++;
+            }
         }
     }
 
@@ -167,19 +170,13 @@ public class CollectingTestListener implements ITestInvocationListener {
      * Gets the total number of tests for all runs.
      */
     public int getNumTotalTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
-        return mNumTotalTests;
+        return getNumFailedTests() + getNumErrorTests() + getNumPassedTests();
     }
 
     /**
      * Gets the total number of failed tests for all runs.
      */
     public int getNumFailedTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumFailedTests;
     }
 
@@ -187,9 +184,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * Gets the total number of error tests for all runs.
      */
     public int getNumErrorTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumErrorTests;
     }
 
@@ -197,9 +191,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * Gets the total number of passed tests for all runs.
      */
     public int getNumPassedTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumPassedTests;
     }
 
@@ -208,23 +199,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      */
     public boolean hasFailedTests() {
         return getNumErrorTests() > 0 || getNumFailedTests() > 0;
-    }
-
-    private synchronized boolean areTestCountsCalculated() {
-        return mNumTotalTests != null;
-    }
-
-    private synchronized void calculateTestCounts() {
-        mNumTotalTests = 0;
-        mNumPassedTests = 0;
-        mNumFailedTests = 0;
-        mNumErrorTests = 0;
-        for (TestRunResult runResult : getRunResults()) {
-            mNumTotalTests += runResult.getNumTests();
-            mNumPassedTests += runResult.getNumPassedTests();
-            mNumFailedTests += runResult.getNumFailedTests();
-            mNumErrorTests += runResult.getNumErrorTests();
-        }
     }
 
     /**
