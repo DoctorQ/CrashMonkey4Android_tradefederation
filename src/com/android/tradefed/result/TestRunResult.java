@@ -35,9 +35,9 @@ public class TestRunResult {
     private boolean mIsRunComplete = false;
     private boolean mIsRunFailed = false;
     private long mElapsedTime = 0;
-    private Integer mNumFailedTests = null;
-    private Integer mNumErrorTests = null;
-    private Integer mNumPassedTests = null;
+    private int mNumFailedTests = 0;
+    private int mNumErrorTests = 0;
+    private int mNumPassedTests = 0;
 
     /**
      * Create a {@link TestRunResult}.
@@ -113,39 +113,10 @@ public class TestRunResult {
         mElapsedTime+= elapsedTime;
     }
 
-    private synchronized boolean areTestCountsCalculated() {
-        return mNumFailedTests != null;
-    }
-
-    private synchronized void calculateTestCounts() {
-        mNumFailedTests = 0;
-        mNumErrorTests = 0;
-        mNumPassedTests = 0;
-        for (TestResult result : getTestResults().values()) {
-            switch (result.getStatus()) {
-                case PASSED: {
-                    mNumPassedTests++;
-                    break;
-                }
-                case FAILURE: {
-                    mNumFailedTests++;
-                    break;
-                }
-                case ERROR: {
-                    mNumErrorTests++;
-                    break;
-                }
-            }
-        }
-    }
-
     /**
      * Gets the number of passed tests for this run.
      */
     public int getNumPassedTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumPassedTests;
     }
 
@@ -160,9 +131,6 @@ public class TestRunResult {
      * Gets the number of failed tests in this run.
      */
     public int getNumFailedTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumFailedTests;
     }
 
@@ -170,9 +138,6 @@ public class TestRunResult {
      * Gets the number of error tests in this run.
      */
     public int getNumErrorTests() {
-        if (!areTestCountsCalculated()) {
-            calculateTestCounts();
-        }
         return mNumErrorTests;
     }
 
@@ -188,5 +153,31 @@ public class TestRunResult {
      */
     public long getElapsedTime() {
         return mElapsedTime;
+    }
+
+    /**
+     * Adds a test result.
+     *
+     * @param test
+     * @param testResult
+     * @return true if result was added. false if test result had already existed
+     */
+    public boolean addResult(TestIdentifier test, TestResult testResult) {
+        if (!mTestResults.containsKey(test)) {
+            mTestResults.put(test, testResult);
+            switch (testResult.getStatus()) {
+                case ERROR:
+                    mNumErrorTests++;
+                    break;
+                case FAILURE:
+                    mNumFailedTests++;
+                    break;
+                case PASSED:
+                    mNumPassedTests++;
+                    break;
+            }
+            return true;
+        }
+        return false;
     }
 }
