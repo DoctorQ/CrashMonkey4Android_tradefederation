@@ -60,7 +60,7 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest {
     }
 
     /**
-     * Overrides parent method to pass in device and test app path to included test
+     * Overrides parent method to pass in device to included test
      */
     @Override
     public void runTest(Test test, TestResult result) {
