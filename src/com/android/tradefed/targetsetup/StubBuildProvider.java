@@ -36,4 +36,12 @@ public class StubBuildProvider implements IBuildProvider {
     public void buildNotTested(IBuildInfo info) {
         // ignore
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void cleanUp(IBuildInfo info) {
+        // ignore
+    }
 }

@@ -38,4 +38,9 @@ public interface IBuildProvider {
      * @param info the {@link IBuildInfo} to reset
      */
     public void buildNotTested(IBuildInfo info);
+
+    /**
+     * Clean up any temporary build files.
+     */
+    public void cleanUp(IBuildInfo info);
 }
