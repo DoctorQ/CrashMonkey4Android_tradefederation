@@ -19,6 +19,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,7 +51,8 @@ public class ConfigurationDef {
 
     public ConfigurationDef(String name) {
         mName = name;
-        mObjectClassMap = new HashMap<String, List<String>>();
+        // use LinkedHashMap to keep objects in same order they were added.
+        mObjectClassMap = new LinkedHashMap<String, List<String>>();
         mOptionList = new ArrayList<OptionDef>();
     }
 
