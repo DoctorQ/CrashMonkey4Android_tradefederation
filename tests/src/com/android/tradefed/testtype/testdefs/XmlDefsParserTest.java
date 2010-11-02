@@ -28,8 +28,9 @@ import junit.framework.TestCase;
 public class XmlDefsParserTest extends TestCase {
 
     static final String TEST_PKG = "testpkg";
+    static final String TEST_COVERAGE_TARGET = "testcoverage";
 
-    static final String TEST_DATA =
+    private static final String TEST_DATA =
         "<test name=\"frameworks-core\" " +
         "package=\"" + TEST_PKG + "\" " +
         "continuous=\"true\" />";
@@ -44,12 +45,13 @@ public class XmlDefsParserTest extends TestCase {
         "package=\"" + TEST_PKG + "\" " +
         "continuous=\"false\" />";
 
-    private static final String FULL_DATA =
+    static final String FULL_DATA =
         "<test name=\"frameworks-core\" " +
         "package=\"" + TEST_PKG + "\" " +
         "class=\"class\" " +
         "runner=\"runner\" " +
-        "continuous=\"true\" />";
+        "continuous=\"true\" " +
+        "coverage_target=\"" + TEST_COVERAGE_TARGET + "\" />";
 
     /**
      * Simple test for parsing a single test definition.
@@ -64,6 +66,7 @@ public class XmlDefsParserTest extends TestCase {
         assertTrue(def.isContinuous());
         assertNull(def.getClassName());
         assertNull(def.getRunner());
+        assertNull(def.getCoverageTarget());
     }
 
     /**
@@ -101,6 +104,7 @@ public class XmlDefsParserTest extends TestCase {
         assertTrue(def.isContinuous());
         assertEquals("class", def.getClassName());
         assertEquals("runner", def.getRunner());
+        assertEquals(TEST_COVERAGE_TARGET, def.getCoverageTarget());
     }
 
     /**

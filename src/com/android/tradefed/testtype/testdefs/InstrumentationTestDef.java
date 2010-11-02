@@ -24,6 +24,7 @@ class InstrumentationTestDef {
     private String mRunner = null;
     private String mClassName = null;
     private boolean mIsContinuous = false;
+    private String mCoverageTarget = null;
 
     /**
      * Creates a {@link InstrumentationTestDef}.
@@ -46,6 +47,10 @@ class InstrumentationTestDef {
 
     void setContinuous(boolean isContinuous) {
         mIsContinuous = isContinuous;
+    }
+
+    void setCoverageTarget(String coverageTarget) {
+        mCoverageTarget = coverageTarget;
     }
 
     /**
@@ -83,5 +88,12 @@ class InstrumentationTestDef {
      */
     boolean isContinuous() {
         return mIsContinuous;
+    }
+
+    /**
+     * Returns the coverage target for the test.
+     */
+    String getCoverageTarget() {
+        return mCoverageTarget;
     }
 }

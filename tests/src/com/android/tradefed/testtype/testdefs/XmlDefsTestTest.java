@@ -22,11 +22,13 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.testtype.MockInstrumentationTest;
 
+import org.easymock.Capture;
 import org.easymock.EasyMock;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -36,8 +38,9 @@ import junit.framework.TestCase;
 public class XmlDefsTestTest extends TestCase {
 
     private static final String TEST_PATH = "foopath";
-    private static final String TEST_DEF_DATA = XmlDefsParserTest.TEST_DATA;
+    private static final String TEST_DEF_DATA = XmlDefsParserTest.FULL_DATA;
     private static final String TEST_PKG = XmlDefsParserTest.TEST_PKG;
+    private static final String TEST_COVERAGE_TARGET = XmlDefsParserTest.TEST_COVERAGE_TARGET;
     private ITestDevice mMockTestDevice;
     private ITestInvocationListener mMockListener;
     private XmlDefsTest mXmlTest;
@@ -90,10 +93,15 @@ public class XmlDefsTestTest extends TestCase {
                 return false;
             }
         });
-        EasyMock.replay(mMockTestDevice);
+        mMockListener.testRunStarted(TEST_PKG, 0);
+        Capture<Map<String, String>> captureMetrics = new Capture<Map<String, String>>();
+        mMockListener.testRunEnded(EasyMock.anyLong(), EasyMock.capture(captureMetrics));
+        EasyMock.replay(mMockTestDevice, mMockListener);
         mXmlTest.run(mMockListener);
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
         assertEquals(TEST_PKG, mMockInstrumentationTest.getPackageName());
+        assertEquals(TEST_COVERAGE_TARGET, captureMetrics.getValue().get(
+                XmlDefsTest.COVERAGE_TARGET_KEY));
     }
 
     /**

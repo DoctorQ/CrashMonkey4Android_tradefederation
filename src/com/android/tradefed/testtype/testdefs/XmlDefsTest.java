@@ -33,7 +33,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Runs a set of instrumentation test's defined in test_defs.xml files.
@@ -45,11 +47,15 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
 
     private static final String LOG_TAG = "XmlDefsTest";
 
+    /** the metric key name for the test coverage target value */
+    // TODO: move this to a more generic location
+    public static final String COVERAGE_TARGET_KEY = "coverage_target";
+
     private ITestDevice mDevice;
 
     @Option(name = "timeout",
             description = "Fail any test that takes longer than the specified number of "
-            + "milliseconds ")
+            + "milliseconds. Default 10 min.")
     private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
@@ -57,7 +63,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
     private String mTestSize = null;
 
     @Option(name = "rerun",
-            description = "Rerun non-executed tests individually if test run fails to complete")
+            description = "Rerun non-executed tests individually if test run fails to complete. Default true")
     private boolean mIsRerunMode = true;
 
     @Option(name = "local-file-path",
@@ -67,6 +73,10 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
     @Option(name = "device-file-path",
             description = "file path on device to test_defs.xml file to run")
     private Collection<String> mRemotePaths = new ArrayList<String>();
+
+    @Option(name = "send-coverage",
+            description = "Send coverage target info to test listeners. Default true.")
+    private boolean mSendCoverage = true;
 
     public XmlDefsTest() {
     }
@@ -138,7 +148,27 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
                 test.setTestSize(getTestSize());
                 test.setTestTimeout(getTestTimeout());
                 test.run(listeners);
+                if (mSendCoverage && def.getCoverageTarget() != null) {
+                    sendCoverage(def.getPackage(), def.getCoverageTarget(), listeners);
+                }
             }
+        }
+    }
+
+    /**
+     * Forwards the tests coverage target info as a test metric.
+     *
+     * @param packageName
+     * @param coverageTarget
+     * @param listeners
+     */
+    private void sendCoverage(String packageName, String coverageTarget,
+            List<ITestInvocationListener> listeners) {
+        Map<String, String> coverageMetric = new HashMap<String, String>(1);
+        coverageMetric.put(COVERAGE_TARGET_KEY, coverageTarget);
+        for (ITestInvocationListener listener : listeners) {
+            listener.testRunStarted(packageName, 0);
+            listener.testRunEnded(0, coverageMetric);
         }
     }
 

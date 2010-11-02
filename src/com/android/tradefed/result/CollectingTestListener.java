@@ -114,7 +114,7 @@ public class CollectingTestListener implements ITestInvocationListener {
             throw new IllegalStateException("testRunEnded called before testRunStarted");
         }
         mCurrentResults.setRunComplete(true);
-        mCurrentResults.setMetrics(runMetrics);
+        mCurrentResults.addMetrics(runMetrics);
         mCurrentResults.addElapsedTime(elapsedTime);
     }
 

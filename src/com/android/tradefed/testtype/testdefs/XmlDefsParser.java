@@ -51,6 +51,7 @@ class XmlDefsParser extends AbstractXmlParser {
                 def.setClassName(attributes.getValue("class"));
                 def.setRunner(attributes.getValue("runner"));
                 def.setContinuous("true".equals(attributes.getValue("continuous")));
+                def.setCoverageTarget(attributes.getValue("coverage_target"));
                 mTestDefsMap.put(defName, def);
             }
         }
