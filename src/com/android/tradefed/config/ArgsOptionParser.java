@@ -257,8 +257,16 @@ public class ArgsOptionParser extends OptionSetter {
         Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(optionClass);
         String eol = System.getProperty("line.separator");
         for (Field field : optionFields) {
+            String noFlag = "";
+            try {
+                if (OptionSetter.isBooleanField(field)) {
+                    noFlag = "[no-]";
+                }
+            } catch (ConfigurationException e) {
+                // ignore
+            }
             final Option option = field.getAnnotation(Option.class);
-            out.append(String.format("    %s%s: %s", OPTION_NAME_PREFIX,
+            out.append(String.format("    %s%s%s: %s", OPTION_NAME_PREFIX, noFlag,
                     option.name(), option.description()));
             out.append(eol);
         }

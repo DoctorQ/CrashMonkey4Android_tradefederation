@@ -75,7 +75,7 @@ class OptionSetter {
     }
 
     @SuppressWarnings("unchecked")
-    private Handler getHandler(Type type) throws ConfigurationException {
+    private static Handler getHandler(Type type) throws ConfigurationException {
         if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             Class rawClass = (Class<?>) parameterizedType.getRawType();
@@ -317,7 +317,7 @@ class OptionSetter {
         return isBooleanField(field);
     }
 
-    private boolean isBooleanField(Field field) throws ConfigurationException {
+    static boolean isBooleanField(Field field) throws ConfigurationException {
         return getHandler(field.getGenericType()).isBoolean();
     }
 
