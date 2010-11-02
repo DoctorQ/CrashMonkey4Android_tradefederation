@@ -339,7 +339,7 @@ public class TestInvocationTest extends TestCase {
                 .times(mListeners.size());
 
         mMockLogger.closeLog();
-        mMockBuildInfo.cleanUp();
+        mMockBuildProvider.cleanUp(mMockBuildInfo);
         EasyMock.expect(mMockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mMockLogger.printLog((LogLevel)EasyMock.anyObject(),
             (String)EasyMock.anyObject(), (String)EasyMock.anyObject());
@@ -368,7 +368,7 @@ public class TestInvocationTest extends TestCase {
                 .times(mListeners.size());
 
         mMockLogger.closeLog();
-        mMockBuildInfo.cleanUp();
+        mMockBuildProvider.cleanUp(mMockBuildInfo);
         replayMocks(test);
     }
 

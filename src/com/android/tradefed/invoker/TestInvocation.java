@@ -175,7 +175,7 @@ public class TestInvocation implements ITestInvocation {
             try {
                 reportInvocationEnded(device, listeners, logger, elapsedTime);
             } finally {
-                info.cleanUp();
+                buildProvider.cleanUp(info);
             }
         }
     }
