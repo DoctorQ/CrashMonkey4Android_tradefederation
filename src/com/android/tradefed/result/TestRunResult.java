@@ -18,6 +18,7 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.TestIdentifier;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +32,7 @@ public class TestRunResult {
     // Uses a LinkedHashmap to have predictable iteration order
     private Map<TestIdentifier, TestResult> mTestResults =
         Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
-    private Map<String, String> mRunMetrics = null;
+    private Map<String, String> mRunMetrics = new HashMap<String, String>();
     private boolean mIsRunComplete = false;
     private boolean mIsRunFailed = false;
     private long mElapsedTime = 0;
@@ -64,13 +65,13 @@ public class TestRunResult {
     }
 
     /**
-     * Set the test run metrics.
+     * Adds test run metrics.
      * <p/>
-     * Note: this will replace the currently stored metrics.
+     * Note: this will replace any currently stored metrics with the same key.
      * TODO: find a way to combine metrics instead?
      */
-    public void setMetrics(Map<String, String> runMetrics) {
-        mRunMetrics = runMetrics;
+    public void addMetrics(Map<String, String> runMetrics) {
+        mRunMetrics.putAll(runMetrics);
     }
 
     /**
