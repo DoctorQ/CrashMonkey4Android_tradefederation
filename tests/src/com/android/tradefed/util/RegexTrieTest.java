@@ -15,6 +15,10 @@
  */
 package com.android.tradefed.util;
 
+import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.RegexTrie.CompPattern;
+
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -32,9 +36,12 @@ public class RegexTrieTest extends TestCase {
         mTrie = new RegexTrie<Integer>();
     }
 
+    private void dumpTrie(RegexTrie trie) {
+        System.err.format("Trie is '%s'\n", trie.toString());
+    }
+
     public void testStringPattern() {
         mTrie.put(mStored, "[p]art1", "[p]art2", "[p]art3");
-        System.err.format("Trie is '%s'\n", mTrie.toString());
         Integer retrieved = mTrie.retrieve("part1", "part2", "part3");
         assertEquals(mStored, retrieved);
     }
@@ -72,6 +79,66 @@ public class RegexTrieTest extends TestCase {
         assertNull(retrieved);
         retrieved = mTrie.retrieve("alpha", "bet");
         assertNull(retrieved);
+    }
+
+    public void testMultiChild() {
+        mTrie.put(mStored + 1, "a", "b");
+        mTrie.put(mStored + 2, "a", "c");
+        dumpTrie(mTrie);
+
+        Object retrieved;
+        retrieved = mTrie.retrieve("a", "b");
+        assertEquals(mStored + 1, retrieved);
+        retrieved = mTrie.retrieve("a", "c");
+        assertEquals(mStored + 2, retrieved);
+    }
+
+    /**
+     * Make sure that {@link CompPattern#equals} works as expected.  Shake a proverbial fist at Java
+     */
+    public void testCompPattern_equality() {
+        String regex = "regex";
+        Pattern p1 = Pattern.compile(regex);
+        Pattern p2 = Pattern.compile(regex);
+        Pattern pOther = Pattern.compile("other");
+        CompPattern cp1 = new CompPattern(p1);
+        CompPattern cp2 = new CompPattern(p2);
+        CompPattern cpOther = new CompPattern(pOther);
+
+        // This is the problem with Pattern as implemented
+        assertFalse(p1.equals(p2));
+        assertFalse(p2.equals(p1));
+
+        // Make sure that wrapped patterns with the same regex are considered equivalent
+        assertTrue(cp2.equals(p1));
+        assertTrue(cp2.equals(p2));
+        assertTrue(cp2.equals(cp1));
+
+        // And make sure that wrapped patterns with different regexen are still considered different
+        assertFalse(cp2.equals(pOther));
+        assertFalse(cp2.equals(cpOther));
+    }
+
+    public void testCompPattern_hashmap() {
+        HashMap<CompPattern, Integer> map = new HashMap<CompPattern, Integer>();
+        String regex = "regex";
+        Pattern p1 = Pattern.compile(regex);
+        Pattern p2 = Pattern.compile(regex);
+        Pattern pOther = Pattern.compile("other");
+        CompPattern cp1 = new CompPattern(p1);
+        CompPattern cp2 = new CompPattern(p2);
+        CompPattern cpOther = new CompPattern(pOther);
+
+        map.put(cp1, mStored);
+        assertTrue(map.containsKey(cp1));
+        assertTrue(map.containsKey(cp2));
+        assertFalse(map.containsKey(cpOther));
+
+        map.put(cpOther, mStored);
+        assertEquals(map.size(), 2);
+        assertTrue(map.containsKey(cp1));
+        assertTrue(map.containsKey(cp2));
+        assertTrue(map.containsKey(cpOther));
     }
 }
 
