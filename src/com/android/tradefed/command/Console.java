@@ -27,6 +27,7 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.QuotationAwareTokenizer;
+import com.android.tradefed.util.RegexTrie;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -62,6 +63,7 @@ public class Console {
 
     private ICommandScheduler mScheduler;
     private java.io.Console mTerminal;
+    private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
 
     Console() {
         this(new CommandScheduler());
@@ -75,6 +77,89 @@ public class Console {
     Console(ICommandScheduler scheduler) {
         mScheduler = scheduler;
         mTerminal = System.console();
+        addDefaultCommands(mCommandTrie);
+    }
+
+    void addDefaultCommands(RegexTrie<Runnable> trie) {
+        final String helpPattern = "\\?|h|help";
+        final String listPattern = "l(ist)?";
+        final String dumpPattern = "d(ump)?";
+
+        // Help commands
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminal.printf(
+                                "Not-so-helpful help:\n" +
+                                "Enter 'q' or 'exit' to exit\n" +
+                                "Enter 'help list' for help with 'list' commands\n" +
+                                "Enter 'help dump' for help with 'dump' commands\n");
+                    }
+                }, helpPattern);
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminal.printf(
+                            "%s help:\n" +
+                            "\ti[nvocations]  List all invocation threads\n" +
+                            "\td[evices]      List all detected or known devices\n" +
+                            "\tc[configs]     List all configs\n", listPattern);
+                    }
+                }, helpPattern, listPattern);
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminal.printf(
+                            "%s help:\n" +
+                            "\ts[tack]  Dump the stack traces of all threads\n", dumpPattern);
+                    }
+                }, helpPattern, dumpPattern);
+
+        // List commands
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        Collection<ITestInvocation> invs = mScheduler.listInvocations();
+                        int counter = 1;
+
+                        for (ITestInvocation inv : invs) {
+                            mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
+                        }
+                    }
+                }, listPattern, "i(nvocations)?");
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        IDeviceManager manager = DeviceManager.getInstance();
+                        Collection<String> devices = null;
+
+                        devices = manager.getAvailableDevices();
+                        mTerminal.printf("Available devices:   %s\n", devices);
+                        devices = manager.getUnavailableDevices();
+                        mTerminal.printf("Unavailable devices: %s\n", devices);
+                        devices = manager.getAllocatedDevices();
+                        mTerminal.printf("Allocated devices:   %s\n", devices);
+                    }
+                }, listPattern, "d(evices)?");
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        Collection<String> configs = mScheduler.listConfigs();
+                        int counter = 1;
+
+                        for (String config : configs) {
+                            mTerminal.printf("Got config %d: %s\n", counter++, config);
+                        }
+                    }
+                }, listPattern, "c(onfigs)?");
+
+        // Dump commands
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        dumpStacks();
+                    }
+                }, dumpPattern, "s(tacks?)?");
     }
 
     /**
@@ -151,58 +236,16 @@ public class Console {
                 if (tokens.length == 0) {
                     continue;
                 }
-                String cmd = tokens[0];
 
-                // FIXME: make it easier to add command handlers and to handle shortcuts
-                // FIXME: make all this stuff a bit more modular and less sucky
                 // TODO: think about having the modules themselves advertise their management
-                // TODO:   interfaces
-                // TODO: perhaps use a prefix matching algorithm to select commands based on
-                // TODO:   shortest unique prefix
-                if ("exit".equals(cmd) || "q".equals(cmd)) {
+                // TODO: interfaces
+                Runnable command = mCommandTrie.retrieve(tokens);
+                if (command != null) {
+                    command.run();
+                } else if ("exit".equals(tokens[0]) || "q".equals(tokens[0])) {
                     shouldExit = true;
-                } else if ("?".equals(cmd) || "help".equals(cmd) || "h".equals(cmd)) {
-                    mTerminal.printf("Not-so-helpful help:\n" +
-                            "'q' == 'exit'\n" +
-                            "'l i' == 'list invocations'\n" +
-                            "'l d' == 'list devices'\n" +
-                            "'l c' == 'list configs'\n" +
-                            "'d s' == 'dump stack'\n");
-                } else if ("list".equals(cmd) || "l".equals(cmd)) {
-                    if ("i".equals(index(tokens, 1)) || "invocations".equals(index(tokens, 1))) {
-                        Collection<ITestInvocation> invs = mScheduler.listInvocations();
-                        int counter = 1;
-
-                        for (ITestInvocation inv : invs) {
-                            mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
-                        }
-                    } else if ("d".equals(index(tokens, 1)) || "devices".equals(index(tokens, 1))) {
-                        IDeviceManager manager = DeviceManager.getInstance();
-                        Collection<String> devices = null;
-
-                        devices = manager.getAvailableDevices();
-                        mTerminal.printf("Available devices:   %s\n", devices);
-                        devices = manager.getUnavailableDevices();
-                        mTerminal.printf("Unavailable devices: %s\n", devices);
-                        devices = manager.getAllocatedDevices();
-                        mTerminal.printf("Allocated devices:   %s\n", devices);
-                    } else if ("c".equals(index(tokens, 1)) || "configs".equals(index(tokens, 1))) {
-                        Collection<String> configs = mScheduler.listConfigs();
-                        int counter = 1;
-
-                        for (String config : configs) {
-                            mTerminal.printf("Got config %d: %s\n", counter++, config);
-                        }
-                    }
-                } else if ("dump".equals(cmd) || "d".equals(cmd)) {
-                    if ("s".equals(index(tokens, 1)) || "stack".equals(index(tokens, 1))) {
-                        dumpStacks();
-                    } else {
-                        mTerminal.printf("Unknown dump argument '%s'.  Enter 'help' for help.\n",
-                                index(tokens, 1));
-                    }
                 } else {
-                    mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", cmd);
+                    mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", tokens[0]);
                 }
 
                 Thread.sleep(100);
@@ -226,8 +269,6 @@ public class Console {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            // Manually exit, since there may be other threads hanging around, keeping the runtime
-            // alive
             cleanUp();
         }
     }
@@ -250,7 +291,6 @@ public class Console {
         LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
         // Show which threads are still alive, for debugging in case one holds the JVM alive
         dumpStacks();
-        //System.exit(0);
     }
 
     /**
