@@ -32,7 +32,52 @@ import java.util.regex.Matcher;
  */
 public class RegexTrie<V> {
     private V mValue = null;
-    private Map<Pattern, RegexTrie<V>> mChildren = new LinkedHashMap<Pattern, RegexTrie<V>>();
+    private Map<CompPattern, RegexTrie<V>> mChildren =
+            new LinkedHashMap<CompPattern, RegexTrie<V>>();
+
+    /**
+     * Patterns aren't comparable by default, which prevents you from retrieving them from a
+     * HashTable.  This is a simple stub class that makes a Pattern with a working
+     * {@link CompPattern#equals()} method.
+     */
+    static class CompPattern {
+        protected final Pattern mPattern;
+
+        CompPattern(Pattern pattern) {
+            if (pattern == null) {
+                throw new NullPointerException();
+            }
+            mPattern = pattern;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            Pattern otherPat;
+            if (other instanceof Pattern) {
+                otherPat = (Pattern) other;
+            } else if (other instanceof CompPattern) {
+                CompPattern otherCPat = (CompPattern) other;
+                otherPat = otherCPat.mPattern;
+            } else {
+                return false;
+            }
+            return mPattern.toString().equals(otherPat.toString());
+        }
+
+        @Override
+        public int hashCode() {
+            return mPattern.toString().hashCode();
+        }
+
+        @Override
+        public String toString() {
+            return String.format("CP(%s)", mPattern.toString());
+        }
+
+        public Matcher matcher(String string) {
+            return mPattern.matcher(string);
+        }
+    }
 
     public void clear() {
         mValue = null;
@@ -55,7 +100,7 @@ public class RegexTrie<V> {
             mValue = value;
             return oldValue;
         } else {
-            Pattern curKey = patterns.get(0);
+            CompPattern curKey = new CompPattern(patterns.get(0));
             List<Pattern> nextKeys = patterns.subList(1, patterns.size());
 
             // Create a new child to handle
@@ -98,7 +143,7 @@ public class RegexTrie<V> {
             String curKey = strings.get(0);
             List<String> nextKeys = strings.subList(1, strings.size());
 
-            for (Map.Entry<Pattern, RegexTrie<V>> child : mChildren.entrySet()) {
+            for (Map.Entry<CompPattern, RegexTrie<V>> child : mChildren.entrySet()) {
                 Matcher matcher = child.getKey().matcher(curKey);
                 if (matcher.matches()) {
                     return child.getValue().recursiveRetrieve(nextKeys);
