@@ -88,13 +88,13 @@ public interface ITestDevice {
      * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
      * @param maxTimeToOutputShellResponse the maximum amount of time during which the command is
      *            allowed to not output any response.
-     * @param retryAttempts the maximum number of times to re-attempt command if it fails due to a
+     * @param attempts the maximum number of times to attempt command if it fails due to a
      *            exception
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      *             recovered.
      */
     public void executeShellCommand(String command, IShellOutputReceiver receiver,
-            int maxTimeToOutputShellResponse, int retryAttempts) throws DeviceNotAvailableException;
+            int maxTimeToOutputShellResponse, int attempts) throws DeviceNotAvailableException;
 
     /**
      * Helper method which executes a adb shell command and returns output as a {@link String}.

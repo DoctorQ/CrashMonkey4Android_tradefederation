@@ -19,6 +19,7 @@ import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockFileUtil;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -90,9 +91,9 @@ public class GTestTest extends TestCase {
                 .andReturn("")
                 .times(2);
         mMockITestDevice.executeShellCommand(EasyMock.contains(test1),
-                EasyMock.same(mMockReceiver));
+                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
         mMockITestDevice.executeShellCommand(EasyMock.contains(test2),
-                EasyMock.same(mMockReceiver));
+                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
 
         replayMocks();
 
@@ -115,7 +116,7 @@ public class GTestTest extends TestCase {
         EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
                 .andReturn("");
         mMockITestDevice.executeShellCommand(EasyMock.contains(modulePath),
-                EasyMock.same(mMockReceiver));
+                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
 
         replayMocks();
 
@@ -139,7 +140,7 @@ public class GTestTest extends TestCase {
         EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
                 .andReturn("");
         mMockITestDevice.executeShellCommand(EasyMock.contains(test1Path),
-                EasyMock.same(mMockReceiver));
+                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
 
         replayMocks();
 
@@ -160,7 +161,7 @@ public class GTestTest extends TestCase {
         EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
                     .andReturn("");
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
-                    EasyMock.same(mMockReceiver));
+                    EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
         replayMocks();
         mGTest.run(mMockInvocationListener);
 
@@ -198,5 +199,27 @@ public class GTestTest extends TestCase {
 
         String filter = String.format("%s-*.%s", posFilter, negFilter);
         doTestFilter(filter);
+    }
+
+    /**
+     * Test the run method for a test which times out
+     */
+    public void testRun_timeout() throws DeviceNotAvailableException {
+        final String nativeTestPath = GTest.DEFAULT_NATIVETEST_PATH;
+        final String test1 = "test1";
+
+        MockFileUtil.setMockDirContents(mMockITestDevice, nativeTestPath, test1);
+        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
+                .andReturn("");
+        mMockITestDevice.executeShellCommand(EasyMock.contains(test1),
+                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
+        // for now, test timeout will result in DeviceUnresponsiveException
+        // expect that this exception does not get thrown up
+        EasyMock.expectLastCall().andThrow(new DeviceUnresponsiveException());
+
+        replayMocks();
+
+        mGTest.run(mMockInvocationListener);
+        verifyMocks();
     }
 }

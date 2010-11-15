@@ -22,6 +22,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -36,11 +37,9 @@ import java.util.List;
 public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "GTest";
-    static final String DEFAULT_NATIVETEST_PATH = "data/nativetest";
+    static final String DEFAULT_NATIVETEST_PATH = "/data/nativetest";
 
     private ITestDevice mDevice = null;
-    /** controls whether to run all tests in all subdirectories or just tests in the root dir */
-    private boolean mRunAllTestsInAllSubdirectories = true;
     private boolean mRunDisabledTests = false;
 
     @Option(name = "native-test-device-path",
@@ -57,6 +56,11 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
     @Option(name = "negative-testname-filter",
             description="The GTest-based negative filter of the test name to run.")
     private String mTestNameNegativeFilter = null;
+
+    @Option(name = "native-test-timeout", description =
+        "The max time in ms for a gtest to run (default 1 min). " +
+        "Test run will be aborted if any test takes longer")
+    private int mMaxTestTimeMs = 1 * 60 * 1000;
 
     // GTest flags...
     private static final String GTEST_FLAG_PRINT_TIME = "--gtest_print_time";
@@ -75,16 +79,6 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
      */
     public ITestDevice getDevice() {
         return mDevice;
-    }
-
-    /**
-     * Set whether to run all tests in all subdirectories
-     *
-     * @param runAllSubTests set to true if tests in all subdirectories should be run (default),
-     * false otherwise
-     */
-    public void setRunTestsInAllSubdirectories(boolean runAllSubTests) {
-        mRunAllTestsInAllSubdirectories = runAllSubTests;
     }
 
     /**
@@ -119,6 +113,15 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
      */
     public boolean getRunDisabledTests() {
         return mRunDisabledTests;
+    }
+
+    /**
+     * Set the max time in ms for a gtest to run.
+     * <p/>
+     * Exposed for unit testing
+     */
+    void setMaxTestTimeMs(int timeout) {
+        mMaxTestTimeMs = timeout;
     }
 
     /**
@@ -221,7 +224,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
     void doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
 
-        if (rootEntry.isDirectory() && mRunAllTestsInAllSubdirectories) {
+        if (rootEntry.isDirectory()) {
             // recursively run tests in all subdirectories
             for (IFileEntry childEntry : rootEntry.getChildren(true)) {
                 doRunAllTestsInSubdirectory(childEntry, testDevice, listeners);
@@ -235,9 +238,43 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
                     mDevice.getSerialNumber()));
             // force file to be executable
             testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
-            testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser);
+            runTest(testDevice, resultParser, fullPath, flags);
         }
+    }
 
+    /**
+     * Run the given gtest binary
+     *
+     * @param testDevice the {@link ITestDevice}
+     * @param resultParser the test run output parser
+     * @param fullPath absolute file system path to gtest binary on device
+     * @param flags gtest execution flags
+     * @throws DeviceNotAvailableException
+     */
+    private void runTest(final ITestDevice testDevice, final IShellOutputReceiver resultParser,
+            final String fullPath, final String flags) throws DeviceNotAvailableException {
+        // TODO: add individual test timeout support, and rerun support
+        try {
+            testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser,
+                    mMaxTestTimeMs /* maxTimeToShellOutputResponse */,
+                    1 /* attempts */);
+        } catch (DeviceUnresponsiveException e) {
+            // eat this exception for now. Don't want to abort test invocation if test is just
+            // timing out
+            // TODO: consider adding a ITestDevice method for executing a shell command and
+            // ignoring if its unresponsive
+            Log.w(LOG_TAG, String.format("Gtest run %s is unresponsive on device %s", fullPath,
+                    testDevice.getSerialNumber()));
+            resultParser.flush();
+        } catch (DeviceNotAvailableException e) {
+            // TODO: consider moving the flush of parser data on exceptions to TestDevice or
+            // AdbHelper
+            resultParser.flush();
+            throw e;
+        } catch (RuntimeException e) {
+            resultParser.flush();
+            throw e;
+        }
     }
 
     /**
@@ -283,6 +320,4 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         copy.addAll(listeners);
         return copy;
     }
-
-    //@TODO: Add timeout: public void testTimeout(TestIdentifier test) {
 }

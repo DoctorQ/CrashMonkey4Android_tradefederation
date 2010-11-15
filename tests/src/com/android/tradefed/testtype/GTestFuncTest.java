@@ -21,12 +21,10 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.LogDataType;
 
 import org.easymock.EasyMock;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.Map;
 
@@ -47,6 +45,8 @@ public class GTestFuncTest extends DeviceTestCase {
     public static final String NATIVE_TESTAPP_GTEST_TIMEOUT_METHOD = "testInfiniteLoop";
     public static final int NATIVE_TESTAPP_TOTAL_TESTS = 2;
 
+    private static final String NATIVE_SAMPLETEST_MODULE_NAME = "tfnativetestsamplelibtests";
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -61,9 +61,9 @@ public class GTestFuncTest extends DeviceTestCase {
     @SuppressWarnings("unchecked")
     public void testRun() throws DeviceNotAvailableException {
         Map<String, String> emptyMap = Collections.emptyMap();
-        mGTest.setRunTestsInAllSubdirectories(false);
+        mGTest.setModuleName(NATIVE_SAMPLETEST_MODULE_NAME);
         Log.i(LOG_TAG, "testRun");
-        mMockListener.testRunStarted(NATIVE_TESTAPP_MODULE_NAME, 7);
+        mMockListener.testRunStarted(NATIVE_SAMPLETEST_MODULE_NAME, 7);
         String[][] allTests = {
                 {"FibonacciTest", "testRecursive_One"},
                 {"FibonacciTest", "testRecursive_Ten"},
@@ -84,16 +84,12 @@ public class GTestFuncTest extends DeviceTestCase {
                       EasyMock.eq(id),
                       EasyMock.isA(String.class));
             }
-            else {
-                mMockListener.testEnded(id, emptyMap);
-            }
+            mMockListener.testEnded(id, emptyMap);
         }
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
-        mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mGTest.run(mMockListener);
-        mGTest.setRunTestsInAllSubdirectories(false);
+        EasyMock.verify(mMockListener);
     }
 
     /**
@@ -164,5 +160,26 @@ public class GTestFuncTest extends DeviceTestCase {
         rebootThread.start();
         mGTest.run(mMockListener);
         getDevice().waitForDeviceAvailable();
+        EasyMock.verify(mMockListener);
+    }
+
+    /**
+     * Test run scenario where test timesout.
+     */
+    public void testRun_timeout() throws Exception {
+        Log.i(LOG_TAG, "testRun_timeout");
+
+        TestIdentifier testId = new TestIdentifier(NATIVE_TESTAPP_GTEST_CLASSNAME,
+                NATIVE_TESTAPP_GTEST_TIMEOUT_METHOD);
+        // set max time to a small amount to reduce this test's execution time
+        mGTest.setMaxTestTimeMs(100);
+        doNativeTestAppRunSingleTestFailure(testId);
+
+        // Set GTest to only run the timeout test
+        mGTest.setTestNamePositiveFilter(NATIVE_TESTAPP_GTEST_TIMEOUT_METHOD);
+
+        mGTest.run(mMockListener);
+        getDevice().waitForDeviceAvailable();
+        EasyMock.verify(mMockListener);
     }
 }

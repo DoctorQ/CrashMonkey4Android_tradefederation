@@ -59,4 +59,25 @@ public class DeviceTestCaseTest extends TestCase {
         test.run(result);
         EasyMock.verify(listener);
     }
+
+    /**
+     * Regression test to verify a single test can still be run.
+     */
+    @SuppressWarnings("unchecked")
+    public void testRun_singleTest() {
+        MockTest test = new MockTest();
+        test.setName("test1");
+        TestResult result = new TestResult();
+        // create a mock ITestInvocationListener, because results are easier to verify
+        ITestInvocationListener listener = EasyMock.createMock(ITestInvocationListener.class);
+        result.addListener(new JUnitToInvocationResultForwarder(listener));
+
+        final TestIdentifier test1 = new TestIdentifier(MockTest.class.getName(), "test1");
+        listener.testStarted(test1);
+        listener.testEnded(test1, Collections.EMPTY_MAP);
+        EasyMock.replay(listener);
+
+        test.run(result);
+        EasyMock.verify(listener);
+    }
 }

@@ -67,9 +67,14 @@ public class DeviceTestCase extends TestCase implements IDeviceTest {
      */
     @Override
     public void run(TestResult result) {
-        Collection<String> testMethodNames = getTestMethodNames(this.getClass());
-        for (String methodName : testMethodNames) {
-            setName(methodName);
+        // check if test method to run aka name is null
+        if (getName() == null) {
+            Collection<String> testMethodNames = getTestMethodNames(this.getClass());
+            for (String methodName : testMethodNames) {
+                setName(methodName);
+                super.run(result);
+            }
+        } else {
             super.run(result);
         }
     }
