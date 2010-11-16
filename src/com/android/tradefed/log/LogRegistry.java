@@ -23,6 +23,7 @@ import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -70,6 +71,15 @@ public class LogRegistry implements ILogOutput {
         }
 
         return mLogRegistry;
+    }
+
+    /**
+     * Set the log level display for the global log
+     *
+     * @param logLevel the {@link String} form of the {@link LogLevel} to use
+     */
+    public void setGlobalLogDisplayLevel(String logLevel) {
+        mGlobalLogger.setLogLevelDisplay(logLevel);
     }
 
     /**
@@ -158,13 +168,35 @@ public class LogRegistry implements ILogOutput {
      * Saves global logger contents to a tmp file.
      */
     public void saveGlobalLog() {
+        saveLog("tradefed_global_log_", mGlobalLogger.getLog());
+    }
+
+    /**
+     * Save log data to a temporary file
+     *
+     * @param filePrefix the file name prefix
+     * @param logData the textual log data
+     */
+    private void saveLog(String filePrefix, InputStream logData) {
         try {
-            File tradefedLog = FileUtil.createTempFile("tradefed_global_log_", ".txt");
-            FileUtil.writeToFile(mGlobalLogger.getLog(), tradefedLog);
-            System.out.println(String.format("Saved global log to %s",
-                    tradefedLog.getAbsolutePath()));
+            File tradefedLog = FileUtil.createTempFile(filePrefix, ".txt");
+            FileUtil.writeToFile(logData, tradefedLog);
+            System.out.println(String.format("Saved log to %s", tradefedLog.getAbsolutePath()));
         } catch (IOException e) {
             // ignore
         }
+    }
+
+    /**
+     * Diagnosis method to dump all logs to files.
+     */
+    public void dumpLogs() {
+        for (Map.Entry<ThreadGroup, ILeveledLogOutput> logEntry : mLogTable.entrySet()) {
+            // use thread group name as file name - assume its descriptive
+            String filePrefix = String.format("%s_log_", logEntry.getKey().getName());
+            saveLog(filePrefix, logEntry.getValue().getLog());
+        }
+        // save global log last
+        saveGlobalLog();
     }
 }
