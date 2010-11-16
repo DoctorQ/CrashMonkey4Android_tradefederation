@@ -58,6 +58,10 @@ public class Console {
     @Option(name = "file", description = "the path to file of configs to run")
     private File mFile = null;
 
+    @Option(name = "log-level-display", description =
+            "minimum log level to display on stdout for global log")
+    private String mLogLevelDisplay = null;
+
     @Option(name = "help", description = "get command line usage info")
     private boolean mHelpMode = false;
 
@@ -111,7 +115,8 @@ public class Console {
                     public void run() {
                         mTerminal.printf(
                             "%s help:\n" +
-                            "\ts[tack]  Dump the stack traces of all threads\n", dumpPattern);
+                            "\ts[tack]  Dump the stack traces of all threads\n" +
+                            "\tl[ogs] Dump the logs of all invocations to files\n", dumpPattern);
                     }
                 }, helpPattern, dumpPattern);
 
@@ -160,6 +165,12 @@ public class Console {
                         dumpStacks();
                     }
                 }, dumpPattern, "s(tacks?)?");
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        dumpLogs();
+                    }
+                }, dumpPattern, "l(ogs?)?");
     }
 
     /**
@@ -186,14 +197,6 @@ public class Console {
         return line;
     }
 
-    private String index(String[] array, int i) {
-        if (i > array.length) {
-            return null;
-        } else {
-            return array[i];
-        }
-    }
-
     /**
      * The main method to launch the console. Will keep running until shutdown command is issued.
      *
@@ -208,6 +211,9 @@ public class Console {
             if (mHelpMode) {
                 printHelp();
                 return;
+            }
+            if (mLogLevelDisplay != null) {
+                LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
             }
             if (mFile != null) {
                 createConfigFileParser().parseFile(mFile, mScheduler);
@@ -289,8 +295,6 @@ public class Console {
      */
     void cleanUp() {
         LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
-        // Show which threads are still alive, for debugging in case one holds the JVM alive
-        dumpStacks();
     }
 
     /**
@@ -324,6 +328,10 @@ public class Console {
             mTerminal.printf("\t%s\n", trace[i]);
         }
         mTerminal.printf("\n", "");
+    }
+
+    private void dumpLogs() {
+        LogRegistry.getLogRegistry().dumpLogs();
     }
 
     public static void main(final String[] mainArgs) {
