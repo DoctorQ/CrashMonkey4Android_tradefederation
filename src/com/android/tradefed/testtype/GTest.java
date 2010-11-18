@@ -62,6 +62,13 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         "Test run will be aborted if any test takes longer")
     private int mMaxTestTimeMs = 1 * 60 * 1000;
 
+    @Option(name = "send-coverage",
+            description = "Send coverage target info to test listeners. Default true.")
+    private boolean mSendCoverage = true;
+
+    /** coverage target value. Just report all gtests as 'native' for now */
+    private static final String COVERAGE_TARGET = "Native";
+
     // GTest flags...
     private static final String GTEST_FLAG_PRINT_TIME = "--gtest_print_time";
     private static final String GTEST_FLAG_FILTER = "--gtest_filter";
@@ -290,6 +297,10 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
     IShellOutputReceiver createResultParser(String runName,
             Collection<ITestRunListener> listeners) {
         GTestResultParser resultParser = new GTestResultParser(runName, listeners);
+        // TODO: find a better solution for sending coverage info
+        if (mSendCoverage) {
+            resultParser.setCoverageTarget(COVERAGE_TARGET);
+        }
         return resultParser;
     }
 

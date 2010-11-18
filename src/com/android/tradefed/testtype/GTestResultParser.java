@@ -20,10 +20,12 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.testtype.testdefs.XmlDefsTest;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -100,6 +102,8 @@ public class GTestResultParser extends MultiLineReceiver {
 
     /** True if current test run has been canceled by user. */
     private boolean mIsCancelled = false;
+
+    private String mCoverageTarget = null;
 
     /**
      * Test result data
@@ -347,11 +351,23 @@ public class GTestResultParser extends MultiLineReceiver {
      * Reports the end of a test run, and resets that test
      */
     private void reportTestRunEnded() {
-        Map<String, String> emptyMap = Collections.emptyMap();
         for (ITestRunListener listener : mTestListeners) {
-            listener.testRunEnded(mTotalRunTime, emptyMap);
+            listener.testRunEnded(mTotalRunTime, getRunMetrics());
         }
         mTestRunStartReported = false;
+    }
+
+    /**
+     * Create the run metrics {@link Map} to report.
+     *
+     * @return a {@link Map} of run metrics data
+     */
+    private Map<String, String> getRunMetrics() {
+        Map<String, String> metricsMap = new HashMap<String, String>();
+        if (mCoverageTarget != null) {
+            metricsMap.put(XmlDefsTest.COVERAGE_TARGET_KEY, mCoverageTarget);
+        }
+        return metricsMap;
     }
 
     /**
@@ -603,11 +619,10 @@ public class GTestResultParser extends MultiLineReceiver {
             }
             clearCurrentTestResult();
         }
-        Map<String, String> emptyMap = Collections.emptyMap();
         // Report the test run failed
         for (ITestRunListener listener : mTestListeners) {
             listener.testRunFailed(errorMsg);
-            listener.testRunEnded(mTotalRunTime, emptyMap);
+            listener.testRunEnded(mTotalRunTime, getRunMetrics());
         }
     }
 
@@ -624,5 +639,16 @@ public class GTestResultParser extends MultiLineReceiver {
         else if (mTestRunInProgress) {
             handleTestRunFailed("No test results");
         }
+    }
+
+    /**
+     * Sets the coverage target for this test.
+     * <p/>
+     * Will be sent as a metric to test listeners.
+     *
+     * @param coverageTarget the coverage target
+     */
+    public void setCoverageTarget(String coverageTarget) {
+        mCoverageTarget = coverageTarget;
     }
 }
