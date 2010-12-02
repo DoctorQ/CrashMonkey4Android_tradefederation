@@ -43,7 +43,7 @@ import java.util.List;
 /**
  * A Test that runs an instrumentation test package on given device.
  */
-public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest,
+public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest,
         ITimeoutCallback {
 
     private static final String LOG_TAG = "InstrumentationTest";
@@ -101,6 +101,8 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
 
     private IRemoteAndroidTestRunner mRunner;
     private Collection<ITestRunListener> mListeners;
+
+    private Collection<TestIdentifier> mRemainingTests = new ArrayList<TestIdentifier>();
 
     /**
      * {@inheritDoc}
@@ -313,17 +315,79 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
             Collection<TestIdentifier> expectedTests) throws DeviceNotAvailableException {
         CollectingTestListener testTracker = new CollectingTestListener();
         mListeners.add(testTracker);
-        mDevice.runInstrumentationTests(mRunner, mListeners);
-        TestRunResult runResult = testTracker.getCurrentRunResults();
-        if (runResult.isRunFailure() || !runResult.isRunComplete()) {
-            // get the delta incomplete tests
-            expectedTests.removeAll(runResult.getTests());
+        mRemainingTests = expectedTests;
+        try {
+            mDevice.runInstrumentationTests(mRunner, mListeners);
+        } finally {
+            calculateRemainingTests(mRemainingTests, testTracker);
+        }
+        rerunTests(listeners);
+    }
+
+    /**
+     * Rerun any <var>mRemainingTests</var> one by one
+     *
+     * @param listeners
+     * @throws DeviceNotAvailableException
+     */
+    private void rerunTests(final List<ITestInvocationListener> listeners)
+            throws DeviceNotAvailableException {
+        if (mRemainingTests.size() > 0) {
             InstrumentationListTest testRerunner = new InstrumentationListTest(mPackageName,
-                    mRunnerName, expectedTests);
+                    mRunnerName, mRemainingTests);
             testRerunner.setDevice(getDevice());
             testRerunner.setTestTimeout(getTestTimeout());
-            testRerunner.run(listeners);
+            CollectingTestListener testTracker = new CollectingTestListener();
+            List<ITestInvocationListener> listenersCopy = new ArrayList<ITestInvocationListener>(
+                    listeners);
+            listenersCopy.add(testTracker);
+            try {
+                testRerunner.run(listenersCopy);
+            } finally {
+                calculateRemainingTests(mRemainingTests, testTracker);
+            }
         }
+    }
+
+    /**
+     * Remove the set of tests collected by testTracker from the set of expectedTests
+     *
+     * @param expectedTests
+     * @param testTracker
+     */
+    private void calculateRemainingTests(Collection<TestIdentifier> expectedTests,
+            CollectingTestListener testTracker) {
+        expectedTests.removeAll(testTracker.getCurrentRunResults().getTests());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public void testTimeout(TestIdentifier test) {
+        mRunner.cancel();
+        final String msg = String.format(TIMED_OUT_MSG, mTestTimeout);
+        for (ITestRunListener listener : mListeners) {
+            listener.testFailed(TestFailure.ERROR, test, msg);
+            listener.testRunFailed(msg);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resume(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+        rerunTests(listeners);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(listener);
+        resume(list);
     }
 
     /**
@@ -418,18 +482,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
          */
         public void cancel() {
             mRunner.cancel();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testTimeout(TestIdentifier test) {
-        mRunner.cancel();
-        final String msg = String.format(TIMED_OUT_MSG, mTestTimeout);
-        for (ITestRunListener listener : mListeners) {
-            listener.testFailed(TestFailure.ERROR, test, msg);
-            listener.testRunFailed(msg);
         }
     }
 }

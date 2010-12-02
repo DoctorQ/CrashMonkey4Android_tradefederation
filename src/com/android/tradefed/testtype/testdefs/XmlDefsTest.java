@@ -22,7 +22,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.AbstractRemoteTest;
 import com.android.tradefed.testtype.IDeviceTest;
-import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.testtype.IResumableTest;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.xml.AbstractXmlParser.ParseException;
@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +44,7 @@ import java.util.Map;
  * The test definition files can either be one or more files on local file system, and/or one or
  * more files stored on the device under test.
  */
-public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest {
 
     private static final String LOG_TAG = "XmlDefsTest";
 
@@ -77,6 +78,9 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
     @Option(name = "send-coverage",
             description = "Send coverage target info to test listeners. Default true.")
     private boolean mSendCoverage = true;
+
+    private List<InstrumentationTestDef> mTestDefs = null;
+    private InstrumentationTest mCurrentTest = null;
 
     public XmlDefsTest() {
     }
@@ -130,12 +134,23 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
                 testDefFile.delete();
             }
         }
-        for (InstrumentationTestDef def : parser.getTestDefs()) {
+        mTestDefs = new LinkedList<InstrumentationTestDef>(parser.getTestDefs());
+        doRun(listeners);
+    }
+
+    /**
+     * @param listeners
+     * @throws DeviceNotAvailableException
+     */
+    private void doRun(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+        while (!mTestDefs.isEmpty()) {
+            InstrumentationTestDef def = mTestDefs.remove(0);
             // only run continuous for now. Consider making this configurable
             if (def.isContinuous()) {
                 Log.d(LOG_TAG, String.format("Running test def %s on %s", def.getName(),
                         getDevice().getSerialNumber()));
                 InstrumentationTest test = createInstrumentationTest();
+                mCurrentTest = test;
                 test.setDevice(getDevice());
                 test.setPackageName(def.getPackage());
                 if (def.getRunner() != null) {
@@ -151,6 +166,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
                 if (mSendCoverage && def.getCoverageTarget() != null) {
                     sendCoverage(def.getPackage(), def.getCoverageTarget(), listeners);
                 }
+                mCurrentTest = null;
             }
         }
     }
@@ -217,5 +233,26 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRem
      */
     InstrumentationTest createInstrumentationTest() {
         return new InstrumentationTest();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resume(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+        if (mCurrentTest != null) {
+            mCurrentTest.resume(listeners);
+        }
+        doRun(listeners);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(listener);
+        resume(list);
     }
 }

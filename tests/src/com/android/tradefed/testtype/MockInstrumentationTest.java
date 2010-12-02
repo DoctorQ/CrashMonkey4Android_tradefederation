@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.List;
@@ -25,18 +26,52 @@ import java.util.List;
 public class MockInstrumentationTest extends InstrumentationTest {
 
     private ITestInvocationListener mListener = null;
+    private DeviceNotAvailableException mException = null;
 
     @Override
-    public void run(final List<ITestInvocationListener> listeners) {
+    public void run(final List<ITestInvocationListener> listeners)
+            throws DeviceNotAvailableException {
         mListener = listeners.get(0);
+        if (mException != null) {
+            throw mException;
+        }
     }
 
     @Override
-    public void run(final ITestInvocationListener listener) {
+    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
         mListener = listener;
+        if (mException != null) {
+            throw mException;
+        }
     }
 
     public ITestInvocationListener getListener() {
         return mListener;
+    }
+
+    @Override
+    public void resume(final List<ITestInvocationListener> listeners)
+            throws DeviceNotAvailableException {
+        mListener = listeners.get(0);
+        if (mException != null) {
+            throw mException;
+        }
+    }
+
+    @Override
+    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        mListener = listener;
+        if (mException != null) {
+            throw mException;
+        }
+
+    }
+
+    public void clearListener() {
+        mListener = null;
+    }
+
+    public void setException(DeviceNotAvailableException e) {
+        mException = e;
     }
 }

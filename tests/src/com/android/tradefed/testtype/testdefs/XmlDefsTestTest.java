@@ -73,6 +73,19 @@ public class XmlDefsTestTest extends TestCase {
     public void testRun() throws DeviceNotAvailableException {
         mXmlTest.addRemoteFilePath(TEST_PATH);
 
+        injectMockXmlData();
+        mMockListener.testRunStarted(TEST_PKG, 0);
+        Capture<Map<String, String>> captureMetrics = new Capture<Map<String, String>>();
+        mMockListener.testRunEnded(EasyMock.anyLong(), EasyMock.capture(captureMetrics));
+        EasyMock.replay(mMockTestDevice, mMockListener);
+        mXmlTest.run(mMockListener);
+        assertEquals(mMockListener, mMockInstrumentationTest.getListener());
+        assertEquals(TEST_PKG, mMockInstrumentationTest.getPackageName());
+        assertEquals(TEST_COVERAGE_TARGET, captureMetrics.getValue().get(
+                XmlDefsTest.COVERAGE_TARGET_KEY));
+    }
+
+    private void injectMockXmlData() throws DeviceNotAvailableException {
         // TODO: it would be nice to mock out the file objects, so this test wouldn't need to do
         // IO
         mMockTestDevice.pullFile(EasyMock.eq(TEST_PATH), (File)EasyMock.anyObject());
@@ -93,15 +106,31 @@ public class XmlDefsTestTest extends TestCase {
                 return false;
             }
         });
-        mMockListener.testRunStarted(TEST_PKG, 0);
-        Capture<Map<String, String>> captureMetrics = new Capture<Map<String, String>>();
-        mMockListener.testRunEnded(EasyMock.anyLong(), EasyMock.capture(captureMetrics));
+    }
+
+    /**
+     * Test a run that was aborted then resumed
+     */
+    @SuppressWarnings("unchecked")
+    public void testRun_resume() throws DeviceNotAvailableException {
+        mXmlTest.addRemoteFilePath(TEST_PATH);
+
+        injectMockXmlData();
+        mMockInstrumentationTest.setException(new DeviceNotAvailableException());
         EasyMock.replay(mMockTestDevice, mMockListener);
-        mXmlTest.run(mMockListener);
+        try {
+            mXmlTest.run(mMockListener);
+            fail("DeviceNotAvailableException not thrown");
+        } catch (DeviceNotAvailableException e) {
+            // expected
+        }
+        // verify InstrumentationTest.run was called
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
-        assertEquals(TEST_PKG, mMockInstrumentationTest.getPackageName());
-        assertEquals(TEST_COVERAGE_TARGET, captureMetrics.getValue().get(
-                XmlDefsTest.COVERAGE_TARGET_KEY));
+        mMockInstrumentationTest.setException(null);
+        mMockInstrumentationTest.clearListener();
+        mXmlTest.resume(mMockListener);
+        // verify InstrumentationTest.resume was called
+        assertEquals(mMockListener, mMockInstrumentationTest.getListener());
     }
 
     /**
