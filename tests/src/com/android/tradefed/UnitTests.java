@@ -47,7 +47,6 @@ import com.android.tradefed.testtype.GTestTest;
 import com.android.tradefed.testtype.HostTestTest;
 import com.android.tradefed.testtype.InstrumentationListTestTest;
 import com.android.tradefed.testtype.InstrumentationTestTest;
-import com.android.tradefed.testtype.TestTimeoutListenerTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
 import com.android.tradefed.util.ConditionPriorityBlockingQueueTest;
@@ -99,7 +98,6 @@ public class UnitTests extends TestSuite {
         addTestSuite(GTestTest.class);
         addTestSuite(GTestResultParserTest.class);
         addTestSuite(HostTestTest.class);
-        addTestSuite(TestTimeoutListenerTest.class);
         addTestSuite(XmlDefsParserTest.class);
         addTestSuite(XmlDefsTestTest.class);
         addTestSuite(RunUtilTest.class);

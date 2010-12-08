@@ -19,7 +19,6 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.StubTestDevice;
@@ -73,6 +72,8 @@ public class InstrumentationTestTest extends TestCase {
        mInstrumentationTest.setDevice(mMockTestDevice);
        // default to no rerun, for simplicity
        mInstrumentationTest.setRerunMode(false);
+       // default to no timeout for simplicity
+       mInstrumentationTest.setTestTimeout(-1);
     }
 
     /**
@@ -163,24 +164,15 @@ public class InstrumentationTestTest extends TestCase {
      */
     @SuppressWarnings("unchecked")
     public void testRun_timeout() throws Exception {
-        final long timeout = 1000;
+        final int timeout = 1000;
         mInstrumentationTest.setTestTimeout(timeout);
         mMockRemoteRunner.setTestPackageName(TEST_PACKAGE_VALUE);
+        // expect "maxtimeToOutputResponse" to be used to control timeout
+        mMockRemoteRunner.setMaxtimeToOutputResponse(timeout);
         mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
                 (Collection<ITestRunListener>)EasyMock.anyObject());
-        // expect run to be cancelled
-        mMockRemoteRunner.cancel();
-        final TestIdentifier test = new TestIdentifier("FooTest", "testFoo");
-        // test should be reported as failed
-        mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
-                (String)EasyMock.anyObject());
-        // run should be reported as a failure
-        mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
-        EasyMock.replay(mMockRemoteRunner);
-        EasyMock.replay(mMockListener);
-        EasyMock.replay(mMockTestDevice);
+        EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
         mInstrumentationTest.run(mMockListener);
-        mInstrumentationTest.testTimeout(test);
     }
 
     /**

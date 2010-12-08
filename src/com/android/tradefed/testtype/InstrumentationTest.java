@@ -23,14 +23,12 @@ import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
-import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TestRunResult;
-import com.android.tradefed.testtype.TestTimeoutListener.ITimeoutCallback;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
@@ -43,8 +41,7 @@ import java.util.List;
 /**
  * A Test that runs an instrumentation test package on given device.
  */
-public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest,
-        ITimeoutCallback {
+public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest {
 
     private static final String LOG_TAG = "InstrumentationTest";
 
@@ -57,7 +54,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     /** max time in ms to allow for single  collect list of tests attempt */
     private static final int COLLECT_TESTS_OP_TIMEOUT = 2 * 60 * 1000;
 
-    static final String TIMED_OUT_MSG = "timed out: test did not complete in %d ms";
     static final String DELAY_MSEC_ARG = "delay_msec";
 
     @Option(name = "package", shortName = 'p',
@@ -265,6 +261,9 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
+        if (mTestTimeout >= 0) {
+            mRunner.setMaxtimeToOutputResponse((int)mTestTimeout);
+        }
         if (mInstallFile != null) {
             mDevice.installPackage(mInstallFile, true);
             doTestRun(listeners);
@@ -287,10 +286,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
 
         mListeners = new ArrayList<ITestRunListener>();
         mListeners.addAll(listeners);
-
-        if (mTestTimeout >= 0) {
-            mListeners.add(new TestTimeoutListener(mTestTimeout, this));
-        }
 
         if (expectedTests != null) {
             if (expectedTests.size() != 0) {
@@ -358,18 +353,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     private void calculateRemainingTests(Collection<TestIdentifier> expectedTests,
             CollectingTestListener testTracker) {
         expectedTests.removeAll(testTracker.getCurrentRunResults().getTests());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testTimeout(TestIdentifier test) {
-        mRunner.cancel();
-        final String msg = String.format(TIMED_OUT_MSG, mTestTimeout);
-        for (ITestRunListener listener : mListeners) {
-            listener.testFailed(TestFailure.ERROR, test, msg);
-            listener.testRunFailed(msg);
-        }
     }
 
     /**

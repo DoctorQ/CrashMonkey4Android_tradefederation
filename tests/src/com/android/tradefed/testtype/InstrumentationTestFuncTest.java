@@ -23,12 +23,10 @@ import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.LogDataType;
 
 import org.easymock.EasyMock;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -139,12 +137,13 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testStarted(EasyMock.eq(expectedTest));
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(expectedTest),
                 (String)EasyMock.anyObject());
-        mMockListener.testRunFailed(String.format(InstrumentationTest.TIMED_OUT_MSG, timeout));
-        mMockListener.testLog((String)EasyMock.anyObject(), (LogDataType)EasyMock.anyObject(),
-                (InputStream)EasyMock.anyObject());
+        mMockListener.testEnded(EasyMock.eq(expectedTest),
+                (Map<String, String>)EasyMock.anyObject());
+        mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
         mInstrumentationTest.run(mMockListener);
+        EasyMock.verify(mMockListener);
     }
 
     /**

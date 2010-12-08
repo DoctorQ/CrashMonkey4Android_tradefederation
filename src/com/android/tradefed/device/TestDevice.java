@@ -321,8 +321,6 @@ class TestDevice implements IManagedTestDevice {
         try {
             RunFailureListener failureListener = new RunFailureListener();
             listeners.add(failureListener);
-            // TODO: query current maxTimeToOutputResponse and only override if not set
-            runner.setMaxtimeToOutputResponse((int)mLongCmdTimeout);
             runner.run(listeners);
             if (failureListener.mIsRunFailure) {
                 // run failed, might be system crash. Ensure device is up
