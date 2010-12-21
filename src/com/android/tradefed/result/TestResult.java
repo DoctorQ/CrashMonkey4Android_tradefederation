@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.result;
 
+import java.util.Map;
+
 /**
  * Container for a result of a single test.
  */
@@ -31,6 +33,7 @@ public class TestResult {
 
     private final TestStatus mStatus;
     private final String mStackTrace;
+    private Map<String, String> mMetrics;
 
     TestResult(TestStatus status, String trace) {
         mStatus = status;
@@ -54,5 +57,19 @@ public class TestResult {
      */
     public String getStackTrace() {
         return mStackTrace;
+    }
+
+    /**
+     * Get the associated test metrics.
+     */
+    public Map<String, String> getMetrics() {
+        return mMetrics;
+    }
+
+    /**
+     * Set the test metrics, overriding any previous values.
+     */
+    public void setMetrics(Map<String, String> metrics) {
+        mMetrics = metrics;
     }
 }

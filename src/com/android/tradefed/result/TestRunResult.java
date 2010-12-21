@@ -34,11 +34,11 @@ public class TestRunResult {
         Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());
     private Map<String, String> mRunMetrics = new HashMap<String, String>();
     private boolean mIsRunComplete = false;
-    private boolean mIsRunFailed = false;
     private long mElapsedTime = 0;
     private int mNumFailedTests = 0;
     private int mNumErrorTests = 0;
     private int mNumPassedTests = 0;
+    private String mRunFailureError = null;
 
     /**
      * Create a {@link TestRunResult}.
@@ -92,7 +92,7 @@ public class TestRunResult {
      * @return <code>true</code> if test run failed.
      */
     public boolean isRunFailure() {
-        return mIsRunFailed;
+        return mRunFailureError != null;
     }
 
     /**
@@ -106,12 +106,12 @@ public class TestRunResult {
         mIsRunComplete = runComplete;
     }
 
-    void setRunFailed(boolean runFailed) {
-        mIsRunFailed = runFailed;
-    }
-
     void addElapsedTime(long elapsedTime) {
         mElapsedTime+= elapsedTime;
+    }
+
+    void setRunFailureError(String errorMessage) {
+        mRunFailureError  = errorMessage;
     }
 
     /**
@@ -154,6 +154,13 @@ public class TestRunResult {
      */
     public long getElapsedTime() {
         return mElapsedTime;
+    }
+
+    /**
+     * Return the run failure error message, <code>null</code> if run did not fail.
+     */
+    public String getRunFailureMessage() {
+        return mRunFailureError;
     }
 
     /**

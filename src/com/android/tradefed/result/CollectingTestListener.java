@@ -65,7 +65,7 @@ public class CollectingTestListener implements ITestInvocationListener {
             mRunResultsMap.put(name, mCurrentResults);
         }
         mCurrentResults.setRunComplete(false);
-        mCurrentResults.setRunFailed(false);
+        mCurrentResults.setRunFailureError(null);
     }
 
     /**
@@ -86,6 +86,7 @@ public class CollectingTestListener implements ITestInvocationListener {
         if (mCurrentResults.addResult(test, new TestResult(TestStatus.PASSED))) {
             mNumPassedTests++;
         }
+        mCurrentResults.getTestResults().get(test).setMetrics(testMetrics);
     }
 
     /**
@@ -125,8 +126,8 @@ public class CollectingTestListener implements ITestInvocationListener {
         if (mCurrentResults == null) {
             throw new IllegalStateException("testRunFailed called before testRunStarted");
         }
-        mCurrentResults.setRunComplete(true);
-        mCurrentResults.setRunFailed(true);
+        mCurrentResults.setRunFailureError(errorMessage);
+
     }
 
     /**
