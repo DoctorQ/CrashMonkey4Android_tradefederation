@@ -29,7 +29,7 @@ import junit.framework.TestListener;
 /**
  * Unit tests for {@link InvocationToJUnitResultForwarder}.
  */
-public class TestResultForwarderTest extends TestCase {
+public class InvocationToJUnitResultForwarderTest extends TestCase {
 
     private static final String TEST_NAME = "testName";
     private static final String CLASS_NAME = "className";
