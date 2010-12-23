@@ -21,6 +21,7 @@ import com.android.tradefed.result.TestResult.TestStatus;
 import junit.framework.TestCase;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -28,6 +29,12 @@ import java.util.Map;
  * Unit tests for {@link CollectingTestListener}.
  */
 public class CollectingTestListenerTest extends TestCase {
+
+    private static final String METRIC_VALUE = "value";
+    private static final String TEST_KEY = "key";
+    private static final String METRIC_VALUE2 = "value2";
+    private static final String RUN_KEY = "key2";
+
 
     private CollectingTestListener mCollectingTestListener;
 
@@ -44,7 +51,7 @@ public class CollectingTestListenerTest extends TestCase {
      * Test the listener under a single normal test run.
      */
     public void testSingleRun() {
-        final TestIdentifier test = injectTestRun("run", "testFoo");
+        final TestIdentifier test = injectTestRun("run", "testFoo", METRIC_VALUE);
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertTrue(runResult.isRunComplete());
         assertFalse(runResult.isRunFailure());
@@ -56,20 +63,23 @@ public class CollectingTestListenerTest extends TestCase {
     /**
      * Test the listener where test run has failed.
      */
+    @SuppressWarnings("unchecked")
     public void testRunFailed() {
         mCollectingTestListener.testRunStarted("foo", 1);
-        mCollectingTestListener.testRunFailed("");
+        mCollectingTestListener.testRunFailed("error");
+        mCollectingTestListener.testRunEnded(0, Collections.EMPTY_MAP);
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertTrue(runResult.isRunComplete());
         assertTrue(runResult.isRunFailure());
+        assertEquals("error", runResult.getRunFailureMessage());
     }
 
     /**
      * Test the listener when invocation is composed of two test runs.
      */
     public void testTwoRuns() {
-        final TestIdentifier test1 = injectTestRun("run1", "testFoo1");
-        final TestIdentifier test2 = injectTestRun("run2", "testFoo2");
+        final TestIdentifier test1 = injectTestRun("run1", "testFoo1", METRIC_VALUE);
+        final TestIdentifier test2 = injectTestRun("run2", "testFoo2", METRIC_VALUE2);
         assertEquals(2, mCollectingTestListener.getNumTotalTests());
         assertEquals(2, mCollectingTestListener.getNumPassedTests());
         assertEquals(2, mCollectingTestListener.getRunResults().size());
@@ -83,19 +93,25 @@ public class CollectingTestListenerTest extends TestCase {
                 runResult1.getTestResults().get(test1).getStatus());
         assertEquals(TestStatus.PASSED,
                 runResult2.getTestResults().get(test2).getStatus());
+        assertEquals(METRIC_VALUE,
+                runResult1.getRunMetrics().get(RUN_KEY));
+        assertEquals(METRIC_VALUE,
+                runResult1.getTestResults().get(test1).getMetrics().get(TEST_KEY));
+        assertEquals(METRIC_VALUE2,
+                runResult2.getTestResults().get(test2).getMetrics().get(TEST_KEY));
     }
 
     /**
      * Test the listener when invocation is composed of a re-executed test run.
      */
     public void testReRun() {
-        final TestIdentifier test1 = injectTestRun("run", "testFoo1");
+        final TestIdentifier test1 = injectTestRun("run", "testFoo1", METRIC_VALUE);
         assertEquals(1, mCollectingTestListener.getNumTotalTests());
         assertEquals(1, mCollectingTestListener.getNumPassedTests());
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertEquals(1, runResult.getNumPassedTests());
 
-        final TestIdentifier test2 = injectTestRun("run", "testFoo2");
+        final TestIdentifier test2 = injectTestRun("run", "testFoo2", METRIC_VALUE2);
         assertEquals(2, mCollectingTestListener.getNumTotalTests());
         assertEquals(2, mCollectingTestListener.getNumPassedTests());
         assertEquals(1, mCollectingTestListener.getRunResults().size());
@@ -110,13 +126,17 @@ public class CollectingTestListenerTest extends TestCase {
      * test
      * @return the {@link TestIdentifier} of added test
      */
-    private TestIdentifier injectTestRun(String runName, String testName) {
-        Map<String, String> emptyMap = Collections.emptyMap();
+    private TestIdentifier injectTestRun(String runName, String testName, String metricValue) {
+        Map<String, String> runMetrics = new HashMap<String, String>(1);
+        runMetrics.put(RUN_KEY, metricValue);
+        Map<String, String> testMetrics = new HashMap<String, String>(1);
+        testMetrics.put(TEST_KEY, metricValue);
+
         mCollectingTestListener.testRunStarted(runName, 1);
         final TestIdentifier test = new TestIdentifier("FooTest", testName);
         mCollectingTestListener.testStarted(test);
-        mCollectingTestListener.testEnded(test, emptyMap);
-        mCollectingTestListener.testRunEnded(0, emptyMap);
+        mCollectingTestListener.testEnded(test, testMetrics);
+        mCollectingTestListener.testRunEnded(0, runMetrics);
         return test;
     }
 }
