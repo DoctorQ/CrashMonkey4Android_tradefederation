@@ -287,6 +287,70 @@ public class CommandFileParserTest extends TestCase {
     }
 
     /**
+     * Verify that the INCLUDE directive is behaving properly
+     */
+    public void testMacroParserInclude() throws Exception {
+        final String mockFileData = "INCLUDE somefile.txt\n";
+        final String mockIncludedFileData = "--foo bar\n";
+        String[] expectedArgs = new String[] {"--foo", "bar"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            private boolean showInclude = false;
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if(showInclude) {
+                    showInclude = false;
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else {
+                    return new BufferedReader(new StringReader(mockIncludedFileData));
+                }
+            }
+        };
+
+
+        mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs));
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Verify that the INCLUDE directive works when used twice
+     */
+    public void testMacroParserIncludeTwice() throws Exception {
+        final String mockFileData = "INCLUDE somefile.txt\n" +
+                "INCLUDE otherfile.txt\n";
+        final String mockIncludedFileData1 = "--foo bar\n";
+        final String mockIncludedFileData2 = "--baz quux\n";
+        String[] expectedArgs1 = new String[] {"--foo", "bar"};
+        String[] expectedArgs2 = new String[] {"--baz", "quux"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            private int phase = 0;
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if(phase == 0) {
+                    phase++;
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else if (phase == 1) {
+                    phase++;
+                    return new BufferedReader(new StringReader(mockIncludedFileData1));
+                } else {
+                    return new BufferedReader(new StringReader(mockIncludedFileData2));
+                }
+            }
+        };
+
+        mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs1));
+        mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs2));
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
      * A testcase to make sure that the internal bitmask and mLines stay in sync
      * <p>
      * This tickles a bug in the current implementation (before I fix it).  The problem is here,
@@ -327,3 +391,4 @@ public class CommandFileParserTest extends TestCase {
         EasyMock.verify(mMockScheduler);
     }
 }
+
