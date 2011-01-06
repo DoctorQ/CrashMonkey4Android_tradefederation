@@ -216,7 +216,7 @@ public class Console {
                 LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
             }
             if (mFile != null) {
-                createConfigFileParser().parseFile(mFile, mScheduler);
+                createCommandFileParser().parseFile(mFile, mScheduler);
             }
 
             mScheduler.start();
@@ -298,12 +298,12 @@ public class Console {
     }
 
     /**
-     * Factory method for creating a {@link ConfigFileParser}.
+     * Factory method for creating a {@link CommandFileParser}.
      * <p/>
      * Exposed for unit testing.
      */
-    ConfigFileParser createConfigFileParser() {
-        return new ConfigFileParser();
+    CommandFileParser createCommandFileParser() {
+        return new CommandFileParser();
     }
 
     /**

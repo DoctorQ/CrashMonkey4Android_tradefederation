@@ -28,12 +28,12 @@ import java.io.StringReader;
 import junit.framework.TestCase;
 
 /**
- * Unit tests for {@link ConfigFileParser}
+ * Unit tests for {@link CommandFileParser}
  */
-public class ConfigFileParserTest extends TestCase {
+public class CommandFileParserTest extends TestCase {
 
-    /** the {@link ConfigFileParser} under test, with all dependencies mocked out */
-    private ConfigFileParser mCommandFile;
+    /** the {@link CommandFileParser} under test, with all dependencies mocked out */
+    private CommandFileParser mCommandFile;
     private String mMockFileData = "";
     private File mMockFile = new File("tmp");
     private ICommandScheduler mMockScheduler;
@@ -42,16 +42,16 @@ public class ConfigFileParserTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockScheduler = EasyMock.createMock(ICommandScheduler.class);
-        mCommandFile = new ConfigFileParser() {
+        mCommandFile = new CommandFileParser() {
             @Override
-            BufferedReader createConfigFileReader(File file) {
+            BufferedReader createCommandFileReader(File file) {
                return new BufferedReader(new StringReader(mMockFileData));
             }
         };
     }
 
     /**
-     * Test parsing a config file with a comment and a single config.
+     * Test parsing a command file with a comment and a single config.
      */
     public void testParse_singleConfig() throws Exception {
         // inject mock file data

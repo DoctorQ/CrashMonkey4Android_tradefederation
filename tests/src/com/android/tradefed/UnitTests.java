@@ -15,9 +15,9 @@
  */
 package com.android.tradefed;
 
+import com.android.tradefed.command.CommandFileParserTest;
 import com.android.tradefed.command.CommandSchedulerTest;
 import com.android.tradefed.command.CommandTest;
-import com.android.tradefed.command.ConfigFileParserTest;
 import com.android.tradefed.command.ConsoleTest;
 import com.android.tradefed.config.ArgsOptionParserTest;
 import com.android.tradefed.config.ConfigurationDefTest;
@@ -65,10 +65,10 @@ public class UnitTests extends TestSuite {
 
     public UnitTests() {
         super();
+        addTestSuite(CommandFileParserTest.class);
         addTestSuite(CommandTest.class);
         addTestSuite(CommandSchedulerTest.class);
         addTestSuite(ConditionPriorityBlockingQueueTest.class);
-        addTestSuite(ConfigFileParserTest.class);
         addTestSuite(ConsoleTest.class);
         addTestSuite(ConfigurationTest.class);
         addTestSuite(ArgsOptionParserTest.class);

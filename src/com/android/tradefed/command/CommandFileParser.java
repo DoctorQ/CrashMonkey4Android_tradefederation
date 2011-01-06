@@ -33,7 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Parser for file that contains set of configs.
+ * Parser for file that contains set of command lines.
  * <p/>
  * The syntax of the given file should be series of lines. Each line is one configuration plus its
  * options, delimited by whitespace:
@@ -43,8 +43,8 @@ import java.util.regex.Pattern;
  *   ...
  * </pre>
  */
-class ConfigFileParser {
-    private static final String LOG_TAG = "ConfigFileParser";
+class CommandFileParser {
+    private static final String LOG_TAG = "CommandFileParser";
 
     /**
      * A pattern that matches valid macro usages and captures the name of the macro.
@@ -112,7 +112,7 @@ class ConfigFileParser {
      * configuration lines.
      */
     private void scanFile(File file) throws IOException, ConfigurationException {
-        BufferedReader fileReader = createConfigFileReader(file);
+        BufferedReader fileReader = createCommandFileReader(file);
         String inputLine = null;
         while ((inputLine = fileReader.readLine()) != null) {
             inputLine = inputLine.trim();
@@ -326,15 +326,15 @@ class ConfigFileParser {
     }
 
     /**
-     * Create a reader for the config file data.
+     * Create a reader for the command file data.
      * <p/>
      * Exposed for unit testing.
      *
-     * @param file the config data {@link File}
+     * @param file the command {@link File}
      * @return the {@link BufferedReader}
      * @throws IOException if failed to read data
      */
-    BufferedReader createConfigFileReader(File file) throws IOException {
+    BufferedReader createCommandFileReader(File file) throws IOException {
         return new BufferedReader(new FileReader(file));
     }
 }
