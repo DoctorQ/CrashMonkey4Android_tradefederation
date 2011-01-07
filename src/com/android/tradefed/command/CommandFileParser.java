@@ -81,7 +81,7 @@ class CommandFileParser {
      *
      * @return {@code true} if the line matches the macro format, {@false} otherwise
      */
-    private boolean isLineMacro(ConfigLine line) {
+    private static boolean isLineMacro(ConfigLine line) {
         return line.size() >= 4 && "MACRO".equals(line.get(0)) && "=".equals(line.get(2));
     }
 
@@ -91,8 +91,17 @@ class CommandFileParser {
      *
      * @return {@code true} if the line matches the long macro format, {@code false} otherwise
      */
-    private boolean isLineLongMacro(ConfigLine line) {
+    private static boolean isLineLongMacro(ConfigLine line) {
         return line.size() == 3 && "LONG".equals(line.get(0)) && "MACRO".equals(line.get(1));
+    }
+
+    /**
+     * Checks if a line matches the expected format for an INCLUDE directive
+     *
+     * @return {@code true} if the line is an INCLUDE directive, {@code false} otherwise
+     */
+    private static boolean isLineIncludeDirective(ConfigLine line) {
+        return line.size() == 2 && "INCLUDE".equals(line.get(0));
     }
 
     /**
@@ -102,7 +111,7 @@ class CommandFileParser {
      * @param line A {@see String} containing the line of input to check
      * @return {@code true} if we should parse the line, {@code false} if we should ignore it.
      */
-    private boolean shouldParseLine(String line) {
+    private static boolean shouldParseLine(String line) {
         line = line.trim();
         return !(line.isEmpty() || line.startsWith("#"));
     }
@@ -110,57 +119,67 @@ class CommandFileParser {
     /**
      * Does a single pass of the input CommandFile, storing input lines as macros, long macros, or
      * configuration lines.
+     *
+     * Note that this method may call itself recursively to handle the INCLUDE directive.
      */
     private void scanFile(File file) throws IOException, ConfigurationException {
         BufferedReader fileReader = createCommandFileReader(file);
         String inputLine = null;
-        while ((inputLine = fileReader.readLine()) != null) {
-            inputLine = inputLine.trim();
-            if (shouldParseLine(inputLine)) {
-                ConfigLine lArgs = null;
-                try {
-                    String[] args = QuotationAwareTokenizer.tokenizeLine(inputLine);
-                    lArgs = new ConfigLine(Arrays.asList(args));
-                } catch (IllegalArgumentException e) {
-                    throw new ConfigurationException(e.getMessage());
-                }
-
-                if (isLineMacro(lArgs)) {
-                    // Expected format: MACRO <name> = <token> [<token>...]
-                    String name = lArgs.get(1);
-                    ConfigLine expansion = new ConfigLine(lArgs.subList(3, lArgs.size()));
-                    mMacros.put(name, expansion);
-                } else if (isLineLongMacro(lArgs)) {
-                    // Expected format: LONG MACRO <name>\n(multiline expansion)\nEND MACRO
-                    String name = lArgs.get(2);
-                    List<ConfigLine> expansion = new LinkedList<ConfigLine>();
-
-                    inputLine = fileReader.readLine();
-                    while (!"END MACRO".equals(inputLine)) {
-                        if (inputLine == null) {
-                            // Syntax error
-                            throw new ConfigurationException(String.format(
-                                    "Syntax error: Unexpected EOF while reading definition for " +
-                                    "LONG MACRO %s.", name));
-                        }
-                        if (shouldParseLine(inputLine)) {
-                            // Store the tokenized line
-                            ConfigLine line = new ConfigLine(
-                                    Arrays.asList(QuotationAwareTokenizer.tokenizeLine(inputLine)));
-                            expansion.add(line);
-                        }
-
-                        // Advance
-                        inputLine = fileReader.readLine();
+        try {
+            while ((inputLine = fileReader.readLine()) != null) {
+                inputLine = inputLine.trim();
+                if (shouldParseLine(inputLine)) {
+                    ConfigLine lArgs = null;
+                    try {
+                        String[] args = QuotationAwareTokenizer.tokenizeLine(inputLine);
+                        lArgs = new ConfigLine(Arrays.asList(args));
+                    } catch (IllegalArgumentException e) {
+                        throw new ConfigurationException(e.getMessage());
                     }
-                    Log.d(LOG_TAG, String.format("Parsed %d-line definition for long macro %s",
-                            expansion.size(), name));
 
-                    mLongMacros.put(name, expansion);
-                } else {
-                    mLines.add(lArgs);
+                    if (isLineMacro(lArgs)) {
+                        // Expected format: MACRO <name> = <token> [<token>...]
+                        String name = lArgs.get(1);
+                        ConfigLine expansion = new ConfigLine(lArgs.subList(3, lArgs.size()));
+                        mMacros.put(name, expansion);
+                    } else if (isLineLongMacro(lArgs)) {
+                        // Expected format: LONG MACRO <name>\n(multiline expansion)\nEND MACRO
+                        String name = lArgs.get(2);
+                        List<ConfigLine> expansion = new LinkedList<ConfigLine>();
+
+                        inputLine = fileReader.readLine();
+                        while (!"END MACRO".equals(inputLine)) {
+                            if (inputLine == null) {
+                                // Syntax error
+                                throw new ConfigurationException(String.format(
+                                        "Syntax error: Unexpected EOF while reading definition " +
+                                        "for LONG MACRO %s.", name));
+                            }
+                            if (shouldParseLine(inputLine)) {
+                                // Store the tokenized line
+                                ConfigLine line = new ConfigLine(Arrays.asList(
+                                        QuotationAwareTokenizer.tokenizeLine(inputLine)));
+                                expansion.add(line);
+                            }
+
+                            // Advance
+                            inputLine = fileReader.readLine();
+                        }
+                        Log.d(LOG_TAG, String.format("Parsed %d-line definition for long macro %s",
+                                expansion.size(), name));
+
+                        mLongMacros.put(name, expansion);
+                    } else if (isLineIncludeDirective(lArgs)) {
+                        Log.d(LOG_TAG, String.format("Got an include directive for file %s",
+                                lArgs.get(1)));
+                        scanFile(new File(lArgs.get(1)));
+                    } else {
+                        mLines.add(lArgs);
+                    }
                 }
             }
+        } finally {
+            fileReader.close();
         }
     }
 
