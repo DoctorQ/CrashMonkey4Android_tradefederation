@@ -227,6 +227,7 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
         if (nativeTestDirectory == null) {
             Log.w(LOG_TAG, String.format("Could not find native stress test directory %s in %s!",
                     testPath, mDevice.getSerialNumber()));
+            return;
         }
         doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
     }
