@@ -67,7 +67,7 @@ class TestDevice implements IManagedTestDevice {
 
     private static final String LOG_TAG = "TestDevice";
     /** the default number of command retry attempts to perform */
-    static final int MAX_RETRY_ATTEMPTS = 3;
+    static final int MAX_RETRY_ATTEMPTS = 2;
     /** the max number of bytes to store in logcat tmp buffer */
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
@@ -884,7 +884,7 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Performs an action on this device. Attempts to recover device and retry command
+     * Performs an action on this device. Attempts to recover device and optionally retry command
      * if action fails.
      *
      * @param actionDescription a short description of action to be performed. Used for logging
@@ -892,16 +892,16 @@ class TestDevice implements IManagedTestDevice {
      * @param action the action to be performed
      * @param callback optional action to perform if action fails but recovery succeeds. If no post
      *            recovery action needs to be taken pass in <code>null</code>
-     * @param attempts the retry attempts to make for action if it fails but
+     * @param retryAttempts the retry attempts to make for action if it fails but
      *            recovery succeeds
      * @returns <code>true</code> if action was performed successfully
      * @throws DeviceNotAvailableException if recovery attempt fails or max attempts done without
      *             success
      */
     private boolean performDeviceAction(String actionDescription, final DeviceAction action,
-            int attempts) throws DeviceNotAvailableException {
+            int retryAttempts) throws DeviceNotAvailableException {
 
-        for (int i=0; i < attempts; i++) {
+        for (int i=0; i < retryAttempts +1; i++) {
             try {
                 return action.run();
             } catch (TimeoutException e) {
@@ -927,10 +927,12 @@ class TestDevice implements IManagedTestDevice {
             // mechanisms for time out's vs IOExceptions
             recoverDevice();
         }
-        throw new DeviceUnresponsiveException(String.format("Attempted %s multiple times "
-                + "on device %s without communication success. Aborting.", actionDescription,
-                getSerialNumber()));
-
+        if (retryAttempts > 0) {
+            throw new DeviceUnresponsiveException(String.format("Attempted %s multiple times "
+                    + "on device %s without communication success. Aborting.", actionDescription,
+                    getSerialNumber()));
+        }
+        return false;
     }
 
     /**

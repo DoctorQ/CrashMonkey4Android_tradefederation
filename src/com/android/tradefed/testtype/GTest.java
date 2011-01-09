@@ -22,7 +22,6 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -264,15 +263,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
         try {
             testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser,
                     mMaxTestTimeMs /* maxTimeToShellOutputResponse */,
-                    1 /* attempts */);
-        } catch (DeviceUnresponsiveException e) {
-            // eat this exception for now. Don't want to abort test invocation if test is just
-            // timing out
-            // TODO: consider adding a ITestDevice method for executing a shell command and
-            // ignoring if its unresponsive
-            Log.w(LOG_TAG, String.format("Gtest run %s is unresponsive on device %s", fullPath,
-                    testDevice.getSerialNumber()));
-            resultParser.flush();
+                    0 /* retryAttempts */);
         } catch (DeviceNotAvailableException e) {
             // TODO: consider moving the flush of parser data on exceptions to TestDevice or
             // AdbHelper

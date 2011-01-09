@@ -200,26 +200,4 @@ public class GTestTest extends TestCase {
         String filter = String.format("%s-*.%s", posFilter, negFilter);
         doTestFilter(filter);
     }
-
-    /**
-     * Test the run method for a test which times out
-     */
-    public void testRun_timeout() throws DeviceNotAvailableException {
-        final String nativeTestPath = GTest.DEFAULT_NATIVETEST_PATH;
-        final String test1 = "test1";
-
-        MockFileUtil.setMockDirContents(mMockITestDevice, nativeTestPath, test1);
-        EasyMock.expect(mMockITestDevice.executeShellCommand(EasyMock.contains("chmod")))
-                .andReturn("");
-        mMockITestDevice.executeShellCommand(EasyMock.contains(test1),
-                EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
-        // for now, test timeout will result in DeviceUnresponsiveException
-        // expect that this exception does not get thrown up
-        EasyMock.expectLastCall().andThrow(new DeviceUnresponsiveException());
-
-        replayMocks();
-
-        mGTest.run(mMockInvocationListener);
-        verifyMocks();
-    }
 }

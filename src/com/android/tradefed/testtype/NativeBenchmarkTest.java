@@ -191,7 +191,7 @@ public class NativeBenchmarkTest extends AbstractRemoteTest implements IDeviceTe
                             mNumIterations, delayFloat, mClientCpu, mServerCpu);
                     Log.i(LOG_TAG, String.format("Running native benchmark test on %s: %s",
                             mDevice.getSerialNumber(), cmd));
-                    testDevice.executeShellCommand(cmd, resultParser, mMaxRunTime, 1);
+                    testDevice.executeShellCommand(cmd, resultParser, mMaxRunTime, 0);
                     addMetric(metricMap, resultParser, delay);
                 }
                 // TODO: is catching exceptions, and reporting testRunFailed necessary?

@@ -70,7 +70,10 @@ public interface ITestDevice {
     public String getProductType() throws DeviceNotAvailableException;
 
     /**
-     * Executes the given adb shell command.
+     * Executes the given adb shell command, retrying multiple times if command fails.
+     * <p/>
+     * A simpler form of {@link #executeShellCommand(String, IShellOutputReceiver, int, int))} with
+     * default values.
      *
      * @param command the adb shell command to run
      * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
@@ -88,13 +91,14 @@ public interface ITestDevice {
      * @param receiver the {@link IShellOutputReceiver} to direct shell output to.
      * @param maxTimeToOutputShellResponse the maximum amount of time during which the command is
      *            allowed to not output any response.
-     * @param attempts the maximum number of times to attempt command if it fails due to a
-     *            exception
+     * @param retryAttempts the maximum number of times to retry command if it fails due to a
+     *            exception. DeviceNotResponsiveException will be thrown if <var>retryAttempts</var>
+     *            are performed without success.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      *             recovered.
      */
     public void executeShellCommand(String command, IShellOutputReceiver receiver,
-            int maxTimeToOutputShellResponse, int attempts) throws DeviceNotAvailableException;
+            int maxTimeToOutputShellResponse, int retryAttempts) throws DeviceNotAvailableException;
 
     /**
      * Helper method which executes a adb shell command and returns output as a {@link String}.

@@ -467,8 +467,8 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
                 EasyMock.anyInt());
-        EasyMock.expectLastCall().andThrow(new IOException()).times(TestDevice.MAX_RETRY_ATTEMPTS);
-        for (int i=0; i < TestDevice.MAX_RETRY_ATTEMPTS; i++) {
+        EasyMock.expectLastCall().andThrow(new IOException()).times(TestDevice.MAX_RETRY_ATTEMPTS+1);
+        for (int i=0; i <= TestDevice.MAX_RETRY_ATTEMPTS; i++) {
             assertRecoverySuccess();
         }
         replayMocks();

@@ -169,7 +169,7 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
                     // use maxShellOutputResponseTime to enforce the max iteration time
                     // it won't be exact, but should be close
                     testDevice.executeShellCommand(String.format("%s -s %d -e %d", fullPath,
-                            startIteration, endIteration), resultParser, mMaxIterationTime, 1);
+                            startIteration, endIteration), resultParser, mMaxIterationTime, 0);
                     // iteration count is also used as a random seed value, so want use different
                     // values for each run
                     startIteration += mNumIterations;
