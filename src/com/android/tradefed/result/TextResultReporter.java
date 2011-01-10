@@ -17,6 +17,8 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
 
+import java.util.Map;
+
 import junit.textui.ResultPrinter;
 
 /**
@@ -41,5 +43,15 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
     public void testFailed(TestFailure status, TestIdentifier testId, String trace) {
         ResultPrinter printer = (ResultPrinter)getJUnitListener();
         printer.getWriter().format("\nTest %s: %s \n stack: %s ", status, testId, trace);
+    }
+
+    /**
+     * Overrides parent to explicitly print out metrics.
+     */
+    @Override
+    public void testRunEnded(long elapsedTime, Map<String, String> metrics) {
+        super.testRunEnded(elapsedTime, metrics);
+        ResultPrinter printer = (ResultPrinter)getJUnitListener();
+        printer.getWriter().format("\nMetrics: %s\n", metrics);
     }
 }
