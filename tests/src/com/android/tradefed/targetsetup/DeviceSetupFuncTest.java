@@ -85,6 +85,7 @@ public class DeviceSetupFuncTest extends DeviceTestCase {
         mDeviceSetup.setUp(getDevice(), mMockBuildInfo);
         assertTrue(getDevice().executeShellCommand("getprop ro.audio.silent").contains("1"));
         assertTrue(getDevice().executeShellCommand("getprop ro.monkey").contains("1"));
+        assertTrue(getDevice().executeShellCommand("getprop ro.test_harness").contains("1"));
         // verify root
         assertTrue(getDevice().executeShellCommand("id").contains("root"));
     }

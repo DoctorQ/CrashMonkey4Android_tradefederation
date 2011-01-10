@@ -65,8 +65,9 @@ public class DeviceSetup implements ITargetPreparer {
     @Option(name="disable-dialing", description="set disable dialing property on boot")
     private boolean mDisableDialing = true;
 
-    @Option(name="set-monkey", description="set ro.monkey on boot")
-    private boolean mSetMonkey = true;
+    @Option(name="set-test-harness", description="set the read-only test harness flag on boot. " +
+            "Requires adb root. Default true.")
+    private boolean mSetTestHarness = true;
 
     @Option(name="audio-silent", description="set ro.audio.silent on boot")
     private boolean mSetAudioSilent = true;
@@ -246,8 +247,10 @@ public class DeviceSetup implements ITargetPreparer {
         if (mDisableDialing) {
             propertyBuilder.append("ro.telephony.disable-call=true\n");
         }
-        if (mSetMonkey) {
+        if (mSetTestHarness) {
+            // set both ro.monkey and ro.test_harness, for compatibility with older platforms
             propertyBuilder.append("ro.monkey=1\n");
+            propertyBuilder.append("ro.test_harness=1\n");
         }
         if (mSetAudioSilent) {
             propertyBuilder.append("ro.audio.silent=1\n");
