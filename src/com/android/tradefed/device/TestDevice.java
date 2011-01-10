@@ -316,30 +316,29 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
-            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
-        try {
-            RunFailureListener failureListener = new RunFailureListener();
-            listeners.add(failureListener);
-            runner.run(listeners);
-            if (failureListener.mIsRunFailure) {
-                // run failed, might be system crash. Ensure device is up
-                if (mMonitor.waitForDeviceAvailable(5*1000) == null) {
-                    // device isn't up, recover
-                    recoverDevice();
-                }
+    public boolean runInstrumentationTests(final IRemoteAndroidTestRunner runner,
+            final Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+        RunFailureListener failureListener = new RunFailureListener();
+        listeners.add(failureListener);
+        DeviceAction runTestsAction = new DeviceAction() {
+            @Override
+            public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                    ShellCommandUnresponsiveException, InstallException, SyncException {
+                runner.run(listeners);
+                return true;
             }
-        } catch (IOException e) {
-            // TODO: no attempt tracking for exceptions. Would be good to catch scenario where
-            // repeated test runs fail even though recovery is succeeding
-            recoverDevice();
-        } catch (ShellCommandUnresponsiveException e) {
-            recoverDevice();
-        } catch (TimeoutException e) {
-            recoverDevice();
-        } catch (AdbCommandRejectedException e) {
-            recoverDevice();
+
+        };
+        boolean result = performDeviceAction(String.format("run %s instrumentation tests",
+                runner.getPackageName()), runTestsAction, 0);
+        if (failureListener.mIsRunFailure) {
+            // run failed, might be system crash. Ensure device is up
+            if (mMonitor.waitForDeviceAvailable(5*1000) == null) {
+                // device isn't up, recover
+                recoverDevice();
+            }
         }
+        return result;
     }
 
     private static class RunFailureListener extends StubTestListener {
@@ -354,11 +353,11 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+    public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException {
         List<ITestRunListener> listenerList = new ArrayList<ITestRunListener>();
         listenerList.addAll(Arrays.asList(listeners));
-        runInstrumentationTests(runner, listenerList);
+        return runInstrumentationTests(runner, listenerList);
     }
 
     /**

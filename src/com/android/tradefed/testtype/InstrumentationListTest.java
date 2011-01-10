@@ -37,7 +37,7 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
     /** the set of tests to run */
     private final Collection<TestIdentifier> mTests;
     /** Aborts the test run if any test takes longer than the specified number of milliseconds */
-    private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
+    private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
     private ITestDevice mDevice = null;
 
     /**
@@ -65,7 +65,7 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
     /**
      * Optionally, set the maximum time for each test.
      */
-    void setTestTimeout(long timeout) {
+    void setTestTimeout(int timeout) {
         mTestTimeout = timeout;
     }
 

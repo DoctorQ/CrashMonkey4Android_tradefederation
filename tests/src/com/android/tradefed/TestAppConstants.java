@@ -30,6 +30,12 @@ public class TestAppConstants {
     public static final String TIMEOUT_TEST_METHOD = "testNeverEnding";
     public static final String ANR_TEST_METHOD = "testAnr";
 
+    public static final String CRASH_ON_INIT_TEST_CLASS =
+        "com.android.tradefed.testapp.CrashOnInitTest";
+    public static final String CRASH_ON_INIT_TEST_METHOD = "testNeverRun";
+    public static final String HANG_ON_INIT_TEST_CLASS =
+        "com.android.tradefed.testapp.HangOnInitTest";
+
     public static final String CRASH_ACTIVITY = String.format("%s/.CrashMeActivity",
             TESTAPP_PACKAGE);
 

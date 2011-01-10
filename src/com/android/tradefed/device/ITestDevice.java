@@ -152,31 +152,36 @@ public interface ITestDevice {
     /**
      * Runs instrumentation tests, and provides device recovery.
      * <p/>
-     * If connection with device is lost before test run completes, and recovery succeeds, this
-     * method will simply return control to caller. eg test command will not be rerun.
+     * If connection with device is lost before test run completes, and recovery succeeds, all
+     * listeners will be informed of testRunFailed and "false" will be returned. The test command
+     * will not be rerun.. It is left to callers to retry if necessary.
      * <p/>
      * If connection with device is lost before test run completes, and recovery fails, all
      * listeners will be informed of testRunFailed and DeviceNotAvailableException will be thrown.
      *
      * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
      * @param listeners the test result listeners
+     * @return <code>true</code> if test command completed. <code>false</code> if it failed to
+     *         complete due to device communication exception, but recovery succeeded
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     *             recovered. ie test command failed to complete and recovery failed.
      */
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+    public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException;
 
     /**
      * Convenience method for performing
-     * {@link #runInstrumentationTests(IRemoteAndroidTestRunner, Collection)} with one or
-     * listeners passed as parameters.
+     * {@link #runInstrumentationTests(IRemoteAndroidTestRunner, Collection)} with one or listeners
+     * passed as parameters.
      *
      * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
      * @param listener the test result listener
+     * @return <code>true</code> if test command completed. <code>false</code> if it failed to
+     *         complete, but recovery succeeded
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     *             recovered.
+     *             recovered. ie test command failed to complete and recovery failed.
      */
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+    public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException;
 
     /**

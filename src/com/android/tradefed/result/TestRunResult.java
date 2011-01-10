@@ -50,6 +50,13 @@ public class TestRunResult {
     }
 
     /**
+     * Create an empty{@link TestRunResult}.
+     */
+    public TestRunResult() {
+        this("not started");
+    }
+
+    /**
      * @return the test run name
      */
     public String getName() {

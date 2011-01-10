@@ -25,13 +25,11 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TestRunResult;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -47,12 +45,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
 
     /** max number of attempts to collect list of tests in package */
     private static final int COLLECT_TESTS_ATTEMPTS = 3;
-
-    /** time in ms between collect list of tests attempts */
-    private static final int COLLECT_TESTS_POLL_INTERVAL = 5 * 1000;
-
-    /** max time in ms to allow for single  collect list of tests attempt */
-    private static final int COLLECT_TESTS_OP_TIMEOUT = 2 * 60 * 1000;
 
     static final String DELAY_MSEC_ARG = "delay_msec";
 
@@ -74,8 +66,8 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
 
     @Option(name = "timeout",
             description="Aborts the test run if any test takes longer than the specified number of "
-            + "milliseconds ")
-    private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
+            + "milliseconds. Default 10 minutes. For no timeout, set to 0")
+    private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
             description="Restrict test to a specific test size")
@@ -87,7 +79,7 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
 
     @Option(name = "log-delay",
             description="Delay in msec between each test when collecting test information")
-    private int mTestDelay = 10;
+    private int mTestDelay = 15;
 
     @Option(name = "install-file",
             description="Optional file path to apk file that contains the tests.")
@@ -99,6 +91,13 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     private Collection<ITestRunListener> mListeners;
 
     private Collection<TestIdentifier> mRemainingTests = new ArrayList<TestIdentifier>();
+
+    /**
+     * Max time in ms to allow for the 'max time to shell output response' when collecting tests.
+     * TODO: currently the collect tests command may take a long time to even start, so this is set
+     * to a overly generous value
+     */
+    private int mCollectTestsShellTimeout = 30 * 1000;
 
     /**
      * {@inheritDoc}
@@ -173,7 +172,7 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     /**
      * Optionally, set the maximum time for each test.
      */
-    public void setTestTimeout(long timeout) {
+    public void setTestTimeout(int timeout) {
         mTestTimeout = timeout;
     }
 
@@ -194,7 +193,7 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     /**
      * Get the test timeout in ms.
      */
-    long getTestTimeout() {
+    int getTestTimeout() {
         return mTestTimeout;
     }
 
@@ -215,19 +214,19 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     }
 
     /**
-     * Get the {@link RunUtil} instance to use.
-     * <p/>
-     * Exposed for unit testing.
-     */
-    IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
-    }
-
-    /**
      * {@inheritDoc}
      */
     public ITestDevice getDevice() {
         return mDevice;
+    }
+    /**
+     * Set the max time in ms to allow for the 'max time to shell output response' when collecting
+     * tests.
+     * <p/>
+     * Exposed for testing.
+     */
+    void setCollectsTestsShellTimeout(int timeout) {
+        mCollectTestsShellTimeout = timeout;
     }
 
     /**
@@ -261,9 +260,8 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-        if (mTestTimeout >= 0) {
-            mRunner.setMaxtimeToOutputResponse((int)mTestTimeout);
-        }
+        mRunner.setMaxtimeToOutputResponse((int)mTestTimeout);
+
         if (mInstallFile != null) {
             mDevice.installPackage(mInstallFile, true);
             doTestRun(listeners);
@@ -277,10 +275,9 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
      * Execute test run.
      *
      * @param listener the test result listener
-     * @returns true if tests were run. false if test run was skipped
      * @throws DeviceNotAvailableException if device stops communicating
      */
-    private boolean doTestRun(final List<ITestInvocationListener> listeners)
+    private void doTestRun(final List<ITestInvocationListener> listeners)
             throws DeviceNotAvailableException {
         Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
@@ -292,12 +289,10 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
                 runWithRerun(listeners, expectedTests);
             } else {
                 Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
-                return false;
             }
         } else {
             mDevice.runInstrumentationTests(mRunner, mListeners);
         }
-        return true;
     }
 
     /**
@@ -395,76 +390,59 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
             if (mTestDelay > 0) {
                 runner.addInstrumentationArg(DELAY_MSEC_ARG, Integer.toString(mTestDelay));
             }
+            // use a shorter timeout when collecting tests
+            runner.setMaxtimeToOutputResponse(mCollectTestsShellTimeout);
             // try to collect tests multiple times, in case device is temporarily not available
             // on first attempt
-            CollectingTestsRunnable collectRunnable = new CollectingTestsRunnable(mDevice,
-                    mRunner);
-            boolean result = getRunUtil().runTimedRetry(COLLECT_TESTS_OP_TIMEOUT,
-                    COLLECT_TESTS_POLL_INTERVAL, COLLECT_TESTS_ATTEMPTS, collectRunnable);
+            Collection<TestIdentifier>  tests = collectTestsAndRetry(runner);
             runner.setLogOnly(false);
-            mRunner.removeInstrumentationArg(DELAY_MSEC_ARG);
-            if (result) {
-                return collectRunnable.getTests();
-            } else if (collectRunnable.getException() != null) {
-                throw collectRunnable.getException();
-            } else {
-                Log.w(LOG_TAG, String.format("Failed to collect tests to run for %s on device %s",
-                        mPackageName, mDevice.getSerialNumber()));
-            }
+            runner.setMaxtimeToOutputResponse(mTestTimeout);
+            runner.removeInstrumentationArg(DELAY_MSEC_ARG);
+            return tests;
         }
         return null;
     }
 
     /**
-     * Collects list of tests to be executed by this test run.
-     * Wrapped as a {@link IRunnableResult} so this command can be re-attempted.
+     * Performs the actual work of collecting tests, making multiple attempts if necessary
+     * @param runner
+     * @return the collection of tests, or <code>null</code> if tests could not be collected
+     * @throws DeviceNotAvailableException if communication with the device was lost
      */
-    private static class CollectingTestsRunnable implements IRunnableResult {
-        private final IRemoteAndroidTestRunner mRunner;
-        private final ITestDevice mDevice;
-        private Collection<TestIdentifier> mTests;
-        private DeviceNotAvailableException mException;
-
-        public CollectingTestsRunnable(ITestDevice device, IRemoteAndroidTestRunner runner) {
-            mRunner = runner;
-            mDevice = device;
-            mTests = null;
-            mException = null;
-        }
-
-        public boolean run() {
+    private Collection<TestIdentifier> collectTestsAndRetry(final IRemoteAndroidTestRunner runner)
+            throws DeviceNotAvailableException {
+        boolean communicationFailure = false;
+        for (int i=0; i < COLLECT_TESTS_ATTEMPTS; i++) {
             CollectingTestListener listener = new CollectingTestListener();
-            Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(1);
-            listeners.add(listener);
-            try {
-                mDevice.runInstrumentationTests(mRunner, listeners);
-                TestRunResult runResults = listener.getCurrentRunResults();
-                mTests = runResults.getTests();
-                return !runResults.isRunFailure() && runResults.isRunComplete();
-            } catch (DeviceNotAvailableException e) {
-                // TODO: should throw this immediately if it occurs, rather than continuing to
-                // retry
-                mException = e;
+            boolean instrResult = mDevice.runInstrumentationTests(runner, listener);
+            TestRunResult runResults = listener.getCurrentRunResults();
+            if (!instrResult || !runResults.isRunComplete()) {
+                // communication failure with device, retry
+                Log.w(LOG_TAG, String.format(
+                        "No results when collecting tests to run for %s on device %s. Retrying",
+                        mPackageName, mDevice.getSerialNumber()));
+                communicationFailure = true;
+            } else if (runResults.isRunFailure()) {
+                // not a communication failure, but run still failed. Still retry in case its a
+                // transient error
+                Log.w(LOG_TAG, String.format(
+                        "Run failure %s when collecting tests to run for %s on device %s.",
+                        runResults.getRunFailureMessage(), mPackageName,
+                        mDevice.getSerialNumber()));
+            } else {
+                // success!
+                return runResults.getTests();
             }
-            return false;
         }
-
-        /**
-         * Gets the collected tests. Must be called after {@link run}.
-         */
-        public Collection<TestIdentifier> getTests() {
-            return new ArrayList<TestIdentifier>(mTests);
+        if (communicationFailure) {
+            // TODO: report this as a run failure?
+            throw new DeviceUnresponsiveException(String.format(
+                    "Communication failure when attempting to collect tests %s on device %s",
+                    mPackageName, mDevice.getSerialNumber()));
         }
-
-        public DeviceNotAvailableException getException() {
-            return mException;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void cancel() {
-            mRunner.cancel();
-        }
+        Log.e(LOG_TAG, String.format(
+                "Failed to collect tests to run to run for %s on device %s.",
+                mPackageName, mDevice.getSerialNumber()));
+        return null;
     }
 }

@@ -21,6 +21,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 
@@ -127,7 +128,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     public void testRun_testTimeout() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun_testTimeout");
 
-        final long timeout = 1000;
+        final int timeout = 1000;
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
                 TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
@@ -270,5 +271,52 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.run(listener);
         assertEquals(TestAppConstants.TOTAL_TEST_CLASS_TESTS, listener.getNumTotalTests());
         assertEquals(TestAppConstants.TOTAL_TEST_CLASS_PASSED_TESTS, listener.getNumPassedTests());
+    }
+
+    /**
+     * Test a run that crashes when collecting tests.
+     * <p/>
+     * Expect run to proceed, but be reported as a run failure
+     */
+    public void testRun_rerunCrash() throws Exception {
+        Log.i(LOG_TAG, "testRun_rerunCrash");
+
+        mInstrumentationTest.setClassName(TestAppConstants.CRASH_ON_INIT_TEST_CLASS);
+        mInstrumentationTest.setMethodName(TestAppConstants.CRASH_ON_INIT_TEST_METHOD);
+        mInstrumentationTest.setRerunMode(true);
+        mInstrumentationTest.setTestTimeout(1000);
+        CollectingTestListener listener = new CollectingTestListener();
+        mInstrumentationTest.run(listener);
+        assertEquals(0, listener.getNumTotalTests());
+        assertNotNull(listener.getCurrentRunResults());
+        assertEquals(TestAppConstants.TESTAPP_PACKAGE, listener.getCurrentRunResults().getName());
+        assertTrue(listener.getCurrentRunResults().isRunFailure());
+        assertTrue(listener.getCurrentRunResults().isRunComplete());
+    }
+
+    /**
+     * Test a run that hangs when collecting tests.
+     * <p/>
+     * Expect a {@link DeviceUnresponsiveException} to be thrown
+     */
+    public void testRun_rerunHang() throws Exception {
+        Log.i(LOG_TAG, "testRun_rerunHang");
+
+        mInstrumentationTest.setClassName(TestAppConstants.HANG_ON_INIT_TEST_CLASS);
+        mInstrumentationTest.setRerunMode(true);
+        mInstrumentationTest.setTestTimeout(1000);
+        mInstrumentationTest.setCollectsTestsShellTimeout(2 * 1000);
+        CollectingTestListener listener = new CollectingTestListener();
+        try {
+            mInstrumentationTest.run(listener);
+            fail("DeviceUnresponsiveException not thrown");
+        } catch (DeviceUnresponsiveException e) {
+            // expected
+        }
+        assertEquals(0, listener.getNumTotalTests());
+        // TODO: consider changing InstrumentationTest to report this as a run failure
+        // also consider what to do for resume. If this run always times out on collection phase,
+        // it might be resumed indefinitely
+        assertFalse(listener.getCurrentRunResults().isRunComplete());
     }
 }

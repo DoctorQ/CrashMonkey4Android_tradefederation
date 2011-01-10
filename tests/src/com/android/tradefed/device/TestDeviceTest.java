@@ -564,6 +564,7 @@ public class TestDeviceTest extends TestCase {
      */
     public void testRunInstrumentationTests() throws Exception {
         IRemoteAndroidTestRunner mockRunner = EasyMock.createMock(IRemoteAndroidTestRunner.class);
+        EasyMock.expect(mockRunner.getPackageName()).andStubReturn("com.example");
         Collection<ITestRunListener> listeners = new ArrayList<ITestRunListener>(0);
         mockRunner.setMaxtimeToOutputResponse(EasyMock.anyInt());
         // expect runner.run command to be called

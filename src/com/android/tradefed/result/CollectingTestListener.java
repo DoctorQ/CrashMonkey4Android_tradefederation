@@ -38,7 +38,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     // Uses a LinkedHashmap to have predictable iteration order
     private Map<String, TestRunResult> mRunResultsMap =
         Collections.synchronizedMap(new LinkedHashMap<String, TestRunResult>());
-    private TestRunResult mCurrentResults = null;
+    private TestRunResult mCurrentResults =  new TestRunResult();
 
     // cached test constants
     private int mNumPassedTests = 0;
@@ -79,9 +79,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("testEnded called before testRunStarted");
-        }
         // only record test pass if failure not already recorded
         if (mCurrentResults.addResult(test, new TestResult(TestStatus.PASSED))) {
             mNumPassedTests++;
@@ -93,9 +90,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("testFailed called before testRunStarted");
-        }
         if (status.equals(TestFailure.ERROR)) {
             if (mCurrentResults.addResult(test, new TestResult(TestStatus.ERROR, trace))) {
                 mNumErrorTests++;
@@ -111,9 +105,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("testRunEnded called before testRunStarted");
-        }
         mCurrentResults.setRunComplete(true);
         mCurrentResults.addMetrics(runMetrics);
         mCurrentResults.addElapsedTime(elapsedTime);
@@ -123,9 +114,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testRunFailed(String errorMessage) {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("testRunFailed called before testRunStarted");
-        }
         mCurrentResults.setRunFailureError(errorMessage);
 
     }
@@ -134,9 +122,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void testRunStopped(long elapsedTime) {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("testRunStopped called before testRunStarted");
-        }
         mCurrentResults.setRunComplete(true);
         mCurrentResults.addElapsedTime(elapsedTime);
     }
@@ -144,19 +129,13 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * Gets the results for the current test run.
      * <p/>
-     * Its intended to be called once test run is complete (ie {@link #testRunEnded(long, Map)} has
-     * been called). Calling this method before the run has even started
-     * (ie before {@link #testRunStarted(String, int)} has been called) is invalid, and will
-     * produce a {@link IllegalStateException}.
+     * Note the results may not be complete. It is recommended to test the value of {@link
+     * TestRunResult#isRunComplete()} and/or (@link TestRunResult#isRunFailure()} as appropriate
+     * before processing the results.
      *
      * @return the {@link TestRunResult} representing data collected during last test run
-     * @throws IllegalStateException if no test run data has been collected. This can occur if this
-     *             method is called before {@link #testRunStarted(String, int))} has been called.
      */
     public TestRunResult getCurrentRunResults() {
-        if (mCurrentResults == null) {
-            throw new IllegalStateException("no current results");
-        }
         return mCurrentResults;
     }
 

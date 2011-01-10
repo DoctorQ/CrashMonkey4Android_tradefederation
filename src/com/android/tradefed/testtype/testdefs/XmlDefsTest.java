@@ -57,7 +57,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
     @Option(name = "timeout",
             description = "Fail any test that takes longer than the specified number of "
             + "milliseconds. Default 10 min.")
-    private long mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
+    private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
             description = "Restrict tests to a specific test size")
@@ -209,7 +209,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
         return files;
     }
 
-    long getTestTimeout() {
+    int getTestTimeout() {
         return mTestTimeout;
     }
 

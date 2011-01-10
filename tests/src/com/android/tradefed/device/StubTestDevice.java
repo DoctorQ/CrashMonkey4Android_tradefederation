@@ -56,14 +56,16 @@ public class StubTestDevice implements IManagedTestDevice {
         return null;
     }
 
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+    public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
         // ignore
+        return true;
     }
 
-    public void runInstrumentationTests(IRemoteAndroidTestRunner runner,
+    public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException {
         // ignore
+        return true;
     }
 
     public boolean pullFile(String remoteFilePath, File localFile)
