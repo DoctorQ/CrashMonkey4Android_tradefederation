@@ -84,6 +84,10 @@ public class NativeBenchmarkTest extends AbstractRemoteTest implements IDeviceTe
             description="Optionally specify a client cpu. Default 1")
     private int mClientCpu = 1;
 
+    @Option(name = "max-cpu-freq",
+            description="Flag to force device cpu to run at maximum frequency. Default false")
+    private boolean mMaxCpuFreq = false;
+
 
     // TODO: consider sharing code with {@link GTest} and {@link NativeStressTest}
 
@@ -245,7 +249,19 @@ public class NativeBenchmarkTest extends AbstractRemoteTest implements IDeviceTe
                     testPath, mDevice.getSerialNumber()));
             return;
         }
+        if (mMaxCpuFreq) {
+            mDevice.executeShellCommand(
+                    "cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq > " +
+                    "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
+        }
         doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
+        if (mMaxCpuFreq) {
+            // revert to normal
+            mDevice.executeShellCommand(
+                    "cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq > " +
+                    "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
+        }
+
     }
 
     /**
