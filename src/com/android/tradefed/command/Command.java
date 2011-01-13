@@ -129,6 +129,7 @@ public class Command {
                 System.out.println("Could not find device to test");
                 throw new DeviceNotAvailableException();
             }
+            // TODO: add a proper rescheduler
             instance.invoke(device, config, new StubRescheduler());
         } catch (DeviceUnresponsiveException e) {
             deviceState = FreeDeviceState.UNRESPONSIVE;

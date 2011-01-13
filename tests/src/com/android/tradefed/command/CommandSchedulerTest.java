@@ -16,11 +16,11 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.command.CommandScheduler.CommandOptions;
-import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockDeviceManager;
@@ -38,7 +38,7 @@ import junit.framework.TestCase;
 public class CommandSchedulerTest extends TestCase {
 
     private CommandScheduler mScheduler;
-    private MockInvocation mMockInvocation;
+    private ITestInvocation mMockInvocation;
     private MockDeviceManager mMockManager;
     private IConfigurationFactory mMockConfigFactory;
     private IConfiguration mMockConfiguration;
@@ -52,7 +52,7 @@ public class CommandSchedulerTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        mMockInvocation = new MockInvocation();
+        mMockInvocation = EasyMock.createMock(ITestInvocation.class);
         mMockManager = new MockDeviceManager(0);
         mMockConfigFactory = EasyMock.createMock(IConfigurationFactory.class);
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
@@ -91,14 +91,14 @@ public class CommandSchedulerTest extends TestCase {
      * Switch all mock objects to replay mode
      */
     private void replayMocks() {
-        EasyMock.replay(mMockConfigFactory);
+        EasyMock.replay(mMockConfigFactory, mMockInvocation);
     }
 
     /**
      * Verify all mock objects
      */
     private void verifyMocks() {
-        EasyMock.verify(mMockConfigFactory);
+        EasyMock.verify(mMockConfigFactory, mMockInvocation);
     }
 
     /**
@@ -108,17 +108,13 @@ public class CommandSchedulerTest extends TestCase {
         mMockManager.setNumDevices(1);
         replayMocks();
         mScheduler.start();
-        // wait for thread to start
-        while (!mScheduler.isAlive()) {
-            Thread.sleep(10);
-        }
+        mScheduler.waitForEmptyQueue();
         mScheduler.shutdown();
         // expect run not to block
         mScheduler.join();
         assertEquals("allocated device was not returned to queue", 1,
                 mMockManager.getAvailableDevices().size());
         verifyMocks();
-        assertEquals(0, mMockInvocation.invokeCount());
     }
 
     /**
@@ -135,7 +131,6 @@ public class CommandSchedulerTest extends TestCase {
         replayMocks();
         mScheduler.addConfig(args);
         verifyMocks();
-        assertEquals(0, mMockInvocation.invokeCount());
     }
 
     /**
@@ -149,7 +144,6 @@ public class CommandSchedulerTest extends TestCase {
         replayMocks();
         mScheduler.addConfig(args);
         verifyMocks();
-        assertEquals(0, mMockInvocation.invokeCount());
     }
 
     /**
@@ -159,13 +153,12 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 2);
+        mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
+                (IRescheduler)EasyMock.anyObject());
         replayMocks();
         mScheduler.addConfig(args);
         mScheduler.start();
-        // wait for thread to start
-        while (mMockInvocation.invokeCount() == 0) {
-            Thread.sleep(10);
-        }
+        mScheduler.waitForEmptyQueue();
         mScheduler.shutdown();
         mScheduler.join();
         assertEquals("allocated device was not returned to queue", 2,
@@ -177,13 +170,16 @@ public class CommandSchedulerTest extends TestCase {
      * Verify that scheduler goes into shutdown mode when a {@link FatalHostError} is thrown.
      */
     public void testRun_fatalError() throws Exception {
-        mMockInvocation.setException(new FatalHostError("error"));
+        mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
+                (IRescheduler)EasyMock.anyObject());
+        EasyMock.expectLastCall().andThrow(new FatalHostError("error"));
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 2);
         replayMocks();
         mScheduler.addConfig(args);
         mScheduler.start();
+        mScheduler.waitForEmptyQueue();
         // no need to call shutdown explicitly - scheduler should shutdown by itself
         mScheduler.join();
         assertEquals("allocated device was not returned to queue", 2,
@@ -203,22 +199,19 @@ public class CommandSchedulerTest extends TestCase {
         // allocate and free a device to get its serial
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addSerial(dev.getSerialNumber());
-        mMockInvocation.setExpectedSerial(dev.getSerialNumber());
+        mMockInvocation.invoke(EasyMock.eq(dev), EasyMock.eq(mMockConfiguration),
+                (IRescheduler)EasyMock.anyObject());
         replayMocks();
         mScheduler.addConfig(args);
         mScheduler.addConfig(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
 
         mScheduler.start();
-        // wait for invocations to complete
-        while (mMockInvocation.invokeCount() < 2) {
-            Thread.sleep(10);
-        }
+        mScheduler.waitForEmptyQueue();
         mScheduler.shutdown();
         mScheduler.join();
         assertEquals("allocated device was not returned to queue", 2,
                 mMockManager.getAvailableDevices().size());
-        assertTrue(mMockInvocation.matchedExpectedDevice());
         verifyMocks();
     }
 
@@ -236,22 +229,53 @@ public class CommandSchedulerTest extends TestCase {
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addExcludeSerial(dev.getSerialNumber());
         ITestDevice expectedDevice = mMockManager.allocateDevice();
-        mMockInvocation.setExpectedSerial(expectedDevice.getSerialNumber());
+        mMockInvocation.invoke(EasyMock.eq(expectedDevice), EasyMock.eq(mMockConfiguration),
+                (IRescheduler)EasyMock.anyObject());
         replayMocks();
         mScheduler.addConfig(args);
         mScheduler.addConfig(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
         mMockManager.freeDevice(expectedDevice, FreeDeviceState.AVAILABLE);
         mScheduler.start();
-        // wait for thread to start
-        while (mMockInvocation.invokeCount() < 2) {
-            Thread.sleep(10);
-        }
+        mScheduler.waitForEmptyQueue();
         mScheduler.shutdown();
         mScheduler.join();
         assertEquals("allocated device was not returned to queue", 2,
                 mMockManager.getAvailableDevices().size());
-        assertTrue(mMockInvocation.matchedExpectedDevice());
+        verifyMocks();
+    }
+
+    /**
+     * Test {@link CommandScheduler#run()} when one config has been rescheduled
+     */
+    public void testRun_rescheduled() throws Exception {
+        String[] args = new String[] {};
+        mMockManager.setNumDevices(2);
+        setCreateConfigExpectations(args, 2);
+        final IConfiguration rescheduledConfig = EasyMock.createMock(IConfiguration.class);
+        mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
+                (IRescheduler)EasyMock.anyObject());
+        EasyMock.expectLastCall().andDelegateTo(new ITestInvocation() {
+            @Override
+            public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
+                    throws DeviceNotAvailableException {
+                rescheduler.scheduleConfig(rescheduledConfig);
+                throw new DeviceNotAvailableException("not avail");
+            }
+        });
+        mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(rescheduledConfig),
+                (IRescheduler)EasyMock.anyObject());
+        replayMocks();
+        mScheduler.addConfig(args);
+        mScheduler.start();
+        mScheduler.waitForEmptyQueue();
+        // hack, wait again for rescheduled invocation to run
+        Thread.sleep(100);
+        mScheduler.waitForEmptyQueue();
+        mScheduler.shutdown();
+        mScheduler.join();
+        assertEquals("allocated device was not returned to queue", 1,
+                mMockManager.getAvailableDevices().size());
         verifyMocks();
     }
 
@@ -291,47 +315,5 @@ public class CommandSchedulerTest extends TestCase {
     private void setPrintHelpExpectations(String[] args) {
         mMockConfigFactory.printHelp(EasyMock.eq(args), EasyMock.eq(System.out),
                 EasyMock.eq(CommandOptions.class), EasyMock.eq(DeviceSelectionOptions.class));
-    }
-
-    private static class MockInvocation implements ITestInvocation {
-
-        private int mInvokeCount = 0;
-        private String mExpectedSerial = null;
-        private boolean mMatched = true;
-        private RuntimeException mException = null;
-
-        public MockInvocation() {
-
-        }
-
-        public void setException(RuntimeException e) {
-            mException = e;
-        }
-
-        public void setExpectedSerial(String expectedDeviceSerial) {
-            mExpectedSerial  = expectedDeviceSerial;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
-                throws DeviceNotAvailableException {
-            mInvokeCount++;
-            if (mException != null) {
-                throw mException;
-            }
-            if (mExpectedSerial != null && !device.getSerialNumber().equals(mExpectedSerial)) {
-                mMatched = false;
-            }
-        }
-
-        public int invokeCount() {
-            return mInvokeCount;
-        }
-
-        public boolean matchedExpectedDevice() {
-            return mMatched ;
-        }
     }
 }

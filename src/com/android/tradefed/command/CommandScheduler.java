@@ -30,13 +30,12 @@ import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
-import com.android.tradefed.invoker.StubRescheduler;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
-import java.lang.UnsupportedOperationException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -133,7 +132,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Represents one config to be executed
      */
-    private static class ConfigCommand {
+    private class ConfigCommand {
         private final String[] mArgs;
 
         private final CommandOptions mCmdOptions;
@@ -172,6 +171,73 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         String[] getArgs() {
             return mArgs;
+        }
+
+        /**
+         * Get the {@link IConfiguration} associated with this command.
+         *
+         * @return
+         * @throws ConfigurationException
+         */
+        public IConfiguration getConfiguration() throws ConfigurationException {
+            // create a new config
+            return getConfigFactory().createConfigurationFromArgs(
+                    getArgs(), new CommandOptions(), new DeviceSelectionOptions());
+        }
+    }
+
+    /**
+     * A {@link ConfigCommand} that is a rescheduling of a previously executed command
+     */
+    private class RescheduledConfigCommand extends ConfigCommand {
+
+        private final IConfiguration mConfig;
+        private final ConfigCommand mOriginalCmd;
+
+        RescheduledConfigCommand(ConfigCommand cmd, IConfiguration config) {
+            super(cmd.getArgs(), new CommandOptions(), cmd.getDeviceOptions());
+            // a resumable config should never be in loop mode
+            getCommandOptions().setLoopMode(false);
+            mConfig = config;
+            mOriginalCmd = cmd;
+        }
+
+        @Override
+        public IConfiguration getConfiguration() throws ConfigurationException {
+            return mConfig;
+        }
+
+        @Override
+        synchronized void incrementExecTime(long execTime) {
+            // add exec time to original cmd
+            mOriginalCmd.incrementExecTime(execTime);
+        }
+    }
+
+    /**
+     * A {@link IRescheduler} that will add a config back to the queue.
+     */
+    private class Rescheduler implements IRescheduler {
+
+        private ConfigCommand mOrigCmd;
+
+        Rescheduler(ConfigCommand cmd) {
+            mOrigCmd = cmd;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean scheduleConfig(IConfiguration config) {
+            if (mShutdown) {
+                // cannot schedule configs if shut down
+                return false;
+            }
+            RescheduledConfigCommand rescheduledCmd = new RescheduledConfigCommand(mOrigCmd,
+                    config);
+            mConfigQueue.add(rescheduledCmd);
+            return true;
         }
     }
 
@@ -248,9 +314,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             long startTime = System.currentTimeMillis();
             ITestInvocation instance = createInvocation();
             try {
-                IConfiguration config = getConfigFactory().createConfigurationFromArgs(
-                        cmd.getArgs(), new CommandOptions(), new DeviceSelectionOptions());
-                instance.invoke(mDevice, config, new StubRescheduler());
+                IConfiguration config = cmd.getConfiguration();
+                instance.invoke(mDevice, config, new Rescheduler(cmd));
             } catch (DeviceUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s is unresponsive",
                         mDevice.getSerialNumber()));
@@ -584,4 +649,14 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         return stringConfigs;
     }
 
+    /**
+     * Helper method for unit testing. Blocks until config queue is empty
+     *
+     * @throws InterruptedException
+     */
+    void waitForEmptyQueue() throws InterruptedException {
+        while (mConfigQueue.size() > 0) {
+            Thread.sleep(10);
+        }
+    }
 }

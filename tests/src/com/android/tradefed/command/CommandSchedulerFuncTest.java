@@ -156,5 +156,5 @@ public class CommandSchedulerFuncTest extends TestCase {
                 throw new IllegalArgumentException("unknown config");
             }
         }
-    }
+   }
 }
