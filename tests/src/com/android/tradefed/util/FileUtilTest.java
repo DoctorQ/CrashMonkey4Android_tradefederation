@@ -135,4 +135,10 @@ public class FileUtilTest extends TestCase {
     public void testExtractZip() throws IOException {
         // TODO: implement this - maybe create a zip programmatically than extract it ?
     }
+
+    public void testGetExtension() {
+        assertEquals("", FileUtil.getExtension("filewithoutext"));
+        assertEquals(".txt", FileUtil.getExtension("file.txt"));
+        assertEquals(".txt", FileUtil.getExtension("foo.file.txt"));
+    }
 }

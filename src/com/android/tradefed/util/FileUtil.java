@@ -242,4 +242,51 @@ public class FileUtil {
             }
         }
     }
+
+    /**
+     * Gets the extension for given file name.
+     *
+     * @param fileName
+     * @return the extension or empty String if file has no extension
+     */
+    public static String getExtension(String fileName) {
+        int index = fileName.lastIndexOf('.');
+        if (index == -1) {
+            return "";
+        } else {
+            return fileName.substring(index);
+        }
+    }
+
+    /**
+     * Utility method to do byte-wise content comparison of two files.
+     *
+     * @return <code>true</code> if file contents are identical
+     */
+    public static boolean compareFileContents(File file1, File file2) throws IOException {
+        BufferedInputStream stream1 = null;
+        BufferedInputStream stream2 = null;
+
+        try {
+            stream1 = new BufferedInputStream(new FileInputStream(file1));
+            stream2 = new BufferedInputStream(new FileInputStream(file2));
+            boolean eof = false;
+            while (!eof) {
+                int byte1 = stream1.read();
+                int byte2 = stream2.read();
+                if (byte1 != byte2) {
+                    return false;
+                }
+                eof = byte1 == -1;
+            }
+            return true;
+        } finally {
+            if (stream1 != null) {
+                stream1.close();
+            }
+            if (stream2 != null) {
+                stream2.close();
+            }
+        }
+    }
 }
