@@ -69,4 +69,9 @@ public class StdoutLogger implements ILeveledLogOutput {
         return new ByteArrayInputStream(new byte[0]);
     }
 
+    @Override
+    public ILeveledLogOutput clone()  {
+        return new StdoutLogger();
+    }
+
 }

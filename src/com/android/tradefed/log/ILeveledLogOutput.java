@@ -51,4 +51,9 @@ public interface ILeveledLogOutput extends ILogOutput {
      */
     public void closeLog();
 
+    /**
+     * @return
+     */
+    public ILeveledLogOutput clone();
+
 }

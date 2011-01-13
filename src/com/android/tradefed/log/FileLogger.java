@@ -56,6 +56,15 @@ public class FileLogger implements ILeveledLogOutput {
     }
 
     /**
+     * Sets the log level filtering.
+     *
+     * @param logLevel the {@link LogLevel#getStringValue()} log level to display
+     */
+    void setLogLevel(String logLevel) {
+        mLogLevel = logLevel;
+    }
+
+    /**
      * Constructor for creating a temporary log file in the system's default temp directory
      *
      * @throws ConfigurationException if unable to create log file
@@ -68,6 +77,26 @@ public class FileLogger implements ILeveledLogOutput {
         catch (IOException e) {
             throw new ConfigurationException(String.format("Could not create output log file : %s",
                     e.getMessage()));
+        }
+    }
+
+    /**
+     * Creates a new {@link FileLogger} with the same log level settings as the current object.
+     * <p/>
+     * Does not copy underlying log file content (ie the clone's log data will be written to a new
+     * file.)
+     */
+    @Override
+    public ILeveledLogOutput clone()  {
+        try {
+            FileLogger logger = new FileLogger();
+            logger.setLogLevelDisplay(mLogLevelStringDisplay);
+            logger.setLogLevel(mLogLevel);
+            return logger;
+        } catch (ConfigurationException e) {
+            // throw this as a RuntimeException, since declaring a ConfigurationException would
+            // conflict with Object#clone()
+            throw new RuntimeException(e);
         }
     }
 
