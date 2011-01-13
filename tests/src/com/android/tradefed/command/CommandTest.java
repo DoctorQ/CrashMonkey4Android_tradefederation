@@ -25,6 +25,7 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.invoker.StubRescheduler;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.StubLogRegistry;
 
@@ -94,7 +95,7 @@ public class CommandTest extends TestCase {
         mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
-        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
+        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration, new StubRescheduler());
         // switch mock objects to verify mode
         replayMocks();
         mCommand.run(new String[] {});
@@ -145,7 +146,7 @@ public class CommandTest extends TestCase {
         mMockDeviceManager.freeDevice(mMockDevice, FreeDeviceState.AVAILABLE);
         mMockDeviceManager.terminate();
         // expect doRun is invoked with the device
-        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration);
+        mMockTestInvoker.invoke(mMockDevice, mMockConfiguration, new StubRescheduler());
         EasyMock.expectLastCall().andThrow(new RuntimeException());
         replayMocks();
         try {

@@ -26,14 +26,16 @@ import com.android.tradefed.device.ITestDevice;
 public interface ITestInvocation {
 
     /**
-     * Instantiate objects and perform the test invocation.
+     * Perform the test invocation.
      *
      * @param device the {@link ITestDevice} to perform tests. May be <code>null</code> if tests to
      *            run are not dependent on a device
      * @param config the {@link IConfiguration} of this test run.
+     * @param rescheduler the {@link IRescheduler}, for rescheduling portions of the invocation for
+     *            execution on another resource(s)
      * @throws DeviceNotAvailableException if communication with device was lost
      */
-    public void invoke(ITestDevice device, IConfiguration config)
+    public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
             throws DeviceNotAvailableException;
 
 }

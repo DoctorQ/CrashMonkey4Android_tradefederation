@@ -64,9 +64,7 @@ public class ResultForwarder implements ITestInvocationListener {
      */
     @Override
     public void invocationEnded(long elapsedTime) {
-        for (ITestInvocationListener listener : mListeners) {
-            listener.invocationEnded(elapsedTime);
-        }
+        InvocationSummaryHelper.reportInvocationEnded(mListeners, elapsedTime);
     }
 
     /**
@@ -77,7 +75,6 @@ public class ResultForwarder implements ITestInvocationListener {
         // should never be called
         return null;
     }
-
 
     /**
      * {@inheritDoc}

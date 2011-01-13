@@ -31,6 +31,7 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.invoker.StubRescheduler;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.LogRegistry;
 
@@ -128,7 +129,7 @@ public class Command {
                 System.out.println("Could not find device to test");
                 throw new DeviceNotAvailableException();
             }
-            instance.invoke(device, config);
+            instance.invoke(device, config, new StubRescheduler());
         } catch (DeviceUnresponsiveException e) {
             deviceState = FreeDeviceState.UNRESPONSIVE;
         } catch (DeviceNotAvailableException e) {

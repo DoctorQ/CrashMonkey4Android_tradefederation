@@ -59,7 +59,9 @@ public interface ITestInvocationListener extends ITestRunListener {
      * Must be called before {@link #invocationFailed(String, Throwable)} or
      * {@link #invocationEnded()}
      *
-     * @param dataName a {@link String} descriptive name of the data. e.g. "device_logcat".
+     * @param dataName a {@link String} descriptive name of the data. e.g. "device_logcat". Note
+     *            dataName may not be unique per invocation. ie implementers must be able to handle
+     *            multiple calls with same dataName
      * @param dataType the {@link LogDataType} of the data
      * @param dataStream the {@link InputStream} of the data.
      */

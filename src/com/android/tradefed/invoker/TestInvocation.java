@@ -17,27 +17,31 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.ITestSummaryListener;
+import com.android.tradefed.result.InvocationSummaryHelper;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
-import com.android.tradefed.result.TestSummary;
+import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.targetsetup.BuildError;
 import com.android.tradefed.targetsetup.BuildInfo;
+import com.android.tradefed.targetsetup.ExistingBuildProvider;
 import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 import com.android.tradefed.targetsetup.TargetSetupError;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.testtype.IResumableTest;
+import com.android.tradefed.testtype.IShardableTest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -61,41 +65,120 @@ public class TestInvocation implements ITestInvocation {
     static final String DEVICE_LOG_NAME = "device_logcat";
 
     /**
-     * Constructs a {@link TestInvocation}
+     * A {@link ResultForwarder} for forwarding resumed invocations.
+     * <p/>
+     * It filters the invocationStarted event for the resumed invocation, and sums the invocation
+     * elapsed time
      */
-    public TestInvocation() {
+    private static class ResumeResultForwarder extends ResultForwarder {
+
+        long mCurrentElapsedTime;
+
+        /**
+         * @param listeners
+         */
+        public ResumeResultForwarder(List<ITestInvocationListener> listeners,
+                long currentElapsedTime) {
+            super(listeners);
+            mCurrentElapsedTime = currentElapsedTime;
+        }
+
+        @Override
+        public void invocationStarted(IBuildInfo buildInfo) {
+            // ignore
+        }
+
+        @Override
+        public void invocationEnded(long newElapsedTime) {
+            super.invocationEnded(mCurrentElapsedTime + newElapsedTime);
+        }
     }
 
     /**
      * {@inheritDoc}
      */
-    public void invoke(ITestDevice device, IConfiguration config)
+    public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
             throws DeviceNotAvailableException {
-        List<ITestInvocationListener> listeners = null;
-        ILeveledLogOutput logger = null;
         try {
-            logger = config.getLogOutput();
-
-            IBuildProvider buildProvider = config.getBuildProvider();
-            List<ITargetPreparer> preparers = config.getTargetPreparers();
-            IDeviceRecovery recovery = config.getDeviceRecovery();
-            device.setRecovery(recovery);
-            List<Test> tests = config.getTests();
-            IBuildInfo info = buildProvider.getBuild();
+            IBuildInfo info = config.getBuildProvider().getBuild();
             if (info != null) {
-                listeners = config.getTestInvocationListeners();
-                performInvocation(config, buildProvider, device, listeners, preparers, tests, info,
-                        logger);
+                if (shardConfig(config, info, rescheduler)) {
+                    Log.i(LOG_TAG, String.format("Invocation for %s has been sharded, rescheduling",
+                            device.getSerialNumber()));
+                } else {
+                    device.setRecovery(config.getDeviceRecovery());
+                    performInvocation(config, device, info, rescheduler);
+                }
             } else {
                 Log.i(LOG_TAG, "No build to test");
             }
         } catch (TargetSetupError e) {
             Log.e(LOG_TAG, e);
-        } finally {
-            if (logger != null) {
-                logger.closeLog();
+        }
+    }
+
+   /**
+    * Attempt to shard the configuration into sub-configurations, to be re-scheduled to run on
+    * multiple resources in parallel.
+    * <p/>
+    * A successful shard action renders the current config empty, and invocation should not proceed.
+    *
+    * @see {@link IShardableTest}, {@link IRescheduler}
+    *
+    * @param config the current {@link IConfiguration}.
+    * @param info the {@link IBuildInfo} to test
+    * @param rescheduler the {@link IRescheduler}
+    * @return true if test was sharded. Otherwise return <code>false</code>
+    */
+   private boolean shardConfig(IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
+       List<Test> shardableTests = new ArrayList<Test>();
+       boolean isSharded = false;
+       for (Test test : config.getTests()) {
+           isSharded |= shardTest(shardableTests, test);
+       }
+       if (isSharded) {
+           ShardMasterResultForwarder resultCollector = new ShardMasterResultForwarder(
+                   config.getTestInvocationListeners(), shardableTests.size());
+           ShardListener origConfigListener = new ShardListener(resultCollector);
+           config.setTestInvocationListener(origConfigListener);
+           for (Test testShard : shardableTests) {
+               Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
+               IConfiguration shardConfig = config.clone();
+               shardConfig.setTest(testShard);
+               shardConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
+                       config.getBuildProvider()));
+               shardConfig.setTestInvocationListener(new ShardListener(resultCollector));
+               shardConfig.setLogOutput(config.getLogOutput().clone());
+               // use the same {@link ITargetPreparer}, {@link IDeviceRecovery} etc as original
+               // config
+               rescheduler.scheduleConfig(shardConfig);
+           }
+           return true;
+       }
+       return false;
+   }
+
+    /**
+     * Attempt to shard given {@link Test}.
+     *
+     * @param shardableTests the list of {@link Test}s to add to
+     * @param test the {@link Test} to shard
+     * @return <code>true</code> if test was sharded
+     */
+    private boolean shardTest(List<Test> shardableTests, Test test) {
+        boolean isSharded = false;
+        if (test instanceof IShardableTest) {
+            IShardableTest shardableTest = (IShardableTest)test;
+            Collection<Test> shards = shardableTest.split();
+            if (shards != null) {
+                shardableTests.addAll(shards);
+                isSharded = true;
             }
         }
+        if (!isSharded) {
+            shardableTests.add(test);
+        }
+        return isSharded;
     }
 
     /**
@@ -122,24 +205,22 @@ public class TestInvocation implements ITestInvocation {
      * Performs the invocation
      *
      * @param config the {@link IConfiguration}
-     * @param buildProvider the {@link IBuildProvider}
      * @param device the {@link ITestDevice} to use. May be <code>null</code>
-     * @param listener the {@link ITestInvocationListener} to report results to
-     * @param preparers the {@link ITargetPreparer}s, to be called in order.
-     * @param test the {@link Test} to run
      * @param info the {@link IBuildInfo}
-     * @param logger the {@link ILeveledLogOutput}
+     *
      * @throws DeviceNotAvailableException
+     * @throws ConfigurationException
      */
-    private void performInvocation(IConfiguration config, IBuildProvider buildProvider,
-            ITestDevice device, List<ITestInvocationListener> listeners,
-            List<ITargetPreparer> preparers, List<Test> tests, IBuildInfo info,
-            ILeveledLogOutput logger) throws DeviceNotAvailableException {
+    private void performInvocation(IConfiguration config, ITestDevice device, IBuildInfo info,
+            IRescheduler rescheduler) throws DeviceNotAvailableException {
+
+        boolean resumed = false;
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
-        getLogRegistry().registerLogger(logger);
+
+        getLogRegistry().registerLogger(config.getLogOutput());
         logStartInvocation(info, device);
-        for (ITestInvocationListener listener : listeners) {
+        for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
             listener.invocationStarted(info);
         }
         try {
@@ -147,38 +228,79 @@ public class TestInvocation implements ITestInvocation {
             if (device != null) {
                 info.addBuildAttribute("device_serial", device.getSerialNumber());
             }
-            for (ITargetPreparer preparer : preparers) {
+            for (ITargetPreparer preparer : config.getTargetPreparers()) {
                 preparer.setUp(device, info);
             }
-            runTests(config, device, info, tests, listeners);
+            runTests(device, info, config, rescheduler);
         } catch (BuildError e) {
             Log.w(LOG_TAG, String.format("Build %d failed on device %s", info.getBuildId(),
                     device.getSerialNumber()));
-            reportFailure(e, listeners, buildProvider, info);
+            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
             Log.e(LOG_TAG, e);
-            reportFailure(e, listeners, buildProvider, info);
+            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (DeviceNotAvailableException e) {
             Log.e(LOG_TAG, e);
-            reportFailure(e, listeners, buildProvider, info);
+            resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
+            if (!resumed) {
+                reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
+                        info);
+            } else {
+                Log.i(LOG_TAG, "Rescheduled failed invocation for resume");
+            }
             throw e;
         } catch (RuntimeException e) {
             Log.e(LOG_TAG, "Unexpected runtime exception!");
             Log.e(LOG_TAG, e);
-            reportFailure(e, listeners, buildProvider, info);
+            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
+            reportLogs(device, config.getTestInvocationListeners(), config.getLogOutput());
             elapsedTime = System.currentTimeMillis() - startTime;
             try {
-                reportInvocationEnded(device, listeners, logger, elapsedTime);
+                if (!resumed) {
+                    InvocationSummaryHelper.reportInvocationEnded(
+                            config.getTestInvocationListeners(), elapsedTime);
+                }
             } finally {
-                buildProvider.cleanUp(info);
+                config.getBuildProvider().cleanUp(info);
             }
         }
     }
 
+    /**
+     * Attempt to reschedule the failed invocation to resume where it left off.
+     *
+     * @see {@link IResumableTest}
+     *
+     * @param config
+     * @return <code>true</code> if invocation was resumed successfully
+     */
+    private boolean resume(IConfiguration config, IBuildInfo info, IRescheduler rescheduler,
+            long elapsedTime) {
+        for (Test test : config.getTests()) {
+            if (test instanceof IResumableTest) {
+                IResumableTest resumeTest = (IResumableTest)test;
+                if (resumeTest.isResumable()) {
+                    // resume this config if any test is resumable
+                    IConfiguration resumeConfig = config.clone();
+                    // reuse the same build for the resumed invocation
+                    resumeConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
+                            config.getBuildProvider()));
+                    // create a result forwarder, to prevent sending two invocationStarted events
+                    resumeConfig.setTestInvocationListener(new ResumeResultForwarder(
+                            config.getTestInvocationListeners(), elapsedTime));
+                    resumeConfig.setLogOutput(config.getLogOutput().clone());
+                    return rescheduler.scheduleConfig(resumeConfig);
+                }
+            }
+        }
+        return false;
+    }
+
     private void reportFailure(Throwable exception, List<ITestInvocationListener> listeners,
             IBuildProvider buildProvider, IBuildInfo info) {
+
         for (ITestInvocationListener listener : listeners) {
             listener.invocationFailed(exception);
         }
@@ -187,46 +309,19 @@ public class TestInvocation implements ITestInvocation {
         }
     }
 
-    private void reportInvocationEnded(ITestDevice device, List<ITestInvocationListener> listeners,
-            ILeveledLogOutput logger, long elapsedTime) {
-        List<TestSummary> summaries = new ArrayList<TestSummary>(listeners.size());
+    private void reportLogs(ITestDevice device, List<ITestInvocationListener> listeners,
+            ILeveledLogOutput logger) {
         for (ITestInvocationListener listener : listeners) {
             if (device != null) {
                 listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
             }
             listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
-            // once tradefed log is reported, all further log calls for this invocation can get lost
-            // unregister logger so future log calls get directed to the tradefed global log
-            getLogRegistry().unregisterLogger();
-
-            /*
-             * For InvocationListeners (as opposed to SummaryListeners), we call
-             * invocationEnded() followed by getSummary().  If getSummary returns a non-null
-             * value, we gather it to pass to the SummaryListeners below.
-             */
-            if (!(listener instanceof ITestSummaryListener)) {
-                listener.invocationEnded(elapsedTime);
-                TestSummary summary = listener.getSummary();
-                if (summary != null) {
-                    summary.setSource(listener.getClass().getName());
-                    summaries.add(summary);
-                }
-            }
         }
-
-        /*
-         * For SummaryListeners (as opposed to InvocationListeners), we now call putSummary()
-         * followed by invocationEnded().  This means that the SummaryListeners will have
-         * access to the summaries (if any) when invocationEnded is called.
-         */
-        for (ITestInvocationListener listener : listeners) {
-            if (listener instanceof ITestSummaryListener) {
-                ((ITestSummaryListener) listener).putSummary(summaries);
-                listener.invocationEnded(elapsedTime);
-            }
-        }
+        // once tradefed log is reported, all further log calls for this invocation can get lost
+        // unregister logger so future log calls get directed to the tradefed global log
+        getLogRegistry().unregisterLogger();
+        logger.closeLog();
     }
-
 
     /**
      * Gets the {@link LogRegistry} to use.
@@ -240,7 +335,6 @@ public class TestInvocation implements ITestInvocation {
     /**
      * Runs the test.
      *
-     * @param config the {@link IConfiguration}
      * @param device the {@link ITestDevice} to run tests on
      * @param buildInfo the {@link BuildInfo} describing the build target
      * @param tests the {@link Test}s to run
@@ -248,10 +342,11 @@ public class TestInvocation implements ITestInvocation {
      *            time
      * @throws DeviceNotAvailableException
      */
-    private void runTests(IConfiguration config, ITestDevice device, IBuildInfo buildInfo,
-            List<Test> tests, List<ITestInvocationListener> listeners)
+    private void runTests(ITestDevice device, IBuildInfo buildInfo, IConfiguration config,
+            IRescheduler rescheduler)
             throws DeviceNotAvailableException {
-        for (Test test : tests) {
+        List<ITestInvocationListener> listeners = config.getTestInvocationListeners();
+        for (Test test : config.getTests()) {
             if (test instanceof IDeviceTest) {
                 ((IDeviceTest)test).setDevice(device);
             }

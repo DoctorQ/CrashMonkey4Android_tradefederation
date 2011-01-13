@@ -25,6 +25,7 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockDeviceManager;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 
 import org.easymock.EasyMock;
@@ -314,7 +315,7 @@ public class CommandSchedulerTest extends TestCase {
         /**
          * {@inheritDoc}
          */
-        public void invoke(ITestDevice device, IConfiguration config)
+        public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
                 throws DeviceNotAvailableException {
             mInvokeCount++;
             if (mException != null) {

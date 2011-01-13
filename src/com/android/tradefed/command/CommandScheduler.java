@@ -31,6 +31,7 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
+import com.android.tradefed.invoker.StubRescheduler;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
@@ -249,7 +250,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             try {
                 IConfiguration config = getConfigFactory().createConfigurationFromArgs(
                         cmd.getArgs(), new CommandOptions(), new DeviceSelectionOptions());
-                instance.invoke(mDevice, config);
+                instance.invoke(mDevice, config, new StubRescheduler());
             } catch (DeviceUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s is unresponsive",
                         mDevice.getSerialNumber()));
