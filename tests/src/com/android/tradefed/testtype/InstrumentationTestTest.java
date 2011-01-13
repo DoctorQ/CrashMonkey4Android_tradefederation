@@ -244,6 +244,8 @@ public class InstrumentationTestTest extends TestCase {
                     listener.testStarted(TEST1);
                     listener.testEnded(TEST1, EMPTY_STRING_MAP);
                     listener.testRunFailed(RUN_ERROR_MSG);
+                    listener.testRunEnded(1, EMPTY_STRING_MAP);
+
                 }
                 return true;
             }
@@ -254,8 +256,6 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice, mMockListener);
     }
-
-
 
     /**
      * Test resuming a test run when first run is aborted due to
@@ -273,11 +273,13 @@ public class InstrumentationTestTest extends TestCase {
                     listener.testStarted(TEST1);
                     listener.testEnded(TEST1, EMPTY_STRING_MAP);
                     listener.testRunFailed(RUN_ERROR_MSG);
+                    listener.testRunEnded(1, EMPTY_STRING_MAP);
                 }
                 throw new DeviceNotAvailableException();
             }
         };
         setRerunExpectations(firstRunResponse);
+        mMockRemoteRunner.setMaxtimeToOutputResponse(0);
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice, mMockListener);
         try {
             mInstrumentationTest.run(mMockListener);
@@ -285,9 +287,11 @@ public class InstrumentationTestTest extends TestCase {
         } catch (DeviceNotAvailableException e) {
             // expected
         }
-        mInstrumentationTest.resume(mMockListener);
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice, mMockListener);
     }
+
+
 
     /**
      * Set EasyMock expectations for a run that fails.
@@ -349,6 +353,7 @@ public class InstrumentationTestTest extends TestCase {
         mMockListener.testStarted(TEST1);
         mMockListener.testEnded(TEST1, EMPTY_STRING_MAP);
         mMockListener.testRunFailed(RUN_ERROR_MSG);
+        mMockListener.testRunEnded(1, EMPTY_STRING_MAP);
         mMockListener.testRunStarted(TEST_PACKAGE_VALUE, 1);
         mMockListener.testStarted(TEST2);
         mMockListener.testEnded(TEST2, EMPTY_STRING_MAP);

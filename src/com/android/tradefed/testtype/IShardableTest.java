@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2011 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,28 +15,24 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.LogLevel;
+import java.util.Collection;
 
 import junit.framework.Test;
-import junit.framework.TestResult;
 
 /**
- * No-op empty test implementation.
+ * A {@link Test} that can be split into separately executable sub-tests.
  */
-public class StubTest implements Test {
+public interface IShardableTest extends Test {
 
     /**
-     * {@inheritDoc}
+     * Shard the test into separately runnable chunks.
+     * <p/>
+     * This will be called before test execution, so injected dependencies (such as the
+     * {@link ITestDevice} for {@link IDeviceTest}s) may be null.
+     *
+     * @return a collection of subtests to be executed separately or <code>null</code> if test is
+     *         not currently shardable
      */
-    public int countTestCases() {
-        return 0;
-    }
+    public Collection<Test> split();
 
-    /**
-     * {@inheritDoc}
-     */
-    public void run(TestResult result) {
-        Log.logAndDisplay(LogLevel.INFO, "StubTest", "nothing to test!");
-    }
 }

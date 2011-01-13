@@ -23,6 +23,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.AbstractRemoteTest;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IResumableTest;
+import com.android.tradefed.testtype.IShardableTest;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.xml.AbstractXmlParser.ParseException;
@@ -37,6 +38,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
+
+import junit.framework.Test;
 
 /**
  * Runs a set of instrumentation test's defined in test_defs.xml files.
@@ -44,7 +48,8 @@ import java.util.Map;
  * The test definition files can either be one or more files on local file system, and/or one or
  * more files stored on the device under test.
  */
-public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest {
+public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest,
+        IShardableTest {
 
     private static final String LOG_TAG = "XmlDefsTest";
 
@@ -63,9 +68,9 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
             description = "Restrict tests to a specific test size")
     private String mTestSize = null;
 
-    @Option(name = "rerun",
+    @Option(name = "resume",
             description = "Rerun non-executed tests individually if test run fails to complete. Default true")
-    private boolean mIsRerunMode = true;
+    private boolean mIsResumeMode = true;
 
     @Option(name = "local-file-path",
             description = "local file path to test_defs.xml file to run")
@@ -79,8 +84,11 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
             description = "Send coverage target info to test listeners. Default true.")
     private boolean mSendCoverage = true;
 
-    private List<InstrumentationTestDef> mTestDefs = null;
-    private InstrumentationTest mCurrentTest = null;
+    @Option(name = "num-shards",
+            description = "Shard this test into given number of separately runnable chunks")
+    private int mNumShards = 0;
+
+    private List<InstrumentationTest> mTests = null;
 
     public XmlDefsTest() {
     }
@@ -100,10 +108,48 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
     }
 
     /**
-     * Adds a remote test def file path. Exposed for unit testing.
+     * Adds a remote test def file path.
+     * <p/>
+     * Exposed for unit testing.
      */
     void addRemoteFilePath(String path) {
         mRemotePaths.add(path);
+    }
+
+    /**
+     * Adds a local test def file path.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    void addLocalFilePath(File file) {
+        mLocalFiles.add(file);
+    }
+
+    /**
+     * Set the send coverage flag.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    void setSendCoverage(boolean sendCoverage) {
+        mSendCoverage = sendCoverage;
+    }
+
+    /**
+     * Sets the number of shards test should be split into
+     * <p/>
+     * Exposed for unit testing.
+     */
+    void setNumShards(int shards) {
+        mNumShards = shards;
+    }
+
+    /**
+     * Gets the list of parsed {@link InstrumentationTest}s contained within.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    List<InstrumentationTest> getTests() {
+        return mTests;
     }
 
     /**
@@ -113,61 +159,96 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
         if (getDevice() == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
-        if (mLocalFiles.isEmpty() && mRemotePaths.isEmpty()) {
-            throw new IllegalArgumentException("No test definition files (local-file-path or " +
-                    "device-file-path) have been provided.");
-        }
-        mLocalFiles.addAll(getRemoteFile(mRemotePaths));
-        XmlDefsParser parser = createParser();
-        for (File testDefFile : mLocalFiles) {
-            try {
-                Log.i(LOG_TAG, String.format("Parsing test def file %s",
-                        testDefFile.getAbsolutePath()));
-                parser.parse(new FileInputStream(testDefFile));
-            } catch (FileNotFoundException e) {
-                Log.e(LOG_TAG, String.format("Could not find test def file %s",
-                        testDefFile.getAbsolutePath()));
-            } catch (ParseException e) {
-                Log.e(LOG_TAG, String.format("Could not parse test def file %s: %s",
-                        testDefFile.getAbsolutePath(), e.getMessage()));
-            } finally {
-                testDefFile.delete();
-            }
-        }
-        mTestDefs = new LinkedList<InstrumentationTestDef>(parser.getTestDefs());
+        buildTests();
         doRun(listeners);
     }
 
     /**
+     * Build the list of tests to run from the xml files, if not done already.
+     * @throws DeviceNotAvailableException
+     */
+    private void buildTests() throws DeviceNotAvailableException {
+        if (mTests == null) {
+            if (mLocalFiles.isEmpty() && mRemotePaths.isEmpty()) {
+                throw new IllegalArgumentException("No test definition files (local-file-path or " +
+                        "device-file-path) have been provided.");
+            }
+            XmlDefsParser parser = createParser();
+            for (File testDefFile : mLocalFiles) {
+                parseFile(parser, testDefFile);
+            }
+            for (File testDefFile : getRemoteFile(mRemotePaths)) {
+                try {
+                    parseFile(parser, testDefFile);
+                } finally {
+                    testDefFile.delete();
+                }
+            }
+
+            mTests = new LinkedList<InstrumentationTest>();
+            for (InstrumentationTestDef def : parser.getTestDefs()) {
+                // only run continuous for now. Consider making this configurable
+                if (def.isContinuous()) {
+                    InstrumentationTest test = createInstrumentationTest();
+
+                    test.setDevice(getDevice());
+                    test.setPackageName(def.getPackage());
+                    if (def.getRunner() != null) {
+                        test.setRunnerName(def.getRunner());
+                    }
+                    if (def.getClassName() != null) {
+                        test.setClassName(def.getClassName());
+                    }
+                    test.setRerunMode(mIsResumeMode);
+                    test.setTestSize(getTestSize());
+                    test.setTestTimeout(getTestTimeout());
+                    test.setCoverageTarget(def.getCoverageTarget());
+                    mTests.add(test);
+                }
+            }
+        }
+    }
+
+    /**
+     * Parse the given xml def file
+     *
+     * @param parser
+     * @param testDefFile
+     */
+    private void parseFile(XmlDefsParser parser, File testDefFile) {
+        try {
+            Log.i(LOG_TAG, String.format("Parsing test def file %s",
+                    testDefFile.getAbsolutePath()));
+            parser.parse(new FileInputStream(testDefFile));
+        } catch (FileNotFoundException e) {
+            Log.e(LOG_TAG, String.format("Could not find test def file %s",
+                    testDefFile.getAbsolutePath()));
+        } catch (ParseException e) {
+            Log.e(LOG_TAG, String.format("Could not parse test def file %s: %s",
+                    testDefFile.getAbsolutePath(), e.getMessage()));
+        }
+    }
+
+    /**
+     * Run the previously built tests.
+     *
      * @param listeners
      * @throws DeviceNotAvailableException
      */
     private void doRun(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
-        while (!mTestDefs.isEmpty()) {
-            InstrumentationTestDef def = mTestDefs.remove(0);
-            // only run continuous for now. Consider making this configurable
-            if (def.isContinuous()) {
-                Log.d(LOG_TAG, String.format("Running test def %s on %s", def.getName(),
+        while (!mTests.isEmpty()) {
+            InstrumentationTest test = mTests.get(0);
+
+            Log.d(LOG_TAG, String.format("Running test %s on %s", test.getPackageName(),
                         getDevice().getSerialNumber()));
-                InstrumentationTest test = createInstrumentationTest();
-                mCurrentTest = test;
-                test.setDevice(getDevice());
-                test.setPackageName(def.getPackage());
-                if (def.getRunner() != null) {
-                    test.setRunnerName(def.getRunner());
-                }
-                if (def.getClassName() != null) {
-                    test.setClassName(def.getClassName());
-                }
-                test.setRerunMode(isRerunMode());
-                test.setTestSize(getTestSize());
-                test.setTestTimeout(getTestTimeout());
-                test.run(listeners);
-                if (mSendCoverage && def.getCoverageTarget() != null) {
-                    sendCoverage(def.getPackage(), def.getCoverageTarget(), listeners);
-                }
-                mCurrentTest = null;
+
+            test.setDevice(getDevice());
+            test.run(listeners);
+            if (mSendCoverage && test.getCoverageTarget() != null) {
+                sendCoverage(test.getPackageName(), test.getCoverageTarget(), listeners);
             }
+            // test completed, remove from list
+            mTests.remove(0);
         }
     }
 
@@ -196,6 +277,10 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
     private Collection<File> getRemoteFile(Collection<String> remoteFilePaths)
             throws DeviceNotAvailableException {
         Collection<File> files = new ArrayList<File>();
+        if (getDevice() == null) {
+            Log.d(LOG_TAG, "Device not set, skipping collection of remote file");
+            return files;
+        }
         for (String remoteFilePath : remoteFilePaths) {
             try {
                 File tmpFile = FileUtil.createTempFile("test_defs_", ".xml");
@@ -217,10 +302,6 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
         return mTestSize;
     }
 
-    boolean isRerunMode() {
-        return mIsRerunMode;
-    }
-
     /**
      * Creates the {@link XmlDefsParser} to use. Exposed for unit testing.
      */
@@ -239,20 +320,49 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
      * {@inheritDoc}
      */
     @Override
-    public void resume(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
-        if (mCurrentTest != null) {
-            mCurrentTest.resume(listeners);
-        }
-        doRun(listeners);
+    public boolean isResumable() {
+        return mIsResumeMode;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(listener);
-        resume(list);
+    public Collection<Test> split() {
+        if (mLocalFiles.isEmpty()) {
+            Log.w(LOG_TAG, "sharding is only supported if local xml files have been specified");
+            return null;
+        }
+        if (mNumShards <= 1) {
+            return null;
+        }
+
+        try {
+            buildTests();
+        } catch (DeviceNotAvailableException e) {
+            // should never happen
+        }
+        if (mTests.size() <= 1) {
+            Log.w(LOG_TAG, "no tests to shard!");
+            return null;
+        }
+
+        // treat shardQueue as a circular queue, to sequentially distribute tests among shards
+        Queue<Test> shardQueue = new LinkedList<Test>();
+        // don't create more shards than the number of tests we have!
+        for (int i = 0; i < mNumShards && i < mTests.size(); i++) {
+            XmlDefsTest shard = new XmlDefsTest();
+            shard.mTests = new LinkedList<InstrumentationTest>();
+            shardQueue.add(shard);
+        }
+        while (!mTests.isEmpty()) {
+            InstrumentationTest test = mTests.remove(0);
+            XmlDefsTest shard = (XmlDefsTest)shardQueue.poll();
+            shard.mTests.add(test);
+            shardQueue.add(shard);
+        }
+        return shardQueue;
     }
+
+
 }

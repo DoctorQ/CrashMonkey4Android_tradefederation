@@ -114,7 +114,8 @@ public class XmlDefsTestTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testRun_resume() throws DeviceNotAvailableException {
         mXmlTest.addRemoteFilePath(TEST_PATH);
-
+        // turn off sending of coverage for simplicity
+        mXmlTest.setSendCoverage(false);
         injectMockXmlData();
         mMockInstrumentationTest.setException(new DeviceNotAvailableException());
         EasyMock.replay(mMockTestDevice, mMockListener);
@@ -128,9 +129,13 @@ public class XmlDefsTestTest extends TestCase {
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
         mMockInstrumentationTest.setException(null);
         mMockInstrumentationTest.clearListener();
-        mXmlTest.resume(mMockListener);
-        // verify InstrumentationTest.resume was called
+        // resume test run, on a different device
+        ITestDevice newTestDevice = EasyMock.createMock(ITestDevice.class);
+        mXmlTest.setDevice(newTestDevice);
+        mXmlTest.run(mMockListener);
+        // verify InstrumentationTest.run was called again, with same listener + different device
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
+        assertEquals(newTestDevice, mMockInstrumentationTest.getDevice());
     }
 
     /**

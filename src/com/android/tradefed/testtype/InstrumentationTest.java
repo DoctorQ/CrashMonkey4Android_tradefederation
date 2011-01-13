@@ -90,7 +90,9 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     private IRemoteAndroidTestRunner mRunner;
     private Collection<ITestRunListener> mListeners;
 
-    private Collection<TestIdentifier> mRemainingTests = new ArrayList<TestIdentifier>();
+    private Collection<TestIdentifier> mRemainingTests = null;
+
+    private String mCoverageTarget = null;
 
     /**
      * Max time in ms to allow for the 'max time to shell output response' when collecting tests.
@@ -177,9 +179,35 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     }
 
     /**
+     * Set the coverage target of this test.
+     * <p/>
+     * Currently unused. This method is just present so coverageTarget can be later retrieved via
+     * {@link #getCoverageTarget()}
+     */
+    public void setCoverageTarget(String coverageTarget) {
+        mCoverageTarget = coverageTarget;
+    }
+
+    /**
+     * Get the coverageTarget previously set via {@link #setCoverageTarget(String)}.
+     */
+    public String getCoverageTarget() {
+        return mCoverageTarget;
+    }
+
+    /**
      * Return <code>true</code> if rerun mode is on.
      */
     boolean isRerunMode() {
+        return mIsRerunMode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isResumable() {
+        // TODO: should rerun mode and resume mode be separated?
         return mIsRerunMode;
     }
 
@@ -279,19 +307,24 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
      */
     private void doTestRun(final List<ITestInvocationListener> listeners)
             throws DeviceNotAvailableException {
-        Collection<TestIdentifier> expectedTests = collectTestsToRun(mRunner);
 
+        // convert the list of ITestInvocationListener to ITestRunListener, since thats what
+        // TestDevice takes
         mListeners = new ArrayList<ITestRunListener>();
         mListeners.addAll(listeners);
 
-        if (expectedTests != null) {
-            if (expectedTests.size() != 0) {
-                runWithRerun(listeners, expectedTests);
-            } else {
-                Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
-            }
-        } else {
+        if (mRemainingTests != null) {
+            // have remaining tests! This must be a rerun - rerun them individually
+            rerunTests(listeners);
+            return;
+        }
+        mRemainingTests = collectTestsToRun(mRunner);
+        if (mRemainingTests == null) {
             mDevice.runInstrumentationTests(mRunner, mListeners);
+        } else if (mRemainingTests.size() != 0) {
+            runWithRerun(listeners, mRemainingTests);
+        } else {
+            Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
         }
     }
 
@@ -348,24 +381,6 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     private void calculateRemainingTests(Collection<TestIdentifier> expectedTests,
             CollectingTestListener testTracker) {
         expectedTests.removeAll(testTracker.getCurrentRunResults().getTests());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void resume(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
-        rerunTests(listeners);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(listener);
-        resume(list);
     }
 
     /**

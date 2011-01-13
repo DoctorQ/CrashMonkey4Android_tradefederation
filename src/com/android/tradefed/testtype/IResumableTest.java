@@ -15,30 +15,18 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.result.ITestInvocationListener;
-
-import java.util.List;
 
 /**
  * An {@link IRemoteTest} that supports resuming a previous aborted test run from where it left off.
+ * <p/>
+ * Implementations should provide a {@link IRemoteTest#run(List)} method that can remember
+ * previous recorded state, and resume where previous run left off if called again.
  */
 public interface IResumableTest extends IRemoteTest {
 
     /**
-     * Resume the previous test run from where it left off.
-     *
-     * @param listeners the list of {@link ITestInvocationListener} of test results
-     * @throws DeviceNotAvailableException
+     * @return <code>true</code> if test is currently resumable.
      */
-    public void resume(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException;
-
-    /**
-     * Resume the previous test run from where it left off.
-     *
-     * @param listener the {@link ITestInvocationListener} of test results
-     * @throws DeviceNotAvailableException
-     */
-    public void resume(ITestInvocationListener listener) throws DeviceNotAvailableException;
+    public boolean isResumable();
 
 }
