@@ -17,7 +17,10 @@
 package com.android.tradefed.targetsetup;
 
 
+import com.android.tradefed.util.FileUtil;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -190,5 +193,25 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             fileRecord.getImageFile().delete();
         }
         mImageFileMap.clear();
+    }
+
+    @Override
+    public IBuildInfo clone()  {
+        try {
+            DeviceBuildInfo copy = new DeviceBuildInfo(getBuildId(), getTestTarget(),
+                    getBuildName());
+            copy.addAllBuildAttributes(getAttributesMultiMap());
+            for (Map.Entry<String, ImageFile> fileEntry : mImageFileMap.entrySet()) {
+                File origImageFile = fileEntry.getValue().getImageFile();
+                File fileCopy = FileUtil.createTempFile(fileEntry.getKey(),
+                        FileUtil.getExtension(origImageFile.getName()));
+                FileUtil.copyFile(origImageFile, fileCopy);
+                copy.mImageFileMap.put(fileEntry.getKey(), new ImageFile(fileCopy,
+                        fileEntry.getValue().getVersion()));
+            }
+            return copy;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -57,4 +57,9 @@ public interface IBuildInfo {
      */
     public void cleanUp();
 
+    /**
+     * @return
+     */
+    public IBuildInfo clone();
+
 }

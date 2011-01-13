@@ -57,4 +57,13 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
         }
         mRootDir = null;
     }
+
+    @Override
+    public IBuildInfo clone() {
+        FolderBuildInfo copy = new FolderBuildInfo(getBuildId(), getTestTarget(), getBuildName());
+        copy.addAllBuildAttributes(getAttributesMultiMap());
+        // TODO: consider copying directory
+        copy.setRootDir(mRootDir);
+        return copy;
+    }
 }

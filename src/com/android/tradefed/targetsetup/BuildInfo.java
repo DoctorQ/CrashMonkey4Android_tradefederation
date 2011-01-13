@@ -15,7 +15,8 @@
  */
 package com.android.tradefed.targetsetup;
 
-import java.util.Hashtable;
+import com.android.tradefed.util.MultiMap;
+
 import java.util.Map;
 
 /**
@@ -26,7 +27,7 @@ public class BuildInfo implements IBuildInfo {
     private int mBuildInfo = 0;
     private String mTestTarget = "stub";
     private String mBuildName = "stub";
-    private Map<String, String> mBuildAttributes = new Hashtable<String, String>();
+    private MultiMap<String, String> mBuildAttributes = new MultiMap<String, String>();
 
     /**
      * Creates a {@link BuildInfo} using default attribute values.
@@ -62,7 +63,7 @@ public class BuildInfo implements IBuildInfo {
      * {@inheritDoc}
      */
     public Map<String, String> getBuildAttributes() {
-        return mBuildAttributes;
+        return mBuildAttributes.getUniqueMap();
     }
 
     /**
@@ -79,11 +80,26 @@ public class BuildInfo implements IBuildInfo {
         mBuildAttributes.put(attributeName, attributeValue);
     }
 
+    protected void addAllBuildAttributes(MultiMap<String, String> attributes) {
+        mBuildAttributes.putAll(attributes);
+    }
+
+    protected MultiMap<String, String> getAttributesMultiMap() {
+        return mBuildAttributes;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void cleanUp() {
         // ignore
+    }
+
+    @Override
+    public IBuildInfo clone() {
+        BuildInfo copy = new BuildInfo(mBuildInfo, mTestTarget, mBuildName);
+        copy.addAllBuildAttributes(mBuildAttributes);
+        return copy;
     }
 }
