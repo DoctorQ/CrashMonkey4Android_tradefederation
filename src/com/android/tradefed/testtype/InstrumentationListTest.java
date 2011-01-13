@@ -16,18 +16,24 @@
 
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.ResultForwarder;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A Test that runs a set of individual instrumentation tests.
  */
 class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+
+    private static final String LOG_TAG = "InstrumentationListTest";
 
     /** the Android package name of test application */
     private final String mPackageName;
@@ -109,8 +115,56 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
             runner.setTestTimeout(mTestTimeout);
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
-            runner.run(listeners);
+            // use a listener filter, to report the test as failed if the test run fails with no
+            // tests executed
+            TestTrackingListener trackingListener = new TestTrackingListener(listeners, testToRun);
+            runner.run(trackingListener);
         }
-        // TODO: capture log here ?
+    }
+
+    private static class TestTrackingListener extends ResultForwarder {
+
+        private String mRunErrorMsg = null;
+        private final TestIdentifier mExpectedTest;
+        private boolean mDidTestRun = false;
+
+        public TestTrackingListener(List<ITestInvocationListener> listeners,
+                TestIdentifier testToRun) {
+            super(listeners);
+            mExpectedTest = testToRun;
+        }
+
+        @Override
+        public void testRunFailed(String errorMessage) {
+            super.testRunFailed(errorMessage);
+            mRunErrorMsg  = errorMessage;
+        }
+
+        @Override
+        public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
+            super.testEnded(test, testMetrics);
+            if (mExpectedTest.equals(test)) {
+                mDidTestRun  = true;
+            } else {
+                // weird, should never happen
+                Log.w(LOG_TAG, String.format("Expected test %s, but got test %s", mExpectedTest,
+                        test));
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
+            if (mRunErrorMsg != null && !mDidTestRun) {
+                Log.d(LOG_TAG, String.format(
+                        "Test %s was not executed, but run failed. Reporting as a test failure",
+                        mExpectedTest));
+                super.testStarted(mExpectedTest);
+                super.testFailed(TestFailure.ERROR, mExpectedTest, String.format(
+                        "Test run failed: %s", mRunErrorMsg));
+                super.testEnded(mExpectedTest, Collections.EMPTY_MAP);
+            }
+            super.testRunEnded(elapsedTime, runMetrics);
+        }
     }
 }
