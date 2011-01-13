@@ -17,7 +17,6 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
@@ -91,8 +90,6 @@ public class TestInvocation implements ITestInvocation {
                 Log.i(LOG_TAG, "No build to test");
             }
         } catch (TargetSetupError e) {
-            Log.e(LOG_TAG, e);
-        } catch (ConfigurationException e) {
             Log.e(LOG_TAG, e);
         } finally {
             if (logger != null) {

@@ -63,6 +63,9 @@ class ConfigurationXmlParser {
             if (OBJECT_TAG.equals(localName)) {
                 final String objectName = attributes.getValue("name");
                 addObject(objectName, attributes);
+            } else if (Configuration.isBuiltInObjType(localName)) {
+                // tag is a built in config object
+                addObject(localName, attributes);
             } else if (OPTION_TAG.equals(localName)) {
                 String optionName = attributes.getValue("name");
                 if (optionName == null) {
@@ -73,9 +76,6 @@ class ConfigurationXmlParser {
                     throwException("Missing 'value' attribute for option");
                 }
                 mConfigDef.addOptionDef(optionName, optionValue);
-            } else if (Configuration.getConfigObjNames().contains(localName)) {
-                // tag is a built in config object
-                addObject(localName, attributes);
             } else if (CONFIG_TAG.equals(localName)) {
                 String description = attributes.getValue("description");
                 if (description != null) {

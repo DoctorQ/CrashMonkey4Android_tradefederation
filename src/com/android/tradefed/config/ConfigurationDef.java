@@ -18,7 +18,6 @@ package com.android.tradefed.config;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,8 +116,7 @@ public class ConfigurationDef {
      * @throws ConfigurationException if configuration could not be created
      */
     IConfiguration createConfiguration() throws ConfigurationException {
-        Map<String, List<Object>> configObjectMap = new HashMap<String, List<Object>>(
-                mObjectClassMap.size());
+        IConfiguration config = new Configuration();
 
         for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
             List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());
@@ -126,9 +124,8 @@ public class ConfigurationDef {
                 Object configObject = createObject(objClassEntry.getKey(), className);
                 objectList.add(configObject);
             }
-            configObjectMap.put(objClassEntry.getKey(), objectList);
+            config.setConfigurationObjectList(objClassEntry.getKey(), objectList);
         }
-        IConfiguration config = new Configuration(configObjectMap);
         Collection<Object> allConfigObjs = config.getAllConfigurationObjects();
         OptionSetter setter = new OptionSetter(allConfigObjs);
         for (OptionDef optionEntry : mOptionList) {

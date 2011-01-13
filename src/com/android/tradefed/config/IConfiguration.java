@@ -40,55 +40,43 @@ public interface IConfiguration {
      * Gets the {@link IBuildProvider} from the configuration.
      *
      * @return the {@link IBuildProvider} provided in the configuration
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
-     * correct type
      */
-    public IBuildProvider getBuildProvider() throws ConfigurationException;
+    public IBuildProvider getBuildProvider();
 
     /**
      * Gets the {@link ITargetPreparer}s from the configuration.
      *
      * @return the {@link ITargetPreparer}s provided in order in the configuration
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
-     * correct type
      */
-    public List<ITargetPreparer> getTargetPreparers() throws ConfigurationException;
+    public List<ITargetPreparer> getTargetPreparers();
 
     /**
      * Gets the {@link Test}s to run from the configuration.
      *
      * @return the {@link Test}s provided in the configuration
-     * @throws ConfigurationException if config objects could not be fully loaded, or was not the
-     * correct type
      */
-    public List<Test> getTests()  throws ConfigurationException;
+    public List<Test> getTests();
 
     /**
      * Gets the {@link ITestInvocationListener}s to use from the configuration.
      *
      * @return the {@link ITestInvocationListener}s provided in the configuration.
-     * @throws ConfigurationException if config objects could not be fully loaded, or was not the
-     * correct type
      */
-    public List<ITestInvocationListener> getTestInvocationListeners() throws ConfigurationException;
+    public List<ITestInvocationListener> getTestInvocationListeners();
 
     /**
      * Gets the {@link IDeviceRecovery} to use from the configuration.
      *
      * @return the {@link IDeviceRecovery} provided in the configuration.
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
-     * correct type
      */
-    public IDeviceRecovery getDeviceRecovery() throws ConfigurationException;
+    public IDeviceRecovery getDeviceRecovery();
 
     /**
      * Gets the {@link ILeveledLogOutput} to use from the configuration.
      *
      * @return the {@link ILeveledLogOutput} provided in the configuration.
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
-     * correct type
      */
-    public ILeveledLogOutput getLogOutput() throws ConfigurationException;
+    public ILeveledLogOutput getLogOutput();
 
     /**
      * Generic interface to get the configuration object with the given name.
@@ -96,13 +84,10 @@ public interface IConfiguration {
      * @param name the unique name of the configuration object
      * @param expectedType the expected object type
      *
-     * @return the configuration object, with all its {@link Option} fields set
-     *
-     * @throws ConfigurationException if config object could not be fully loaded, or was not the
-     * correct type
+     * @return the configuration object or <code>null</code> if the object type with given name
+     * does not exist.
      */
-    public Object getConfigurationObject(String name, Class<?> expectedType)
-            throws ConfigurationException;
+    public Object getConfigurationObject(String name);
 
     /**
      * Similar to {@link #getConfigurationObject(String, Class)}, but for configuration
@@ -111,13 +96,17 @@ public interface IConfiguration {
      * @param name the unique name of the configuration object
      * @param expectedType the expected object type
      *
-     * @return the list of configuration objects, with all its {@link Option} fields set
-     *
-     * @throws ConfigurationException if any of the config object could not be fully loaded, or
-     * were not the correct type
+     * @return the list of configuration objects or <code>null</code> if the object type with
+     * given name does not exist.
      */
-    public List<?> getConfigurationObjectList(String name, Class<?> expectedType)
-            throws ConfigurationException;
+    public List<?> getConfigurationObjectList(String name);
+
+    /**
+     * Gets a copy of the list of all configuration objects.
+     *
+     * @return a {@link Collection} of all configuration objects
+     */
+    public Collection<Object> getAllConfigurationObjects();
 
     /**
      * Inject a option value into the set of configuration objects.
@@ -132,10 +121,87 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
-     * Gets a copy of the list of all configuration objects.
+     * Create a copy of this object.
      *
-     * @return a {@link Collection} of all configuration objects
-     * @throws {@link ConfigurationException} if the config objects could not be fully loaded
+     * @return a {link IConfiguration} copy
      */
-    public Collection<Object> getAllConfigurationObjects() throws ConfigurationException;
+    public IConfiguration clone();
+
+    /**
+     * Replace the current {@link IBuildProvider} in the configuration.
+     *
+     * @param provider the new {@link IBuildProvider}
+     */
+    public void setBuildProvider(IBuildProvider provider);
+
+    /**
+     * Set the {@link ILeveledLogOutput}, replacing any existing value.
+     *
+     * @param logger
+     */
+    public void setLogOutput(ILeveledLogOutput logger);
+
+    /**
+     * Set the {@link IDeviceRecovery}, replacing any existing value.
+     *
+     * @param recovery
+     */
+    public void setDeviceRecovery(IDeviceRecovery recovery);
+
+    /**
+     * Set the {@link ITargetPreparer}, replacing any existing value.
+     *
+     * @param preparer
+     */
+    public void setTargetPreparer(ITargetPreparer preparer);
+
+    /**
+     * Convenience method to set a single {@link Test} in this configuration, replacing any
+     * existing values
+     *
+     * @param test
+     */
+    public void setTest(Test test);
+
+    /**
+     * Set the list of {@link Test}s in this configuration, replacing any
+     * existing values
+     *
+     * @param tests
+     */
+    public void setTests(List<Test> test);
+
+    /**
+     * Set the list of {@link ITestInvocationListener}s, replacing any existing values
+     *
+     * @param listeners
+     */
+    public void setTestInvocationListeners(List<ITestInvocationListener> listeners);
+
+    /**
+     * Convenience method to set a single {@link ITestInvocationListener}
+     *
+     * @param listener
+     */
+    void setTestInvocationListener(ITestInvocationListener listener);
+
+    /**
+     * Generic method to set the config object with the given name, replacing any existing value.
+     *
+     * @param name the unique name of the config object type.
+     * @param configObject the config object
+     * @throws ConfigurationException if the configObject was not the correct type
+     */
+    public void setConfigurationObject(String name, Object configObject)
+            throws ConfigurationException;
+
+    /**
+     * Generic method to set the config object list for the given name, replacing any existing
+     * value.
+     *
+     * @param name the unique name of the config object type.
+     * @param configList the config object list
+     * @throws ConfigurationException if any objects in the list are not the correct type
+     */
+    void setConfigurationObjectList(String name, List<?> configList) throws ConfigurationException;
 }

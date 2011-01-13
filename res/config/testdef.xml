@@ -14,13 +14,10 @@
      limitations under the License.
 -->
 <configuration
-	description="Runs tests contained in test_def.xml files on an existing device">
+    description="Runs tests contained in test_def.xml files on an existing device">
 
-	<build_provider class="com.android.tradefed.targetsetup.StubBuildProvider" />
-	<device_recovery class="com.android.tradefed.device.WaitDeviceRecovery" />
-	<target_preparer class="com.android.tradefed.targetsetup.StubTargetPreparer" />
-	<test class="com.android.tradefed.testtype.testdefs.XmlDefsTest" />
-	<logger class="com.android.tradefed.log.FileLogger" />
-	<result_reporter class="com.android.tradefed.result.XmlResultReporter" />
+    <test class="com.android.tradefed.testtype.testdefs.XmlDefsTest" />
+    <logger class="com.android.tradefed.log.FileLogger" />
+    <result_reporter class="com.android.tradefed.result.XmlResultReporter" />
 
 </configuration>

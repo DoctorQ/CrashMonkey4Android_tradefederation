@@ -15,21 +15,24 @@
  */
 package com.android.tradefed.config;
 
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.targetsetup.BuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
+import com.android.tradefed.targetsetup.TargetSetupError;
 
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestResult;
 
 /**
  * Unit tests for {@link Configuration}.
@@ -59,7 +62,6 @@ public class ConfigurationTest extends TestCase {
     }
 
     private Configuration mConfig;
-    private TestConfigObject mConfigObject;
 
     /**
      * {@inheritDoc}
@@ -68,8 +70,6 @@ public class ConfigurationTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mConfig = new Configuration();
-        mConfigObject = new TestConfigObject();
-        mConfig.addObject(CONFIG_OBJECT_NAME, mConfigObject);
     }
 
     /**
@@ -77,71 +77,95 @@ public class ConfigurationTest extends TestCase {
      * a previously stored object.
      */
     public void testGetConfigurationObject() throws ConfigurationException {
-        Object fromConfig = mConfig.getConfigurationObject(CONFIG_OBJECT_NAME, TestConfig.class);
-        assertEquals(mConfigObject, fromConfig);
+        TestConfigObject testConfigObject = new TestConfigObject();
+        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
+        Object fromConfig = mConfig.getConfigurationObject(CONFIG_OBJECT_NAME);
+        assertEquals(testConfigObject, fromConfig);
     }
 
     /**
-     * Test that {@link Configuration#getConfigurationObject(String, Class)} throws a
-     * {@link ConfigurationException} when config object with given name does not exist.
-     */
-    public void testGetConfigurationObject_wrongname()  {
-        try {
-            mConfig.getConfigurationObject("non-existent", TestConfig.class);
-            fail("getConfigurationObject did not throw ConfigurationException");
-        } catch (ConfigurationException e) {
-            // expected
-        }
-    }
-
-    /**
-     * Test that getConfigurationObject throws a ConfigurationException when config object exists,
-     * but it not the expected type.
-     */
-    public void testGetConfigurationObject_wrongtype()  {
-        try {
-            // arbitrarily, use the "Test" interface as expected type
-            mConfig.getConfigurationObject(CONFIG_OBJECT_NAME, Test.class);
-            fail("getConfigurationObject did not throw ConfigurationException");
-        } catch (ConfigurationException e) {
-            // expected
-        }
-    }
-
-    /**
-     * Test {@link Configuration#getConfigurationObjectList(String, Class)}
+     * Test {@link Configuration#getConfigurationObjectList(String)}
      */
     @SuppressWarnings("unchecked")
     public void testGetConfigurationObjectList() throws ConfigurationException  {
+        TestConfigObject testConfigObject = new TestConfigObject();
+        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
         List<TestConfig> configList = (List<TestConfig>)mConfig.getConfigurationObjectList(
-                CONFIG_OBJECT_NAME, TestConfig.class);
-        assertEquals(mConfigObject, configList.get(0));
+                CONFIG_OBJECT_NAME);
+        assertEquals(testConfigObject, configList.get(0));
+    }
+
+    /**
+     * Test that {@link Configuration#getConfigurationObject(String)} with a name that does
+     * not exist.
+     */
+    public void testGetConfigurationObject_wrongname()  {
+        assertNull(mConfig.getConfigurationObject("non-existent"));
+    }
+
+    /**
+     * Test that calling {@link Configuration#getConfigurationObject(String)} for a built-in config
+     * type that supports lists.
+     */
+    public void testGetConfigurationObject_typeIsList()  {
+        try {
+            mConfig.getConfigurationObject(Configuration.TEST_NAME);
+            fail("IllegalStateException not thrown");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that calling {@link Configuration#getConfigurationObject(String)} for a config type
+     * that is a list.
+     */
+    public void testGetConfigurationObject_forList() throws ConfigurationException  {
+        List<TestConfigObject> list = new ArrayList<TestConfigObject>();
+        list.add(new TestConfigObject());
+        list.add(new TestConfigObject());
+        mConfig.setConfigurationObjectList(CONFIG_OBJECT_NAME, list);
+        try {
+            mConfig.getConfigurationObject(CONFIG_OBJECT_NAME);
+            fail("IllegalStateException not thrown");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that setConfigurationObject throws a ConfigurationException when config object provided
+     * is not the correct type
+     */
+    public void testSetConfigurationObject_wrongtype()  {
+        try {
+            // arbitrarily, use the "Test" type as expected type
+            mConfig.setConfigurationObject(Configuration.TEST_NAME, new TestConfigObject());
+            fail("setConfigurationObject did not throw ConfigurationException");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 
     /**
      * Test {@link Configuration#getConfigurationObjectList(String, Class)} when config object
      * with given name does not exist.
      */
-    public void testGetConfigurationObjectList_wrongname() throws ConfigurationException  {
-        try {
-            mConfig.getConfigurationObjectList("non-existent", TestConfig.class);
-            fail("ConfigurationException not thrown");
-        } catch (ConfigurationException e) {
-            // expected
-        }
+    public void testGetConfigurationObjectList_wrongname() {
+        assertNull(mConfig.getConfigurationObjectList("non-existent"));
     }
 
     /**
-     * Test {@link Configuration#getConfigurationObjectList(String, Class)} when config object
-     * exists but is the wrong type
+     * Test {@link Configuration#setConfigurationObjectList(String, List)} when config object
+     * is the wrong type
      */
-    public void testGetConfigurationObjectList_wrongtype() throws ConfigurationException  {
-        // add a object of the wrong type
-        mConfig.addObject(CONFIG_OBJECT_NAME, new Object());
+    public void testSetConfigurationObjectList_wrongtype() throws ConfigurationException  {
         try {
-
-            mConfig.getConfigurationObjectList(CONFIG_OBJECT_NAME, TestConfig.class);
-            fail("ConfigurationException not thrown");
+            List<TestConfigObject> myList = new ArrayList<TestConfigObject>(1);
+            myList.add(new TestConfigObject());
+            // arbitrarily, use the "Test" type as expected type
+            mConfig.setConfigurationObjectList(Configuration.TEST_NAME, myList);
+            fail("setConfigurationObject did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
         }
@@ -150,54 +174,57 @@ public class ConfigurationTest extends TestCase {
     /**
      * Test method for {@link com.android.tradefed.config.Configuration#getBuildProvider()}.
      */
-    public void testGetBuildProvider() throws ConfigurationException {
+    public void testGetBuildProvider() throws ConfigurationException, TargetSetupError {
+        // check that the default provider is present and doesn't blow up
+        assertNotNull(mConfig.getBuildProvider().getBuild());
+        // check set and get
         final IBuildProvider provider = EasyMock.createMock(IBuildProvider.class);
-        mConfig.addObject(Configuration.BUILD_PROVIDER_NAME, provider);
+        mConfig.setBuildProvider(provider);
         assertEquals(provider, mConfig.getBuildProvider());
     }
 
     /**
      * Test method for {@link Configuration#getTargetPreparer()}.
      */
-    public void testGetTargetPreparers() throws ConfigurationException {
+    public void testGetTargetPreparers() throws Exception {
+        // check that the default preparer is present and doesn't blow up
+        mConfig.getTargetPreparers().get(0).setUp(null, null);
+        // test set and get
         final ITargetPreparer prep = EasyMock.createMock(ITargetPreparer.class);
-        final ITargetPreparer prep2 = EasyMock.createMock(ITargetPreparer.class);
-        mConfig.addObject(Configuration.TARGET_PREPARER_NAME, prep);
-        mConfig.addObject(Configuration.TARGET_PREPARER_NAME, prep2);
+        mConfig.setTargetPreparer(prep);
         assertEquals(prep, mConfig.getTargetPreparers().get(0));
-        assertEquals(prep2, mConfig.getTargetPreparers().get(1));
     }
 
     /**
      * Test method for {@link Configuration#getTests()}.
-     * @throws ConfigurationException
      */
     public void testGetTests() throws ConfigurationException {
-        final Test test1 = EasyMock.createMock(Test.class);
-        final Test test2 = EasyMock.createMock(Test.class);
-        mConfig.addObject(Configuration.TEST_NAME, test1);
-        mConfig.addObject(Configuration.TEST_NAME, test2);
-        assertTrue(mConfig.getTests().contains(test1));
-        assertTrue(mConfig.getTests().contains(test2));
+        // check that the default test is present and doesn't blow up
+        mConfig.getTests().get(0).run(new TestResult());
+        Test test1 = EasyMock.createMock(Test.class);
+        mConfig.setTest(test1);
+        assertEquals(test1, mConfig.getTests().get(0));
     }
 
     /**
      * Test method for {@link Configuration#getDeviceRecovery()}.
-     * @throws ConfigurationException
      */
     public void testGetDeviceRecovery() throws ConfigurationException {
+        // check that the default recovery is present
+        assertNotNull(mConfig.getDeviceRecovery());
         final IDeviceRecovery recovery = EasyMock.createMock(IDeviceRecovery.class);
-        mConfig.addObject(Configuration.DEVICE_RECOVERY_NAME, recovery);
+        mConfig.setDeviceRecovery(recovery);
         assertEquals(recovery, mConfig.getDeviceRecovery());
     }
 
     /**
      * Test method for {@link Configuration#getLogOutput()}.
-     * @throws ConfigurationException
      */
     public void testGetLogOutput() throws ConfigurationException {
+        // check that the default logger is present and doesn't blow up
+        mConfig.getLogOutput().printLog(LogLevel.INFO, "testGetLogOutput", "test");
         final ILeveledLogOutput logger = EasyMock.createMock(ILeveledLogOutput.class);
-        mConfig.addObject(Configuration.LOGGER_NAME, logger);
+        mConfig.setLogOutput(logger);
         assertEquals(logger, mConfig.getLogOutput());
     }
 
@@ -206,30 +233,27 @@ public class ConfigurationTest extends TestCase {
      * @throws ConfigurationException
      */
     public void testGetTestInvocationListeners() throws ConfigurationException {
+        // check that the default listener is present and doesn't blow up
+        ITestInvocationListener defaultListener = mConfig.getTestInvocationListeners().get(0);
+        defaultListener.invocationStarted(new BuildInfo());
+        defaultListener.invocationEnded(1);
+
         final ITestInvocationListener listener1 = EasyMock.createMock(
                 ITestInvocationListener.class);
-        final ITestInvocationListener listener2 = EasyMock.createMock(
-                ITestInvocationListener.class);
-        mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener1);
-        mConfig.addObject(Configuration.RESULT_REPORTER_NAME, listener2);
-        assertTrue(mConfig.getTestInvocationListeners().contains(listener1));
-        assertTrue(mConfig.getTestInvocationListeners().contains(listener2));
+        mConfig.setTestInvocationListener(listener1);
+        assertEquals(listener1, mConfig.getTestInvocationListeners().get(0));
     }
 
     /**
-     * Test {@link Configuration#Configuration(java.util.Map)} with a {@link IConfigurationReceiver}
-     * .
+     * Test {@link Configuration#setConfigurationObject(String, Object)} with a
+     * {@link IConfigurationReceiver}
      */
-    public void testConfiguration_configReceiver() throws ConfigurationException {
+    public void testSetConfigurationObject_configReceiver() throws ConfigurationException {
         final IConfigurationReceiver mockConfigReceiver = EasyMock.createMock(
                 IConfigurationReceiver.class);
-        mockConfigReceiver.setConfiguration((IConfiguration)EasyMock.anyObject());
+        mockConfigReceiver.setConfiguration(mConfig);
         EasyMock.replay(mockConfigReceiver);
-        Map<String, List<Object>> configMap = new HashMap<String, List<Object>>();
-        List<Object> configList = new ArrayList<Object>(1);
-        configList.add(mockConfigReceiver);
-        configMap.put("foo", configList);
-        new Configuration(configMap);
+        mConfig.setConfigurationObject("example", mockConfigReceiver);
         EasyMock.verify(mockConfigReceiver);
     }
 
@@ -237,7 +261,9 @@ public class ConfigurationTest extends TestCase {
      * Test {@link Configuration#injectOptionValue(String, String)}
      */
     public void testInjectOptionValue() throws ConfigurationException {
+        TestConfigObject testConfigObject = new TestConfigObject();
+        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
         mConfig.injectOptionValue(OPTION_NAME, Boolean.toString(true));
-        assertTrue(mConfigObject.getBool());
+        assertTrue(testConfigObject.getBool());
     }
 }

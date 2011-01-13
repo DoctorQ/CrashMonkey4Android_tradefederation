@@ -16,25 +16,28 @@
 package com.android.tradefed.config;
 
 import com.android.tradefed.device.IDeviceRecovery;
+import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.log.StdoutLogger;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
+import com.android.tradefed.targetsetup.StubBuildProvider;
+import com.android.tradefed.targetsetup.StubTargetPreparer;
+import com.android.tradefed.testtype.StubTest;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import junit.framework.Test;
 
 /**
  * A concrete {@link IConfiguration} implementation that stores the loaded config objects in a map
  */
-// TODO: make package-private
 public class Configuration implements IConfiguration {
 
     // names for built in configuration objects
@@ -45,78 +48,68 @@ public class Configuration implements IConfiguration {
     public static final String LOGGER_NAME = "logger";
     public static final String RESULT_REPORTER_NAME = "result_reporter";
 
-    private static Set<String> sObjNames = null;
-
-    static Set<String> getConfigObjNames() {
-        if (sObjNames == null) {
-            sObjNames = new HashSet<String>();
-            sObjNames.add(BUILD_PROVIDER_NAME);
-            sObjNames.add(TARGET_PREPARER_NAME);
-            sObjNames.add(TEST_NAME);
-            sObjNames.add(DEVICE_RECOVERY_NAME);
-            sObjNames.add(LOGGER_NAME);
-            sObjNames.add(RESULT_REPORTER_NAME);
-        }
-        return sObjNames;
-    }
+    private static Map<String, ObjTypeInfo> sObjTypeMap = null;
 
     /** Mapping of config object name to config objects. */
     private Map<String, List<Object>> mConfigMap;
 
     /**
-     * Creates a {@link Configuration} with no config objects.
-     * <p/>
-     * Exposed for unit testing
+     * Container struct for built-in config object type
      */
-    Configuration() {
-        this(new HashMap<String, List<Object>>());
-    }
+    private static class ObjTypeInfo {
+        final Class<?> mExpectedType;
+        /** true if a list (ie many objects in a single config) are supported for this type */
+        final boolean mIsListSupported;
 
-    /**
-     * Create a {@link Configuration}.
-     *
-     * @param configObjects the config object name to object list map. This {@link IConfiguration}
-     *            will be injected into any object in the map that is a
-     *            {@link IConfigurationReceiver}
-     */
-    Configuration(Map<String, List<Object>> configObjectMap) {
-        mConfigMap = configObjectMap;
-        for (List<Object> configObjectList : configObjectMap.values()) {
-            for (Object configObject : configObjectList)
-                if (configObject instanceof IConfigurationReceiver) {
-                    ((IConfigurationReceiver)configObject).setConfiguration(this);
-                }
+        ObjTypeInfo(Class<?> expectedType, boolean isList) {
+            mExpectedType = expectedType;
+            mIsListSupported = isList;
         }
     }
 
     /**
-     * Adds a loaded object to this configuration.
-     * <p/>
-     * Exposed for unit testing
+     * Determine if given config object type name is a built in object
      *
-     * @param name the unique name of the configuration object
-     * @param configObject the configuration object
-     *
+     * @param name the config name
+     * @return <code>true</code> if name is a built in object type
      */
-    void addObject(String name, Object configObject) {
-        List<Object> objList = mConfigMap.get(name);
-        if (objList == null) {
-            objList = new ArrayList<Object>(1);
-            mConfigMap.put(name, objList);
+    static boolean isBuiltInObjType(String name) {
+        return getObjTypeMap().containsKey(name);
+    }
+
+    private static synchronized Map<String, ObjTypeInfo> getObjTypeMap() {
+        if (sObjTypeMap == null) {
+            sObjTypeMap = new HashMap<String, ObjTypeInfo>();
+            sObjTypeMap.put(BUILD_PROVIDER_NAME, new ObjTypeInfo(IBuildProvider.class, false));
+            sObjTypeMap.put(TARGET_PREPARER_NAME, new ObjTypeInfo(ITargetPreparer.class, true));
+            sObjTypeMap.put(TEST_NAME, new ObjTypeInfo(Test.class, true));
+            sObjTypeMap.put(DEVICE_RECOVERY_NAME, new ObjTypeInfo(IDeviceRecovery.class, false));
+            sObjTypeMap.put(LOGGER_NAME, new ObjTypeInfo(ILeveledLogOutput.class, false));
+            sObjTypeMap.put(RESULT_REPORTER_NAME, new ObjTypeInfo(ITestInvocationListener.class,
+                    true));
         }
-        objList.add(configObject);
-        if (configObject instanceof IConfigurationReceiver) {
-            ((IConfigurationReceiver)configObject).setConfiguration(this);
-        }
+        return sObjTypeMap;
+    }
+
+    /**
+     * Creates an {@link Configuration} with default config objects.
+     */
+    public Configuration() {
+        mConfigMap = new HashMap<String, List<Object>>();
+        setBuildProvider(new StubBuildProvider());
+        setTargetPreparer(new StubTargetPreparer());
+        setTest(new StubTest());
+        setDeviceRecovery(new WaitDeviceRecovery());
+        setLogOutput(new StdoutLogger());
+        setTestInvocationListener(new TextResultReporter());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public IBuildProvider getBuildProvider() throws ConfigurationException {
-        return (IBuildProvider)getConfigurationObject(BUILD_PROVIDER_NAME,
-                IBuildProvider.class);
+    public IBuildProvider getBuildProvider() {
+        return (IBuildProvider)getConfigurationObject(BUILD_PROVIDER_NAME);
     }
 
     /**
@@ -124,9 +117,8 @@ public class Configuration implements IConfiguration {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public List<ITargetPreparer> getTargetPreparers() throws ConfigurationException {
-        return (List<ITargetPreparer>)getConfigurationObjectList(TARGET_PREPARER_NAME,
-                ITargetPreparer.class);
+    public List<ITargetPreparer> getTargetPreparers() {
+        return (List<ITargetPreparer>)getConfigurationObjectList(TARGET_PREPARER_NAME);
     }
 
     /**
@@ -134,26 +126,24 @@ public class Configuration implements IConfiguration {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public List<Test> getTests() throws ConfigurationException {
-        return (List<Test>)getConfigurationObjectList(TEST_NAME, Test.class);
+    public List<Test> getTests() {
+        return (List<Test>)getConfigurationObjectList(TEST_NAME);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public IDeviceRecovery getDeviceRecovery() throws ConfigurationException {
-        return (IDeviceRecovery)getConfigurationObject(DEVICE_RECOVERY_NAME,
-                IDeviceRecovery.class);
+    public IDeviceRecovery getDeviceRecovery() {
+        return (IDeviceRecovery)getConfigurationObject(DEVICE_RECOVERY_NAME);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public ILeveledLogOutput getLogOutput() throws ConfigurationException {
-        return (ILeveledLogOutput)getConfigurationObject(LOGGER_NAME,
-                ILeveledLogOutput.class);
+    public ILeveledLogOutput getLogOutput() {
+        return (ILeveledLogOutput)getConfigurationObject(LOGGER_NAME);
     }
 
     /**
@@ -161,43 +151,36 @@ public class Configuration implements IConfiguration {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public List<ITestInvocationListener> getTestInvocationListeners() throws ConfigurationException {
-        return (List<ITestInvocationListener>)getConfigurationObjectList(RESULT_REPORTER_NAME,
-                ITestInvocationListener.class);
+    public List<ITestInvocationListener> getTestInvocationListeners() {
+        return (List<ITestInvocationListener>)getConfigurationObjectList(RESULT_REPORTER_NAME);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<?> getConfigurationObjectList(String name, Class<?> expectedType)
-        throws ConfigurationException {
-        List<Object> configObjects = mConfigMap.get(name);
+    public List<?> getConfigurationObjectList(String name) {
+        return mConfigMap.get(name);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Object getConfigurationObject(String name) {
+        List<?> configObjects = getConfigurationObjectList(name);
         if (configObjects == null) {
-            throw new ConfigurationException(String.format(
-                    "Could not find config object with name %s", name));
+            return null;
         }
-        for (Object object : configObjects) {
-            if (!expectedType.isInstance(object)) {
-                throw new ConfigurationException(String.format(
-                        "The config object %s is not the correct type. Expected %s, received %s",
-                        name, expectedType.getCanonicalName(),
-                        object.getClass().getCanonicalName()));
-            }
+        ObjTypeInfo typeInfo = getObjTypeMap().get(name);
+        if (typeInfo != null && typeInfo.mIsListSupported) {
+            throw new IllegalStateException(String.format("Wrong method call. " +
+                    "Used getConfigurationObject() for a config object that is stored as a list",
+                        name));
         }
-        return configObjects;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Object getConfigurationObject(String name, Class<?> expectedType)
-            throws ConfigurationException {
-        List<?> configObjects = getConfigurationObjectList(name, expectedType);
         if (configObjects.size() != 1) {
-            throw new ConfigurationException(String.format(
-                    "Only one config object allowed for %s, but %d were specified.",
+            throw new IllegalStateException(String.format(
+                    "Attempted to retrieve single object for %s, but %d are present",
                     name, configObjects.size()));
         }
         return configObjects.get(0);
@@ -223,5 +206,179 @@ public class Configuration implements IConfiguration {
             throws ConfigurationException {
         OptionSetter optionSetter = new OptionSetter(getAllConfigurationObjects());
         optionSetter.setOptionValue(optionName, valueText);
+    }
+
+    /**
+     * Creates a shallow copy of this object.
+     */
+    @Override
+    public Configuration clone() {
+        Configuration clone = new Configuration();
+        for (Map.Entry<String, List<Object>> entry : mConfigMap.entrySet()) {
+            clone.setConfigurationObjectListNoThrow(entry.getKey(), entry.getValue());
+        }
+        return clone;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildProvider(IBuildProvider provider) {
+        setConfigurationObjectNoThrow(BUILD_PROVIDER_NAME, provider);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTestInvocationListeners(List<ITestInvocationListener> listeners) {
+        setConfigurationObjectListNoThrow(RESULT_REPORTER_NAME, listeners);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTestInvocationListener(ITestInvocationListener listener) {
+        setConfigurationObjectNoThrow(RESULT_REPORTER_NAME, listener);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTest(Test test) {
+        setConfigurationObjectNoThrow(TEST_NAME, test);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTests(List<Test> tests) {
+        setConfigurationObjectListNoThrow(TEST_NAME, tests);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLogOutput(ILeveledLogOutput logger) {
+        setConfigurationObjectNoThrow(LOGGER_NAME, logger);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDeviceRecovery(IDeviceRecovery recovery) {
+        setConfigurationObjectNoThrow(DEVICE_RECOVERY_NAME, recovery);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTargetPreparer(ITargetPreparer preparer) {
+        setConfigurationObjectNoThrow(TARGET_PREPARER_NAME, preparer);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setConfigurationObject(String name, Object configObject)
+            throws ConfigurationException {
+        if (configObject == null) {
+            throw new IllegalArgumentException("configObject cannot be null");
+        }
+        mConfigMap.remove(name);
+        addObject(name, configObject);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setConfigurationObjectList(String name, List<?> configList)
+            throws ConfigurationException {
+        if (configList == null) {
+            throw new IllegalArgumentException("configList cannot be null");
+        }
+        mConfigMap.remove(name);
+        for (Object configObject : configList) {
+            addObject(name, configObject);
+        }
+    }
+
+    /**
+     * Adds a loaded object to this configuration.
+     *
+     * @param name the unique name of the configuration object
+     * @param configObject the configuration object
+     * @throws ConfigurationException if object was not the correct type
+     */
+    private void addObject(String name, Object configObject) throws ConfigurationException {
+        List<Object> objList = mConfigMap.get(name);
+        if (objList == null) {
+            objList = new ArrayList<Object>(1);
+            mConfigMap.put(name, objList);
+        }
+        ObjTypeInfo typeInfo = getObjTypeMap().get(name);
+        if (typeInfo != null && !typeInfo.mExpectedType.isInstance(configObject)) {
+            throw new ConfigurationException(String.format(
+                    "The config object %s is not the correct type. Expected %s, received %s",
+                    name, typeInfo.mExpectedType.getCanonicalName(),
+                    configObject.getClass().getCanonicalName()));
+        }
+        if (typeInfo != null && !typeInfo.mIsListSupported && objList.size() > 0) {
+            throw new ConfigurationException(String.format(
+                    "Only one config object allowed for %s, but multiple were specified.",
+                    name));
+        }
+        objList.add(configObject);
+        if (configObject instanceof IConfigurationReceiver) {
+            // TODO: this won't work properly if config object is shared among configurations
+            ((IConfigurationReceiver)configObject).setConfiguration(this);
+        }
+    }
+
+    /**
+     * A wrapper around {@link #setConfigurationObject(String, Object)} that will not throw
+     * {@link ConfigurationException}.
+     * <p/>
+     * Intended to be used in cases where its guaranteed that <var>configObject</var> is the
+     * correct type.
+     *
+     * @param name
+     * @param configObject
+     */
+    private void setConfigurationObjectNoThrow(String name, Object configObject) {
+        try {
+            setConfigurationObject(name, configObject);
+        } catch (ConfigurationException e) {
+            // should never happen
+            throw new IllegalArgumentException(e);
+        }
+    }
+
+    /**
+     * A wrapper around {@link #setConfigurationObjectList(String, List)} that will not throw
+     * {@link ConfigurationException}.
+     * <p/>
+     * Intended to be used in cases where its guaranteed that <var>configObject</var> is the
+     * correct type
+     *
+     * @param name
+     * @param configObject
+     */
+    private void setConfigurationObjectListNoThrow(String name, List<?> configList) {
+        try {
+            setConfigurationObjectList(name, configList);
+        } catch (ConfigurationException e) {
+            // should never happen
+            throw new IllegalArgumentException(e);
+        }
     }
 }
