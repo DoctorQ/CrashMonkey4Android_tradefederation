@@ -117,6 +117,13 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    public boolean waitForDeviceInRecovery(long waitTime) {
+        return waitForDeviceState(TestDeviceState.RECOVERY, waitTime);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public IDevice waitForDeviceAvailable(final long waitTime) {
         // A device is currently considered "available" if and only if three events are true:
         // 1. Device is online aka visible via DDMS/adb

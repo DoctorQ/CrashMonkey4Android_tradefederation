@@ -19,6 +19,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
+import com.android.ddmlib.IDevice.DeviceState;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -76,6 +77,8 @@ class TestDevice implements IManagedTestDevice {
     private int mLogStartDelay = 5*1000;
     /** The time in ms to wait for a device to boot into fastboot. */
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
+    /** The time in ms to wait for a device to boot into recovery. */
+    private static final int ADB_RECOVERY_TIMEOUT = 1 * 60 * 1000;
     /** number of attempts made to clear dialogs */
     private static final int NUM_CLEAR_ATTEMPTS = 5;
     /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
@@ -1470,6 +1473,23 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public void rebootIntoRecovery() throws DeviceNotAvailableException {
+        if (TestDeviceState.FASTBOOT == getDeviceState()) {
+            Log.w(LOG_TAG, String.format(
+                    "device %s in fastboot when requesting boot to recovery. " +
+                    "Rebooting to userspace first.", getSerialNumber()));
+            rebootUntilOnline();
+        }
+        doAdbReboot("recovery");
+        if (!waitForDeviceInRecovery(ADB_RECOVERY_TIMEOUT)) {
+            // TODO: add a recoverDeviceInRecovery() type method
+            throw new DeviceNotAvailableException();
+        }
+    }
+
+    /**
      * @throws DeviceNotAvailableException
      */
     private void doReboot() throws DeviceNotAvailableException {
@@ -1574,6 +1594,13 @@ class TestDevice implements IManagedTestDevice {
      */
     public boolean waitForDeviceNotAvailable(long waitTime) {
         return mMonitor.waitForDeviceNotAvailable(waitTime);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean waitForDeviceInRecovery(long waitTime) {
+        return mMonitor.waitForDeviceInRecovery(waitTime);
     }
 
     void setEnableAdbRoot(boolean enable) {

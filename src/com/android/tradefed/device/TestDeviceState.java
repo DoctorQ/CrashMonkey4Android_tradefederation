@@ -27,9 +27,8 @@ public enum TestDeviceState {
     FASTBOOT,
     ONLINE,
     OFFLINE,
+    RECOVERY,
     NOT_AVAILABLE;
-
-    // TODO: add recovery state and means to detect it via ddms
 
     /**
      * Converts from {@link TestDeviceState} to {@link DeviceState}
@@ -41,6 +40,8 @@ public enum TestDeviceState {
                 return DeviceState.ONLINE;
             case OFFLINE:
                 return DeviceState.OFFLINE;
+            case RECOVERY:
+                return DeviceState.RECOVERY;
             default:
                 return null;
         }
@@ -59,6 +60,8 @@ public enum TestDeviceState {
                 return TestDeviceState.ONLINE;
             case OFFLINE:
                 return TestDeviceState.OFFLINE;
+            case RECOVERY:
+                return TestDeviceState.RECOVERY;
         }
         return TestDeviceState.NOT_AVAILABLE;
     }

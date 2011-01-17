@@ -326,4 +326,20 @@ public class StubTestDevice implements IManagedTestDevice {
             throws DeviceNotAvailableException {
         // ignore
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean waitForDeviceInRecovery(long waitTime) {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void rebootIntoRecovery() throws DeviceNotAvailableException {
+        // ignore
+    }
 }

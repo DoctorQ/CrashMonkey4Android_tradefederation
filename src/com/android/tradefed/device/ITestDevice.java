@@ -358,6 +358,15 @@ public interface ITestDevice {
     public void reboot() throws DeviceNotAvailableException;
 
     /**
+     * Reboots the device into adb recovery mode.
+     * <p/>
+     * Blocks until device enters recovery
+     *
+     * @throws DeviceNotAvailableException if device is not available after reboot
+     */
+    public void rebootIntoRecovery() throws DeviceNotAvailableException;
+
+    /**
      * An alternate to {@link #reboot()} that only blocks until device is online ie visible to adb.
      *
      * @throws DeviceNotAvailableException if device is not available after reboot
@@ -423,6 +432,16 @@ public interface ITestDevice {
      *         <code>false</code> otherwise
      */
     public boolean waitForDeviceNotAvailable(final long waitTime);
+
+    /**
+     * Blocks for the device to be in the 'adb recovery' state (note this is distinct from
+     * {@link IDeviceRecovery}).
+     *
+     * @param waitTime the time in ms to wait
+     * @return <code>true</code> if device boots into recovery before time expires.
+     *         <code>false</code> otherwise
+     */
+    public boolean waitForDeviceInRecovery(final long waitTime);
 
     /**
      * Perform instructions to configure device for testing that after every boot.

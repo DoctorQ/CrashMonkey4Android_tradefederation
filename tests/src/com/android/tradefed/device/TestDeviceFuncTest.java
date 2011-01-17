@@ -294,6 +294,19 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Verify device can be rebooted into adb recovery.
+     */
+    public void testRebootIntoRecovery() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testRebootIntoRecovery");
+        try {
+            mTestDevice.rebootIntoRecovery();
+            assertEquals(TestDeviceState.RECOVERY, mMonitor.getDeviceState());
+        } finally {
+            mTestDevice.reboot();
+        }
+    }
+
+    /**
      * Verify that {@link TestDevice#clearErrorDialogs()} can successfully clear an error dialog
      * from screen.
      * <p/>

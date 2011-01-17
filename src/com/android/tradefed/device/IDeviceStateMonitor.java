@@ -92,6 +92,14 @@ public interface IDeviceStateMonitor {
     public boolean waitForDeviceNotAvailable(long waitTime);
 
     /**
+     * Waits for the device to be in the 'adb recovery' state
+     *
+     * @param waitTime the maximum time in ms to wait
+     * @return
+     */
+    public boolean waitForDeviceInRecovery(long waitTime);
+
+    /**
      * Gets the serial number of the device.
      */
     public String getSerialNumber();
