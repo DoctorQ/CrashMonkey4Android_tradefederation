@@ -83,6 +83,8 @@ public class XmlResultReporter extends CollectingTestListener {
     private ILogFileSaver mLogFileSaver;
     private IBuildInfo mBuildInfo;
 
+    private String mReportPath = "";
+
     /**
      * {@inheritDoc}
      */
@@ -125,7 +127,7 @@ public class XmlResultReporter extends CollectingTestListener {
             printTestResults(serializer, timestamp, elapsedTime);
             serializer.endDocument();
             String msg = String.format("XML test result file generated at %s. Total tests %d, " +
-                    "Failed %d, Error %d", reportDir.getAbsolutePath(), getNumTotalTests(),
+                    "Failed %d, Error %d", getAbsoluteReportPath(), getNumTotalTests(),
                     getNumFailedTests(), getNumErrorTests());
             Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg);
         } catch (IOException e) {
@@ -139,6 +141,10 @@ public class XmlResultReporter extends CollectingTestListener {
                 }
             }
         }
+    }
+
+    private String getAbsoluteReportPath() {
+        return mReportPath ;
     }
 
     /**
@@ -161,6 +167,7 @@ public class XmlResultReporter extends CollectingTestListener {
                 reportDir);
         Log.i(LOG_TAG, String.format("Created xml report file at %s",
                 reportFile.getAbsolutePath()));
+        mReportPath = reportFile.getAbsolutePath();
         return new FileOutputStream(reportFile);
     }
 
@@ -234,7 +241,9 @@ public class XmlResultReporter extends CollectingTestListener {
     @Override
     public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
         try {
-            mLogFileSaver.saveLogData(dataName, dataType, dataStream);
+            File logFile = mLogFileSaver.saveLogData(dataName, dataType, dataStream);
+            Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format("Saved %s log to %s", dataName,
+                    logFile.getAbsolutePath()));
         } catch (IOException e) {
             Log.e(LOG_TAG, "Failed to save log data");
             Log.e(LOG_TAG, e);
