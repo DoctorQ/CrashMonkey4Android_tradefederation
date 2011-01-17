@@ -35,6 +35,7 @@ import com.android.tradefed.targetsetup.IBuildInfo;
 import com.android.tradefed.targetsetup.IBuildProvider;
 import com.android.tradefed.targetsetup.ITargetPreparer;
 import com.android.tradefed.targetsetup.TargetSetupError;
+import com.android.tradefed.testtype.IBuildReceiver;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
@@ -349,6 +350,9 @@ public class TestInvocation implements ITestInvocation {
         for (Test test : config.getTests()) {
             if (test instanceof IDeviceTest) {
                 ((IDeviceTest)test).setDevice(device);
+            }
+            if (test instanceof IBuildReceiver) {
+                ((IBuildReceiver)test).setBuild(buildInfo);
             }
             if (test instanceof IRemoteTest) {
                 // run as a remote test, so results are forwarded directly to TestInvocationListener
