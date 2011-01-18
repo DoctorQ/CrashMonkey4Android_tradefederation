@@ -82,5 +82,63 @@ public class DeviceSelectionMatcherTest extends TestCase {
 
         assertTrue(DeviceSelectionMatcher.matches(mMockDevice, options));
     }
+
+    /**
+     * Test matching by property
+     */
+    public void testMatches_property() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProperty("prop1=propvalue");
+
+        EasyMock.expect(mMockDevice.getProperty("prop1")).andReturn("propvalue");
+        EasyMock.replay(mMockDevice);
+
+        assertTrue(DeviceSelectionMatcher.matches(mMockDevice, options));
+    }
+
+    /**
+     * Test negative case for matching by property
+     */
+    public void testMatches_propertyNotMatch() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProperty("prop1=propvalue");
+
+        EasyMock.expect(mMockDevice.getProperty("prop1")).andReturn("wrongvalue");
+        EasyMock.replay(mMockDevice);
+        assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
+        EasyMock.verify(mMockDevice);
+
+    }
+
+    /**
+     * Test for matching by multiple properties
+     */
+    public void testMatches_multipleProperty() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProperty("prop1=propvalue");
+        options.addProperty("prop2=propvalue2");
+
+        EasyMock.expect(mMockDevice.getProperty("prop1")).andReturn("propvalue");
+        EasyMock.expect(mMockDevice.getProperty("prop2")).andReturn("propvalue2");
+        EasyMock.replay(mMockDevice);
+        assertTrue(DeviceSelectionMatcher.matches(mMockDevice, options));
+        EasyMock.verify(mMockDevice);
+    }
+
+    /**
+     * Test for matching by multiple properties, when one property does not match
+     */
+    public void testMatches_notMultipleProperty() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProperty("prop1=propvalue");
+        options.addProperty("prop2=propvalue2");
+
+        EasyMock.expect(mMockDevice.getProperty("prop1")).andReturn("propvalue");
+        EasyMock.expect(mMockDevice.getProperty("prop2")).andReturn("wrongpropvalue");
+        EasyMock.replay(mMockDevice);
+        assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
+        // don't verify in this case, because order of property checks is not deterministic
+        // EasyMock.verify(mMockDevice);
+    }
 }
 
