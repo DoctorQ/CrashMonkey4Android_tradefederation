@@ -19,13 +19,6 @@ package com.android.tradefed.targetsetup;
 import com.android.ddmlib.IDevice;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetsetup.BuildError;
-import com.android.tradefed.targetsetup.DeviceBuildInfo;
-import com.android.tradefed.targetsetup.DeviceSetup;
-import com.android.tradefed.targetsetup.IBuildInfo;
-import com.android.tradefed.targetsetup.IDeviceFlasher;
-import com.android.tradefed.targetsetup.TargetSetupError;
-import com.android.tradefed.targetsetup.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.FileUtil;
 
 import org.easymock.EasyMock;
@@ -40,7 +33,6 @@ import junit.framework.TestCase;
  */
 public class DeviceSetupTest extends TestCase {
 
-    private IDeviceFlasher mMockFlasher;
     private DeviceSetup mDeviceSetup;
     private ITestDevice mMockDevice;
     private IDevice mMockIDevice;
@@ -53,25 +45,11 @@ public class DeviceSetupTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mMockFlasher = EasyMock.createMock(IDeviceFlasher.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         mMockIDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andReturn("foo").anyTimes();
         mMockBuildInfo = new DeviceBuildInfo(0, "", "");
-        mDeviceSetup = new DeviceSetup() {
-            @Override
-            protected IDeviceFlasher createFlasher(ITestDevice device) {
-                return mMockFlasher;
-            }
-
-            @Override
-            int getDeviceBootPollTimeMs() {
-                return 100;
-            }
-        };
-        mDeviceSetup.setDeviceBootTime(100);
-        // expect this call
-        mMockFlasher.setUserDataFlashOption(UserDataFlashOption.FLASH);
+        mDeviceSetup = new DeviceSetup();
         mDeviceSetup.setMinExternalStoreSpace(-1);
         mTmpDir = FileUtil.createTempDir("tmp");
     }
@@ -90,7 +68,7 @@ public class DeviceSetupTest extends TestCase {
      */
     public void testSetup() throws Exception {
         doSetupExpectations();
-        EasyMock.replay(mMockFlasher, mMockDevice);
+        EasyMock.replay(mMockDevice);
         mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
     }
 
@@ -98,9 +76,6 @@ public class DeviceSetupTest extends TestCase {
      * Set EasyMock expectations for a normal setup call
      */
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
-        mMockFlasher.flash(mMockDevice, mMockBuildInfo);
-        mMockDevice.waitForDeviceOnline();
-        mMockDevice.waitForDeviceAvailable();
         EasyMock.expect(mMockDevice.enableAdbRoot()).andReturn(Boolean.TRUE);
         mMockDevice.postBootSetup();
         EasyMock.expect(mMockDevice.clearErrorDialogs()).andReturn(Boolean.TRUE);
@@ -115,48 +90,17 @@ public class DeviceSetupTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceSetupr#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
-     * is provided
-     */
-    public void testSetUp_nonDevice() throws Exception {
-        try {
-            mDeviceSetup.setUp(mMockDevice, EasyMock.createMock(IBuildInfo.class));
-            fail("IllegalArgumentException not thrown");
-        } catch (IllegalArgumentException e) {
-            // expected
-        }
-    }
-
-    /**
      * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when free space check fails.
      */
     public void testSetup_freespace() throws Exception {
         doSetupExpectations();
         mDeviceSetup.setMinExternalStoreSpace(500);
         EasyMock.expect(mMockDevice.getExternalStoreFreeSpace()).andReturn(1L);
-        EasyMock.replay(mMockFlasher, mMockDevice);
+        EasyMock.replay(mMockDevice);
         try {
             mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
-            // expected
-        }
-    }
-
-    /**
-     * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when build does not boot
-     */
-    public void testSetup_buildError() throws Exception {
-        mMockFlasher.flash(mMockDevice, mMockBuildInfo);
-        mMockDevice.waitForDeviceOnline();
-        EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
-        EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
-                andReturn("").anyTimes();
-        EasyMock.replay(mMockFlasher, mMockDevice);
-        try {
-            mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
-            fail("BuildError not thrown");
-        } catch (BuildError e) {
             // expected
         }
     }
@@ -168,7 +112,7 @@ public class DeviceSetupTest extends TestCase {
     public void testSetup_badLocalData() throws Exception {
         doSetupExpectations();
         mDeviceSetup.setLocalDataPath(new File("idontexist"));
-        EasyMock.replay(mMockFlasher, mMockDevice);
+        EasyMock.replay(mMockDevice);
         try {
             mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
             fail("TargetSetupError not thrown");
@@ -185,7 +129,7 @@ public class DeviceSetupTest extends TestCase {
         doSetupExpectations();
         doSyncDataExpectations(true);
 
-        EasyMock.replay(mMockFlasher, mMockDevice, mMockIDevice);
+        EasyMock.replay(mMockDevice, mMockIDevice);
         mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
     }
 
@@ -209,7 +153,7 @@ public class DeviceSetupTest extends TestCase {
     public void testSetup_syncDataFails() throws Exception {
         doSetupExpectations();
         doSyncDataExpectations(false);
-        EasyMock.replay(mMockFlasher, mMockDevice, mMockIDevice);
+        EasyMock.replay(mMockDevice, mMockIDevice);
         try {
             mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
             fail("DeviceNotAvailableException not thrown");

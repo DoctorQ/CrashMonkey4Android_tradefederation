@@ -17,15 +17,8 @@
 package com.android.tradefed.targetsetup;
 
 import com.android.ddmlib.Log;
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetsetup.DeviceBuildInfo;
-import com.android.tradefed.targetsetup.DeviceSetup;
-import com.android.tradefed.targetsetup.IBuildInfo;
-import com.android.tradefed.targetsetup.IDeviceFlasher;
-import com.android.tradefed.targetsetup.TargetSetupError;
 import com.android.tradefed.testtype.DeviceTestCase;
-import com.android.tradefed.util.RunUtil;
 
 /**
  * Functional tests for {@link DeviceSetup}.
@@ -33,7 +26,6 @@ import com.android.tradefed.util.RunUtil;
 public class DeviceSetupFuncTest extends DeviceTestCase {
 
     private static final String LOG_TAG = "DeviceSetupFuncTest";
-    private IDeviceFlasher mMockFlasher;
     private DeviceSetup mDeviceSetup;
     private IDeviceBuildInfo mMockBuildInfo;
 
@@ -44,32 +36,8 @@ public class DeviceSetupFuncTest extends DeviceTestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        mMockFlasher = new IDeviceFlasher() {
-
-            public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
-                    throws TargetSetupError {
-                // reboot device under test to simulate a flash
-                try {
-                    device.executeAdbCommand("reboot");
-                    // TODO: wait for device to be unavailable instead of sleeping
-                    RunUtil.getInstance().sleep(500);
-                } catch (DeviceNotAvailableException e) {
-                    throw new TargetSetupError("device not avail", e);
-                }
-            }
-
-            public void setUserDataFlashOption(UserDataFlashOption flashOption) {
-                // ignore
-            }
-
-        };
         mMockBuildInfo = new DeviceBuildInfo(0, "", "");
-        mDeviceSetup = new DeviceSetup() {
-            @Override
-            protected IDeviceFlasher createFlasher(ITestDevice device) {
-                return mMockFlasher;
-            }
-        };
+        mDeviceSetup = new DeviceSetup();
     }
 
     /**

@@ -21,25 +21,19 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetsetup.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.FileUtil;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.io.IOException;
 
 /**
- * A {@link ITargetPreparer} that flashes an image on physical Android hardware, and prepares
- * device for testing.
+ * A {@link ITargetPreparer} that configures a device for testing based on provided {@link Option}s.
  * <p/>
- * TODO: split flashing and device setup into separate {@link ITargetPreparer}s.
+ * Should be performed *after* a new build is flashed.
  */
 public class DeviceSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "DeviceSetup";
-
-    private static final int BOOT_POLL_TIME_MS = 5 * 1000;
 
     @Option(name="wifi-network", description="the name of wifi network to connect to")
     private String mWifiNetwork = null;
@@ -76,17 +70,6 @@ public class DeviceSetup implements ITargetPreparer {
         + "Allows package-private framework tests to run.")
     private boolean mDisableDalvikVerifier = false;
 
-    @Option(name="device-boot-time", description="max time in ms to wait for device to boot. " +
-            "Default 5 minutes.")
-    private long mDeviceBootTime = 5 * 60 * 1000;
-
-    @Option(name="skip-flash", description="don't flash a new build on device ie setup only")
-    private boolean mSkipFlash = false;
-
-    @Option(name="userdata-flash", description=
-        "specify handling of userdata partition. One of FLASH (default), TESTS_ZIP, WIPE, SKIP")
-    private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
-
     /**
      * Sets the local data path to use
      * <p/>
@@ -115,24 +98,6 @@ public class DeviceSetup implements ITargetPreparer {
     }
 
     /**
-     * Sets the device boot time
-     * <p/>
-     * Exposed for unit testing
-     */
-    void setDeviceBootTime(long bootTime) {
-        mDeviceBootTime = bootTime;
-    }
-
-    /**
-     * Gets the interval between device boot poll attempts.
-     * <p/>
-     * Exposed for unit testing
-     */
-    int getDeviceBootPollTimeMs() {
-        return BOOT_POLL_TIME_MS;
-    }
-
-    /**
      * Sets the minimum external store space
      * <p/>
      * Exposed for unit testing
@@ -142,75 +107,11 @@ public class DeviceSetup implements ITargetPreparer {
     }
 
     /**
-     * Gets the {@link IRunUtil} instance to use.
-     * <p/>
-     * Exposed for unit testing
-     */
-    IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
-    }
-
-    /**
      * {@inheritDoc}
      */
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException, BuildError {
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        if (!mSkipFlash) {
-            if (!(buildInfo instanceof IDeviceBuildInfo)) {
-                throw new IllegalArgumentException("Provided buildInfo is not a IDeviceBuildInfo");
-            }
-            IDeviceBuildInfo deviceBuild = (IDeviceBuildInfo)buildInfo;
-
-            IDeviceFlasher flasher = createFlasher(device);
-            flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
-            flasher.flash(device, deviceBuild);
-            device.waitForDeviceOnline();
-            // TODO: consider optimizing this into setup steps that can be performed before device
-            // boots
-            waitForBootComplete(device, buildInfo.getBuildId());
-            device.waitForDeviceAvailable();
-        }
-        configureDevice(device);
-    }
-
-    /**
-     * Create {@link IDeviceFlasher} to use. Subclasses should override
-     * @throws DeviceNotAvailableException
-     */
-    protected IDeviceFlasher createFlasher(ITestDevice device) throws DeviceNotAvailableException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Blocks until the device's boot complete flag is set
-     *
-     * @param device the {@link ITestDevice}
-     * @param buildId the build id of current build. Used for logging purposes
-     * @throws DeviceNotAvailableException, BuildError
-     */
-    private void waitForBootComplete(ITestDevice device, int buildId)
-            throws DeviceNotAvailableException, BuildError {
-        long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < mDeviceBootTime) {
-            String output = device.executeShellCommand("getprop dev.bootcomplete");
-            output = output.replace('#', ' ').trim();
-            if (output.equals("1")) {
-                return;
-            }
-            getRunUtil().sleep(getDeviceBootPollTimeMs());
-        }
-        throw new BuildError(String.format("Device %s running build %d did not boot after %d ms",
-                device.getSerialNumber(), buildId, mDeviceBootTime));
-    }
-
-    /**
-     * Configure device for testing based on provided {@link Option}'s
-     *
-     * @param device
-     */
-    protected void configureDevice(ITestDevice device) throws DeviceNotAvailableException,
-            TargetSetupError {
 
         device.enableAdbRoot();
 
