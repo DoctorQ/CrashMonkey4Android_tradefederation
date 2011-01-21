@@ -15,15 +15,20 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Container for for device selection criteria.
  */
 public class DeviceSelectionOptions {
+
+    private static final String LOG_TAG = "DeviceSelectionOptions";
 
     @Option(name="serial", shortName='s', description=
         "run this test on a specific device with given serial number(s)")
@@ -36,6 +41,11 @@ public class DeviceSelectionOptions {
     @Option(name="product-type", description=
         "run this test on device with this product type(s)")
     private Collection<String> mProductTypes = new ArrayList<String>();
+
+    @Option(name="property", description=
+        "run this test on device with this property value. " +
+        "Expected format <propertyname>=<propertyvalue>")
+    private Collection<String> mPropertyStrings = new ArrayList<String>();
 
     /**
      * Add a serial number to the device selection options.
@@ -65,6 +75,15 @@ public class DeviceSelectionOptions {
     }
 
     /**
+     * Add a property criteria to the device selection options
+     *
+     * @param propertyKeyValue a property to match. Expected format propertykey=propertyvalue
+     */
+    public void addProperty(String propertyKeyValue) {
+        mPropertyStrings.add(propertyKeyValue);
+    }
+
+    /**
      * Gets a copy of the serial numbers
      *
      * @return a {@link Collection} of serial numbers
@@ -89,6 +108,25 @@ public class DeviceSelectionOptions {
      */
     public Collection<String> getProductTypes() {
         return copyCollection(mProductTypes);
+    }
+
+    /**
+     * Returns a map of the property list
+     *
+     * @return a {@link Map} of device property names to values
+     */
+    public Map<String, String> getProperties() {
+        Map<String, String> propertyMap = new HashMap<String, String>(mPropertyStrings.size());
+        for (String propertyKeyValue : mPropertyStrings) {
+            String[] keyValuePair =  propertyKeyValue.split("=");
+            if (keyValuePair.length == 2) {
+                propertyMap.put(keyValuePair[0], keyValuePair[1]);
+            } else {
+                Log.e(LOG_TAG, String.format("Unrecognized property key value pair: '%s'",
+                        propertyKeyValue));
+            }
+        }
+        return propertyMap;
     }
 
     private Collection<String> copyCollection(Collection<String> original) {

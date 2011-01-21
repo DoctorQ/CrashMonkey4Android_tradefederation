@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Helper class to determine if a given {@link IDevice} matches a
@@ -33,6 +34,7 @@ public class DeviceSelectionMatcher {
         Collection<String> serials = deviceOptions.getSerials();
         Collection<String> excludeSerials = deviceOptions.getExcludeSerials();
         Collection<String> productTypes = deviceOptions.getProductTypes();
+        Map<String, String> properties = deviceOptions.getProperties();
 
         if (!serials.isEmpty() &&
                 !serials.contains(device.getSerialNumber())) {
@@ -45,10 +47,16 @@ public class DeviceSelectionMatcher {
                 !productTypes.contains(getDeviceProductType(device))) {
             return false;
         }
+        for (Map.Entry<String, String> propEntry : properties.entrySet()) {
+            if (!propEntry.getValue().equals(device.getProperty(propEntry.getKey()))) {
+                return false;
+            }
+        }
         return true;
     }
 
     private static String getDeviceProductType(IDevice device) {
+        // TODO: merge this into the getProperties match
         String type = device.getProperty("ro.product.board");
         if(type == null || type.isEmpty()) {
             // last-chance fallback to ro.product.device, which may be set if ro.product.board isn't
