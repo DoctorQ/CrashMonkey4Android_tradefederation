@@ -23,7 +23,7 @@ import java.util.List;
 /**
  * A {@link IBuildInfo} that represents an Android application and its test package(s).
  */
-public class AppBuildInfo extends BuildInfo {
+public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
 
     private List<File> mAppPackageFiles = new ArrayList<File>();
 
@@ -39,7 +39,7 @@ public class AppBuildInfo extends BuildInfo {
     }
 
     /**
-     * Gets a copy of the list of local app apk file(s).
+     * {@inheritDoc}
      */
     public List<File> getAppPackageFiles() {
         List<File> listCopy = new ArrayList<File>(mAppPackageFiles.size());
@@ -48,7 +48,7 @@ public class AppBuildInfo extends BuildInfo {
     }
 
     /**
-     * Adds the local apk file.
+     * {@inheritDoc}
      */
     public void addAppPackageFile(File appPackageFile) {
         mAppPackageFiles.add(appPackageFile);

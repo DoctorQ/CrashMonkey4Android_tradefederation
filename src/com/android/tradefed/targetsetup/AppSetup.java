@@ -43,30 +43,22 @@ public class AppSetup implements ITargetPreparer {
      */
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException {
-        if (!(buildInfo instanceof AppBuildInfo)) {
+        if (!(buildInfo instanceof IAppBuildInfo)) {
             throw new IllegalArgumentException("Provided buildInfo is not a AppBuildInfo");
         }
-        AppBuildInfo appBuild = (AppBuildInfo)buildInfo;
-        try {
-            if (mAppPackageNames.size() == 0) {
-                throw new IllegalArgumentException(
-                        "Missing app-package-name or test-package-name options");
-            }
-            Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-            for (String packageName : mAppPackageNames) {
-                device.uninstallPackage(packageName);
-            }
+        IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
+        Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
+        for (String packageName : mAppPackageNames) {
+            device.uninstallPackage(packageName);
+        }
 
-            if (mReboot) {
-                // reboot device to get a clean state
-                device.reboot();
-            }
+        if (mReboot) {
+            // reboot device to get a clean state
+            device.reboot();
+        }
 
-            for (File apkFile : appBuild.getAppPackageFiles()) {
-                device.installPackage(apkFile, true);
-            }
-        } finally {
-            appBuild.cleanUp();
+        for (File apkFile : appBuild.getAppPackageFiles()) {
+            device.installPackage(apkFile, true);
         }
     }
 
