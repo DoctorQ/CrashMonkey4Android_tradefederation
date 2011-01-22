@@ -74,11 +74,49 @@ public class TestRunResult {
     /**
      * Adds test run metrics.
      * <p/>
-     * Note: this will replace any currently stored metrics with the same key.
-     * TODO: find a way to combine metrics instead?
+     * @param runMetrics the run metrics
+     * @param aggregateMetrics if <code>true</code>, attempt to add given metrics values to any
+     * currently stored values. If <code>false</code>, replace any currently stored metrics with
+     * the same key.
      */
-    public void addMetrics(Map<String, String> runMetrics) {
-        mRunMetrics.putAll(runMetrics);
+    public void addMetrics(Map<String, String> runMetrics, boolean aggregateMetrics) {
+        if (aggregateMetrics) {
+            for (Map.Entry<String, String> entry : runMetrics.entrySet()) {
+                String existingValue = mRunMetrics.get(entry.getKey());
+                String combinedValue = combineValues(existingValue, entry.getValue());
+                mRunMetrics.put(entry.getKey(), combinedValue);
+            }
+        } else {
+            mRunMetrics.putAll(runMetrics);
+        }
+    }
+
+    /**
+     * Combine old and new metrics value
+     *
+     * @param existingValue
+     * @param value
+     * @return
+     */
+    private String combineValues(String existingValue, String newValue) {
+        if (existingValue != null) {
+            try {
+                Long existingLong = Long.parseLong(existingValue);
+                Long newLong = Long.parseLong(newValue);
+                return Long.toString(existingLong + newLong);
+            } catch (NumberFormatException e) {
+                // not a long, skip to next
+            }
+            try {
+               Double existingDouble = Double.parseDouble(existingValue);
+               Double newDouble = Double.parseDouble(newValue);
+               return Double.toString(existingDouble + newDouble);
+            } catch (NumberFormatException e) {
+                // not a double either, fall through
+            }
+        }
+        // default to overriding existingValue
+        return newValue;
     }
 
     /**

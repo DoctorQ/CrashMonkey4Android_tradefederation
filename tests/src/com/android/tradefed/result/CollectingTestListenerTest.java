@@ -122,6 +122,61 @@ public class CollectingTestListenerTest extends TestCase {
     }
 
     /**
+     * Test aggregating of metrics with long values
+     */
+    public void testRunEnded_aggregateLongMetrics() {
+        mCollectingTestListener.setIsAggregrateMetrics(true);
+        injectTestRun("run", "testFoo1", "1");
+        injectTestRun("run", "testFoo1", "1");
+        assertEquals("2", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
+                RUN_KEY));
+    }
+
+    /**
+     * Test aggregating of metrics with double values
+     */
+    public void testRunEnded_aggregateDoubleMetrics() {
+        mCollectingTestListener.setIsAggregrateMetrics(true);
+        injectTestRun("run", "testFoo1", "1.1");
+        injectTestRun("run", "testFoo1", "1.1");
+        assertEquals("2.2", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
+                RUN_KEY));
+    }
+
+    /**
+     * Test aggregating of metrics with different data types
+     */
+    public void testRunEnded_aggregateMixedMetrics() {
+        mCollectingTestListener.setIsAggregrateMetrics(true);
+        injectTestRun("run", "testFoo1", "1");
+        injectTestRun("run", "testFoo1", "1.1");
+        assertEquals("2.1", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
+                RUN_KEY));
+    }
+
+    /**
+     * Test aggregating of metrics when new metric isn't a number
+     */
+    public void testRunEnded_aggregateNewStringMetrics() {
+        mCollectingTestListener.setIsAggregrateMetrics(true);
+        injectTestRun("run", "testFoo1", "1");
+        injectTestRun("run", "testFoo1", "bar");
+        assertEquals("bar", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
+                RUN_KEY));
+    }
+
+    /**
+     * Test aggregating of metrics when existing metric isn't a number
+     */
+    public void testRunEnded_aggregateExistingStringMetrics() {
+        mCollectingTestListener.setIsAggregrateMetrics(true);
+        injectTestRun("run", "testFoo1", "bar");
+        injectTestRun("run", "testFoo1", "1");
+        assertEquals("1", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
+                RUN_KEY));
+    }
+
+    /**
      * Injects a single test run with 1 passed test into the {@link CollectingTestListener} under
      * test
      * @return the {@link TestIdentifier} of added test
