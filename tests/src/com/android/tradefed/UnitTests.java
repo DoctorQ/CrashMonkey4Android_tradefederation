@@ -41,6 +41,7 @@ import com.android.tradefed.result.XmlResultReporterTest;
 import com.android.tradefed.targetsetup.DeviceBuildInfoTest;
 import com.android.tradefed.targetsetup.DeviceFlasherTest;
 import com.android.tradefed.targetsetup.DeviceSetupTest;
+import com.android.tradefed.targetsetup.FileDownloadCacheTest;
 import com.android.tradefed.targetsetup.FlashingResourcesParserTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
@@ -94,6 +95,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(DeviceFlasherTest.class);
         addTestSuite(DeviceSetupTest.class);
         addTestSuite(FlashingResourcesParserTest.class);
+        addTestSuite(FileDownloadCacheTest.class);
         addTestSuite(DeviceTestCaseTest.class);
         addTestSuite(InstrumentationListTestTest.class);
         addTestSuite(InstrumentationTestTest.class);

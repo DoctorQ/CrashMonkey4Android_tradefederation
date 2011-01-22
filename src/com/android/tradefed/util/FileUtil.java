@@ -259,6 +259,23 @@ public class FileUtil {
     }
 
     /**
+     * Gets the base name, without extension, of given file name.
+     * <p/>
+     * e.g. getBaseName("file.txt") will return "file"
+     *
+     * @param fileName
+     * @return the base name
+     */
+    public static String getBaseName(String fileName) {
+        int index = fileName.lastIndexOf('.');
+        if (index == -1) {
+            return fileName;
+        } else {
+            return fileName.substring(0, index);
+        }
+    }
+
+    /**
      * Utility method to do byte-wise content comparison of two files.
      *
      * @return <code>true</code> if file contents are identical
@@ -288,5 +305,31 @@ public class FileUtil {
                 stream2.close();
             }
         }
+    }
+
+    /**
+     * Helper method which constructs a unique file on temporary disk, whose name corresponds as
+     * closely as possible to the file name given by the remote file path
+     *
+     * @param remoteFilePath the '/' separated remote path to construct the name from
+     * @param parentDir the parent directory to create the file in. <code>null</code> to use the
+     * default temporary directory
+     */
+    public static File createTempFileForRemote(String remoteFilePath, File parentDir)
+            throws IOException {
+        String[] segments = remoteFilePath.split("/");
+        // take last segment as base name
+        String remoteFileName = segments[segments.length-1];
+        String prefix = getBaseName(remoteFileName);
+        if (prefix.length() < 3) {
+            // prefix must be at least 3 characters long
+            prefix = prefix + "XXX";
+        }
+        String fileExt = getExtension(remoteFileName);
+
+        // create a unique file name. Add a underscore to prefix so file name is more readable
+        // e.g. myfile_57588758.img rather than myfile57588758.img
+        File tmpFile =  FileUtil.createTempFile(prefix + "_", fileExt, parentDir);
+        return tmpFile;
     }
 }
