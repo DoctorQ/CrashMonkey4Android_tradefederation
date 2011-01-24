@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.targetsetup.IBuildInfo;
 
@@ -40,10 +41,23 @@ public class CollectingTestListener implements ITestInvocationListener {
         Collections.synchronizedMap(new LinkedHashMap<String, TestRunResult>());
     private TestRunResult mCurrentResults =  new TestRunResult();
 
+    @Option(name = "aggregate-metrics", description =
+        "attempt to add test metrics values for test runs with the same name" )
+    private boolean mIsAggregateMetrics = false;
+
     // cached test constants
     private int mNumPassedTests = 0;
     private int mNumFailedTests = 0;
     private int mNumErrorTests = 0;
+
+    /**
+     * Toggle the 'aggregate metrics' option
+     * <p/>
+     * Exposed for unit testing
+     */
+    void setIsAggregrateMetrics(boolean aggregate) {
+        mIsAggregateMetrics = aggregate;
+    }
 
     /**
      * {@inheritDoc}
@@ -106,7 +120,7 @@ public class CollectingTestListener implements ITestInvocationListener {
      */
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
         mCurrentResults.setRunComplete(true);
-        mCurrentResults.addMetrics(runMetrics);
+        mCurrentResults.addMetrics(runMetrics, mIsAggregateMetrics);
         mCurrentResults.addElapsedTime(elapsedTime);
     }
 
