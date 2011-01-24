@@ -33,12 +33,15 @@ import com.android.tradefed.util.FileUtil;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
+import junit.framework.Test;
 
 /**
  * A test that will flash a build on a device, wait for the device to be OTA-ed to another build,
@@ -49,7 +52,7 @@ import junit.framework.AssertionFailedError;
  * to receive the OTA to a new build.
  */
 public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest, IBuildReceiver,
-        IConfigurationReceiver {
+        IConfigurationReceiver, IShardableTest {
 
     private static final String LOG_TAG = "OtaStabilityTest";
     private IBuildInfo mDeviceBuild;
@@ -73,6 +76,9 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
         "Default 10 min")
     private int mWaitInstallTime = 10 * 60;
 
+    @Option(name = "shards", description = "Optional number of shards to split test into. " +
+            "Iterations will be split evenly among shards.")
+    private int mShards = 1;
 
     /**
      * {@inheritDoc}
@@ -104,6 +110,77 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
     @Override
     public ITestDevice getDevice() {
         return mDevice;
+    }
+
+    /**
+     * Set the wait recovery time
+     */
+    void setWaitRecoveryTime(int waitRecoveryTime) {
+        mWaitRecoveryTime = waitRecoveryTime;
+    }
+
+    /**
+     * Set the wait install time
+     */
+    void setWaitInstallTime(int waitInstallTime) {
+        mWaitInstallTime = waitInstallTime;
+    }
+
+    /**
+     * Set the run name
+     */
+    void setRunName(String runName) {
+        mRunName = runName;
+    }
+
+    /**
+     * Return the number of iterations.
+     * <p/>
+     * Exposed for unit testing
+     */
+    public int getIterations() {
+        return mIterations;
+    }
+
+    /**
+     * Set the iterations
+     */
+    void setIterations(int iterations) {
+        mIterations = iterations;
+    }
+
+    /**
+     * Set the number of shards
+     */
+    void setShards(int shards) {
+        mShards = shards;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<Test> split() {
+        if (mShards <= 1) {
+            return null;
+        }
+        Collection<Test> shards = new ArrayList<Test>(mShards);
+        int remainingIterations = mIterations;
+        for (int i = mShards; i > 0; i--) {
+            OtaStabilityTest testShard = new OtaStabilityTest();
+            // device and configuration will be set by test invoker
+            testShard.setRunName(mRunName);
+            testShard.setWaitInstallTime(mWaitInstallTime);
+            testShard.setWaitRecoveryTime(mWaitRecoveryTime);
+            // attempt to divide iterations evenly among shards with no remainder
+            int iterationsForShard = Math.round(remainingIterations/i);
+            if (iterationsForShard > 0) {
+                testShard.setIterations(iterationsForShard);
+                remainingIterations -= iterationsForShard;
+                shards.add(testShard);
+            }
+        }
+        return shards;
     }
 
     /**
