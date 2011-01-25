@@ -199,7 +199,10 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
             waitForOta(listeners);
             for (actualIterations = 1; actualIterations < mIterations; actualIterations++) {
                 flashDevice();
-                waitForOta(listeners);
+                int buildId = waitForOta(listeners);
+                Log.i(LOG_TAG, String.format(
+                        "Device %s successfully OTA-ed to build %d. Iteration: %d",
+                        mDevice.getSerialNumber(), buildId, actualIterations));
             }
         } catch (AssertionFailedError error) {
             Log.e(LOG_TAG, error);
@@ -242,10 +245,11 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
      * Blocks and waits for OTA package to be installed.
      *
      * @param listeners
+     * @return the build id the device ota-ed to
      * @throws DeviceNotAvailableException
      * @throws AssertionFailedError
      */
-    private void waitForOta(List<ITestInvocationListener> listeners)
+    private int waitForOta(List<ITestInvocationListener> listeners)
             throws DeviceNotAvailableException, AssertionFailedError {
         int currentBuildId = getDeviceBuildId();
         Assert.assertEquals(String.format("device %s has not have expected build id on boot.",
@@ -275,8 +279,7 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
         // TODO: should exact expected build id be checked?
         Assert.assertTrue(String.format("Device %s build id did not change after leaving recovery",
                 mDevice.getSerialNumber()), currentBuildId !=  mDeviceBuild.getBuildId());
-        Log.i(LOG_TAG, String.format("Device %s successfully OTA-ed to build %d",
-                mDevice.getSerialNumber(), currentBuildId));
+        return currentBuildId;
     }
 
     private void sendRecoveryLog(List<ITestInvocationListener> listeners) throws
@@ -303,15 +306,7 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
      * @return the current build id or -1 if it could not be retrieved
      */
     private int getDeviceBuildId() {
-        String stringBuild = mDevice.getIDevice().getProperty("ro.build.version.incremental");
-        try {
-            int currentBuildId = Integer.parseInt(stringBuild);
-            return currentBuildId;
-        } catch (NumberFormatException e) {
-            Log.e(LOG_TAG, String.format("Could not get device %s build id. Received %s",
-                    mDevice.getSerialNumber(), stringBuild));
-        }
-        return -1;
+        return mDevice.getBuildId();
     }
 
     private void checkFields() {

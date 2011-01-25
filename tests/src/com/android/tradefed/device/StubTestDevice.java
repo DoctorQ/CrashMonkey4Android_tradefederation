@@ -342,4 +342,12 @@ public class StubTestDevice implements IManagedTestDevice {
     public void rebootIntoRecovery() throws DeviceNotAvailableException {
         // ignore
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int getBuildId() {
+        return -1;
+    }
 }

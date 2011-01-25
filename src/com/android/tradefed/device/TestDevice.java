@@ -207,6 +207,21 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public int getBuildId() {
+        String stringBuild = getIDevice().getProperty("ro.build.version.incremental");
+        try {
+            int currentBuildId = Integer.parseInt(stringBuild);
+            return currentBuildId;
+        } catch (NumberFormatException e) {
+            Log.e(LOG_TAG, String.format("Could not get device %s build id. Received %s",
+                    getSerialNumber(), stringBuild));
+        }
+        return -1;
+    }
+
+    /**
      * {@see getProductType()}
      *
      * @param retryAttempts The number of times to try calling {@see recoverDevice()} if the

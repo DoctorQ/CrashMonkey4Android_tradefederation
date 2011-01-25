@@ -70,6 +70,13 @@ public interface ITestDevice {
     public String getProductType() throws DeviceNotAvailableException;
 
     /**
+     * Retrieve the build the device is currently running.
+     *
+     * @return the build id or -1 if it could not be retrieved
+     */
+    public int getBuildId();
+
+    /**
      * Executes the given adb shell command, retrying multiple times if command fails.
      * <p/>
      * A simpler form of {@link #executeShellCommand(String, IShellOutputReceiver, int, int))} with

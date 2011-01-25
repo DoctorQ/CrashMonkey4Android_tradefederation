@@ -81,6 +81,9 @@ public class DeviceFlasher implements IDeviceFlasher  {
         Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
                 device.getSerialNumber(), deviceBuild.getBuildId()));
 
+        // get system build id before booting into fastboot
+        int systemBuildId = device.getBuildId();
+
         device.rebootIntoBootloader();
 
         downloadFlashingResources(device, deviceBuild);
@@ -89,7 +92,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
         checkAndFlashBaseband(device, deviceBuild);
         flashUserData(device, deviceBuild);
         eraseCache(device);
-        flashSystem(device, deviceBuild);
+        checkAndFlashSystem(device, systemBuildId, deviceBuild);
     }
 
     /**
@@ -419,6 +422,35 @@ public class DeviceFlasher implements IDeviceFlasher  {
             throw new TargetSetupError("Missing tests.zip file");
         }
         FileUtil.extractZip(new ZipFile(deviceBuild.getTestsZipFile()), unzipDir);
+    }
+
+    /**
+     * If needed, flash the system image on device.
+     * <p/>
+     * Will only flash system if current version on device != required version.
+     * <p/>
+     * Regardless of path chosen, after method execution device should be booting into userspace.
+     *
+     * @param device the {@link ITestDevice} to flash
+     * @param currentBuildId the current build id running on device
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the system image to flash
+     * @return <code>true</code> if system was flashed, <code>false</code> if it was skipped
+     * @throws DeviceNotAvailableException if device is not available
+     * @throws TargetSetupError if failed to flash bootloader
+     */
+    protected boolean checkAndFlashSystem(ITestDevice device, int currentBuildId,
+            IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
+        if (currentBuildId != deviceBuild.getBuildId()) {
+            Log.i(LOG_TAG, String.format("Flashing system %d", deviceBuild.getBuildId()));
+            flashSystem(device, deviceBuild);
+            return true;
+        } else {
+            Log.i(LOG_TAG, String.format("System is already version %d, skipping flashing",
+                    currentBuildId));
+            // reboot
+            device.rebootUntilOnline();
+            return false;
+        }
     }
 
     /**
