@@ -28,6 +28,8 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.HashSet;
 
 /**
  * A {@link ILeveledLogOutput} that directs log messages to a file and to stdout.
@@ -46,6 +48,9 @@ public class FileLogger implements ILeveledLogOutput {
     @Option(name="log-level-display", description="minimum log level to display on stdout")
     private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
 
+    @Option(name="log-tag-display", description="Always display given tags logs on stdout")
+    private Collection<String> mLogTagsDisplay = new HashSet<String>();
+
     /**
      * Sets the log level filtering for stdout.
      *
@@ -62,6 +67,15 @@ public class FileLogger implements ILeveledLogOutput {
      */
     void setLogLevel(String logLevel) {
         mLogLevel = logLevel;
+    }
+
+    /**
+     * Adds tags to the log-tag-display list
+     *
+     * @param tags collection of tags to add
+     */
+    void addLogTagsDisplay(Collection<String> tags) {
+        mLogTagsDisplay.addAll(tags);
     }
 
     /**
@@ -92,6 +106,7 @@ public class FileLogger implements ILeveledLogOutput {
             FileLogger logger = new FileLogger();
             logger.setLogLevelDisplay(mLogLevelStringDisplay);
             logger.setLogLevel(mLogLevel);
+            logger.addLogTagsDisplay(mLogTagsDisplay);
             return logger;
         } catch (ConfigurationException e) {
             // throw this as a RuntimeException, since declaring a ConfigurationException would
@@ -114,7 +129,7 @@ public class FileLogger implements ILeveledLogOutput {
     public void printLog(LogLevel logLevel, String tag, String message) {
         String outMessage = Log.getLogFormatString(logLevel, tag, message);
         LogLevel displayLevel = LogLevel.getByString(mLogLevelStringDisplay);
-        if (logLevel.getPriority() >= displayLevel.getPriority()) {
+        if (logLevel.getPriority() >= displayLevel.getPriority() || mLogTagsDisplay.contains(tag)) {
             System.out.print(outMessage);
         }
         try {
