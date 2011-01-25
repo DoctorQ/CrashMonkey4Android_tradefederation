@@ -51,7 +51,9 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
     @Override
     public void testRunEnded(long elapsedTime, Map<String, String> metrics) {
         super.testRunEnded(elapsedTime, metrics);
-        ResultPrinter printer = (ResultPrinter)getJUnitListener();
-        printer.getWriter().format("\nMetrics: %s\n", metrics);
+        if (!metrics.isEmpty()) {
+            ResultPrinter printer = (ResultPrinter)getJUnitListener();
+            printer.getWriter().format("\nMetrics: %s\n", metrics);
+        }
     }
 }
