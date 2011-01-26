@@ -316,9 +316,9 @@ public class CommandFileParserTest extends TestCase {
     }
 
     /**
-     * Verify that the INCLUDE directive works when used twice
+     * Verify that the INCLUDE directive works when used for two files
      */
-    public void testMacroParserIncludeTwice() throws Exception {
+    public void testMacroParserInclude_twice() throws Exception {
         final String mockFileData = "INCLUDE somefile.txt\n" +
                 "INCLUDE otherfile.txt\n";
         final String mockIncludedFileData1 = "--foo bar\n";
@@ -344,6 +344,36 @@ public class CommandFileParserTest extends TestCase {
 
         mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs1));
         mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs2));
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Verify that a file is only ever included once, regardless of how many INCLUDE directives for
+     * that file show up
+     */
+    public void testMacroParserInclude_repeat() throws Exception {
+        final String mockFileData = "INCLUDE somefile.txt\n" +
+                "INCLUDE somefile.txt\n";
+        final String mockIncludedFileData1 = "--foo bar\n";
+        String[] expectedArgs1 = new String[] {"--foo", "bar"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            private int phase = 0;
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if(phase == 0) {
+                    phase++;
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else {
+                    return new BufferedReader(new StringReader(mockIncludedFileData1));
+                }
+            }
+        };
+
+        mMockScheduler.addConfig(EasyMock.aryEq(expectedArgs1));
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);

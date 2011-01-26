@@ -58,6 +58,8 @@ class CommandFileParser {
     private Map<String, List<ConfigLine>> mLongMacros = new HashMap<String, List<ConfigLine>>();
     private List<ConfigLine> mLines = new LinkedList<ConfigLine>();
 
+    private List<File> mIncludedFiles = new LinkedList<File>();
+
     @SuppressWarnings("serial")
     private class ConfigLine extends LinkedList<String> {
         ConfigLine() {
@@ -123,6 +125,14 @@ class CommandFileParser {
      * Note that this method may call itself recursively to handle the INCLUDE directive.
      */
     private void scanFile(File file) throws IOException, ConfigurationException {
+        if (mIncludedFiles.contains(file)) {
+            // Repeated include; ignore
+            Log.v(LOG_TAG, String.format("Skipping repeated include of file %s.", file.toString()));
+            return;
+        } else {
+            mIncludedFiles.add(file);
+        }
+
         BufferedReader fileReader = createCommandFileReader(file);
         String inputLine = null;
         try {
