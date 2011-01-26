@@ -19,7 +19,6 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.IDevice.DeviceState;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -1243,6 +1242,17 @@ class TestDevice implements IManagedTestDevice {
                     mTmpFile.getAbsolutePath()));
             mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
                     LOGCAT_BUFF_SIZE);
+            // add an initial message to log, to give info to viewer
+            if (mPreviousTmpFile == null) {
+                // first log!
+                appendDeviceLogMsg(String.format("Logcat for device %s running system build %d",
+                        getSerialNumber(), getBuildId()));
+            } else {
+                appendDeviceLogMsg(String.format(
+                        "Continuing logcat capture for device %s running system build %d. " +
+                        "Previous content may have been truncated.", getSerialNumber(),
+                        getBuildId()));
+            }
         }
 
         /**

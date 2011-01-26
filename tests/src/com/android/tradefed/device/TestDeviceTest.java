@@ -290,6 +290,9 @@ public class TestDeviceTest extends TestCase {
         LogCatReceiver receiver = mTestDevice.createLogcatReceiver();
         final Object notifier = new Object();
 
+        // mock the call to get system build id
+        EasyMock.expect(mMockIDevice.getProperty((String)EasyMock.anyObject())).andStubReturn("1");
+
         try {
             // expect shell command to be called, with any receiver
             mMockIDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
@@ -331,7 +334,9 @@ public class TestDeviceTest extends TestCase {
             String actualString = StreamUtil.getStringFromStream(receiver.getLogcatData());
             // verify that data from both the backup log file (input2) and current log file
             // (input3) is retrieved
-            assertEquals(input2 + input3, actualString);
+            assertFalse(actualString.contains(input));
+            assertTrue(actualString.contains(input2));
+            assertTrue(actualString.contains(input3));
         } finally {
             receiver.cancel();
         }
