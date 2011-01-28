@@ -15,11 +15,9 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.RegexTrie.CompPattern;
 
 import java.util.HashMap;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;

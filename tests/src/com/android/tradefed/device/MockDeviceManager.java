@@ -79,7 +79,9 @@ public class MockDeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public void freeDevice(ITestDevice device, FreeDeviceState state) {
-        mDeviceQueue.add(device);
+        if (!state.equals(FreeDeviceState.UNAVAILABLE)) {
+            mDeviceQueue.add(device);
+        }
     }
 
     /**

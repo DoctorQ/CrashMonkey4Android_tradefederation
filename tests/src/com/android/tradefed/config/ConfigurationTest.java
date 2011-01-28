@@ -27,7 +27,6 @@ import com.android.tradefed.targetsetup.TargetSetupError;
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import junit.framework.Test;

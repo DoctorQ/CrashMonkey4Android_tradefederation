@@ -53,8 +53,9 @@ public class DeviceFlasherTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockDevice = EasyMock.createMock(ITestDevice.class);
-        EasyMock.expect(mMockDevice.getSerialNumber()).andReturn(TEST_STRING).anyTimes();
-        EasyMock.expect(mMockDevice.getProductType()).andReturn(TEST_STRING).anyTimes();
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
+        EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
+        EasyMock.expect(mMockDevice.getBuildId()).andStubReturn(1);
         mMockBuildInfo = new DeviceBuildInfo(0, TEST_STRING, TEST_STRING);
         mMockBuildInfo.setDeviceImageFile(new File(TEST_STRING));
         mMockBuildInfo.setUserDataImageFile(new File(TEST_STRING));
