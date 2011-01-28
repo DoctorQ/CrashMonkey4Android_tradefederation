@@ -16,6 +16,7 @@
 package com.android.tradefed.targetsetup;
 
 import com.android.tradefed.util.MultiMap;
+import com.android.tradefed.util.UniqueMultiMap;
 
 import java.util.Map;
 
@@ -27,7 +28,7 @@ public class BuildInfo implements IBuildInfo {
     private int mBuildInfo = 0;
     private String mTestTarget = "stub";
     private String mBuildName = "stub";
-    private MultiMap<String, String> mBuildAttributes = new MultiMap<String, String>();
+    private UniqueMultiMap<String, String> mBuildAttributes = new UniqueMultiMap<String, String>();
 
     /**
      * Creates a {@link BuildInfo} using default attribute values.
