@@ -31,7 +31,7 @@ public enum LogDataType {
         mFileExt = fileExt;
     }
 
-    String getFileExt() {
+    public String getFileExt() {
         return mFileExt;
     }
 }
