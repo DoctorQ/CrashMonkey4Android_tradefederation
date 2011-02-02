@@ -83,6 +83,13 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
+     * Set the log tags to display for the global log
+     */
+    public void setGlobalLogTagDisplay(Collection<String> logTagsDisplay) {
+        mGlobalLogger.addLogTagsDisplay(logTagsDisplay);
+    }
+
+    /**
      * Registers the logger as the instance to use for the current thread.
      *
      */

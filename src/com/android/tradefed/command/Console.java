@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Map;
 
 // not importing java.io.Console because of class name conflict
@@ -61,6 +62,10 @@ public class Console {
     @Option(name = "log-level-display", description =
             "minimum log level to display on stdout for global log")
     private String mLogLevelDisplay = null;
+
+    @Option(name = "log-tag-display", description =
+        "Log tag filter for global log. Always display logs with this tag on stdout")
+    private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
     @Option(name = "help", description = "get command line usage info")
     private boolean mHelpMode = false;
@@ -215,6 +220,8 @@ public class Console {
             if (mLogLevelDisplay != null) {
                 LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
             }
+            LogRegistry.getLogRegistry().setGlobalLogTagDisplay(mLogTagsDisplay);
+
             if (mFile != null) {
                 createCommandFileParser().parseFile(mFile, mScheduler);
             }
