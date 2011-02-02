@@ -52,7 +52,7 @@ public class FileDownloadCacheFactory {
      * @param cacheDir the local filesystem directory to use as a cache
      * @return the {@link FileDownloadCache} for given cacheDir
      */
-    public FileDownloadCache getCache(File cacheDir) {
+    public synchronized FileDownloadCache getCache(File cacheDir) {
         FileDownloadCache cache = mCacheObjectMap.get(cacheDir.getAbsolutePath());
         if (cache == null) {
             cache = new FileDownloadCache(cacheDir);
