@@ -65,6 +65,18 @@ public class TestInvocation implements ITestInvocation {
     static final String TRADEFED_LOG_NAME = "host_log";
     static final String DEVICE_LOG_NAME = "device_logcat";
 
+    private ITestDevice mDevice = null;
+    private String mStatus = "(not invoked)";
+
+    @Override
+    public String toString() {
+        String devString = "(none)";
+        if (mDevice != null) {
+            devString = mDevice.getSerialNumber();
+        }
+        return String.format("Device %s: %s", devString, mStatus);
+    }
+
     /**
      * A {@link ResultForwarder} for forwarding resumed invocations.
      * <p/>
@@ -101,6 +113,8 @@ public class TestInvocation implements ITestInvocation {
     public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
             throws DeviceNotAvailableException {
         try {
+            mDevice = device;
+            mStatus = "fetching build";
             IBuildInfo info = config.getBuildProvider().getBuild();
             if (info != null) {
                 if (shardConfig(config, info, rescheduler)) {
@@ -111,6 +125,7 @@ public class TestInvocation implements ITestInvocation {
                     performInvocation(config, device, info, rescheduler);
                 }
             } else {
+                mStatus = "(no build to test)";
                 Log.i(LOG_TAG, "No build to test");
             }
         } catch (TargetSetupError e) {
@@ -131,33 +146,34 @@ public class TestInvocation implements ITestInvocation {
     * @param rescheduler the {@link IRescheduler}
     * @return true if test was sharded. Otherwise return <code>false</code>
     */
-   private boolean shardConfig(IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
-       List<Test> shardableTests = new ArrayList<Test>();
-       boolean isSharded = false;
-       for (Test test : config.getTests()) {
-           isSharded |= shardTest(shardableTests, test);
-       }
-       if (isSharded) {
-           ShardMasterResultForwarder resultCollector = new ShardMasterResultForwarder(
-                   config.getTestInvocationListeners(), shardableTests.size());
-           ShardListener origConfigListener = new ShardListener(resultCollector);
-           config.setTestInvocationListener(origConfigListener);
-           for (Test testShard : shardableTests) {
-               Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
-               IConfiguration shardConfig = config.clone();
-               shardConfig.setTest(testShard);
-               shardConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
-                       config.getBuildProvider()));
-               shardConfig.setTestInvocationListener(new ShardListener(resultCollector));
-               shardConfig.setLogOutput(config.getLogOutput().clone());
-               // use the same {@link ITargetPreparer}, {@link IDeviceRecovery} etc as original
-               // config
-               rescheduler.scheduleConfig(shardConfig);
-           }
-           return true;
-       }
-       return false;
-   }
+    private boolean shardConfig(IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
+        mStatus = "sharding";
+        List<Test> shardableTests = new ArrayList<Test>();
+        boolean isSharded = false;
+        for (Test test : config.getTests()) {
+            isSharded |= shardTest(shardableTests, test);
+        }
+        if (isSharded) {
+            ShardMasterResultForwarder resultCollector = new ShardMasterResultForwarder(
+                    config.getTestInvocationListeners(), shardableTests.size());
+            ShardListener origConfigListener = new ShardListener(resultCollector);
+            config.setTestInvocationListener(origConfigListener);
+            for (Test testShard : shardableTests) {
+                Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
+                IConfiguration shardConfig = config.clone();
+                shardConfig.setTest(testShard);
+                shardConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
+                        config.getBuildProvider()));
+                shardConfig.setTestInvocationListener(new ShardListener(resultCollector));
+                shardConfig.setLogOutput(config.getLogOutput().clone());
+                // use the same {@link ITargetPreparer}, {@link IDeviceRecovery} etc as original
+                // config
+                rescheduler.scheduleConfig(shardConfig);
+            }
+            return true;
+        }
+        return false;
+    }
 
     /**
      * Attempt to shard given {@link Test}.
@@ -200,6 +216,7 @@ public class TestInvocation implements ITestInvocation {
         msg.append(" on device ");
         msg.append(device.getSerialNumber());
         Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg.toString());
+        mStatus = String.format("running %s on build %d", info.getTestTarget(), info.getBuildId());
     }
 
     /**
@@ -256,6 +273,7 @@ public class TestInvocation implements ITestInvocation {
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
+            mStatus = "done running tests";
             reportLogs(device, config.getTestInvocationListeners(), config.getLogOutput());
             elapsedTime = System.currentTimeMillis() - startTime;
             try {
