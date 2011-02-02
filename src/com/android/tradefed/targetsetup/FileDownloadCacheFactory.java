@@ -56,7 +56,7 @@ public class FileDownloadCacheFactory {
         FileDownloadCache cache = mCacheObjectMap.get(cacheDir.getAbsolutePath());
         if (cache == null) {
             cache = new FileDownloadCache(cacheDir);
-            mCacheObjectMap.put(cacheDir.getAbsolutePath(), new FileDownloadCache(cacheDir));
+            mCacheObjectMap.put(cacheDir.getAbsolutePath(), cache);
         }
         return cache;
     }
