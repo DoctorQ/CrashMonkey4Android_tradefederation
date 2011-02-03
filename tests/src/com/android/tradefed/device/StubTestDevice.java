@@ -305,6 +305,13 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public String getBugreport() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void setRecovery(IDeviceRecovery recovery) {
         // ignore
     }

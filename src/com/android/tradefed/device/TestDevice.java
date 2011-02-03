@@ -38,6 +38,7 @@ import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -71,6 +72,13 @@ class TestDevice implements IManagedTestDevice {
     /** the max number of bytes to store in logcat tmp buffer */
     private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
+    private static final String BUGREPORT_CMD = "bugreport";
+    /**
+     * Allow pauses of up to 2 minutes while receiving bugreport.  Note that dumpsys may pause up to
+     * a minute while waiting for unresponsive components, but should bail after that minute, if it
+     *  will ever terminate on its own.
+     */
+    private static final int BUGREPORT_TIMEOUT = 2 * 60 * 1000;
 
     /** The time in ms to wait before starting logcat for a device */
     private int mLogStartDelay = 5*1000;
@@ -1069,6 +1077,24 @@ class TestDevice implements IManagedTestDevice {
      */
     LogCatReceiver createLogcatReceiver() {
         return new LogCatReceiver();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBugreport() {
+        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        try {
+            executeShellCommand(BUGREPORT_CMD, receiver, BUGREPORT_TIMEOUT, 0 /* don't retry */);
+        } catch (DeviceNotAvailableException e) {
+            // Log, but don't throw, so the caller can get the bugreport contents even if the device
+            // goes away
+            Log.e(LOG_TAG, String.format("Device %s became unresponsive while retrieving bugreport",
+                    getSerialNumber()));
+        }
+
+        return receiver.getOutput();
     }
 
     /**

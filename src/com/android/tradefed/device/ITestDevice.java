@@ -229,6 +229,17 @@ public interface ITestDevice {
     public String getMountPoint(String mountName);
 
     /**
+     * Retrieves a bugreport from the device.
+     * <p/>
+     * The implementation of this is guaranteed to continue to work on a device without an sdcard
+     * (or where the sdcard is not yet mounted).
+     *
+     * @return A {@link String} containing the bugreport contents.  Will be an empty String in case
+     *         of failure.
+     */
+    public String getBugreport();
+
+    /**
      * Retrieves a file off device.
      *
      * @param remoteFilePath the absolute path to file on device.

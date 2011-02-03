@@ -342,6 +342,33 @@ public class TestDeviceTest extends TestCase {
         }
     }
 
+    public void testGetBugreport_deviceUnavail() throws Exception {
+        final String testCommand = "bugreport";
+        final String expectedOutput = "this is the output\r\n in two lines\r\n";
+        // FIXME: this isn't actually causing a DeviceNotAvailableException to be thrown
+
+        // expect shell command to be called, with any receiver
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), (IShellOutputReceiver)
+                EasyMock.anyObject(), EasyMock.anyInt());
+        EasyMock.expectLastCall().andDelegateTo(
+                new MockDevice() {
+                    @Override
+                    public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                            int timeout) throws ShellCommandUnresponsiveException {
+                        byte[] inputData = expectedOutput.getBytes();
+                        receiver.addOutput(inputData, 0, inputData.length);
+                        // device goes away
+                        throw new ShellCommandUnresponsiveException();
+                    }
+                });
+        mMockRecovery.recoverDevice(mMockMonitor);
+        EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
+
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        assertEquals(expectedOutput, mTestDevice.getBugreport());
+    }
+
     /**
      * Simple normal case test for
      * {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)}.
@@ -637,121 +664,151 @@ public class TestDeviceTest extends TestCase {
      */
     private static class MockDevice implements IDevice {
 
+        @Override
         public void createForward(int localPort, int remotePort) {
         }
 
+        @Override
         public void executeShellCommand(String command, IShellOutputReceiver receiver)
-                throws IOException {
+                throws IOException, ShellCommandUnresponsiveException {
         }
 
+        @Override
         public void executeShellCommand(String command, IShellOutputReceiver receiver, int timeout)
-                throws TimeoutException, IOException {
+                throws TimeoutException, IOException, ShellCommandUnresponsiveException {
         }
 
+        @Override
         public String getAvdName() {
             return null;
         }
 
+        @Override
         public Client getClient(String applicationName) {
             return null;
         }
 
+        @Override
         public String getClientName(int pid) {
             return null;
         }
 
+        @Override
         public Client[] getClients() {
             return null;
         }
 
+        @Override
         public FileListingService getFileListingService() {
             return null;
         }
 
+        @Override
         public Map<String, String> getProperties() {
             return null;
         }
 
+        @Override
         public String getProperty(String name) {
             return null;
         }
 
+        @Override
         public int getPropertyCount() {
             return 0;
         }
 
+        @Override
         public String getMountPoint(String name) {
             return null;
         }
 
+        @Override
         public RawImage getScreenshot() throws IOException {
             return null;
         }
 
+        @Override
         public String getSerialNumber() {
             return null;
         }
 
+        @Override
         public DeviceState getState() {
             return null;
         }
 
+        @Override
         public SyncService getSyncService() throws IOException {
             return null;
         }
 
+        @Override
         public boolean hasClients() {
             return false;
         }
 
+        @Override
         public String installPackage(String packageFilePath, boolean reinstall)
                 throws InstallException {
             return null;
         }
 
+        @Override
         public String installRemotePackage(String remoteFilePath, boolean reinstall)
                 throws InstallException {
             return null;
         }
 
+        @Override
         public boolean isBootLoader() {
             return false;
         }
 
+        @Override
         public boolean isEmulator() {
             return false;
         }
 
+        @Override
         public boolean isOffline() {
             return false;
         }
 
+        @Override
         public boolean isOnline() {
             return false;
         }
 
+        @Override
         public void removeForward(int localPort, int remotePort) {
         }
 
+        @Override
         public void removeRemotePackage(String remoteFilePath) throws InstallException {
         }
 
+        @Override
         public void runEventLogService(LogReceiver receiver) throws IOException {
         }
 
+        @Override
         public void runLogService(String logname, LogReceiver receiver) throws IOException {
         }
 
+        @Override
         public String syncPackageToDevice(String localFilePath) throws IOException {
             return null;
         }
 
+        @Override
         public String uninstallPackage(String packageName) throws InstallException {
             return null;
         }
+
+        @Override
         public void reboot(String into) throws IOException {
         }
-
-
     }
 }
+

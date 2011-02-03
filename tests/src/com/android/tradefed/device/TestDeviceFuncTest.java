@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Functional tests for {@link TestDevice}.
@@ -42,12 +43,23 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     private static final String LOG_TAG = "TestDeviceFuncTest";
     private TestDevice mTestDevice;
     private IDeviceStateMonitor mMonitor;
+    /** Expect bugreports to be at least a meg. */
+    private static final int mMinBugreportBytes = 1024 * 1024;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mTestDevice = (TestDevice)getDevice();
         mMonitor = mTestDevice.getDeviceStateMonitor();
+    }
+
+    /**
+     * Simple testcase to ensure that the grabbing a bugreport from a real TestDevice works.
+     */
+    public void testBugreport() throws Exception {
+        String data = mTestDevice.getBugreport();
+        assertTrue(String.format("Expected at least %d characters; only saw %d", mMinBugreportBytes,
+                data.length()), data.length() >= mMinBugreportBytes);
     }
 
     /**
