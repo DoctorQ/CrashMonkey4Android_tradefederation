@@ -82,6 +82,9 @@ class TestDevice implements IManagedTestDevice {
     private static final int NUM_CLEAR_ATTEMPTS = 5;
     /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
     static final String DISMISS_DIALOG_CMD = "input keyevent 23";
+
+    private static final String BUILD_ID_PROP = "ro.build.version.incremental";
+
     /** The time in ms to wait for a command to complete. */
     private int mCmdTimeout = 2 * 60 * 1000;
     /** The time in ms to wait for a 'long' command to complete. */
@@ -208,13 +211,17 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public int getBuildId() {
-        String stringBuild = getIDevice().getProperty("ro.build.version.incremental");
+    public int getBuildId() throws DeviceNotAvailableException {
+        String stringBuild = getIDevice().getProperty(BUILD_ID_PROP);
+        // TODO: move the 'lazy-load' of property logic to ddmlib
+        if (stringBuild == null || stringBuild.isEmpty()) {
+            stringBuild = executeShellCommand(String.format("getprop %s", BUILD_ID_PROP));
+        }
         try {
             int currentBuildId = Integer.parseInt(stringBuild);
             return currentBuildId;
         } catch (NumberFormatException e) {
-            Log.e(LOG_TAG, String.format("Could not get device %s build id. Received %s",
+            Log.w(LOG_TAG, String.format("Could not get device %s build id. Received %s",
                     getSerialNumber(), stringBuild));
         }
         return -1;
@@ -1242,16 +1249,22 @@ class TestDevice implements IManagedTestDevice {
                     mTmpFile.getAbsolutePath()));
             mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
                     LOGCAT_BUFF_SIZE);
+            int buildId = -1;
+            try {
+                buildId = getBuildId();
+            } catch (DeviceNotAvailableException e) {
+                // ignore
+            }
             // add an initial message to log, to give info to viewer
             if (mPreviousTmpFile == null) {
                 // first log!
                 appendDeviceLogMsg(String.format("Logcat for device %s running system build %d",
-                        getSerialNumber(), getBuildId()));
+                        getSerialNumber(), buildId));
             } else {
                 appendDeviceLogMsg(String.format(
                         "Continuing logcat capture for device %s running system build %d. " +
                         "Previous content may have been truncated.", getSerialNumber(),
-                        getBuildId()));
+                        buildId));
             }
         }
 

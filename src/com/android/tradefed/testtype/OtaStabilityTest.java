@@ -251,8 +251,8 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
      */
     private int waitForOta(List<ITestInvocationListener> listeners)
             throws DeviceNotAvailableException, AssertionFailedError {
-        int currentBuildId = getDeviceBuildId();
-        Assert.assertEquals(String.format("device %s has not have expected build id on boot.",
+        int currentBuildId =  mDevice.getBuildId();
+        Assert.assertEquals(String.format("device %s does not have expected build id on boot.",
                 mDevice.getSerialNumber()), currentBuildId, mDeviceBuild.getBuildId());
         Assert.assertTrue(String.format(
                 "Device %s did not enter recovery after %d s.",
@@ -275,7 +275,7 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
                     mDevice.getSerialNumber()));
             throw e;
         }
-        currentBuildId = getDeviceBuildId();
+        currentBuildId = mDevice.getBuildId();
         // TODO: should exact expected build id be checked?
         Assert.assertTrue(String.format("Device %s build id did not change after leaving recovery",
                 mDevice.getSerialNumber()), currentBuildId !=  mDeviceBuild.getBuildId());
@@ -298,15 +298,6 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
                     mDevice.getSerialNumber()));
             Log.e(LOG_TAG, e);
         }
-    }
-
-    /**
-     * Gets the current build id of device
-     *
-     * @return the current build id or -1 if it could not be retrieved
-     */
-    private int getDeviceBuildId() {
-        return mDevice.getBuildId();
     }
 
     private void checkFields() {

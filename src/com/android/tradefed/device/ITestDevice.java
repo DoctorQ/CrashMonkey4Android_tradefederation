@@ -73,8 +73,10 @@ public interface ITestDevice {
      * Retrieve the build the device is currently running.
      *
      * @return the build id or -1 if it could not be retrieved
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
      */
-    public int getBuildId();
+    public int getBuildId() throws DeviceNotAvailableException;
 
     /**
      * Executes the given adb shell command, retrying multiple times if command fails.
