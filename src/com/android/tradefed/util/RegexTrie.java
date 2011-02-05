@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -112,6 +113,13 @@ public class RegexTrie<V> {
         }
     }
 
+    /**
+     * Add an entry to the trie.
+     *
+     * @param value The value to set
+     * @param patterns The sequence of {@link Pattern}s that must be sequentially matched to
+     *        retrieve the associated {@code value}
+     */
     public V put(V value, Pattern... patterns) {
         if (patterns.length == 0) {
             throw new IllegalArgumentException("pattern list must be non-empty");
@@ -121,8 +129,13 @@ public class RegexTrie<V> {
     }
 
     /**
-     * This helper method takes a list of regular expressions as Strings and compiles them
-     * on-the-fly before recursing
+     * This helper method takes a list of regular expressions as {@link String}s and compiles them
+     * on-the-fly before adding the subsequent {@link Pattern}s to the trie
+     *
+     * @param value The value to set
+     * @param patterns The sequence of regular expressions (as {@link String}s) that must be
+     *        sequentially matched to retrieve the associated {@code value}.  Each String will be
+     *        compiled as a {@link Pattern} before invoking {@link #put(V, Pattern...)}.
      */
     public V put(V value, String... regexen) {
         Pattern[] patterns = new Pattern[regexen.length];
@@ -132,7 +145,7 @@ public class RegexTrie<V> {
         return put(value, patterns);
     }
 
-    V recursiveRetrieve(List<String> strings) {
+    V recursiveRetrieve(List<List<String>> groups, List<String> strings) {
         // Cases:
         // 1) strings is empty -- return our value
         // 2) strings is non-empty -- find the first child that matches, recurse downward
@@ -145,7 +158,16 @@ public class RegexTrie<V> {
             for (Map.Entry<CompPattern, RegexTrie<V>> child : mChildren.entrySet()) {
                 Matcher matcher = child.getKey().matcher(curKey);
                 if (matcher.matches()) {
-                    return child.getValue().recursiveRetrieve(nextKeys);
+                    if (groups != null) {
+                        List<String> captures = new ArrayList<String>(matcher.groupCount());
+                        for (int i = 0; i < matcher.groupCount(); i++) {
+                            // i+1 since group 0 is the entire matched string
+                            captures.add(matcher.group(i+1));
+                        }
+                        groups.add(captures);
+                    }
+
+                    return child.getValue().recursiveRetrieve(groups, nextKeys);
                 }
             }
 
@@ -154,12 +176,43 @@ public class RegexTrie<V> {
         }
     }
 
+    /**
+     * Fetch a value from the trie, by matching the provided sequence of {@link String}s to a
+     * sequence of {@link Pattern}s stored in the trie.
+     *
+     * @param strings A sequence of {@link String}s to match
+     * @return The associated value, or {@code null} if no value was found
+     */
     public V retrieve(String... strings) {
+        return retrieve(null, strings);
+    }
+
+    /**
+     * Fetch a value from the trie, by matching the provided sequence of {@link String}s to a
+     * sequence of {@link Pattern}s stored in the trie.  This version of the method also returns
+     * a {@link List} of capture groups for each {@link Pattern} that was matched.
+     * <p />
+     * Each entry in the outer List corresponds to one level of {@code Pattern} in the trie.
+     * For each level, the list of capture groups will be stored.  If there were no captures
+     * for a particular level, an empty list will be stored.
+     * <p />
+     * Note that {@code groups} will be {@link List#clear()}ed before the retrieval begins.
+     * Also, if the retrieval fails after a partial sequence of matches, {@code groups} will
+     * still reflect the capture groups from the partial match.
+     *
+     * @param groups A {@code List<List<String>>} through which capture groups will be returned.
+     * @param strings A sequence of {@link String}s to match
+     * @return The associated value, or {@code null} if no value was found
+     */
+    public V retrieve(List<List<String>> groups, String... strings) {
         if (strings.length == 0) {
             throw new IllegalArgumentException("string list must be non-empty");
         }
         List<String> sList = Arrays.asList(strings);
-        return recursiveRetrieve(sList);
+        if (groups != null) {
+            groups.clear();
+        }
+        return recursiveRetrieve(groups, sList);
     }
 
     @Override
