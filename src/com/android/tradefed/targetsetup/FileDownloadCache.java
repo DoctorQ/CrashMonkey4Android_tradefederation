@@ -196,7 +196,11 @@ public class FileDownloadCache {
             mCacheMap.put(remotePath, cachedFile);
             mCacheMapLock.unlock();
             if (download) {
+                Log.d(LOG_TAG, String.format("Downloading %s to cache", remotePath));
                 downloader.downloadFile(remotePath, cachedFile);
+            } else {
+                Log.d(LOG_TAG, String.format("Retrieved remote file %s from cached file %s",
+                        remotePath, cachedFile.getAbsolutePath()));
             }
             try {
                 // attempt to create a local copy of cached file with sane name
