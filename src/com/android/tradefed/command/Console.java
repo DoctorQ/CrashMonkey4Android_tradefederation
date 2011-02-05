@@ -220,18 +220,23 @@ public class Console {
         ArgRunnable<CaptureList> runLoadConfig = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
-                        String arg = args.get(args.size() - 1).get(0);
-                        System.out.format("Attempting to load config %s\n", arg);
+                        // Skip 2 tokens to get past loadPattern and "config"
+                        String[] flatArgs = new String[args.size() - 2];
+                        for (int i = 2; i < args.size(); i++) {
+                            flatArgs[i - 2] = args.get(i).get(0);
+                        }
+                        mScheduler.addConfig(flatArgs);
                     }
                 };
-        trie.put(runLoadConfig, loadPattern, "config", "(.*)");
+        trie.put(runLoadConfig, loadPattern, "config", null);
         // Missing required argument: show help
         trie.put(runHelpLoad, loadPattern, "config");
 
         ArgRunnable<CaptureList> runLoadCmdfile = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
-                        String file = args.get(args.size() - 1).get(0);
+                        // Skip 2 tokens to get past loadPattern and "cmdfile"
+                        String file = args.get(2).get(0);
                         System.out.format("Attempting to load cmdfile %s\n", file);
                         try {
                             createCommandFileParser().parseFile(new File(file), mScheduler);
