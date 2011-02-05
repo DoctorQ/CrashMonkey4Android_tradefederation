@@ -19,5 +19,6 @@
 
 # A simpler helper script that runs the Trade Federation unit tests
 
-tradefed.sh --class  com.android.tradefed.UnitTests "$@" host
+lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
+java -cp $lib_path/ddmlib-prebuilt.jar:$lib_path/tradefed.jar:$lib_path/tradefed-tests.jar junit.textui.TestRunner com.android.tradefed.UnitTests

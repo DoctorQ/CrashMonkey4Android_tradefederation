@@ -17,4 +17,4 @@
 # A simpler helper script that runs the Trade Federation functional tests
 
 # run the functional test suite that contains all the functional tests
-tradefed.sh --class com.android.tradefed.FuncTests "$@" host
+$ANDROID_BUILD_TOP/tools/tradefederation/tests/run_tradefed_func_test.sh --class com.android.tradefed.FuncTests "$@"

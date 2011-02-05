@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # Copyright (C) 2010 The Android Open Source Project
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,22 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-LOCAL_PATH := $(call my-dir)
+# A helper script that launches TradeFederation from the current build
+# environment.
 
-include $(CLEAR_VARS)
+# Currently fixed to linux
+lib_path=$ANDROID_BUILD_TOP/out/host/linux-x86/framework
 
-# Only compile source java files in this lib.
-LOCAL_SRC_FILES := $(call all-java-files-under, src)
-
-LOCAL_JAVA_RESOURCE_DIRS := res
-
-LOCAL_MODULE := tradefed
-
-LOCAL_MODULE_TAGS := optional
-LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0
-LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt
-
-include $(BUILD_HOST_JAVA_LIBRARY)
-
-# Build all sub-directories
-include $(call all-makefiles-under,$(LOCAL_PATH))
+java -cp $lib_path/ddmlib-prebuilt.jar:$lib_path/tradefed.jar com.android.tradefed.command.Command "$@"
