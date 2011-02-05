@@ -151,6 +151,58 @@ public class RegexTrieTest extends TestCase {
         assertEquals(list("beta"), groups.get(1));
     }
 
+    /**
+     * Make sure that the wildcard functionality works
+     */
+    public void testWildcard() {
+        mTrie.put(mStored, "a", null);
+        Integer retrieved;
+        List<List<String>> groups = new ArrayList<List<String>>();
+
+        retrieved = mTrie.retrieve(groups, "a", "b", "c");
+        assertEquals(mStored, retrieved);
+        assertEquals(3, groups.size());
+        assertEquals(list(), groups.get(0));
+        assertEquals(list("b"), groups.get(1));
+        assertEquals(list("c"), groups.get(2));
+
+        retrieved = mTrie.retrieve(groups, "a");
+        assertNull(retrieved);
+        assertEquals(1, groups.size());
+        assertEquals(list(), groups.get(0));
+    }
+
+    /**
+     * Make sure that if a wildcard and a more specific match could both match, that the more
+     * specific match takes precedence
+     */
+    public void testWildcard_precedence() {
+        // Do one before and one after the wildcard to check for ordering effects
+        mTrie.put(mStored + 1, "a", "(b)");
+        mTrie.put(mStored, "a", null);
+        mTrie.put(mStored + 2, "a", "(c)");
+        Integer retrieved;
+        List<List<String>> groups = new ArrayList<List<String>>();
+
+        retrieved = mTrie.retrieve(groups, "a", "d");
+        assertEquals(mStored, retrieved);
+        assertEquals(2, groups.size());
+        assertEquals(list(), groups.get(0));
+        assertEquals(list("d"), groups.get(1));
+
+        retrieved = mTrie.retrieve(groups, "a", "b");
+        assertEquals((Integer)(mStored + 1), retrieved);
+        assertEquals(2, groups.size());
+        assertEquals(list(), groups.get(0));
+        assertEquals(list("b"), groups.get(1));
+
+        retrieved = mTrie.retrieve(groups, "a", "c");
+        assertEquals((Integer)(mStored + 2), retrieved);
+        assertEquals(2, groups.size());
+        assertEquals(list(), groups.get(0));
+        assertEquals(list("c"), groups.get(1));
+    }
+
     public void testMultiChild() {
         mTrie.put(mStored + 1, "a", "b");
         mTrie.put(mStored + 2, "a", "c");

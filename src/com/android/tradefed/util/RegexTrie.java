@@ -26,9 +26,32 @@ import java.util.regex.Pattern;
 /**
  * The RegexTrie is a trie where each _stored_ segment of the key is a regex {@link Pattern}.  Thus,
  * the full _stored_ key is a List<Pattern> rather than a String as in a standard trie.  Note that
- * the {@link get(Object key)} requires a List<String>, which will be matched against the
+ * the {@link #get(Object key)} method requires a List<String>, which will be matched against the
  * {@link Pattern}s, rather than checked for equality as in a standard trie.  It will likely perform
  * poorly for large datasets.
+ * <p />
+ * One can also use a {@code null} entry in the {@code Pattern} sequence to serve as a wildcard.  If
+ * a {@code null} is encountered, all subsequent entries in the sequence will be ignored.
+ * When the retrieval code encounters a {@code null} {@code Pattern}, it will first wait to see if a
+ * more-specific entry matches the sequence.  If one does, that more-specific entry will proceed,
+ * even if it subsequently fails to match.
+ * <p />
+ * If no more-specific entry matches, the wildcard match will add all remaining {@code String}s
+ * to the list of captures (if enabled) and return the value associated with the wildcard.
+ * <p />
+ * A short sample of the wildcard functionality:
+ * <pre>
+ * List<List<String>> captures = new LinkedList<List<String>>();
+ * RegexTrie<Integer> trie = new RegexTrie<Integer>();
+ * trie.put(2, "a", null);
+ * trie.put(4, "a", "b");
+ * trie.retrieve(captures, "a", "c", "e");
+ * // returns 2.  captures is now [[], ["c"], ["e"]]
+ * trie.retrieve(captures, "a", "b");
+ * // returns 4.  captures is now [[], []]
+ * trie.retrieve(captures, "a", "b", "c");
+ * // returns null.  captures is now [[], []]
+ * </pre>
  */
 public class RegexTrie<V> {
     private V mValue = null;
@@ -91,7 +114,7 @@ public class RegexTrie<V> {
         return retrieve(strings) != null;
     }
 
-    V recursivePut(V value, List<Pattern> patterns) {
+    V recursivePut(V value, List<CompPattern> patterns) {
         // Cases:
         // 1) patterns is empty -- set our value
         // 2) patterns is non-empty -- recurse downward, creating a child if necessary
@@ -100,8 +123,8 @@ public class RegexTrie<V> {
             mValue = value;
             return oldValue;
         } else {
-            CompPattern curKey = new CompPattern(patterns.get(0));
-            List<Pattern> nextKeys = patterns.subList(1, patterns.size());
+            CompPattern curKey = patterns.get(0);
+            List<CompPattern> nextKeys = patterns.subList(1, patterns.size());
 
             // Create a new child to handle
             RegexTrie<V> nextChild = mChildren.get(curKey);
@@ -114,6 +137,20 @@ public class RegexTrie<V> {
     }
 
     /**
+     * A helper method to consolidate validation before adding an entry to the trie.
+     *
+     * @param value The value to set
+     * @param patterns The sequence of {@link CompPattern}s that must be sequentially matched to
+     *        retrieve the associated {@code value}
+     */
+    private V validateAndPut(V value, List<CompPattern> pList) {
+        if (pList.size() == 0) {
+            throw new IllegalArgumentException("pattern list must be non-empty.");
+        }
+        return recursivePut(value, pList);
+    }
+
+    /**
      * Add an entry to the trie.
      *
      * @param value The value to set
@@ -121,11 +158,15 @@ public class RegexTrie<V> {
      *        retrieve the associated {@code value}
      */
     public V put(V value, Pattern... patterns) {
-        if (patterns.length == 0) {
-            throw new IllegalArgumentException("pattern list must be non-empty");
+        List<CompPattern> pList = new ArrayList<CompPattern>(patterns.length);
+        for (Pattern pat : patterns) {
+            if (pat == null) {
+                pList.add(null);
+                break;
+            }
+            pList.add(new CompPattern(pat));
         }
-        List<Pattern> pList = Arrays.asList(patterns);
-        return recursivePut(value, pList);
+        return validateAndPut(value, pList);
     }
 
     /**
@@ -138,37 +179,67 @@ public class RegexTrie<V> {
      *        compiled as a {@link Pattern} before invoking {@link #put(V, Pattern...)}.
      */
     public V put(V value, String... regexen) {
-        Pattern[] patterns = new Pattern[regexen.length];
-        for (int i = 0; i < regexen.length; ++i) {
-            patterns[i] = Pattern.compile(regexen[i]);
+        List<CompPattern> pList = new ArrayList<CompPattern>(regexen.length);
+        for (String regex : regexen) {
+            if (regex == null) {
+                pList.add(null);
+                break;
+            }
+            Pattern pat = Pattern.compile(regex);
+            pList.add(new CompPattern(pat));
         }
-        return put(value, patterns);
+        return validateAndPut(value, pList);
     }
 
-    V recursiveRetrieve(List<List<String>> groups, List<String> strings) {
+    private static List<String> list(String... strings) {
+        List<String> retList = new ArrayList<String>(strings.length);
+        for (String str : strings) {
+            retList.add(str);
+        }
+        return retList;
+    }
+
+    V recursiveRetrieve(List<List<String>> captures, List<String> strings) {
         // Cases:
         // 1) strings is empty -- return our value
         // 2) strings is non-empty -- find the first child that matches, recurse downward
         if (strings.isEmpty()) {
             return mValue;
         } else {
+            boolean wildcardMatch = false;
+            V wildcardValue = null;
             String curKey = strings.get(0);
             List<String> nextKeys = strings.subList(1, strings.size());
 
             for (Map.Entry<CompPattern, RegexTrie<V>> child : mChildren.entrySet()) {
-                Matcher matcher = child.getKey().matcher(curKey);
+                CompPattern pattern = child.getKey();
+                if (pattern == null) {
+                    wildcardMatch = true;
+                    wildcardValue = child.getValue().getValue();
+                    continue;
+                }
+
+                Matcher matcher = pattern.matcher(curKey);
                 if (matcher.matches()) {
-                    if (groups != null) {
-                        List<String> captures = new ArrayList<String>(matcher.groupCount());
+                    if (captures != null) {
+                        List<String> curCaptures = new ArrayList<String>(matcher.groupCount());
                         for (int i = 0; i < matcher.groupCount(); i++) {
                             // i+1 since group 0 is the entire matched string
-                            captures.add(matcher.group(i+1));
+                            curCaptures.add(matcher.group(i+1));
                         }
-                        groups.add(captures);
+                        captures.add(curCaptures);
                     }
 
-                    return child.getValue().recursiveRetrieve(groups, nextKeys);
+                    return child.getValue().recursiveRetrieve(captures, nextKeys);
                 }
+            }
+
+            if (wildcardMatch) {
+                // Stick the rest of the query string into the captures list and return
+                for (String str : strings) {
+                    captures.add(list(str));
+                }
+                return wildcardValue;
             }
 
             // no match
@@ -196,23 +267,27 @@ public class RegexTrie<V> {
      * For each level, the list of capture groups will be stored.  If there were no captures
      * for a particular level, an empty list will be stored.
      * <p />
-     * Note that {@code groups} will be {@link List#clear()}ed before the retrieval begins.
-     * Also, if the retrieval fails after a partial sequence of matches, {@code groups} will
+     * Note that {@code captures} will be {@link List#clear()}ed before the retrieval begins.
+     * Also, if the retrieval fails after a partial sequence of matches, {@code captures} will
      * still reflect the capture groups from the partial match.
      *
-     * @param groups A {@code List<List<String>>} through which capture groups will be returned.
+     * @param captures A {@code List<List<String>>} through which capture groups will be returned.
      * @param strings A sequence of {@link String}s to match
      * @return The associated value, or {@code null} if no value was found
      */
-    public V retrieve(List<List<String>> groups, String... strings) {
+    public V retrieve(List<List<String>> captures, String... strings) {
         if (strings.length == 0) {
             throw new IllegalArgumentException("string list must be non-empty");
         }
         List<String> sList = Arrays.asList(strings);
-        if (groups != null) {
-            groups.clear();
+        if (captures != null) {
+            captures.clear();
         }
-        return recursiveRetrieve(groups, sList);
+        return recursiveRetrieve(captures, sList);
+    }
+
+    private V getValue() {
+        return mValue;
     }
 
     @Override

@@ -227,6 +227,7 @@ public class Console {
         trie.put(runLoadConfig, loadPattern, "config", "(.*)");
         // Missing required argument: show help
         trie.put(runHelpLoad, loadPattern, "config");
+
         ArgRunnable<CaptureList> runLoadCmdfile = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
