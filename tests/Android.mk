@@ -28,5 +28,15 @@ LOCAL_JAVA_LIBRARIES := tradefed ddmlib-prebuilt
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 
+# makefile rules to copy jars to HOST_OUT/tradefed
+# so tradefed.sh can automatically add to classpath
+
+DEST_JAR := $(HOST_OUT)/tradefed/$(LOCAL_MODULE).jar
+$(DEST_JAR): $(LOCAL_BUILT_MODULE)
+	$(copy-file-to-new-target)
+
+# this dependency ensure the above rule will be executed if module is built
+$(LOCAL_INSTALLED_MODULE) : $(DEST_JAR)
+
 # Build all sub-directories
 include $(call all-makefiles-under,$(LOCAL_PATH))
