@@ -1249,12 +1249,9 @@ class TestDevice implements IManagedTestDevice {
                     mTmpFile.getAbsolutePath()));
             mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
                     LOGCAT_BUFF_SIZE);
-            int buildId = -1;
-            try {
-                buildId = getBuildId();
-            } catch (DeviceNotAvailableException e) {
-                // ignore
-            }
+            // TODO: temp hack: query buildId directly rather than going through getBuildId
+            // because don't want to chance entering recovery on background thread
+            String buildId = getIDevice().getProperty(BUILD_ID_PROP);
             // add an initial message to log, to give info to viewer
             if (mPreviousTmpFile == null) {
                 // first log!
