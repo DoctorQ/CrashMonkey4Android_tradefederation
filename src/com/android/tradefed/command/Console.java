@@ -34,6 +34,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
 // not importing java.io.Console because of class name conflict
@@ -74,6 +76,30 @@ public class Console {
     private java.io.Console mTerminal;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
 
+    /** A convenience type for List<List<String>> */
+    @SuppressWarnings("serial")
+    private class CaptureList extends LinkedList<List<String>> {
+        CaptureList() {
+            super();
+        }
+
+        CaptureList(Collection<? extends List<String>> c) {
+            super(c);
+        }
+    }
+
+    /**
+     * A {@link Runnable} with a {@code run} method that can take an argument
+     */
+    abstract class ArgRunnable<T> implements Runnable {
+        @Override
+        public void run() {
+            run(null);
+        }
+
+        abstract public void run(T args);
+    }
+
     Console() {
         this(new CommandScheduler());
     }
@@ -91,17 +117,18 @@ public class Console {
 
     void addDefaultCommands(RegexTrie<Runnable> trie) {
         final String helpPattern = "\\?|h|help";
-        final String listPattern = "l(ist)?";
-        final String dumpPattern = "d(ump)?";
+        final String showPattern = "s(?:how)?";
+        final String dumpPattern = "d(?:ump)?";
+        final String loadPattern = "l(?:oad)?";
 
         // Help commands
         trie.put(new Runnable() {
                     @Override
                     public void run() {
                         mTerminal.printf(
-                                "Not-so-helpful help:\n" +
                                 "Enter 'q' or 'exit' to exit\n" +
-                                "Enter 'help list' for help with 'list' commands\n" +
+                                "Enter 'help show' for help with 'show' commands\n" +
+                                "Enter 'help load' for help with 'load' commands\n" +
                                 "Enter 'help dump' for help with 'dump' commands\n");
                     }
                 }, helpPattern);
@@ -109,23 +136,35 @@ public class Console {
                     @Override
                     public void run() {
                         mTerminal.printf(
-                            "%s help:\n" +
-                            "\ti[nvocations]  List all invocation threads\n" +
-                            "\td[evices]      List all detected or known devices\n" +
-                            "\tc[configs]     List all configs\n", listPattern);
+                                "%s help:\n" +
+                                "\ti[nvocations]  Show all invocation threads\n" +
+                                "\td[evices]      Show all detected or known devices\n" +
+                                "\tc[configs]     Show all configs\n", showPattern);
                     }
-                }, helpPattern, listPattern);
+                }, helpPattern, showPattern);
         trie.put(new Runnable() {
                     @Override
                     public void run() {
                         mTerminal.printf(
-                            "%s help:\n" +
-                            "\ts[tack]  Dump the stack traces of all threads\n" +
-                            "\tl[ogs] Dump the logs of all invocations to files\n", dumpPattern);
+                                "%s help:\n" +
+                                "\ts[tack]  Dump the stack traces of all threads\n" +
+                                "\tl[ogs]   Dump the logs of all invocations to files\n",
+                                dumpPattern);
                     }
                 }, helpPattern, dumpPattern);
+        Runnable runHelpLoad = new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminal.printf(
+                                "%s help:\n" +
+                                "\tconfig  <config.xml>   Load and run the specified config\n" +
+                                "\tcmdfile <cmdfile.txt>  Load and run the specified commandfile\n",
+                                loadPattern);
+                    }
+                };
+        trie.put(runHelpLoad, helpPattern, loadPattern);
 
-        // List commands
+        // Show commands
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -136,7 +175,7 @@ public class Console {
                             mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
                         }
                     }
-                }, listPattern, "i(nvocations)?");
+                }, showPattern, "i(?:nvocations)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -150,7 +189,7 @@ public class Console {
                         devices = manager.getAllocatedDevices();
                         mTerminal.printf("Allocated devices:   %s\n", devices);
                     }
-                }, listPattern, "d(evices)?");
+                }, showPattern, "d(?:evices)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -161,7 +200,7 @@ public class Console {
                             mTerminal.printf("Got config %d: %s\n", counter++, config);
                         }
                     }
-                }, listPattern, "c(onfigs)?");
+                }, showPattern, "c(?:onfigs)?");
 
         // Dump commands
         trie.put(new Runnable() {
@@ -169,13 +208,42 @@ public class Console {
                     public void run() {
                         dumpStacks();
                     }
-                }, dumpPattern, "s(tacks?)?");
+                }, dumpPattern, "s(?:tacks?)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
                         dumpLogs();
                     }
-                }, dumpPattern, "l(ogs?)?");
+                }, dumpPattern, "l(?:ogs?)?");
+
+        // Load commands
+        ArgRunnable<CaptureList> runLoadConfig = new ArgRunnable<CaptureList>() {
+                    @Override
+                    public void run(CaptureList args) {
+                        String arg = args.get(args.size() - 1).get(0);
+                        System.out.format("Attempting to load config %s\n", arg);
+                    }
+                };
+        trie.put(runLoadConfig, loadPattern, "config", "(.*)");
+        // Missing required argument: show help
+        trie.put(runHelpLoad, loadPattern, "config");
+        ArgRunnable<CaptureList> runLoadCmdfile = new ArgRunnable<CaptureList>() {
+                    @Override
+                    public void run(CaptureList args) {
+                        String file = args.get(args.size() - 1).get(0);
+                        System.out.format("Attempting to load cmdfile %s\n", file);
+                        try {
+                            createCommandFileParser().parseFile(new File(file), mScheduler);
+                        } catch (IOException e) {
+                            mTerminal.printf("Failed to load %s: %s\n", file, e);
+                        } catch (ConfigurationException e) {
+                            mTerminal.printf("Failed to load %s: %s\n", file, e);
+                        }
+                    }
+                };
+        trie.put(runLoadCmdfile, loadPattern, "cmdfile", "(.*)");
+        // Missing required argument: show help
+        trie.put(runHelpLoad, loadPattern, "cmdfile");
     }
 
     /**
@@ -240,6 +308,7 @@ public class Console {
 
             String input = "";
             boolean shouldExit = false;
+            CaptureList groups = new CaptureList();
 
             while (!shouldExit) {
                 input = getConsoleInput();
@@ -252,9 +321,15 @@ public class Console {
 
                 // TODO: think about having the modules themselves advertise their management
                 // TODO: interfaces
-                Runnable command = mCommandTrie.retrieve(tokens);
+                Runnable command = mCommandTrie.retrieve(groups, tokens);
                 if (command != null) {
-                    command.run();
+                    if (command instanceof ArgRunnable) {
+                        // FIXME: verify that command implements ArgRunnable<CaptureList> instead
+                        // FIXME: of just ArgRunnable
+                        ((ArgRunnable<CaptureList>)command).run(groups);
+                    } else {
+                        command.run();
+                    }
                 } else if ("exit".equals(tokens[0]) || "q".equals(tokens[0])) {
                     shouldExit = true;
                 } else {

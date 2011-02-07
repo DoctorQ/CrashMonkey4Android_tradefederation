@@ -51,7 +51,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
      * Get the singleton {@link IConfigurationFactory} instance.
      */
     public static IConfigurationFactory getInstance() {
-        if (sInstance  == null) {
+        if (sInstance == null) {
             sInstance = new ConfigurationFactory();
         }
         return sInstance;
