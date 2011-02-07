@@ -1255,7 +1255,7 @@ class TestDevice implements IManagedTestDevice {
             // add an initial message to log, to give info to viewer
             if (mPreviousTmpFile == null) {
                 // first log!
-                appendDeviceLogMsg(String.format("Logcat for device %s running system build %d",
+                appendDeviceLogMsg(String.format("Logcat for device %s running system build %s",
                         getSerialNumber(), buildId));
             } else {
                 appendDeviceLogMsg(String.format(
