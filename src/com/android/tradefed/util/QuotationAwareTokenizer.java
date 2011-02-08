@@ -55,6 +55,10 @@ public class QuotationAwareTokenizer {
      * @throws IllegalArgumentException if the line cannot be parsed
      */
     public static String[] tokenizeLine(String line) throws IllegalArgumentException {
+        if (line == null) {
+            throw new IllegalArgumentException("line is null");
+        }
+
         ArrayList<String> tokens = new ArrayList<String>();
         StringBuilder token = new StringBuilder();
         // This pattern matches an escaped character or a character.  Escaped char takes precedence

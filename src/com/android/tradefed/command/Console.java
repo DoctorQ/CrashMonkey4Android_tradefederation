@@ -318,10 +318,23 @@ public class Console {
 
             while (!shouldExit) {
                 input = getConsoleInput();
-                // System.err.println("Got input line: " + input);
-                String[] tokens = QuotationAwareTokenizer.tokenizeLine(input);
+                if (input == null) {
+                    // Usually the result of getting EOF on the console
+                    mTerminal.printf("\nReceived EOF; quitting...\n");
+                    shouldExit = true;
+                    break;
+                }
 
-                if (tokens.length == 0) {
+                String[] tokens = null;
+                // System.err.println("Got input line: " + input);
+                try {
+                    tokens = QuotationAwareTokenizer.tokenizeLine(input);
+                } catch (IllegalArgumentException e) {
+                    mTerminal.printf("Invalid input: %s.\n", input);
+                    continue;
+                }
+
+                if (tokens == null || tokens.length == 0) {
                     continue;
                 }
 
