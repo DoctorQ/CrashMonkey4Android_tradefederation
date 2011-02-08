@@ -16,13 +16,13 @@
 package com.android.tradefed.config;
 
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.build.BuildInfo;
+import com.android.tradefed.build.BuildRetrievalError;
+import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.targetsetup.BuildInfo;
-import com.android.tradefed.targetsetup.IBuildProvider;
-import com.android.tradefed.targetsetup.ITargetPreparer;
-import com.android.tradefed.targetsetup.TargetSetupError;
+import com.android.tradefed.targetprep.ITargetPreparer;
 
 import org.easymock.EasyMock;
 
@@ -173,7 +173,7 @@ public class ConfigurationTest extends TestCase {
     /**
      * Test method for {@link com.android.tradefed.config.Configuration#getBuildProvider()}.
      */
-    public void testGetBuildProvider() throws ConfigurationException, TargetSetupError {
+    public void testGetBuildProvider() throws ConfigurationException, BuildRetrievalError {
         // check that the default provider is present and doesn't blow up
         assertNotNull(mConfig.getBuildProvider().getBuild());
         // check set and get

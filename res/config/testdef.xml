@@ -19,5 +19,4 @@
     <test class="com.android.tradefed.testtype.testdefs.XmlDefsTest" />
     <logger class="com.android.tradefed.log.FileLogger" />
     <result_reporter class="com.android.tradefed.result.XmlResultReporter" />
-
 </configuration>

@@ -15,10 +15,10 @@
  */
 package com.android.tradefed;
 
+import com.android.tradefed.build.FileDownloadCacheFuncTest;
 import com.android.tradefed.command.CommandSchedulerFuncTest;
 import com.android.tradefed.device.TestDeviceFuncTest;
-import com.android.tradefed.targetsetup.DeviceSetupFuncTest;
-import com.android.tradefed.targetsetup.FileDownloadCacheFuncTest;
+import com.android.tradefed.targetprep.DeviceSetupFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.GTestFuncTest;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;

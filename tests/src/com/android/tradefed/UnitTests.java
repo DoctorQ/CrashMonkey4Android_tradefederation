@@ -15,6 +15,8 @@
  */
 package com.android.tradefed;
 
+import com.android.tradefed.build.DeviceBuildInfoTest;
+import com.android.tradefed.build.FileDownloadCacheTest;
 import com.android.tradefed.command.CommandFileParserTest;
 import com.android.tradefed.command.CommandSchedulerTest;
 import com.android.tradefed.command.CommandTest;
@@ -38,11 +40,9 @@ import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
 import com.android.tradefed.result.TestSummaryTest;
 import com.android.tradefed.result.XmlResultReporterTest;
-import com.android.tradefed.targetsetup.DeviceBuildInfoTest;
-import com.android.tradefed.targetsetup.DeviceFlasherTest;
-import com.android.tradefed.targetsetup.DeviceSetupTest;
-import com.android.tradefed.targetsetup.FileDownloadCacheTest;
-import com.android.tradefed.targetsetup.FlashingResourcesParserTest;
+import com.android.tradefed.targetprep.DeviceFlasherTest;
+import com.android.tradefed.targetprep.DeviceSetupTest;
+import com.android.tradefed.targetprep.FlashingResourcesParserTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
 import com.android.tradefed.testtype.GTestTest;

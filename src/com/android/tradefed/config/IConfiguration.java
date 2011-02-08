@@ -16,11 +16,11 @@
 
 package com.android.tradefed.config;
 
+import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.targetsetup.IBuildProvider;
-import com.android.tradefed.targetsetup.ITargetPreparer;
+import com.android.tradefed.targetprep.ITargetPreparer;
 
 import java.util.Collection;
 import java.util.List;

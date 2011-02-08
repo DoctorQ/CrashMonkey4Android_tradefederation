@@ -14,12 +14,5 @@
      limitations under the License.
 -->
 <configuration description="Runs a native stress test on an existing device">
-
-    <build_provider class="com.android.tradefed.targetsetup.StubBuildProvider" />
-    <device_recovery class="com.android.tradefed.device.WaitDeviceRecovery" />
-    <target_preparer class="com.android.tradefed.targetsetup.StubTargetPreparer" />
     <test class="com.android.tradefed.testtype.NativeBenchmarkTest" />
-    <logger class="com.android.tradefed.log.StdoutLogger" />
-    <result_reporter class="com.android.tradefed.result.TextResultReporter" />
-
 </configuration>

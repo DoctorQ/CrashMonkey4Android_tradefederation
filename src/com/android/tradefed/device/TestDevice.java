@@ -1259,7 +1259,7 @@ class TestDevice implements IManagedTestDevice {
                         getSerialNumber(), buildId));
             } else {
                 appendDeviceLogMsg(String.format(
-                        "Continuing logcat capture for device %s running system build %d. " +
+                        "Continuing logcat capture for device %s running system build %s. " +
                         "Previous content may have been truncated.", getSerialNumber(),
                         buildId));
             }

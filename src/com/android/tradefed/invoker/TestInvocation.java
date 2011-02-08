@@ -17,6 +17,11 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.build.BuildInfo;
+import com.android.tradefed.build.BuildRetrievalError;
+import com.android.tradefed.build.ExistingBuildProvider;
+import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -28,13 +33,9 @@ import com.android.tradefed.result.InvocationSummaryHelper;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
-import com.android.tradefed.targetsetup.BuildError;
-import com.android.tradefed.targetsetup.BuildInfo;
-import com.android.tradefed.targetsetup.ExistingBuildProvider;
-import com.android.tradefed.targetsetup.IBuildInfo;
-import com.android.tradefed.targetsetup.IBuildProvider;
-import com.android.tradefed.targetsetup.ITargetPreparer;
-import com.android.tradefed.targetsetup.TargetSetupError;
+import com.android.tradefed.targetprep.BuildError;
+import com.android.tradefed.targetprep.ITargetPreparer;
+import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.testtype.IBuildReceiver;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
@@ -128,7 +129,7 @@ public class TestInvocation implements ITestInvocation {
                 mStatus = "(no build to test)";
                 Log.i(LOG_TAG, "No build to test");
             }
-        } catch (TargetSetupError e) {
+        } catch (BuildRetrievalError e) {
             Log.e(LOG_TAG, e);
         }
     }

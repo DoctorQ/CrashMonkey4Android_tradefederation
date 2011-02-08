@@ -17,6 +17,9 @@ package com.android.tradefed.invoker;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.build.BuildRetrievalError;
+import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.config.Configuration;
 import com.android.tradefed.config.ConfigurationException;
@@ -32,11 +35,8 @@ import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;
-import com.android.tradefed.targetsetup.BuildError;
-import com.android.tradefed.targetsetup.IBuildInfo;
-import com.android.tradefed.targetsetup.IBuildProvider;
-import com.android.tradefed.targetsetup.ITargetPreparer;
-import com.android.tradefed.targetsetup.TargetSetupError;
+import com.android.tradefed.targetprep.BuildError;
+import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
@@ -177,9 +177,9 @@ public class TestInvocationTest extends TestCase {
      * <p/>
      * An invocation will not be started in this scenario.
      */
-    public void testInvoke_buildFailed() throws TargetSetupError, ConfigurationException,
+    public void testInvoke_buildFailed() throws BuildRetrievalError, ConfigurationException,
             DeviceNotAvailableException  {
-        TargetSetupError exception = new TargetSetupError("error");
+        BuildRetrievalError exception = new BuildRetrievalError("error");
         EasyMock.expect(mMockBuildProvider.getBuild()).andThrow(exception);
         Test test = EasyMock.createMock(Test.class);
         mStubConfiguration.setTest(test);
@@ -193,7 +193,7 @@ public class TestInvocationTest extends TestCase {
     /**
      * Test the invoke scenario where there is no build to test.
      */
-    public void testInvoke_noBuild() throws TargetSetupError, ConfigurationException,
+    public void testInvoke_noBuild() throws BuildRetrievalError, ConfigurationException,
             DeviceNotAvailableException  {
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(null);
         Test test = EasyMock.createMock(Test.class);
