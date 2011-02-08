@@ -51,6 +51,15 @@ public class InstrumentationListTestTest extends TestCase {
     }
 
     /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runIListTest() throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(mMockListener);
+        mInstrumentationListTest.run(list);
+    }
+
+    /**
      * Test normal run scenario with a single test.
      */
     @SuppressWarnings("unchecked")
@@ -83,7 +92,7 @@ public class InstrumentationListTestTest extends TestCase {
 
         EasyMock.replay(mMockListener, mMockTestDevice);
         mInstrumentationListTest.setDevice(mMockTestDevice);
-        mInstrumentationListTest.run(mMockListener);
+        runIListTest();
         assertEquals(mMockTestDevice, mockITest.getDevice());
         assertEquals(test.getClassName(), mockITest.getClassName());
         assertEquals(test.getTestName(), mockITest.getMethodName());
@@ -128,7 +137,7 @@ public class InstrumentationListTestTest extends TestCase {
 
         EasyMock.replay(mMockListener, mMockTestDevice);
         mInstrumentationListTest.setDevice(mMockTestDevice);
-        mInstrumentationListTest.run(mMockListener);
+        runIListTest();
         assertEquals(mMockTestDevice, mockITest.getDevice());
         assertEquals(test.getClassName(), mockITest.getClassName());
         assertEquals(test.getTestName(), mockITest.getMethodName());
@@ -144,7 +153,7 @@ public class InstrumentationListTestTest extends TestCase {
         mInstrumentationListTest.setDevice(null);
         EasyMock.replay(mMockListener);
         try {
-            mInstrumentationListTest.run(mMockListener);
+            runIListTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected

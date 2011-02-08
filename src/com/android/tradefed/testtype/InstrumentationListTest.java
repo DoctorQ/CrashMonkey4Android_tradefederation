@@ -23,6 +23,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -97,6 +98,12 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
         return new InstrumentationTest();
     }
 
+    List<ITestInvocationListener> buildSingletonList(ITestInvocationListener listener) {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(listener);
+        return list;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -118,7 +125,7 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
             // use a listener filter, to report the test as failed if the test run fails with no
             // tests executed
             TestTrackingListener trackingListener = new TestTrackingListener(listeners, testToRun);
-            runner.run(trackingListener);
+            runner.run(buildSingletonList(trackingListener));
         }
     }
 

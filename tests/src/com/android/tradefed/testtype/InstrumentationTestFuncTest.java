@@ -28,6 +28,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import org.easymock.EasyMock;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -56,6 +58,19 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener = EasyMock.createStrictMock(ITestInvocationListener.class);
     }
 
+    List<ITestInvocationListener> buildSingletonList(ITestInvocationListener listener) {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(listener);
+        return list;
+    }
+
+    /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runInstTest(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        mInstrumentationTest.run(buildSingletonList(listener));
+    }
+
     /**
      * Test normal run scenario with a single passed test result.
      */
@@ -72,7 +87,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                     (Map<String, String>)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
     }
 
     /**
@@ -95,7 +110,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
                     (Map<String, String>)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
     }
 
     /**
@@ -118,7 +133,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
     }
 
     /**
@@ -143,7 +158,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mMockListener.testRunFailed((String)EasyMock.anyObject());
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
         EasyMock.verify(mMockListener);
     }
 
@@ -185,7 +200,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
             }
         };
         rebootThread.start();
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
         EasyMock.verify(mMockListener);
         // now run the ui tests and verify success
         // done to ensure keyguard is cleared after reboot
@@ -193,7 +208,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         uiTest.setPackageName(TestAppConstants.UITESTAPP_PACKAGE);
         uiTest.setDevice(getDevice());
         CollectingTestListener uilistener = new CollectingTestListener();
-        uiTest.run(uilistener);
+        uiTest.run(buildSingletonList(uilistener));
         assertFalse(uilistener.hasFailedTests());
         assertEquals(TestAppConstants.UI_TOTAL_TESTS, uilistener.getNumPassedTests());
     }
@@ -242,7 +257,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
             }
         };
         resetThread.start();
-        mInstrumentationTest.run(mMockListener);
+        runInstTest(mMockListener);
         EasyMock.verify(mMockListener);
         // now run the ui tests and verify success
         // done to ensure keyguard is cleared after runtime reset
@@ -250,7 +265,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         uiTest.setPackageName(TestAppConstants.UITESTAPP_PACKAGE);
         uiTest.setDevice(getDevice());
         CollectingTestListener uilistener = new CollectingTestListener();
-        uiTest.run(uilistener);
+        uiTest.run(buildSingletonList(uilistener));
         assertFalse(uilistener.hasFailedTests());
         assertEquals(TestAppConstants.UI_TOTAL_TESTS, uilistener.getNumPassedTests());
     }
@@ -268,7 +283,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setRerunMode(true);
         mInstrumentationTest.setTestTimeout(1000);
         CollectingTestListener listener = new CollectingTestListener();
-        mInstrumentationTest.run(listener);
+        runInstTest(listener);
         assertEquals(TestAppConstants.TOTAL_TEST_CLASS_TESTS, listener.getNumTotalTests());
         assertEquals(TestAppConstants.TOTAL_TEST_CLASS_PASSED_TESTS, listener.getNumPassedTests());
     }
@@ -286,7 +301,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setRerunMode(true);
         mInstrumentationTest.setTestTimeout(1000);
         CollectingTestListener listener = new CollectingTestListener();
-        mInstrumentationTest.run(listener);
+        runInstTest(listener);
         assertEquals(0, listener.getNumTotalTests());
         assertNotNull(listener.getCurrentRunResults());
         assertEquals(TestAppConstants.TESTAPP_PACKAGE, listener.getCurrentRunResults().getName());
@@ -308,7 +323,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setCollectsTestsShellTimeout(2 * 1000);
         CollectingTestListener listener = new CollectingTestListener();
         try {
-            mInstrumentationTest.run(listener);
+            runInstTest(listener);
             fail("DeviceUnresponsiveException not thrown");
         } catch (DeviceUnresponsiveException e) {
             // expected

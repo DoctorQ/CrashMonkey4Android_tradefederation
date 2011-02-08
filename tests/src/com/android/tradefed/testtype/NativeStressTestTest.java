@@ -24,6 +24,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -66,11 +68,20 @@ public class NativeStressTestTest extends TestCase {
     }
 
     /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runNativeTest() throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(mMockListener);
+        mNativeTest.run(list);
+    }
+
+    /**
      * Test a run where --iterations has not been specified.
      */
     public void testRun_missingIterations() throws DeviceNotAvailableException {
         try {
-            mNativeTest.run(mMockListener);
+            runNativeTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -85,7 +96,7 @@ public class NativeStressTestTest extends TestCase {
         mMockDevice.executeShellCommand(EasyMock.contains("-s 0 -e 99"), (IShellOutputReceiver)
                 EasyMock.anyObject(), EasyMock.anyInt(), EasyMock.anyInt());
         replayMocks();
-        mNativeTest.run(mMockListener);
+        runNativeTest();
         verifyMocks();
     }
 
@@ -101,7 +112,7 @@ public class NativeStressTestTest extends TestCase {
                 EasyMock.anyObject(), EasyMock.anyInt(), EasyMock.anyInt());
 
         replayMocks();
-        mNativeTest.run(mMockListener);
+        runNativeTest();
         verifyMocks();
     }
 
@@ -116,7 +127,7 @@ public class NativeStressTestTest extends TestCase {
 
         replayMocks();
         try {
-            mNativeTest.run(mMockListener);
+            runNativeTest();
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected

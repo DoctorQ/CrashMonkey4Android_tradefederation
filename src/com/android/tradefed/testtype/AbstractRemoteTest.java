@@ -15,29 +15,12 @@
  */
 package com.android.tradefed.testtype;
 
-import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.result.ITestInvocationListener;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import junit.framework.TestResult;
 
 /**
  * Abstract implementation of a {@link IRemoteTest}.
- * <p/>
- * Provides implementation for {@link IRemoteTest#run(ITestInvocationListener)}.
  */
 public abstract class AbstractRemoteTest implements IRemoteTest {
-
-    /**
-     * {@inheritDoc}
-     */
-    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        List<ITestInvocationListener> listeners = new ArrayList<ITestInvocationListener>(1);
-        listeners.add(listener);
-        run(listeners);
-    }
 
     /**
      * {@inheritDoc}

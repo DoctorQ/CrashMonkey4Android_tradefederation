@@ -27,7 +27,7 @@ import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
+import java.util.List;
 import junit.framework.TestCase;
 
 
@@ -64,6 +64,15 @@ public class GTestTest extends TestCase {
     }
 
     /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runGtest() throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(mMockInvocationListener);
+        mGTest.run(list);
+    }
+
+    /**
      * Helper that replays all mocks.
      */
     private void replayMocks() {
@@ -96,7 +105,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        mGTest.run(mMockInvocationListener);
+        runGtest();
         verifyMocks();
     }
 
@@ -119,7 +128,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        mGTest.run(mMockInvocationListener);
+        runGtest();
         verifyMocks();
     }
 
@@ -143,7 +152,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        mGTest.run(mMockInvocationListener);
+        runGtest();
         verifyMocks();
     }
 
@@ -162,7 +171,7 @@ public class GTestTest extends TestCase {
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
                     EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
         replayMocks();
-        mGTest.run(mMockInvocationListener);
+        runGtest();
 
         verifyMocks();
     }

@@ -25,7 +25,9 @@ import com.android.tradefed.result.ITestInvocationListener;
 import org.easymock.EasyMock;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 
@@ -53,6 +55,15 @@ public class GTestFuncTest extends DeviceTestCase {
         mGTest = new GTest();
         mGTest.setDevice(getDevice());
         mMockListener = EasyMock.createMock(ITestInvocationListener.class);
+    }
+
+    /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runGtest() throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(mMockListener);
+        mGTest.run(list);
     }
 
     /**
@@ -88,7 +99,7 @@ public class GTestFuncTest extends DeviceTestCase {
         }
         mMockListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mMockListener);
-        mGTest.run(mMockListener);
+        runGtest();
         EasyMock.verify(mMockListener);
     }
 
@@ -122,7 +133,7 @@ public class GTestFuncTest extends DeviceTestCase {
         // Set GTest to only run the crash test
         mGTest.setTestNamePositiveFilter(NATIVE_TESTAPP_GTEST_CRASH_METHOD);
 
-        mGTest.run(mMockListener);
+        runGtest();
         EasyMock.verify(mMockListener);
     }
 
@@ -158,7 +169,7 @@ public class GTestFuncTest extends DeviceTestCase {
             }
         };
         rebootThread.start();
-        mGTest.run(mMockListener);
+        runGtest();
         getDevice().waitForDeviceAvailable();
         EasyMock.verify(mMockListener);
     }
@@ -178,7 +189,7 @@ public class GTestFuncTest extends DeviceTestCase {
         // Set GTest to only run the timeout test
         mGTest.setTestNamePositiveFilter(NATIVE_TESTAPP_GTEST_TIMEOUT_METHOD);
 
-        mGTest.run(mMockListener);
+        runGtest();
         getDevice().waitForDeviceAvailable();
         EasyMock.verify(mMockListener);
     }

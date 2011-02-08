@@ -37,14 +37,6 @@ public class MockInstrumentationTest extends InstrumentationTest {
         }
     }
 
-    @Override
-    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
-        mListener = listener;
-        if (mException != null) {
-            throw mException;
-        }
-    }
-
     public ITestInvocationListener getListener() {
         return mListener;
     }

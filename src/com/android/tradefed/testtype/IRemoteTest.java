@@ -37,13 +37,4 @@ public interface IRemoteTest extends Test {
      * @throws DeviceNotAvailableException
      */
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException;
-
-    /**
-     * Convenience method for calling {@link DeviceNotAvailableException#run()} with only one
-     * listener.
-     *
-     * @param listener the {@link ITestInvocationListener} of test results
-     * @throws DeviceNotAvailableException
-     */
-    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException;
 }
