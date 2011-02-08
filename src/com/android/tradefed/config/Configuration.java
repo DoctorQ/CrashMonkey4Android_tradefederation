@@ -15,16 +15,16 @@
  */
 package com.android.tradefed.config;
 
+import com.android.tradefed.build.IBuildProvider;
+import com.android.tradefed.build.StubBuildProvider;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.StdoutLogger;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TextResultReporter;
-import com.android.tradefed.targetsetup.IBuildProvider;
-import com.android.tradefed.targetsetup.ITargetPreparer;
-import com.android.tradefed.targetsetup.StubBuildProvider;
-import com.android.tradefed.targetsetup.StubTargetPreparer;
+import com.android.tradefed.targetprep.ITargetPreparer;
+import com.android.tradefed.targetprep.StubTargetPreparer;
 import com.android.tradefed.testtype.StubTest;
 
 import java.util.ArrayList;

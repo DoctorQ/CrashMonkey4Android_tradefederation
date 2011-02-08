@@ -17,8 +17,8 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.TestSummary;
-import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.File;
 import java.io.InputStream;

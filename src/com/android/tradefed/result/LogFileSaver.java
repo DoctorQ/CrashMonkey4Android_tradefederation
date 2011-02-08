@@ -16,7 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
-import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.BufferedInputStream;

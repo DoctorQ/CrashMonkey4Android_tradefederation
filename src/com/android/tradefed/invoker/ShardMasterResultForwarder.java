@@ -15,9 +15,9 @@
  */
 package com.android.tradefed.invoker;
 
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
-import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.util.List;
 

@@ -15,8 +15,8 @@
  */
 package com.android.tradefed.result;
 
-import com.android.tradefed.targetsetup.BuildInfo;
-import com.android.tradefed.targetsetup.IBuildInfo;
+import com.android.tradefed.build.BuildInfo;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 

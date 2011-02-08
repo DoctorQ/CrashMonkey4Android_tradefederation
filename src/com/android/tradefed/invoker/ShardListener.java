@@ -16,13 +16,13 @@
 package com.android.tradefed.invoker;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.result.TestResult.TestStatus;
-import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.InputStream;
 import java.util.Map;

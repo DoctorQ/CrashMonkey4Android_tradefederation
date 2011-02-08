@@ -16,9 +16,9 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.result.TestResult.TestStatus;
-import com.android.tradefed.targetsetup.IBuildInfo;
 
 import java.io.InputStream;
 import java.util.Collection;

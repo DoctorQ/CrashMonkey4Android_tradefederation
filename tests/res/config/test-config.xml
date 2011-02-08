@@ -14,13 +14,13 @@
      limitations under the License.
 -->
 <configuration
-	description="test that jar plugins to Tradefed can contribute config.xml">
+    description="test that jar plugins to Tradefed can contribute config.xml">
 
-	<build_provider class="com.android.tradefed.targetsetup.StubBuildProvider" />
-	<device_recovery class="com.android.tradefed.device.WaitDeviceRecovery" />
-	<target_preparer class="com.android.tradefed.targetsetup.StubTargetPreparer" />
-	<test class="com.android.tradefed.testtype.HostTest" />
-	<logger class="com.android.tradefed.log.FileLogger" />
-	<result_reporter class="com.android.tradefed.result.XmlResultReporter" />
+    <build_provider class="com.android.tradefed.build.StubBuildProvider" />
+    <device_recovery class="com.android.tradefed.device.WaitDeviceRecovery" />
+    <target_preparer class="com.android.tradefed.targetprep.StubTargetPreparer" />
+    <test class="com.android.tradefed.testtype.HostTest" />
+    <logger class="com.android.tradefed.log.FileLogger" />
+    <result_reporter class="com.android.tradefed.result.XmlResultReporter" />
 
 </configuration>

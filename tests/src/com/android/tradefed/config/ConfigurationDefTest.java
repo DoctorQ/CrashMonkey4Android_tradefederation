@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.config;
 
-import com.android.tradefed.targetsetup.StubBuildProvider;
+import com.android.tradefed.build.StubBuildProvider;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
