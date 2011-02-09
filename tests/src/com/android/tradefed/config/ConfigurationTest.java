@@ -19,19 +19,20 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.BuildRetrievalError;
 import com.android.tradefed.build.IBuildProvider;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetprep.ITargetPreparer;
+import com.android.tradefed.testtype.IRemoteTest;
 
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestResult;
 
 /**
  * Unit tests for {@link Configuration}.
@@ -197,12 +198,22 @@ public class ConfigurationTest extends TestCase {
     /**
      * Test method for {@link Configuration#getTests()}.
      */
-    public void testGetTests() throws ConfigurationException {
+    public void testGetTests() throws ConfigurationException, DeviceNotAvailableException {
         // check that the default test is present and doesn't blow up
-        mConfig.getTests().get(0).run(new TestResult());
-        Test test1 = EasyMock.createMock(Test.class);
+        mConfig.getTests().get(0).run(createList(new TextResultReporter()));
+        IRemoteTest test1 = EasyMock.createMock(IRemoteTest.class);
         mConfig.setTest(test1);
         assertEquals(test1, mConfig.getTests().get(0));
+    }
+
+    /**
+     * @param textResultReporter
+     * @return
+     */
+    private List<ITestInvocationListener> createList(ITestInvocationListener listener) {
+        List<ITestInvocationListener> l = new ArrayList<ITestInvocationListener>(1);
+        l.add(listener);
+        return l;
     }
 
     /**

@@ -25,6 +25,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.targetprep.StubTargetPreparer;
+import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.StubTest;
 
 import java.util.ArrayList;
@@ -32,8 +33,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.Test;
 
 /**
  * A concrete {@link IConfiguration} implementation that stores the loaded config objects in a map
@@ -82,7 +81,7 @@ public class Configuration implements IConfiguration {
             sObjTypeMap = new HashMap<String, ObjTypeInfo>();
             sObjTypeMap.put(BUILD_PROVIDER_NAME, new ObjTypeInfo(IBuildProvider.class, false));
             sObjTypeMap.put(TARGET_PREPARER_NAME, new ObjTypeInfo(ITargetPreparer.class, true));
-            sObjTypeMap.put(TEST_NAME, new ObjTypeInfo(Test.class, true));
+            sObjTypeMap.put(TEST_NAME, new ObjTypeInfo(IRemoteTest.class, true));
             sObjTypeMap.put(DEVICE_RECOVERY_NAME, new ObjTypeInfo(IDeviceRecovery.class, false));
             sObjTypeMap.put(LOGGER_NAME, new ObjTypeInfo(ILeveledLogOutput.class, false));
             sObjTypeMap.put(RESULT_REPORTER_NAME, new ObjTypeInfo(ITestInvocationListener.class,
@@ -126,8 +125,8 @@ public class Configuration implements IConfiguration {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public List<Test> getTests() {
-        return (List<Test>)getConfigurationObjectList(TEST_NAME);
+    public List<IRemoteTest> getTests() {
+        return (List<IRemoteTest>)getConfigurationObjectList(TEST_NAME);
     }
 
     /**
@@ -248,7 +247,7 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public void setTest(Test test) {
+    public void setTest(IRemoteTest test) {
         setConfigurationObjectNoThrow(TEST_NAME, test);
     }
 
@@ -256,7 +255,7 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public void setTests(List<Test> tests) {
+    public void setTests(List<IRemoteTest> tests) {
         setConfigurationObjectListNoThrow(TEST_NAME, tests);
     }
 

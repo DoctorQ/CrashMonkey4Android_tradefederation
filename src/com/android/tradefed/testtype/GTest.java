@@ -33,7 +33,7 @@ import java.util.List;
 /**
  * A Test that runs a native test package on given device.
  */
-public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+public class GTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "GTest";
     static final String DEFAULT_NATIVETEST_PATH = "/data/nativetest";
@@ -298,6 +298,7 @@ public class GTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTes
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         // @TODO: add support for rerunning tests
         if (mDevice == null) {

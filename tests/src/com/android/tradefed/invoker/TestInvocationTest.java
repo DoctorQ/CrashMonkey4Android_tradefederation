@@ -181,7 +181,7 @@ public class TestInvocationTest extends TestCase {
             DeviceNotAvailableException  {
         BuildRetrievalError exception = new BuildRetrievalError("error");
         EasyMock.expect(mMockBuildProvider.getBuild()).andThrow(exception);
-        Test test = EasyMock.createMock(Test.class);
+        IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         mStubConfiguration.setTest(test);
         mMockLogger.closeLog();
         replayMocks(test);
@@ -196,7 +196,7 @@ public class TestInvocationTest extends TestCase {
     public void testInvoke_noBuild() throws BuildRetrievalError, ConfigurationException,
             DeviceNotAvailableException  {
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(null);
-        Test test = EasyMock.createMock(Test.class);
+        IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         mStubConfiguration.setTest(test);
         replayMocks(test);
         mTestInvocation.invoke(mMockDevice, mStubConfiguration, new StubRescheduler());
@@ -407,7 +407,7 @@ public class TestInvocationTest extends TestCase {
      *
      * @param test the {@link Test} to use.
      */
-    private void setupNormalInvoke(Test test) throws Exception {
+    private void setupNormalInvoke(IRemoteTest test) throws Exception {
         mStubConfiguration.setTest(test);
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
@@ -491,7 +491,7 @@ public class TestInvocationTest extends TestCase {
     /**
      * Verify all mock objects received expected calls
      */
-    private void verifyMocks(Test mockTest) {
+    private void verifyMocks(IRemoteTest mockTest) {
         // note: intentionally exclude configuration and logger from verification - don't care
         // what methods are called
         EasyMock.verify(mockTest, mMockTestListener, mMockSummaryListener, mMockPreparer,
@@ -501,7 +501,7 @@ public class TestInvocationTest extends TestCase {
     /**
      * Switch all mock objects into replay mode.
      */
-    private void replayMocks(Test mockTest) {
+    private void replayMocks(IRemoteTest mockTest) {
         EasyMock.replay(mockTest, mMockTestListener, mMockSummaryListener,
                 mMockPreparer, mMockBuildProvider, mMockLogger, mMockDevice, mMockBuildInfo);
     }

@@ -41,7 +41,6 @@ import java.util.Map;
 
 import junit.framework.Assert;
 import junit.framework.AssertionFailedError;
-import junit.framework.Test;
 
 /**
  * A test that will flash a build on a device, wait for the device to be OTA-ed to another build,
@@ -51,8 +50,8 @@ import junit.framework.Test;
  * {@link IConfiguration} will flash the device back to a baseline build, and prepare the device
  * to receive the OTA to a new build.
  */
-public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest, IBuildReceiver,
-        IConfigurationReceiver, IShardableTest {
+public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigurationReceiver,
+        IShardableTest {
 
     private static final String LOG_TAG = "OtaStabilityTest";
     private IBuildInfo mDeviceBuild;
@@ -160,11 +159,11 @@ public class OtaStabilityTest extends AbstractRemoteTest implements IDeviceTest,
      * {@inheritDoc}
      */
     @Override
-    public Collection<Test> split() {
+    public Collection<IRemoteTest> split() {
         if (mShards <= 1) {
             return null;
         }
-        Collection<Test> shards = new ArrayList<Test>(mShards);
+        Collection<IRemoteTest> shards = new ArrayList<IRemoteTest>(mShards);
         int remainingIterations = mIterations;
         for (int i = mShards; i > 0; i--) {
             OtaStabilityTest testShard = new OtaStabilityTest();

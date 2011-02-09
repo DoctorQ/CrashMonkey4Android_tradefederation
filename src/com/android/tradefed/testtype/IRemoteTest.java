@@ -23,12 +23,18 @@ import java.util.List;
 import junit.framework.Test;
 
 /**
- * A specialization of JUnit Test that reports results to a {@link ITestInvocationListener}.
- *
- * This is desirable so the results of a remote test don't need to be unnecessarily marshalled and
- * unmarshalled from {@link Test} objects.
+ * A test that reports results directly to a {@link ITestInvocationListener}.
+ * <p/>
+ * This has the following benefits over a JUnit {@link Test}
+ * <ul>
+ * <li> easier to report the results of a test that has been run remotely on an Android device, as
+ * the results of a remote test don't need to be unnecessarily marshalled and unmarshalled from
+ * {@link Test} objects.
+ * </li>
+ * <li> supports reporting test metrics</li>
+ * </ul>
  */
-public interface IRemoteTest extends Test {
+public interface IRemoteTest {
 
     /**
      * Runs the tests, and reports results to the listeners.

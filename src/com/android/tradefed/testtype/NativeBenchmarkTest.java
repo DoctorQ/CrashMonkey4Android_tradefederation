@@ -37,7 +37,7 @@ import java.util.Map;
  * It uses {@link NativeBenchmarkTestParser} to parse out the average operation time vs delay
  * between operations those results to the {@link ITestInvocationListener}s.
  */
-public class NativeBenchmarkTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "NativeStressTest";
     static final String DEFAULT_TEST_PATH = "data/nativebenchmark";
@@ -237,6 +237,7 @@ public class NativeBenchmarkTest extends AbstractRemoteTest implements IDeviceTe
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");

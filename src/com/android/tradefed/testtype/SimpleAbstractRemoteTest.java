@@ -27,9 +27,9 @@ import java.util.List;
  * <p />
  * If the subclass doesn't care about the difference between one {@link ITestInvocationListener} and
  * the next, it will be functionally equivalent (and much simpler) to implement this class instead
- * of {@link AbstractRemoteTest}.
+ * of {@link IRemoteTest}.
  */
-public abstract class SimpleAbstractRemoteTest extends AbstractRemoteTest {
+public abstract class SimpleAbstractRemoteTest implements IRemoteTest {
     /**
      * {@inheritDoc}
      */

@@ -16,11 +16,14 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
+import java.util.List;
 import java.util.Vector;
 
 import junit.framework.Test;
@@ -28,12 +31,18 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 
 /**
- * Helper JUnit test case that stores reference to an Android device.
+ * Helper JUnit test case that provides the {@link IRemoteTest} and {@link IDeviceTest} services.
+ * <p/>
+ * This is useful if you want to implement tests that follow the JUnit pattern of defining tests,
+ * and still have full support for other tradefed features such as {@link Option}s
  */
-public class DeviceTestCase extends TestCase implements IDeviceTest {
+public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "DeviceTestCase";
     private ITestDevice mDevice;
+
+    @Option(name = "method", description = "run a specific test method")
+    private String mMethodName = null;
 
     public DeviceTestCase() {
         super();
@@ -58,10 +67,21 @@ public class DeviceTestCase extends TestCase implements IDeviceTest {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run(List<ITestInvocationListener> listeners) {
+        if (getName() == null && mMethodName != null) {
+            setName(mMethodName);
+        }
+        JUnitRunUtil.runTest(listeners, this);
+    }
+
+    /**
      * Override parent method to run all test methods if test method to run is null.
      * <p/>
      * The JUnit framework only supports running all the tests in a TestCase by wrapping it in a
-     * TestSuite. Unfortunately with this mechansim callers can't control the lifecycle of their
+     * TestSuite. Unfortunately with this mechanism callers can't control the lifecycle of their
      * own test cases, which makes it impossible to do things like have the tradefed configuration
      * framework inject options into a Test Case.
      */
@@ -77,6 +97,8 @@ public class DeviceTestCase extends TestCase implements IDeviceTest {
         } else {
             super.run(result);
         }
+        // TODO: customize this method further to support aborting if DeviceNotAvailableException
+        // is thrown
     }
 
     /**
@@ -119,7 +141,7 @@ public class DeviceTestCase extends TestCase implements IDeviceTest {
 
     private boolean isPublicTestMethod(Method m) {
         return isTestMethod(m) && Modifier.isPublic(m.getModifiers());
-     }
+    }
 
     private boolean isTestMethod(Method m) {
         String name = m.getName();

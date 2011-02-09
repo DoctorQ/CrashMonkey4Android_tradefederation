@@ -15,16 +15,20 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
+
+import java.util.List;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 /**
- * Helper JUnit test suite that stores reference to an Android device.
+ *  Helper JUnit test suite that provides the {@link IRemoteTest} and {@link IDeviceTest} services.
  */
-public class DeviceTestSuite extends TestSuite implements IDeviceTest {
+public class DeviceTestSuite extends TestSuite implements IDeviceTest, IRemoteTest {
 
     private ITestDevice mDevice = null;
 
@@ -48,6 +52,14 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest {
      */
     public void setDevice(ITestDevice device) {
         mDevice = device;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+        JUnitRunUtil.runTest(listeners, this);
     }
 
     /**

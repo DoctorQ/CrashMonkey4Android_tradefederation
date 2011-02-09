@@ -15,25 +15,30 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
 
-import junit.framework.AssertionFailedError;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import junit.framework.Test;
 import junit.framework.TestCase;
-import junit.framework.TestListener;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
 
 /**
  * Unit tests for {@link HostTest}.
  */
+@SuppressWarnings("unchecked")
 public class HostTestTest extends TestCase {
 
     private HostTest mHostTest;
-    private TestListener mListener;
-    private TestResult mResult;
+    private ITestInvocationListener mListener;
 
     public static class SuccessTestCase extends TestCase {
         public SuccessTestCase() {
@@ -48,25 +53,6 @@ public class HostTestTest extends TestCase {
 
         public void testPass2() {
         }
-
-        /** Override parent to do content based comparison - to allow for EasyMock matching */
-        @Override
-        public boolean equals(Object other) {
-           if (other instanceof SuccessTestCase)  {
-               SuccessTestCase otherTest = (SuccessTestCase)other;
-               if (getName() == null && otherTest.getName() == null) {
-                   return true;
-               } else if (getName() != null) {
-                   return getName().equals(otherTest.getName());
-               }
-           }
-           return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return getName().hashCode();
-        }
     }
 
     public static class SuccessTestSuite extends TestSuite {
@@ -80,30 +66,8 @@ public class HostTestTest extends TestCase {
             super();
         }
 
-        public SuccessDeviceTest(String name) {
-            super(name);
-        }
-
         public void testPass() {
-        }
-
-        /** Override parent to do content based comparison - to allow for EasyMock matching */
-        @Override
-        public boolean equals(Object other) {
-           if (other instanceof SuccessDeviceTest)  {
-               SuccessDeviceTest otherTest = (SuccessDeviceTest)other;
-               if (getName() == null && otherTest.getName() == null) {
-                   return true;
-               } else if (getName() != null) {
-                   return getName().equals(otherTest.getName());
-               }
-           }
-           return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return getName().hashCode();
+            assertNotNull(getDevice());
         }
     }
 
@@ -125,64 +89,67 @@ public class HostTestTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mHostTest = new HostTest();
-        mListener = EasyMock.createMock(TestListener.class);
-        //mListener = new MyTestListener();
-        mResult = new TestResult();
-        mResult.addListener(mListener);
+        mListener = EasyMock.createMock(ITestInvocationListener.class);
     }
 
     /**
      * Test success case for {@link HostTest#run(TestResult)}, where test to run is a
      * {@link TestCase}.
      */
-    public void testRun_testcase() {
+    public void testRun_testcase() throws Exception {
         mHostTest.setClassName(SuccessTestCase.class.getName());
-        SuccessTestCase test1 = new SuccessTestCase("testPass");
-        SuccessTestCase test2 = new SuccessTestCase("testPass2");
-        mListener.startTest(EasyMock.eq(test1));
-        mListener.endTest(EasyMock.eq(test1));
-        mListener.startTest(EasyMock.eq(test2));
-        mListener.endTest(EasyMock.eq(test2));
+        TestIdentifier test1 = new TestIdentifier(SuccessTestCase.class.getName(), "testPass");
+        TestIdentifier test2 = new TestIdentifier(SuccessTestCase.class.getName(), "testPass2");
+        mListener.testRunStarted((String)EasyMock.anyObject(), EasyMock.eq(2));
+        mListener.testStarted(EasyMock.eq(test1));
+        mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
+        mListener.testStarted(EasyMock.eq(test2));
+        mListener.testEnded(EasyMock.eq(test2), (Map<String, String>)EasyMock.anyObject());
+        mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        mHostTest.run(mResult);
+        runHostTest();
     }
 
     /**
      * Test success case for {@link HostTest#run(TestResult)}, where test to run is a
      * {@link TestSuite}.
      */
-    public void testRun_testSuite() {
+    public void testRun_testSuite() throws Exception {
         mHostTest.setClassName(SuccessTestSuite.class.getName());
-        SuccessTestCase test1 = new SuccessTestCase("testPass");
-        SuccessTestCase test2 = new SuccessTestCase("testPass2");
-        mListener.startTest(EasyMock.eq(test1));
-        mListener.endTest(EasyMock.eq(test1));
-        mListener.startTest(EasyMock.eq(test2));
-        mListener.endTest(EasyMock.eq(test2));
+        TestIdentifier test1 = new TestIdentifier(SuccessTestCase.class.getName(), "testPass");
+        TestIdentifier test2 = new TestIdentifier(SuccessTestCase.class.getName(), "testPass2");
+        mListener.testRunStarted((String)EasyMock.anyObject(), EasyMock.eq(2));
+        mListener.testStarted(EasyMock.eq(test1));
+        mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
+        mListener.testStarted(EasyMock.eq(test2));
+        mListener.testEnded(EasyMock.eq(test2), (Map<String, String>)EasyMock.anyObject());
+        mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        mHostTest.run(mResult);
+        runHostTest();
     }
 
     /**
      * Test success case for {@link HostTest#run(TestResult)}, where test to run is a
      * {@link TestCase} and methodName is set.
      */
-    public void testRun_testMethod() {
+    public void testRun_testMethod() throws Exception {
         mHostTest.setClassName(SuccessTestCase.class.getName());
         mHostTest.setMethodName("testPass");
-        SuccessTestCase test1 = new SuccessTestCase("testPass");
-        mListener.startTest(EasyMock.eq(test1));
-        mListener.endTest(EasyMock.eq(test1));
+        TestIdentifier test1 = new TestIdentifier(SuccessTestCase.class.getName(), "testPass");
+        mListener.testRunStarted((String)EasyMock.anyObject(), EasyMock.eq(1));
+        mListener.testStarted(EasyMock.eq(test1));
+        mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
+        mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        mHostTest.run(mResult);
+        runHostTest();
     }
 
     /**
      * Test for {@link HostTest#run(TestResult)}, where className is not set.
      */
-    public void testRun_missingClass() {
+    public void testRun_missingClass() throws Exception {
         try {
-            mHostTest.run(mResult);
+            runHostTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -192,10 +159,10 @@ public class HostTestTest extends TestCase {
     /**
      * Test for {@link HostTest#run(TestResult)}, for an invalid class.
      */
-    public void testRun_invalidClass() {
+    public void testRun_invalidClass() throws Exception {
         try {
             mHostTest.setClassName("foo");
-            mHostTest.run(mResult);
+            runHostTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -205,10 +172,10 @@ public class HostTestTest extends TestCase {
     /**
      * Test for {@link HostTest#run(TestResult)}, for a valid class that is not a {@link Test}.
      */
-    public void testRun_notTestClass() {
+    public void testRun_notTestClass() throws Exception {
         try {
             mHostTest.setClassName(String.class.getName());
-            mHostTest.run(mResult);
+            runHostTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -218,10 +185,10 @@ public class HostTestTest extends TestCase {
     /**
      * Test for {@link HostTest#run(TestResult)}, for a private class.
      */
-    public void testRun_privateClass() {
+    public void testRun_privateClass() throws Exception {
         try {
             mHostTest.setClassName(PrivateTest.class.getName());
-            mHostTest.run(mResult);
+            runHostTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -231,10 +198,10 @@ public class HostTestTest extends TestCase {
     /**
      * Test for {@link HostTest#run(TestResult)}, for a test class with no default constructor.
      */
-    public void testRun_noConstructorClass() {
+    public void testRun_noConstructorClass() throws Exception {
         try {
             mHostTest.setClassName(NoConstructorTest.class.getName());
-            mHostTest.run(mResult);
+            runHostTest();
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -244,44 +211,41 @@ public class HostTestTest extends TestCase {
     /**
      * Test for {@link HostTest#run(TestResult)}, for a {@link DeviceTest}.
      */
-    public void testRun_deviceTest() {
+    public void testRun_deviceTest() throws Exception {
         final ITestDevice device = EasyMock.createMock(ITestDevice.class);
         mHostTest.setClassName(SuccessDeviceTest.class.getName());
         mHostTest.setDevice(device);
 
-        SuccessDeviceTest test1 = new SuccessDeviceTest("testPass");
-        mListener.startTest(EasyMock.eq(test1));
-        EasyMock.expectLastCall().andDelegateTo(new TestListener() {
-            public void addError(Test test, Throwable t) {
-            }
-
-            public void addFailure(Test test, AssertionFailedError t) {
-            }
-
-            public void endTest(Test test) {
-            }
-
-            public void startTest(Test test) {
-                assertEquals(device, ((DeviceTestCase)test).getDevice());
-            }
-
-        });
-        mListener.endTest(EasyMock.eq(test1));
+        TestIdentifier test1 = new TestIdentifier(SuccessDeviceTest.class.getName(), "testPass");
+        mListener.testRunStarted((String)EasyMock.anyObject(), EasyMock.eq(1));
+        mListener.testStarted(EasyMock.eq(test1));
+        mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
+        mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        mHostTest.run(mResult);
+        runHostTest();
+        EasyMock.verify(mListener);
     }
 
     /**
      * Test for {@link HostTest#run(TestResult)}, for a {@link DeviceTest} where no device has been
      * provided.
      */
-    public void testRun_missingDevice() {
+    public void testRun_missingDevice() throws Exception {
         mHostTest.setClassName(SuccessDeviceTest.class.getName());
         try {
-            mHostTest.run(mResult);
+            runHostTest();
             fail("expected IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
         }
+    }
+
+    /**
+     * A helper function to build a "list" of InvocationListeners and call the test's run() method
+     */
+    public void runHostTest() throws DeviceNotAvailableException {
+        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
+        list.add(mListener);
+        mHostTest.run(list);
     }
 }
