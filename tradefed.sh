@@ -25,6 +25,7 @@ checkPath() {
 }
 
 checkPath adb
+checkPath fastboot
 checkPath java
 
 # check java version
