@@ -19,7 +19,6 @@ package com.android.tradefed.command;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
@@ -30,8 +29,8 @@ import com.android.tradefed.util.QuotationAwareTokenizer;
 import com.android.tradefed.util.RegexTrie;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -58,19 +57,19 @@ public class Console {
     private static final String LOG_TAG = "Console";
     private static final String CONSOLE_PROMPT = "tf >";
 
-    @Option(name = "file", description = "the path to file of configs to run")
-    private File mFile = null;
-
-    @Option(name = "log-level-display", description =
-            "minimum log level to display on stdout for global log")
-    private String mLogLevelDisplay = null;
-
-    @Option(name = "log-tag-display", description =
-        "Log tag filter for global log. Always display logs with this tag on stdout")
-    private Collection<String> mLogTagsDisplay = new HashSet<String>();
-
-    @Option(name = "help", description = "get command line usage info")
-    private boolean mHelpMode = false;
+    /* FIXME: reimplement these somewhere
+     * @Option(name = "log-level-display", description =
+     *         "minimum log level to display on stdout for global log")
+     * private String mLogLevelDisplay = null;
+     *
+     * @Option(name = "log-tag-display", description =
+     *     "Log tag filter for global log. Always display logs with this tag on stdout")
+     * private Collection<String> mLogTagsDisplay = new HashSet<String>();
+     * if (mLogLevelDisplay != null) {
+     *     LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
+     * }
+     * LogRegistry.getLogRegistry().setGlobalLogTagDisplay(mLogTagsDisplay);
+     */
 
     private ICommandScheduler mScheduler;
     private java.io.Console mTerminal;
@@ -253,15 +252,6 @@ public class Console {
     }
 
     /**
-     * Sets the config file to use
-     * <p/>
-     * Exposed for unit testing
-     */
-    void setConfigFile(File file) {
-        mFile = file;
-    }
-
-    /**
      * Sets the terminal instance to use
      * <p/>
      * Exposed for unit testing
@@ -283,23 +273,9 @@ public class Console {
      */
     public void run(String[] args) {
         initLogging();
+        List<String> arrrgs = new LinkedList<String>(Arrays.asList(args));
 
         try {
-            ArgsOptionParser myParser = new ArgsOptionParser(this);
-            myParser.parse(args);
-            if (mHelpMode) {
-                printHelp();
-                return;
-            }
-            if (mLogLevelDisplay != null) {
-                LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
-            }
-            LogRegistry.getLogRegistry().setGlobalLogTagDisplay(mLogTagsDisplay);
-
-            if (mFile != null) {
-                createCommandFileParser().parseFile(mFile, mScheduler);
-            }
-
             mScheduler.start();
 
             if (mTerminal == null) {
@@ -315,27 +291,35 @@ public class Console {
             String input = "";
             boolean shouldExit = false;
             CaptureList groups = new CaptureList();
+            String[] tokens;
 
             while (!shouldExit) {
-                input = getConsoleInput();
-                if (input == null) {
-                    // Usually the result of getting EOF on the console
-                    mTerminal.printf("\nReceived EOF; quitting...\n");
-                    shouldExit = true;
-                    break;
-                }
+                if (arrrgs.isEmpty()) {
+                    input = getConsoleInput();
 
-                String[] tokens = null;
-                // System.err.println("Got input line: " + input);
-                try {
-                    tokens = QuotationAwareTokenizer.tokenizeLine(input);
-                } catch (IllegalArgumentException e) {
-                    mTerminal.printf("Invalid input: %s.\n", input);
-                    continue;
-                }
+                    if (input == null) {
+                        // Usually the result of getting EOF on the console
+                        mTerminal.printf("\nReceived EOF; quitting...\n");
+                        shouldExit = true;
+                        break;
+                    }
 
-                if (tokens == null || tokens.length == 0) {
-                    continue;
+                    tokens = null;
+                    try {
+                        tokens = QuotationAwareTokenizer.tokenizeLine(input);
+                    } catch (IllegalArgumentException e) {
+                        mTerminal.printf("Invalid input: %s.\n", input);
+                        continue;
+                    }
+
+                    if (tokens == null || tokens.length == 0) {
+                        continue;
+                    }
+                } else {
+                    mTerminal.printf("Using commandline arguments as starting command: %s\n",
+                            arrrgs);
+                    tokens = arrrgs.toArray(new String[0]);
+                    arrrgs.clear();
                 }
 
                 // TODO: think about having the modules themselves advertise their management
@@ -361,16 +345,6 @@ public class Console {
             mScheduler.shutdown();
 
             mScheduler.join();
-        } catch (ConfigurationException e) {
-            System.err.println(String.format("Failed to parse options: %s", e.getMessage()));
-            printHelp();
-        } catch (FileNotFoundException e) {
-            System.err.println(String.format("Provided file %s does not exist",
-                    mFile.getAbsolutePath()));
-        } catch (IOException e) {
-            System.err.println(String.format("Provided file %s cannot be read",
-                    mFile.getAbsolutePath()));
-            e.printStackTrace();
         } catch (InterruptedException e) {
             // ignore
         } catch (Exception e) {
@@ -405,15 +379,6 @@ public class Console {
      */
     CommandFileParser createCommandFileParser() {
         return new CommandFileParser();
-    }
-
-    /**
-     * Output command line help info to stdout.
-     */
-    private void printHelp() {
-        System.out.println("Run TradeFederation console.");
-        System.out.println("Options:");
-        System.out.print(ArgsOptionParser.getOptionHelp(this.getClass()));
     }
 
     private void dumpStacks() {
