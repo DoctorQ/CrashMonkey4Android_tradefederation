@@ -48,28 +48,6 @@ public class ConsoleTest extends TestCase {
      }
 
     /**
-     * Test running console with help specified
-     */
-    public void testRun_help() {
-        EasyMock.replay(mMockScheduler);
-        mConsole.run(new String[] {"--help"});
-        // TODO: verify help is outputted
-        // expect scheduler not to be started
-        EasyMock.verify(mMockScheduler);
-    }
-
-    /**
-     * Test running console with invalid args specified
-     */
-    public void testRun_invalidArgs() {
-        EasyMock.replay(mMockScheduler);
-        mConsole.run(new String[] {"--invalid"});
-        // TODO: verify help is outputted
-        // expect scheduler not to be started
-        EasyMock.verify(mMockScheduler);
-    }
-
-    /**
      * Test normal console run.
      */
     public void testRun() throws InterruptedException {
