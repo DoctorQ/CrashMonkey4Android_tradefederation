@@ -154,12 +154,12 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (getDevice() == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
         buildTests();
-        doRun(listeners);
+        doRun(listener);
     }
 
     /**
@@ -231,10 +231,10 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
     /**
      * Run the previously built tests.
      *
-     * @param listeners
+     * @param listener the {@link ITestInvocationListener}
      * @throws DeviceNotAvailableException
      */
-    private void doRun(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    private void doRun(ITestInvocationListener listener) throws DeviceNotAvailableException {
         while (!mTests.isEmpty()) {
             InstrumentationTest test = mTests.get(0);
 
@@ -242,9 +242,9 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
                         getDevice().getSerialNumber()));
 
             test.setDevice(getDevice());
-            test.run(listeners);
+            test.run(listener);
             if (mSendCoverage && test.getCoverageTarget() != null) {
-                sendCoverage(test.getPackageName(), test.getCoverageTarget(), listeners);
+                sendCoverage(test.getPackageName(), test.getCoverageTarget(), listener);
             }
             // test completed, remove from list
             mTests.remove(0);
@@ -256,16 +256,14 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
      *
      * @param packageName
      * @param coverageTarget
-     * @param listeners
+     * @param listener
      */
     private void sendCoverage(String packageName, String coverageTarget,
-            List<ITestInvocationListener> listeners) {
+            ITestInvocationListener listener) {
         Map<String, String> coverageMetric = new HashMap<String, String>(1);
         coverageMetric.put(COVERAGE_TARGET_KEY, coverageTarget);
-        for (ITestInvocationListener listener : listeners) {
-            listener.testRunStarted(packageName, 0);
-            listener.testRunEnded(0, coverageMetric);
-        }
+        listener.testRunStarted(packageName, 0);
+        listener.testRunEnded(0, coverageMetric);
     }
 
     /**
@@ -362,6 +360,4 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
         }
         return shardQueue;
     }
-
-
 }

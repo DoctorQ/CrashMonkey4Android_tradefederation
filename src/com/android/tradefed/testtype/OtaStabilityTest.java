@@ -36,7 +36,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.Assert;
@@ -186,19 +185,17 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         checkFields();
 
         long startTime = System.currentTimeMillis();
-        for (ITestInvocationListener listener : listeners) {
-            listener.testRunStarted(mRunName, 0);
-        }
+        listener.testRunStarted(mRunName, 0);
         int actualIterations = 0;
         try {
-            waitForOta(listeners);
+            waitForOta(listener);
             for (actualIterations = 1; actualIterations < mIterations; actualIterations++) {
                 flashDevice();
-                int buildId = waitForOta(listeners);
+                int buildId = waitForOta(listener);
                 Log.i(LOG_TAG, String.format(
                         "Device %s successfully OTA-ed to build %d. Iteration: %d",
                         mDevice.getSerialNumber(), buildId, actualIterations));
@@ -215,9 +212,7 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
             Map<String, String> metrics = new HashMap<String, String>(1);
             metrics.put("iterations", Integer.toString(actualIterations));
             long endTime = System.currentTimeMillis() - startTime;
-            for (ITestInvocationListener listener : listeners) {
-                listener.testRunEnded(endTime, metrics);
-            }
+            listener.testRunEnded(endTime, metrics);
         }
     }
 
@@ -243,12 +238,12 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
     /**
      * Blocks and waits for OTA package to be installed.
      *
-     * @param listeners
+     * @param listener the {@link ITestInvocationListener}
      * @return the build id the device ota-ed to
      * @throws DeviceNotAvailableException
      * @throws AssertionFailedError
      */
-    private int waitForOta(List<ITestInvocationListener> listeners)
+    private int waitForOta(ITestInvocationListener listener)
             throws DeviceNotAvailableException, AssertionFailedError {
         int currentBuildId =  mDevice.getBuildId();
         Assert.assertEquals(String.format("device %s does not have expected build id on boot.",
@@ -263,7 +258,7 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
             Log.e(LOG_TAG, String.format(
                     "Device %s did not come back online after leaving recovery",
                     mDevice.getSerialNumber()));
-            sendRecoveryLog(listeners);
+            sendRecoveryLog(listener);
             throw e;
         }
         try {
@@ -281,16 +276,14 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
         return currentBuildId;
     }
 
-    private void sendRecoveryLog(List<ITestInvocationListener> listeners) throws
+    private void sendRecoveryLog(ITestInvocationListener listener) throws
             DeviceNotAvailableException {
         try {
             // get recovery log
             File destFile = FileUtil.createTempFile("recovery", "log");
             boolean gotFile = mDevice.pullFile("/tmp/recovery.log", destFile);
             if (gotFile) {
-                for (ITestInvocationListener listener : listeners) {
-                    listener.testLog("recovery_log", LogDataType.TEXT, new FileInputStream(destFile));
-                }
+                listener.testLog("recovery_log", LogDataType.TEXT, new FileInputStream(destFile));
             }
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Failed to get recovery log from device %s",

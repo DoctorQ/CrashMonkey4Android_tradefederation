@@ -19,8 +19,6 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.List;
-
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
@@ -58,8 +56,8 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest, IRemoteTe
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
-        JUnitRunUtil.runTest(listeners, this);
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        JUnitRunUtil.runTest(listener, this);
     }
 
     /**

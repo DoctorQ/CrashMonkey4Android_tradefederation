@@ -23,7 +23,6 @@ import com.android.tradefed.result.ITestInvocationListener;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Collection;
-import java.util.List;
 import java.util.Vector;
 
 import junit.framework.Test;
@@ -70,11 +69,11 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) {
+    public void run(ITestInvocationListener listener) {
         if (getName() == null && mMethodName != null) {
             setName(mMethodName);
         }
-        JUnitRunUtil.runTest(listeners, this);
+        JUnitRunUtil.runTest(listener, this);
     }
 
     /**

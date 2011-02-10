@@ -19,33 +19,28 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
 
 /**
- * A helper class for directing a {@link IRemoteTest#run(java.util.List)} call to a
+ * A helper class for directing a {@link IRemoteTest#run(ITestInvocationListener)} call to a
  * {@link Test#run(TestResult)} call.
  */
 class JUnitRunUtil {
 
-    public static void runTest(List<ITestInvocationListener> listeners, Test junitTest) {
+    public static void runTest(ITestInvocationListener listener, Test junitTest) {
 
-        for (ITestInvocationListener listener : listeners) {
-            listener.testRunStarted(junitTest.getClass().getName(), junitTest.countTestCases());
-        }
+        listener.testRunStarted(junitTest.getClass().getName(), junitTest.countTestCases());
         long startTime = System.currentTimeMillis();
         // forward the JUnit results to the invocation listener
         JUnitToInvocationResultForwarder resultForwarder =
-            new JUnitToInvocationResultForwarder(listeners);
+            new JUnitToInvocationResultForwarder(listener);
         TestResult result = new TestResult();
         result.addListener(resultForwarder);
         junitTest.run(result);
         Map<String, String> emptyMap = Collections.emptyMap();
-        for (ITestInvocationListener listener : listeners) {
-            listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
-        }
+        listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
     }
 }

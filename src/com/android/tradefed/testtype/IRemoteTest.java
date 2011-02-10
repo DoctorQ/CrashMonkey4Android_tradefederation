@@ -18,8 +18,6 @@ package com.android.tradefed.testtype;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.List;
-
 import junit.framework.Test;
 
 /**
@@ -37,10 +35,10 @@ import junit.framework.Test;
 public interface IRemoteTest {
 
     /**
-     * Runs the tests, and reports results to the listeners.
+     * Runs the tests, and reports result to the listener.
      *
-     * @param listeners the list of {@link ITestInvocationListener} of test results
+     * @param listener the {@link ITestInvocationListener} of test results
      * @throws DeviceNotAvailableException
      */
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException;
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException;
 }

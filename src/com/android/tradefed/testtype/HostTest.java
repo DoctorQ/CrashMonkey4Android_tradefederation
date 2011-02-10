@@ -19,8 +19,6 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.List;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -72,7 +70,7 @@ public class HostTest implements IDeviceTest, IRemoteTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) {
+    public void run(ITestInvocationListener listener) {
         if (mClassName == null) {
             throw new IllegalArgumentException("Missing Test class name");
         }
@@ -96,7 +94,7 @@ public class HostTest implements IDeviceTest, IRemoteTest {
                 test = testSuite;
             }
         }
-        JUnitRunUtil.runTest(listeners, test);
+        JUnitRunUtil.runTest(listener, test);
     }
 
     private Class<?> loadTestClass(String className) throws IllegalArgumentException  {

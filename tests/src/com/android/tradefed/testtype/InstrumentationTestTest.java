@@ -26,10 +26,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -83,12 +81,12 @@ public class InstrumentationTestTest extends TestCase {
         @Override
         public Boolean answer() throws Throwable {
             Object[] args = EasyMock.getCurrentArguments();
-            return answer((IRemoteAndroidTestRunner)args[0], (Collection<ITestRunListener>)args[1]);
+            return answer((IRemoteAndroidTestRunner)args[0], (ITestRunListener)args[1]);
 
         }
 
         public abstract Boolean answer(IRemoteAndroidTestRunner runner,
-                Collection<ITestRunListener> listeners) throws DeviceNotAvailableException;
+                ITestRunListener listener) throws DeviceNotAvailableException;
     }
 
     @Override
@@ -121,15 +119,6 @@ public class InstrumentationTestTest extends TestCase {
     }
 
     /**
-     * A helper function to build a "list" of InvocationListeners and call the test's run() method
-     */
-    public void runInstTest() throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(mMockListener);
-        mInstrumentationTest.run(list);
-    }
-
-    /**
      * Test normal run scenario.
      */
     @SuppressWarnings("unchecked")
@@ -138,14 +127,15 @@ public class InstrumentationTestTest extends TestCase {
         RunTestAnswer runTestResponse = new RunTestAnswer() {
             @Override
             public Boolean answer(IRemoteAndroidTestRunner runner,
-                    Collection<ITestRunListener> listeners) {
-                assertTrue(listeners.contains(mMockListener));
+                    ITestRunListener listener) {
+                listener.testRunStarted("run", 1);
                 return true;
             }
         };
         setRunTestExpectations(runTestResponse);
+        mMockListener.testRunStarted("run", 1);
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
     }
 
     /**
@@ -158,7 +148,7 @@ public class InstrumentationTestTest extends TestCase {
         setRunTestExpectations();
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
         mInstrumentationTest.setClassName(className);
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
     }
 
@@ -175,7 +165,7 @@ public class InstrumentationTestTest extends TestCase {
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
         mInstrumentationTest.setClassName(className);
         mInstrumentationTest.setMethodName(methodName);
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
     }
 
@@ -186,7 +176,7 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.setPackageName(null);
         EasyMock.replay(mMockRemoteRunner);
         try {
-            runInstTest();
+            mInstrumentationTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -200,7 +190,7 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.setDevice(null);
         EasyMock.replay(mMockRemoteRunner);
         try {
-            runInstTest();
+            mInstrumentationTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -236,7 +226,7 @@ public class InstrumentationTestTest extends TestCase {
 
         // note: expect run to not be reported
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice, mMockListener);
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice, mMockListener);
     }
 
@@ -248,23 +238,20 @@ public class InstrumentationTestTest extends TestCase {
         RunTestAnswer firstRunAnswer = new RunTestAnswer() {
             @Override
             public Boolean answer(IRemoteAndroidTestRunner runner,
-                    Collection<ITestRunListener> listeners) {
-                // perform call back on listeners to show run failed - only one test
-                for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
-                    listener.testStarted(TEST1);
-                    listener.testEnded(TEST1, EMPTY_STRING_MAP);
-                    listener.testRunFailed(RUN_ERROR_MSG);
-                    listener.testRunEnded(1, EMPTY_STRING_MAP);
-
-                }
+                    ITestRunListener listener) {
+                // perform call back on listener to show run failed - only one test
+                listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
+                listener.testStarted(TEST1);
+                listener.testEnded(TEST1, EMPTY_STRING_MAP);
+                listener.testRunFailed(RUN_ERROR_MSG);
+                listener.testRunEnded(1, EMPTY_STRING_MAP);
                 return true;
             }
         };
         setRerunExpectations(firstRunAnswer);
 
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice, mMockListener);
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice, mMockListener);
     }
 
@@ -276,16 +263,13 @@ public class InstrumentationTestTest extends TestCase {
     public void testRun_resume() throws Exception {
         RunTestAnswer firstRunResponse = new RunTestAnswer() {
             @Override
-            public Boolean answer(IRemoteAndroidTestRunner runner,
-                    Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
-                // perform call back on listeners to show run failed - only one test
-                for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
-                    listener.testStarted(TEST1);
-                    listener.testEnded(TEST1, EMPTY_STRING_MAP);
-                    listener.testRunFailed(RUN_ERROR_MSG);
-                    listener.testRunEnded(1, EMPTY_STRING_MAP);
-                }
+            public Boolean answer(IRemoteAndroidTestRunner runner, ITestRunListener listener)
+                    throws DeviceNotAvailableException {
+                listener.testRunStarted(TEST_PACKAGE_VALUE, 2);
+                listener.testStarted(TEST1);
+                listener.testEnded(TEST1, EMPTY_STRING_MAP);
+                listener.testRunFailed(RUN_ERROR_MSG);
+                listener.testRunEnded(1, EMPTY_STRING_MAP);
                 throw new DeviceNotAvailableException();
             }
         };
@@ -293,12 +277,12 @@ public class InstrumentationTestTest extends TestCase {
         mMockRemoteRunner.setMaxtimeToOutputResponse(0);
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice, mMockListener);
         try {
-            runInstTest();
+            mInstrumentationTest.run(mMockListener);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
         }
-        runInstTest();
+        mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice, mMockListener);
     }
 
@@ -343,17 +327,15 @@ public class InstrumentationTestTest extends TestCase {
         RunTestAnswer secondRunAnswer = new RunTestAnswer() {
             @Override
             public Boolean answer(IRemoteAndroidTestRunner runner,
-                    Collection<ITestRunListener> listeners) {
+                    ITestRunListener listener) {
                 // TODO: assert runner has proper class and method name
                 // assertEquals(test2.getClassName(), runner.getClassName());
                 // assertEquals(test2.getMethodName(), runner.getMethodName());
                 // perform call back on listeners to show run remaining test was run
-                for (ITestRunListener listener : listeners) {
-                    listener.testRunStarted(TEST_PACKAGE_VALUE, 1);
-                    listener.testStarted(TEST2);
-                    listener.testEnded(TEST2, EMPTY_STRING_MAP);
-                    listener.testRunEnded(1, EMPTY_STRING_MAP);
-                }
+                listener.testRunStarted(TEST_PACKAGE_VALUE, 1);
+                listener.testStarted(TEST2);
+                listener.testEnded(TEST2, EMPTY_STRING_MAP);
+                listener.testRunEnded(1, EMPTY_STRING_MAP);
                 return true;
             }
         };
@@ -378,7 +360,7 @@ public class InstrumentationTestTest extends TestCase {
         mInstrumentationTest.setTestSize("foo");
         EasyMock.replay(mMockRemoteRunner);
         try {
-            runInstTest();
+            mInstrumentationTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -398,7 +380,7 @@ public class InstrumentationTestTest extends TestCase {
         EasyMock.expect(
                 mMockTestDevice.runInstrumentationTests(
                         (IRemoteAndroidTestRunner)EasyMock.anyObject(),
-                        (Collection<ITestRunListener>)EasyMock.anyObject())).andAnswer(
+                        (ITestRunListener)EasyMock.anyObject())).andAnswer(
                 secondRunAnswer);
     }
 
@@ -406,7 +388,7 @@ public class InstrumentationTestTest extends TestCase {
     private void setRunTestExpectations() throws DeviceNotAvailableException {
         EasyMock.expect(
                 mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),
-                        (Collection<ITestRunListener>)EasyMock.anyObject()))
+                        (ITestRunListener)EasyMock.anyObject()))
                 .andReturn(Boolean.TRUE);
     }
 }

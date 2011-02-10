@@ -16,14 +16,11 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.Test;
@@ -107,7 +104,7 @@ public class HostTestTest extends TestCase {
         mListener.testEnded(EasyMock.eq(test2), (Map<String, String>)EasyMock.anyObject());
         mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        runHostTest();
+        mHostTest.run(mListener);
     }
 
     /**
@@ -125,7 +122,7 @@ public class HostTestTest extends TestCase {
         mListener.testEnded(EasyMock.eq(test2), (Map<String, String>)EasyMock.anyObject());
         mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        runHostTest();
+        mHostTest.run(mListener);
     }
 
     /**
@@ -141,7 +138,7 @@ public class HostTestTest extends TestCase {
         mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
         mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        runHostTest();
+        mHostTest.run(mListener);
     }
 
     /**
@@ -149,7 +146,7 @@ public class HostTestTest extends TestCase {
      */
     public void testRun_missingClass() throws Exception {
         try {
-            runHostTest();
+            mHostTest.run(mListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -162,7 +159,7 @@ public class HostTestTest extends TestCase {
     public void testRun_invalidClass() throws Exception {
         try {
             mHostTest.setClassName("foo");
-            runHostTest();
+            mHostTest.run(mListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -175,7 +172,7 @@ public class HostTestTest extends TestCase {
     public void testRun_notTestClass() throws Exception {
         try {
             mHostTest.setClassName(String.class.getName());
-            runHostTest();
+            mHostTest.run(mListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -188,7 +185,7 @@ public class HostTestTest extends TestCase {
     public void testRun_privateClass() throws Exception {
         try {
             mHostTest.setClassName(PrivateTest.class.getName());
-            runHostTest();
+            mHostTest.run(mListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -201,7 +198,7 @@ public class HostTestTest extends TestCase {
     public void testRun_noConstructorClass() throws Exception {
         try {
             mHostTest.setClassName(NoConstructorTest.class.getName());
-            runHostTest();
+            mHostTest.run(mListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -222,7 +219,7 @@ public class HostTestTest extends TestCase {
         mListener.testEnded(EasyMock.eq(test1), (Map<String, String>)EasyMock.anyObject());
         mListener.testRunEnded(EasyMock.anyLong(), (Map<String, String>)EasyMock.anyObject());
         EasyMock.replay(mListener);
-        runHostTest();
+        mHostTest.run(mListener);
         EasyMock.verify(mListener);
     }
 
@@ -233,19 +230,10 @@ public class HostTestTest extends TestCase {
     public void testRun_missingDevice() throws Exception {
         mHostTest.setClassName(SuccessDeviceTest.class.getName());
         try {
-            runHostTest();
+            mHostTest.run(mListener);
             fail("expected IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
         }
-    }
-
-    /**
-     * A helper function to build a "list" of InvocationListeners and call the test's run() method
-     */
-    public void runHostTest() throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(mListener);
-        mHostTest.run(list);
     }
 }

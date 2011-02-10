@@ -26,10 +26,6 @@ import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 /**
  * A Test that runs a native test package on given device.
  */
@@ -224,20 +220,20 @@ public class GTest implements IDeviceTest, IRemoteTest {
      *
      * @param rootEntry The root folder to begin searching for native tests
      * @param testDevice The device to run tests on
-     * @param listeners the run listeners
+     * @param listener the {@link ITestRunListener)
      * @throws DeviceNotAvailableException
      */
     void doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
-            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+            ITestRunListener listener) throws DeviceNotAvailableException {
 
         if (rootEntry.isDirectory()) {
             // recursively run tests in all subdirectories
             for (IFileEntry childEntry : rootEntry.getChildren(true)) {
-                doRunAllTestsInSubdirectory(childEntry, testDevice, listeners);
+                doRunAllTestsInSubdirectory(childEntry, testDevice, listener);
             }
         } else {
             // assume every file is a valid gtest binary.
-            IShellOutputReceiver resultParser = createResultParser(rootEntry.getName(), listeners);
+            IShellOutputReceiver resultParser = createResultParser(rootEntry.getName(), listener);
             String fullPath = rootEntry.getFullEscapedPath();
             String flags = getAllGTestFlags();
             Log.i(LOG_TAG, String.format("Running gtest %s %s on %s", fullPath, flags,
@@ -277,17 +273,16 @@ public class GTest implements IDeviceTest, IRemoteTest {
 
     /**
      * Factory method for creating a {@link IShellOutputReceiver} that parses test output and
-     * forwards results to listeners.
+     * forwards results to the result listener.
      * <p/>
      * Exposed so unit tests can mock
      *
-     * @param listeners
+     * @param listener
      * @param runName
      * @return a {@link IShellOutputReceiver}
      */
-    IShellOutputReceiver createResultParser(String runName,
-            Collection<ITestRunListener> listeners) {
-        GTestResultParser resultParser = new GTestResultParser(runName, listeners);
+    IShellOutputReceiver createResultParser(String runName, ITestRunListener listener) {
+        GTestResultParser resultParser = new GTestResultParser(runName, listener);
         // TODO: find a better solution for sending coverage info
         if (mSendCoverage) {
             resultParser.setCoverageTarget(COVERAGE_TARGET);
@@ -299,7 +294,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         // @TODO: add support for rerunning tests
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
@@ -312,15 +307,6 @@ public class GTest implements IDeviceTest, IRemoteTest {
                     testPath, mDevice.getSerialNumber()));
             return;
         }
-        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
-    }
-
-    /**
-     * Convert a list of {@link ITestInvocationListener} to a collection of {@link ITestRunListener}
-     */
-    private Collection<ITestRunListener> convertListeners(List<ITestInvocationListener> listeners) {
-        ArrayList<ITestRunListener> copy = new ArrayList<ITestRunListener>(listeners.size());
-        copy.addAll(listeners);
-        return copy;
+        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, listener);
     }
 }
