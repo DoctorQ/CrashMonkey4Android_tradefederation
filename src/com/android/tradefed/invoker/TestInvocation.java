@@ -30,7 +30,6 @@ import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InvocationSummaryHelper;
-import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.targetprep.BuildError;
@@ -44,12 +43,9 @@ import com.android.tradefed.testtype.IShardableTest;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.Test;
-import junit.framework.TestResult;
 
 /**
  * Default implementation of {@link ITestInvocation}.
@@ -149,9 +145,9 @@ public class TestInvocation implements ITestInvocation {
     */
     private boolean shardConfig(IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
         mStatus = "sharding";
-        List<Test> shardableTests = new ArrayList<Test>();
+        List<IRemoteTest> shardableTests = new ArrayList<IRemoteTest>();
         boolean isSharded = false;
-        for (Test test : config.getTests()) {
+        for (IRemoteTest test : config.getTests()) {
             isSharded |= shardTest(shardableTests, test);
         }
         if (isSharded) {
@@ -159,7 +155,7 @@ public class TestInvocation implements ITestInvocation {
                     config.getTestInvocationListeners(), shardableTests.size());
             ShardListener origConfigListener = new ShardListener(resultCollector);
             config.setTestInvocationListener(origConfigListener);
-            for (Test testShard : shardableTests) {
+            for (IRemoteTest testShard : shardableTests) {
                 Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
                 IConfiguration shardConfig = config.clone();
                 shardConfig.setTest(testShard);
@@ -177,17 +173,17 @@ public class TestInvocation implements ITestInvocation {
     }
 
     /**
-     * Attempt to shard given {@link Test}.
+     * Attempt to shard given {@link IRemoteTest}.
      *
-     * @param shardableTests the list of {@link Test}s to add to
+     * @param shardableTests the list of {@link IRemoteTest}s to add to
      * @param test the {@link Test} to shard
      * @return <code>true</code> if test was sharded
      */
-    private boolean shardTest(List<Test> shardableTests, Test test) {
+    private boolean shardTest(List<IRemoteTest> shardableTests, IRemoteTest test) {
         boolean isSharded = false;
         if (test instanceof IShardableTest) {
             IShardableTest shardableTest = (IShardableTest)test;
-            Collection<Test> shards = shardableTest.split();
+            Collection<IRemoteTest> shards = shardableTest.split();
             if (shards != null) {
                 shardableTests.addAll(shards);
                 isSharded = true;
@@ -298,7 +294,7 @@ public class TestInvocation implements ITestInvocation {
      */
     private boolean resume(IConfiguration config, IBuildInfo info, IRescheduler rescheduler,
             long elapsedTime) {
-        for (Test test : config.getTests()) {
+        for (IRemoteTest test : config.getTests()) {
             if (test instanceof IResumableTest) {
                 IResumableTest resumeTest = (IResumableTest)test;
                 if (resumeTest.isResumable()) {
@@ -366,32 +362,14 @@ public class TestInvocation implements ITestInvocation {
             IRescheduler rescheduler)
             throws DeviceNotAvailableException {
         List<ITestInvocationListener> listeners = config.getTestInvocationListeners();
-        for (Test test : config.getTests()) {
+        for (IRemoteTest test : config.getTests()) {
             if (test instanceof IDeviceTest) {
                 ((IDeviceTest)test).setDevice(device);
             }
             if (test instanceof IBuildReceiver) {
                 ((IBuildReceiver)test).setBuild(buildInfo);
             }
-            if (test instanceof IRemoteTest) {
-                // run as a remote test, so results are forwarded directly to TestInvocationListener
-                ((IRemoteTest)test).run(listeners);
-            } else {
-                for (ITestInvocationListener listener : listeners) {
-                    listener.testRunStarted(test.getClass().getName(), test.countTestCases());
-                }
-                long startTime = System.currentTimeMillis();
-                // forward the JUnit results to the invocation listener
-                JUnitToInvocationResultForwarder resultForwarder =
-                    new JUnitToInvocationResultForwarder(listeners);
-                TestResult result = new TestResult();
-                result.addListener(resultForwarder);
-                test.run(result);
-                Map<String, String> emptyMap = Collections.emptyMap();
-                for (ITestInvocationListener listener : listeners) {
-                    listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
-                }
-            }
+            test.run(listeners);
         }
     }
 }

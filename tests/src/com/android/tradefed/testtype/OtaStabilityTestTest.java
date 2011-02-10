@@ -18,7 +18,6 @@ package com.android.tradefed.testtype;
 import java.util.Collection;
 import java.util.Iterator;
 
-import junit.framework.Test;
 import junit.framework.TestCase;
 
 /**
@@ -34,9 +33,9 @@ public class OtaStabilityTestTest extends TestCase {
         OtaStabilityTest test = new OtaStabilityTest();
         test.setIterations(10);
         test.setShards(5);
-        Collection<Test> shards = test.split();
+        Collection<IRemoteTest> shards = test.split();
         assertEquals(5, shards.size());
-        for (Test shardTest : shards) {
+        for (IRemoteTest shardTest : shards) {
             OtaStabilityTest otaShard = (OtaStabilityTest)shardTest;
             assertEquals(2, otaShard.getIterations());
         }
@@ -49,9 +48,9 @@ public class OtaStabilityTestTest extends TestCase {
         OtaStabilityTest test = new OtaStabilityTest();
         test.setIterations(5);
         test.setShards(10);
-        Collection<Test> shards = test.split();
+        Collection<IRemoteTest> shards = test.split();
         assertEquals(5, shards.size());
-        for (Test shardTest : shards) {
+        for (IRemoteTest shardTest : shards) {
             OtaStabilityTest otaShard = (OtaStabilityTest)shardTest;
             assertEquals(1, otaShard.getIterations());
         }
@@ -64,17 +63,16 @@ public class OtaStabilityTestTest extends TestCase {
         OtaStabilityTest test = new OtaStabilityTest();
         test.setIterations(10);
         test.setShards(3);
-        Collection<Test> shards = test.split();
+        Collection<IRemoteTest> shards = test.split();
         assertEquals(3, shards.size());
-        Iterator<Test> iterator = shards.iterator();
-        Test first = iterator.next();
+        Iterator<IRemoteTest> iterator = shards.iterator();
+        IRemoteTest first = iterator.next();
         assertEquals(3, ((OtaStabilityTest)first).getIterations());
 
-        Test second = iterator.next();
+        IRemoteTest second = iterator.next();
         assertEquals(3, ((OtaStabilityTest)second).getIterations());
 
-        Test three = iterator.next();
+        IRemoteTest three = iterator.next();
         assertEquals(4, ((OtaStabilityTest)three).getIterations());
     }
-
 }

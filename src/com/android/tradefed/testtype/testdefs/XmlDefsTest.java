@@ -20,8 +20,8 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.testtype.AbstractRemoteTest;
 import com.android.tradefed.testtype.IDeviceTest;
+import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
 import com.android.tradefed.testtype.IShardableTest;
 import com.android.tradefed.testtype.InstrumentationTest;
@@ -40,15 +40,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 
-import junit.framework.Test;
-
 /**
  * Runs a set of instrumentation test's defined in test_defs.xml files.
  * <p/>
  * The test definition files can either be one or more files on local file system, and/or one or
  * more files stored on the device under test.
  */
-public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest,
+public class XmlDefsTest implements IDeviceTest, IResumableTest,
         IShardableTest {
 
     private static final String LOG_TAG = "XmlDefsTest";
@@ -155,6 +153,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (getDevice() == null) {
             throw new IllegalArgumentException("Device has not been set");
@@ -328,7 +327,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
      * {@inheritDoc}
      */
     @Override
-    public Collection<Test> split() {
+    public Collection<IRemoteTest> split() {
         if (mLocalFiles.isEmpty()) {
             Log.w(LOG_TAG, "sharding is only supported if local xml files have been specified");
             return null;
@@ -348,7 +347,7 @@ public class XmlDefsTest extends AbstractRemoteTest implements IDeviceTest, IRes
         }
 
         // treat shardQueue as a circular queue, to sequentially distribute tests among shards
-        Queue<Test> shardQueue = new LinkedList<Test>();
+        Queue<IRemoteTest> shardQueue = new LinkedList<IRemoteTest>();
         // don't create more shards than the number of tests we have!
         for (int i = 0; i < mNumShards && i < mTests.size(); i++) {
             XmlDefsTest shard = new XmlDefsTest();

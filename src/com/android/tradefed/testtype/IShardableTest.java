@@ -15,14 +15,14 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.tradefed.device.ITestDevice;
+
 import java.util.Collection;
 
-import junit.framework.Test;
-
 /**
- * A {@link Test} that can be split into separately executable sub-tests.
+ * A interface for a {@link IRemoteTest} that can be split into separately executable sub-tests.
  */
-public interface IShardableTest extends Test {
+public interface IShardableTest extends IRemoteTest {
 
     /**
      * Shard the test into separately runnable chunks.
@@ -33,6 +33,6 @@ public interface IShardableTest extends Test {
      * @return a collection of subtests to be executed separately or <code>null</code> if test is
      *         not currently shardable
      */
-    public Collection<Test> split();
+    public Collection<IRemoteTest> split();
 
 }

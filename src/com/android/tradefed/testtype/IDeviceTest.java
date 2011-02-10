@@ -17,12 +17,10 @@ package com.android.tradefed.testtype;
 
 import com.android.tradefed.device.ITestDevice;
 
-import junit.framework.Test;
-
 /**
- * A JUnit test that needs a reference to a {@link ITestDevice}.
+ * Interface for object that needs a reference to a {@link ITestDevice}.
  */
-public interface IDeviceTest extends Test {
+public interface IDeviceTest {
 
     /**
      * Inject the device under test.

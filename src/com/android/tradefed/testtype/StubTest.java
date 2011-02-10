@@ -17,26 +17,22 @@ package com.android.tradefed.testtype;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.result.ITestInvocationListener;
 
-import junit.framework.Test;
-import junit.framework.TestResult;
+import java.util.List;
 
 /**
  * No-op empty test implementation.
  */
-public class StubTest implements Test {
+public class StubTest implements IRemoteTest {
 
     /**
      * {@inheritDoc}
      */
-    public int countTestCases() {
-        return 0;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void run(TestResult result) {
+    @Override
+    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         Log.logAndDisplay(LogLevel.INFO, "StubTest", "nothing to test!");
+
     }
 }

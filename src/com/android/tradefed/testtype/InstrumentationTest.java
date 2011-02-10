@@ -39,7 +39,7 @@ import java.util.List;
 /**
  * A Test that runs an instrumentation test package on given device.
  */
-public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTest, IResumableTest {
+public class InstrumentationTest implements IDeviceTest, IResumableTest {
 
     private static final String LOG_TAG = "InstrumentationTest";
 
@@ -268,6 +268,7 @@ public class InstrumentationTest extends AbstractRemoteTest implements IDeviceTe
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mPackageName == null) {
             throw new IllegalArgumentException("package name has not been set");

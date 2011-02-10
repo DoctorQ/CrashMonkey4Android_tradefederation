@@ -32,7 +32,7 @@ import java.util.Map;
 /**
  * A Test that runs a set of individual instrumentation tests.
  */
-class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+class InstrumentationListTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "InstrumentationListTest";
 
@@ -84,14 +84,6 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int countTestCases() {
-        return mTests.size();
-    }
-
-    /**
      * @return the {@link InstrumentationTest} to use. Exposed for unit testing.
      */
     InstrumentationTest createInstrumentationTest() {
@@ -107,6 +99,7 @@ class InstrumentationListTest extends AbstractRemoteTest implements IDeviceTest,
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");

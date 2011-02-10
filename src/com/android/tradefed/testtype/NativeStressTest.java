@@ -37,7 +37,7 @@ import java.util.Map;
  * It uses {@link NativeStressTestParser} to parse out number of iterations completed and report
  * those results to the {@link ITestInvocationListener}s.
  */
-public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest, IRemoteTest {
+public class NativeStressTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "NativeStressTest";
     static final String DEFAULT_TEST_PATH = "data/nativestresstest";
@@ -214,6 +214,7 @@ public class NativeStressTest extends AbstractRemoteTest implements IDeviceTest,
     /**
      * {@inheritDoc}
      */
+    @Override
     public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");

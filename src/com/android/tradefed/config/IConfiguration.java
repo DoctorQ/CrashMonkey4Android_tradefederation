@@ -21,11 +21,10 @@ import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.targetprep.ITargetPreparer;
+import com.android.tradefed.testtype.IRemoteTest;
 
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.Test;
 
 /**
  * Configuration information for a TradeFederation invocation.
@@ -51,11 +50,11 @@ public interface IConfiguration {
     public List<ITargetPreparer> getTargetPreparers();
 
     /**
-     * Gets the {@link Test}s to run from the configuration.
+     * Gets the {@link IRemoteTest}s to run from the configuration.
      *
-     * @return the {@link Test}s provided in the configuration
+     * @return the tests provided in the configuration
      */
-    public List<Test> getTests();
+    public List<IRemoteTest> getTests();
 
     /**
      * Gets the {@link ITestInvocationListener}s to use from the configuration.
@@ -156,20 +155,20 @@ public interface IConfiguration {
     public void setTargetPreparer(ITargetPreparer preparer);
 
     /**
-     * Convenience method to set a single {@link Test} in this configuration, replacing any
+     * Convenience method to set a single {@link IRemoteTest} in this configuration, replacing any
      * existing values
      *
      * @param test
      */
-    public void setTest(Test test);
+    public void setTest(IRemoteTest test);
 
     /**
-     * Set the list of {@link Test}s in this configuration, replacing any
+     * Set the list of {@link IRemoteTest}s in this configuration, replacing any
      * existing values
      *
      * @param tests
      */
-    public void setTests(List<Test> test);
+    public void setTests(List<IRemoteTest> test);
 
     /**
      * Set the list of {@link ITestInvocationListener}s, replacing any existing values
