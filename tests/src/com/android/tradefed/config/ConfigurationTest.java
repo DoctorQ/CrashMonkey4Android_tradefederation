@@ -200,20 +200,10 @@ public class ConfigurationTest extends TestCase {
      */
     public void testGetTests() throws ConfigurationException, DeviceNotAvailableException {
         // check that the default test is present and doesn't blow up
-        mConfig.getTests().get(0).run(createList(new TextResultReporter()));
+        mConfig.getTests().get(0).run(new TextResultReporter());
         IRemoteTest test1 = EasyMock.createMock(IRemoteTest.class);
         mConfig.setTest(test1);
         assertEquals(test1, mConfig.getTests().get(0));
-    }
-
-    /**
-     * @param textResultReporter
-     * @return
-     */
-    private List<ITestInvocationListener> createList(ITestInvocationListener listener) {
-        List<ITestInvocationListener> l = new ArrayList<ITestInvocationListener>(1);
-        l.add(listener);
-        return l;
     }
 
     /**

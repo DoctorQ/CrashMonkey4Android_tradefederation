@@ -20,8 +20,6 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.List;
-
 /**
  * No-op empty test implementation.
  */
@@ -31,7 +29,7 @@ public class StubTest implements IRemoteTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Log.logAndDisplay(LogLevel.INFO, "StubTest", "nothing to test!");
 
     }

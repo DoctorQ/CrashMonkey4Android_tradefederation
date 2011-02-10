@@ -25,9 +25,6 @@ import com.android.tradefed.result.ITestInvocationListener;
 
 import org.easymock.EasyMock;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import junit.framework.TestCase;
 
 
@@ -38,7 +35,6 @@ public class GTestTest extends TestCase {
     private ITestInvocationListener mMockInvocationListener = null;
     private IShellOutputReceiver mMockReceiver = null;
     private ITestDevice mMockITestDevice = null;
-    private Collection<ITestRunListener> mMockListeners;
     private GTest mGTest;
 
     /**
@@ -48,28 +44,16 @@ public class GTestTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockInvocationListener = EasyMock.createMock(ITestInvocationListener.class);
-        mMockListeners = new ArrayList<ITestRunListener>(1);
-        mMockListeners.add(mMockInvocationListener);
         mMockReceiver = EasyMock.createMock(IShellOutputReceiver.class);
         mMockITestDevice = EasyMock.createMock(ITestDevice.class);
         EasyMock.expect(mMockITestDevice.getSerialNumber()).andStubReturn("serial");
         mGTest = new GTest() {
             @Override
-            IShellOutputReceiver createResultParser(String runName,
-                    Collection<ITestRunListener> listeners) {
+            IShellOutputReceiver createResultParser(String runName, ITestRunListener listener) {
                 return mMockReceiver;
             }
         };
         mGTest.setDevice(mMockITestDevice);
-    }
-
-    /**
-     * A helper function to build a "list" of InvocationListeners and call the test's run() method
-     */
-    public void runGtest() throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(mMockInvocationListener);
-        mGTest.run(list);
     }
 
     /**
@@ -105,7 +89,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        runGtest();
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
     }
 
@@ -128,7 +112,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        runGtest();
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
     }
 
@@ -152,7 +136,7 @@ public class GTestTest extends TestCase {
 
         replayMocks();
 
-        runGtest();
+        mGTest.run(mMockInvocationListener);
         verifyMocks();
     }
 
@@ -171,7 +155,7 @@ public class GTestTest extends TestCase {
             mMockITestDevice.executeShellCommand(EasyMock.contains(filterString),
                     EasyMock.same(mMockReceiver), EasyMock.anyInt(), EasyMock.anyInt());
         replayMocks();
-        runGtest();
+        mGTest.run(mMockInvocationListener);
 
         verifyMocks();
     }

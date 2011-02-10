@@ -19,6 +19,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -33,10 +34,18 @@ public class ResultForwarder implements ITestInvocationListener {
      * Create a {@link ResultForwarder}.
      *
      * @param listeners the real {@link ITestInvocationListener} to forward results to
-     * @param testPackage the {@link ITestPackageDef} that defines the expected tests
      */
     public ResultForwarder(List<ITestInvocationListener> listeners) {
         mListeners = listeners;
+    }
+
+    /**
+     * Alternate variable arg constructor for {@link ResultForwarder}.
+     *
+     * @param listeners the real {@link ITestInvocationListener} to forward results to
+     */
+    public ResultForwarder(ITestInvocationListener... listeners) {
+        mListeners = Arrays.asList(listeners);
     }
 
     /**

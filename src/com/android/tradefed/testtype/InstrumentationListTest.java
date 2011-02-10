@@ -23,10 +23,8 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -90,17 +88,11 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
         return new InstrumentationTest();
     }
 
-    List<ITestInvocationListener> buildSingletonList(ITestInvocationListener listener) {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(listener);
-        return list;
-    }
-
     /**
      * {@inheritDoc}
      */
     @Override
-    public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -117,8 +109,8 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             runner.setRerunMode(false);
             // use a listener filter, to report the test as failed if the test run fails with no
             // tests executed
-            TestTrackingListener trackingListener = new TestTrackingListener(listeners, testToRun);
-            runner.run(buildSingletonList(trackingListener));
+            TestTrackingListener trackingListener = new TestTrackingListener(listener, testToRun);
+            runner.run(trackingListener);
         }
     }
 
@@ -128,9 +120,9 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
         private final TestIdentifier mExpectedTest;
         private boolean mDidTestRun = false;
 
-        public TestTrackingListener(List<ITestInvocationListener> listeners,
+        public TestTrackingListener(ITestInvocationListener listener,
                 TestIdentifier testToRun) {
-            super(listeners);
+            super(listener);
             mExpectedTest = testToRun;
         }
 

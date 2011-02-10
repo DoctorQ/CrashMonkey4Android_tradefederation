@@ -19,7 +19,6 @@ package com.android.tradefed.testtype;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
@@ -29,12 +28,11 @@ import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.result.TestRunResult;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * A Test that runs an instrumentation test package on given device.
@@ -88,7 +86,6 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     private ITestDevice mDevice = null;
 
     private IRemoteAndroidTestRunner mRunner;
-    private Collection<ITestRunListener> mListeners;
 
     private Collection<TestIdentifier> mRemainingTests = null;
 
@@ -269,7 +266,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(final List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mPackageName == null) {
             throw new IllegalArgumentException("package name has not been set");
         }
@@ -293,10 +290,10 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
 
         if (mInstallFile != null) {
             mDevice.installPackage(mInstallFile, true);
-            doTestRun(listeners);
+            doTestRun(listener);
             mDevice.uninstallPackage(mPackageName);
         } else {
-            doTestRun(listeners);
+            doTestRun(listener);
         }
     }
 
@@ -306,24 +303,19 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * @param listener the test result listener
      * @throws DeviceNotAvailableException if device stops communicating
      */
-    private void doTestRun(final List<ITestInvocationListener> listeners)
+    private void doTestRun(final ITestInvocationListener listener)
             throws DeviceNotAvailableException {
-
-        // convert the list of ITestInvocationListener to ITestRunListener, since thats what
-        // TestDevice takes
-        mListeners = new ArrayList<ITestRunListener>();
-        mListeners.addAll(listeners);
 
         if (mRemainingTests != null) {
             // have remaining tests! This must be a rerun - rerun them individually
-            rerunTests(listeners);
+            rerunTests(listener);
             return;
         }
         mRemainingTests = collectTestsToRun(mRunner);
         if (mRemainingTests == null) {
-            mDevice.runInstrumentationTests(mRunner, mListeners);
+            mDevice.runInstrumentationTests(mRunner, listener);
         } else if (mRemainingTests.size() != 0) {
-            runWithRerun(listeners, mRemainingTests);
+            runWithRerun(listener, mRemainingTests);
         } else {
             Log.i(LOG_TAG, String.format("No tests expected for %s, skipping", mPackageName));
         }
@@ -332,29 +324,28 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     /**
      * Execute the test run, but re-run incomplete tests individually if run fails to complete.
      *
-     * @param listeners list of {@link ITestInvocationListener}
+     * @param listener the {@link ITestInvocationListener}
      * @param expectedTests the full set of expected tests in this run.
      */
-    private void runWithRerun(final List<ITestInvocationListener> listeners,
+    private void runWithRerun(final ITestInvocationListener listener,
             Collection<TestIdentifier> expectedTests) throws DeviceNotAvailableException {
         CollectingTestListener testTracker = new CollectingTestListener();
-        mListeners.add(testTracker);
         mRemainingTests = expectedTests;
         try {
-            mDevice.runInstrumentationTests(mRunner, mListeners);
+            mDevice.runInstrumentationTests(mRunner, new ResultForwarder(listener, testTracker));
         } finally {
             calculateRemainingTests(mRemainingTests, testTracker);
         }
-        rerunTests(listeners);
+        rerunTests(listener);
     }
 
     /**
      * Rerun any <var>mRemainingTests</var> one by one
      *
-     * @param listeners
+     * @param listener the {@link ITestInvocationListener}
      * @throws DeviceNotAvailableException
      */
-    private void rerunTests(final List<ITestInvocationListener> listeners)
+    private void rerunTests(final ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         if (mRemainingTests.size() > 0) {
             InstrumentationListTest testRerunner = new InstrumentationListTest(mPackageName,
@@ -362,11 +353,8 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             testRerunner.setDevice(getDevice());
             testRerunner.setTestTimeout(getTestTimeout());
             CollectingTestListener testTracker = new CollectingTestListener();
-            List<ITestInvocationListener> listenersCopy = new ArrayList<ITestInvocationListener>(
-                    listeners);
-            listenersCopy.add(testTracker);
             try {
-                testRerunner.run(listenersCopy);
+                testRerunner.run(new ResultForwarder(listener, testTracker));
             } finally {
                 calculateRemainingTests(mRemainingTests, testTracker);
             }

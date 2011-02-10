@@ -28,8 +28,6 @@ import org.easymock.EasyMock;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -70,15 +68,6 @@ public class XmlDefsTestTest extends TestCase {
     }
 
     /**
-     * A helper function to build a "list" of InvocationListeners and call the test's run() method
-     */
-    public void runXmlTest() throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(mMockListener);
-        mXmlTest.run(list);
-    }
-
-    /**
      * Test the run normal case. Simple verification that expected data is passed along, etc.
      */
     public void testRun() throws DeviceNotAvailableException {
@@ -89,7 +78,7 @@ public class XmlDefsTestTest extends TestCase {
         Capture<Map<String, String>> captureMetrics = new Capture<Map<String, String>>();
         mMockListener.testRunEnded(EasyMock.anyLong(), EasyMock.capture(captureMetrics));
         EasyMock.replay(mMockTestDevice, mMockListener);
-        runXmlTest();
+        mXmlTest.run(mMockListener);
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
         assertEquals(TEST_PKG, mMockInstrumentationTest.getPackageName());
         assertEquals(TEST_COVERAGE_TARGET, captureMetrics.getValue().get(
@@ -131,7 +120,7 @@ public class XmlDefsTestTest extends TestCase {
         mMockInstrumentationTest.setException(new DeviceNotAvailableException());
         EasyMock.replay(mMockTestDevice, mMockListener);
         try {
-            runXmlTest();
+            mXmlTest.run(mMockListener);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
@@ -143,7 +132,7 @@ public class XmlDefsTestTest extends TestCase {
         // resume test run, on a different device
         ITestDevice newTestDevice = EasyMock.createMock(ITestDevice.class);
         mXmlTest.setDevice(newTestDevice);
-        runXmlTest();
+        mXmlTest.run(mMockListener);
         // verify InstrumentationTest.run was called again, with same listener + different device
         assertEquals(mMockListener, mMockInstrumentationTest.getListener());
         assertEquals(newTestDevice, mMockInstrumentationTest.getDevice());
@@ -156,7 +145,7 @@ public class XmlDefsTestTest extends TestCase {
         mXmlTest.addRemoteFilePath(TEST_PATH);
         mXmlTest.setDevice(null);
         try {
-            runXmlTest();
+            mXmlTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected
@@ -170,7 +159,7 @@ public class XmlDefsTestTest extends TestCase {
      */
     public void testRun_noPath() throws Exception {
         try {
-            runXmlTest();
+            mXmlTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected

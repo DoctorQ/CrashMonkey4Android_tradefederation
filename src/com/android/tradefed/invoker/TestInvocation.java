@@ -369,7 +369,7 @@ public class TestInvocation implements ITestInvocation {
             if (test instanceof IBuildReceiver) {
                 ((IBuildReceiver)test).setBuild(buildInfo);
             }
-            test.run(listeners);
+            test.run(new ResultForwarder(listeners));
         }
     }
 }

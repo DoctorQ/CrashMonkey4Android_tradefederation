@@ -51,15 +51,6 @@ public class InstrumentationListTestTest extends TestCase {
     }
 
     /**
-     * A helper function to build a "list" of InvocationListeners and call the test's run() method
-     */
-    public void runIListTest() throws DeviceNotAvailableException {
-        List<ITestInvocationListener> list = new ArrayList<ITestInvocationListener>(1);
-        list.add(mMockListener);
-        mInstrumentationListTest.run(list);
-    }
-
-    /**
      * Test normal run scenario with a single test.
      */
     @SuppressWarnings("unchecked")
@@ -70,13 +61,11 @@ public class InstrumentationListTestTest extends TestCase {
         testList.add(test);
         final InstrumentationTest mockITest = new InstrumentationTest() {
             @Override
-            public void run(List<ITestInvocationListener> listeners) {
-                for (ITestInvocationListener listener: listeners) {
-                    listener.testRunStarted(packageName, 1);
-                    listener.testStarted(test);
-                    listener.testEnded(test, Collections.EMPTY_MAP);
-                    listener.testRunEnded(0, Collections.EMPTY_MAP);
-                }
+            public void run(ITestInvocationListener listener) {
+                listener.testRunStarted(packageName, 1);
+                listener.testStarted(test);
+                listener.testEnded(test, Collections.EMPTY_MAP);
+                listener.testRunEnded(0, Collections.EMPTY_MAP);
             }
         };
         mInstrumentationListTest = new InstrumentationListTest(packageName, "foo", testList) {
@@ -92,7 +81,7 @@ public class InstrumentationListTestTest extends TestCase {
 
         EasyMock.replay(mMockListener, mMockTestDevice);
         mInstrumentationListTest.setDevice(mMockTestDevice);
-        runIListTest();
+        mInstrumentationListTest.run(mMockListener);
         assertEquals(mMockTestDevice, mockITest.getDevice());
         assertEquals(test.getClassName(), mockITest.getClassName());
         assertEquals(test.getTestName(), mockITest.getMethodName());
@@ -112,12 +101,10 @@ public class InstrumentationListTestTest extends TestCase {
         testList.add(test);
         final InstrumentationTest mockITest = new InstrumentationTest() {
             @Override
-            public void run(List<ITestInvocationListener> listeners) {
-                for (ITestInvocationListener listener: listeners) {
-                    listener.testRunStarted(packageName, 1);
-                    listener.testRunFailed(runFailureMsg);
-                    listener.testRunEnded(0, Collections.EMPTY_MAP);
-                }
+            public void run(ITestInvocationListener listener) {
+                listener.testRunStarted(packageName, 1);
+                listener.testRunFailed(runFailureMsg);
+                listener.testRunEnded(0, Collections.EMPTY_MAP);
             }
         };
         mInstrumentationListTest = new InstrumentationListTest(packageName, "foo", testList) {
@@ -137,7 +124,7 @@ public class InstrumentationListTestTest extends TestCase {
 
         EasyMock.replay(mMockListener, mMockTestDevice);
         mInstrumentationListTest.setDevice(mMockTestDevice);
-        runIListTest();
+        mInstrumentationListTest.run(mMockListener);
         assertEquals(mMockTestDevice, mockITest.getDevice());
         assertEquals(test.getClassName(), mockITest.getClassName());
         assertEquals(test.getTestName(), mockITest.getMethodName());
@@ -153,7 +140,7 @@ public class InstrumentationListTestTest extends TestCase {
         mInstrumentationListTest.setDevice(null);
         EasyMock.replay(mMockListener);
         try {
-            runIListTest();
+            mInstrumentationListTest.run(mMockListener);
             fail("IllegalArgumentException not thrown");
         } catch (IllegalArgumentException e) {
             // expected

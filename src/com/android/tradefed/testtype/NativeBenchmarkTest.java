@@ -28,7 +28,6 @@ import com.android.tradefed.result.ITestInvocationListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -156,16 +155,16 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
      *
      * @param rootEntry The root folder to begin searching for native tests
      * @param testDevice The device to run tests on
-     * @param listeners the run listeners
+     * @param listener the run listener
      * @throws DeviceNotAvailableException
      */
     private void doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
-            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+            ITestRunListener listener) throws DeviceNotAvailableException {
 
         if (rootEntry.isDirectory()) {
             // recursively run tests in all subdirectories
             for (IFileEntry childEntry : rootEntry.getChildren(true)) {
-                doRunAllTestsInSubdirectory(childEntry, testDevice, listeners);
+                doRunAllTestsInSubdirectory(childEntry, testDevice, listener);
             }
         } else {
             // assume every file is a valid benchmark test binary.
@@ -181,9 +180,7 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
             testDevice.executeShellCommand(String.format("chmod 755 %s", fullPath));
             long startTime = System.currentTimeMillis();
 
-            for (ITestRunListener listener : listeners) {
-                listener.testRunStarted(runName, 0);
-            }
+            listener.testRunStarted(runName, 0);
             Map<String, String> metricMap = new HashMap<String, String>();
             metricMap.put(ITERATION_KEY, Integer.toString(mNumIterations));
             try {
@@ -201,9 +198,7 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
                 // TODO: is catching exceptions, and reporting testRunFailed necessary?
             } finally {
                 final long elapsedTime = System.currentTimeMillis() - startTime;
-                for (ITestRunListener listener : listeners) {
-                    listener.testRunEnded(elapsedTime, metricMap);
-                }
+                listener.testRunEnded(elapsedTime, metricMap);
             }
         }
     }
@@ -238,7 +233,7 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -255,7 +250,7 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
                     "cat /sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq > " +
                     "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
         }
-        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
+        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, listener);
         if (mMaxCpuFreq) {
             // revert to normal
             mDevice.executeShellCommand(
@@ -263,14 +258,5 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
                     "/sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq");
         }
 
-    }
-
-    /**
-     * Convert a list of {@link ITestInvocationListener} to a collection of {@link ITestRunListener}
-     */
-    private Collection<ITestRunListener> convertListeners(List<ITestInvocationListener> listeners) {
-        ArrayList<ITestRunListener> copy = new ArrayList<ITestRunListener>(listeners.size());
-        copy.addAll(listeners);
-        return copy;
     }
 }

@@ -25,10 +25,7 @@ import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -137,16 +134,16 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
      *
      * @param rootEntry The root folder to begin searching for native tests
      * @param testDevice The device to run tests on
-     * @param listeners the run listeners
+     * @param listener the run listener
      * @throws DeviceNotAvailableException
      */
     private void doRunAllTestsInSubdirectory(IFileEntry rootEntry, ITestDevice testDevice,
-            Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
+            ITestRunListener listener) throws DeviceNotAvailableException {
 
         if (rootEntry.isDirectory()) {
             // recursively run tests in all subdirectories
             for (IFileEntry childEntry : rootEntry.getChildren(true)) {
-                doRunAllTestsInSubdirectory(childEntry, testDevice, listeners);
+                doRunAllTestsInSubdirectory(childEntry, testDevice, listener);
             }
         } else {
             // assume every file is a valid stress test binary.
@@ -160,9 +157,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
             int startIteration = 0;
             int endIteration = mNumIterations - 1;
             long startTime = System.currentTimeMillis();
-            for (ITestRunListener listener : listeners) {
-                listener.testRunStarted(resultParser.getRunName(), 0);
-            }
+            listener.testRunStarted(resultParser.getRunName(), 0);
             try {
                 for (int i = 0; i < mNumRuns; i++) {
                     // -s is start iteration, -e means end iteration
@@ -177,13 +172,13 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
                 }
                 // TODO: is catching exceptions, and reporting testRunFailed necessary?
             } finally {
-                reportTestCompleted(startTime, listeners, resultParser);
+                reportTestCompleted(startTime, listener, resultParser);
             }
 
         }
     }
 
-    private void reportTestCompleted(long startTime, Collection<ITestRunListener> listeners,
+    private void reportTestCompleted(long startTime, ITestRunListener listener,
             NativeStressTestParser parser) {
         final long elapsedTime = System.currentTimeMillis() - startTime;
         int iterationsComplete = parser.getIterationsCompleted();
@@ -194,9 +189,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
                 parser.getRunName(), iterationsComplete, avgIterationTime));
         metricMap.put(ITERATION_KEY, Integer.toString(iterationsComplete));
         metricMap.put(AVG_ITERATION_TIME_KEY, Float.toString(avgIterationTime));
-        for (ITestRunListener listener : listeners) {
-            listener.testRunEnded(elapsedTime, metricMap);
-        }
+        listener.testRunEnded(elapsedTime, metricMap);
     }
 
     /**
@@ -215,7 +208,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
      * {@inheritDoc}
      */
     @Override
-    public void run(List<ITestInvocationListener> listeners) throws DeviceNotAvailableException {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
@@ -230,15 +223,6 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
                     testPath, mDevice.getSerialNumber()));
             return;
         }
-        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, convertListeners(listeners));
-    }
-
-    /**
-     * Convert a list of {@link ITestInvocationListener} to a collection of {@link ITestRunListener}
-     */
-    private Collection<ITestRunListener> convertListeners(List<ITestInvocationListener> listeners) {
-        ArrayList<ITestRunListener> copy = new ArrayList<ITestRunListener>(listeners.size());
-        copy.addAll(listeners);
-        return copy;
+        doRunAllTestsInSubdirectory(nativeTestDirectory, mDevice, listener);
     }
 }
