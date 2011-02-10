@@ -156,8 +156,11 @@ public class Console {
                     public void run() {
                         mTerminal.printf(
                                 "%s help:\n" +
-                                "\tconfig  <config.xml>   Load and run the specified config\n" +
-                                "\tcmdfile <cmdfile.txt>  Load and run the specified commandfile\n",
+                                "\tconfig       <config.xml>  Load and run the specified config\n" +
+                                "\tcmdfile      <cmdfile.txt> Load and run the specified " +
+                                    "commandfile\n",
+                                "\tsingleConfig <config.xml>  Load and run the specified config, " +
+                                    "and run 'exit' immediately afterward\n",
                                 loadPattern);
                     }
                 };
@@ -227,9 +230,9 @@ public class Console {
                         mScheduler.addConfig(flatArgs);
                     }
                 };
-        trie.put(runLoadConfig, loadPattern, "config", null);
+        trie.put(runLoadConfig, loadPattern, "(?:singleC|c)onfig", null);
         // Missing required argument: show help
-        trie.put(runHelpLoad, loadPattern, "config");
+        trie.put(runHelpLoad, loadPattern, "(?:singleC|c)onfig");
 
         ArgRunnable<CaptureList> runLoadCmdfile = new ArgRunnable<CaptureList>() {
                     @Override
@@ -337,6 +340,19 @@ public class Console {
                     shouldExit = true;
                 } else {
                     mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", tokens[0]);
+                }
+
+                // Special-case for singleConfig, which should run a config and then immediately
+                // attempt to exit
+                if (tokens.length >= 2 && "singleConfig".equals(tokens[1])) {
+                    try {
+                        // FIXME: This is a horrible hack to wait until there _should_ be devices
+                        // FIXME: available.
+                        Thread.sleep(5000 /*DeviceStateMonitor.CHECK_POLL_TIME*/ + 500);
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                    shouldExit = true;
                 }
 
                 Thread.sleep(100);
