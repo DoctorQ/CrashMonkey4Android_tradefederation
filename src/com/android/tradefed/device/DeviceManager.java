@@ -16,17 +16,17 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
-import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,6 +70,8 @@ public class DeviceManager implements IDeviceManager {
 
     private boolean mEnableLogcat = true;
 
+    private boolean mFastbootEnabled;
+
     private Set<IFastbootListener> mFastbootListeners;
 
     private static class DeviceMatcher implements IMatcher<IDevice> {
@@ -104,6 +106,7 @@ public class DeviceManager implements IDeviceManager {
         // assume "adb" is in PATH
         // TODO: make this configurable
         mAdbBridge.init(false /* client support */, "adb");
+        mFastbootEnabled = isFastbootAvailable();
         for (IDevice device : mAdbBridge.getDevices()) {
             if (device.getState() == IDevice.DeviceState.ONLINE) {
                 checkAndAddAvailableDevice(device);
@@ -111,9 +114,25 @@ public class DeviceManager implements IDeviceManager {
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
-        mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
-        mFastbootMonitor = new FastbootMonitor();
-        startFastbootMonitor();
+        if (mFastbootEnabled) {
+            mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
+            mFastbootMonitor = new FastbootMonitor();
+            startFastbootMonitor();
+        } else {
+            Log.w(LOG_TAG, "Fastboot is not available.");
+            mFastbootListeners = null;
+            mFastbootMonitor = null;
+        }
+    }
+
+    /**
+     * Determine if fastboot is available for use.
+     */
+    private boolean isFastbootAvailable() {
+        // TODO: replace with fastboot --version when available.
+        CommandResult fastbootResult = getRunUtil().runTimedCmd(
+                FASTBOOT_CMD_TIMEOUT, "fastboot devices");
+        return (fastbootResult.getStatus() == CommandStatus.SUCCESS);
     }
 
     /**
@@ -291,12 +310,13 @@ public class DeviceManager implements IDeviceManager {
      * Exposed so unit tests can mock
      *
      * @param allocatedDevice
-     * @param recovery
      * @param monitor
-     * @return
+     * @return a {@link IManagedTestDevice}
      */
     IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceStateMonitor monitor) {
-        return new TestDevice(allocatedDevice, monitor);
+        IManagedTestDevice testDevice = new TestDevice(allocatedDevice, monitor);
+        testDevice.setFastbootEnabled(mFastbootEnabled);
+        return testDevice;
     }
 
     /**
