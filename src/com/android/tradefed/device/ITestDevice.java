@@ -253,6 +253,31 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Retrieves a file off device, stores it in a local temporary {@link File}, and returns that
+     * {@code File}.
+     *
+     * @param remoteFilePath the absolute path to file on device.
+     * @return A {@link File} containing the contents of the device file, or {@code null} if the
+     *         copy failed for any reason (including problems with the host filesystem)
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public File pullFile(String remoteFilePath) throws DeviceNotAvailableException;
+
+    /**
+     * A convenience method to retrieve a file from the device's external storage, stores it in a
+     * local temporary {@link File}, and return a reference to that {@code File}.
+     *
+     * @param remoteFilePath the path to file on device, relative to the device's external storage
+     *        mountpoint
+     * @return A {@link File} containing the contents of the device file, or {@code null} if the
+     *         copy failed for any reason (including problems with the host filesystem)
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public File pullFileFromExternal(String remoteFilePath) throws DeviceNotAvailableException;
+
+    /**
      * Push a file to device
      *
      * @param localFile the local file to push

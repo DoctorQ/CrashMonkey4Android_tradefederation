@@ -436,7 +436,8 @@ class TestDevice implements IManagedTestDevice {
             throws DeviceNotAvailableException {
 
         DeviceAction pullAction = new DeviceAction() {
-            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException, SyncException {
+            public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
+                    SyncException {
                 SyncService syncService = null;
                 boolean status = false;
                 try {
@@ -459,6 +460,31 @@ class TestDevice implements IManagedTestDevice {
         };
         return performDeviceAction(String.format("pull %s", remoteFilePath), pullAction,
                 MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * {@inheridDoc}
+     */
+    public File pullFile(String remoteFilePath) throws DeviceNotAvailableException {
+        try {
+            File localFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+            if (pullFile(remoteFilePath, localFile)) {
+                return localFile;
+            }
+        } catch (IOException e) {
+            Log.w(LOG_TAG, String.format("Encountered IOException while trying to pull '%s': %s",
+                    remoteFilePath, e));
+        }
+        return null;
+    }
+
+    /**
+     * {@inheridDoc}
+     */
+    public File pullFileFromExternal(String remoteFilePath) throws DeviceNotAvailableException {
+        String externalPath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        String fullPath = (new File(externalPath, remoteFilePath)).getPath();
+        return pullFile(fullPath);
     }
 
     /**

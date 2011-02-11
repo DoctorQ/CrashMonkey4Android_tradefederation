@@ -73,6 +73,14 @@ public class StubTestDevice implements IManagedTestDevice {
         return false;
     }
 
+    public File pullFile(String remoteFilePath) throws DeviceNotAvailableException {
+        return null;
+    }
+
+    public File pullFileFromExternal(String remoteFilePath) throws DeviceNotAvailableException {
+        return null;
+    }
+
     public boolean pushFile(File localFile, String deviceFilePath)
             throws DeviceNotAvailableException {
         return false;
