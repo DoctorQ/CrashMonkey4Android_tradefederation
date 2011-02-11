@@ -156,6 +156,30 @@ public class FileUtil {
     }
 
     /**
+     * Recursively copy folder contents.
+     * <p/>
+     * Only supports copying of files and directories - symlinks are not copied.
+     *
+     * @param sourceDir the folder that contains the files to copy
+     * @param destDir the destination folder
+     * @throws IOException
+     */
+    public static void recursiveCopy(File sourceDir, File destDir) throws IOException {
+        for (File childFile : sourceDir.listFiles()) {
+            File destChild = new File(destDir, childFile.getName());
+            if (childFile.isDirectory()) {
+                if (!destChild.mkdir()) {
+                    throw new IOException(String.format("Could not create directory %s",
+                            destChild.getAbsolutePath()));
+                }
+                recursiveCopy(childFile, destChild);
+            } else if (childFile.isFile()) {
+                copyFile(childFile, destChild);
+            }
+        }
+    }
+
+    /**
      * A helper method for writing string data to file
      *
      * @param inputString the input {@link String}
@@ -332,4 +356,6 @@ public class FileUtil {
         File tmpFile =  FileUtil.createTempFile(prefix + "_", fileExt, parentDir);
         return tmpFile;
     }
+
+
 }

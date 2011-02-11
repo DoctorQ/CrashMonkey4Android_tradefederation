@@ -18,6 +18,7 @@ package com.android.tradefed.build;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 
 /**
  * Concrete implementation of a {@link IFolderBuildInfo}.
@@ -62,8 +63,13 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     public IBuildInfo clone() {
         FolderBuildInfo copy = new FolderBuildInfo(getBuildId(), getTestTarget(), getBuildName());
         copy.addAllBuildAttributes(getAttributesMultiMap());
-        // TODO: consider copying directory
-        copy.setRootDir(mRootDir);
-        return copy;
+        try {
+            File copyDir = FileUtil.createTempDir("foldercopy");
+            FileUtil.recursiveCopy(mRootDir, copyDir);
+            copy.setRootDir(copyDir);
+            return copy;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

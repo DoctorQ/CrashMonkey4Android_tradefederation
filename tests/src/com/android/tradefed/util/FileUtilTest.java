@@ -191,4 +191,22 @@ public class FileUtilTest extends TestCase {
         assertTrue(tmpFile.getAbsolutePath().contains("userdata"));
         assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
     }
+
+    public void testRecursiveCopy() throws IOException {
+        File tmpParentDir = FileUtil.createTempDir("foo");
+        File childDir = FileUtil.createTempDir("foochild", tmpParentDir);
+        File subFile = FileUtil.createTempFile("foo", ".txt", childDir);
+        FileUtil.writeToFile("foo", subFile);
+        File destDir = FileUtil.createTempDir("dest");
+        try {
+            FileUtil.recursiveCopy(tmpParentDir, destDir);
+            File subFileCopy = new File(destDir, String.format("%s%s%s", childDir.getName(),
+                    File.separator, subFile.getName()));
+            assertTrue(subFileCopy.exists());
+            assertTrue(FileUtil.compareFileContents(subFile, subFileCopy));
+        } finally {
+            FileUtil.recursiveDelete(tmpParentDir);
+            FileUtil.recursiveDelete(destDir);
+        }
+    }
 }
