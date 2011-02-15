@@ -60,12 +60,4 @@ interface IManagedTestDevice extends ITestDevice {
      * Get the device's state.
      */
     public TestDeviceState getDeviceState();
-
-    /**
-     * Set the fastboot option for the device. Should be set when device is first
-     * allocated.
-     *
-     * @param fastbootEnabled whether fastboot is available for the device or not
-     */
-    public void setFastbootEnabled(boolean fastbootEnabled);
 }

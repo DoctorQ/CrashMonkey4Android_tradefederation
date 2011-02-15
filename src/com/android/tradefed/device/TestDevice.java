@@ -38,6 +38,7 @@ import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -104,7 +105,6 @@ class TestDevice implements IManagedTestDevice {
     private Semaphore mFastbootLock = new Semaphore(1);
     private LogCatReceiver mLogcatReceiver;
     private IFileEntry mRootFile = null;
-    private boolean mFastbootEnabled = true;
 
     // TODO: TestDevice is not loaded from configuration yet, so these options are currently fixed
 
@@ -285,8 +285,7 @@ class TestDevice implements IManagedTestDevice {
         return productType;
     }
 
-    private String getFastbootProduct()
-            throws DeviceNotAvailableException, UnsupportedOperationException {
+    private String getFastbootProduct() throws DeviceNotAvailableException {
         CommandResult result = executeFastbootCommand("getvar", "product");
         if (result.getStatus() == CommandStatus.SUCCESS) {
             Pattern fastbootProductPattern = Pattern.compile("product:[ ]+(\\w+)");
@@ -822,7 +821,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public CommandResult executeFastbootCommand(String... cmdArgs)
-            throws DeviceNotAvailableException, UnsupportedOperationException {
+            throws DeviceNotAvailableException {
         return doFastbootCommand(getCommandTimeout(), cmdArgs);
     }
 
@@ -830,7 +829,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public CommandResult executeLongFastbootCommand(String... cmdArgs)
-            throws DeviceNotAvailableException, UnsupportedOperationException {
+            throws DeviceNotAvailableException {
         return doFastbootCommand(getLongCommandTimeout(), cmdArgs);
     }
 
@@ -839,12 +838,7 @@ class TestDevice implements IManagedTestDevice {
      * @throws DeviceNotAvailableException
      */
     private CommandResult doFastbootCommand(final long timeout, String... cmdArgs)
-            throws DeviceNotAvailableException, UnsupportedOperationException {
-        if (!mFastbootEnabled) {
-            throw new UnsupportedOperationException(String.format(
-                    "Attempted to fastboot on device %s , but fastboot is not available. Aborting.",
-                    getSerialNumber()));
-        }
+            throws DeviceNotAvailableException {
         final String[] fullCmd = buildFastbootCommand(cmdArgs);
         for (int i = 0; i < MAX_RETRY_ATTEMPTS; i++) {
             // block state changes while executing a fastboot command, since
@@ -1493,12 +1487,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void rebootIntoBootloader()
-            throws DeviceNotAvailableException, UnsupportedOperationException {
-        if (!mFastbootEnabled) {
-            throw new UnsupportedOperationException(
-                    "Fastboot is not available and cannot reboot into bootloader");
-        }
+    public void rebootIntoBootloader() throws DeviceNotAvailableException {
         if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s already in fastboot. Rebooting anyway",
                     getSerialNumber()));
@@ -1590,7 +1579,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * @throws DeviceNotAvailableException
      */
-    private void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
+    private void doReboot() throws DeviceNotAvailableException {
         if (TestDeviceState.FASTBOOT == getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s in fastboot. Rebooting to userspace.",
                     getSerialNumber()));
@@ -1719,13 +1708,6 @@ class TestDevice implements IManagedTestDevice {
      */
     public void setRecovery(IDeviceRecovery recovery) {
         mRecovery = recovery;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void setFastbootEnabled(boolean fastbootEnabled) {
-        mFastbootEnabled = fastbootEnabled;
     }
 
     /**

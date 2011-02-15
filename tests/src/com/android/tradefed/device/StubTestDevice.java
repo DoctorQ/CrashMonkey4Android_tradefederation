@@ -112,13 +112,6 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void setFastbootEnabled(boolean fastbootEnabled) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public String executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException {
         // ignore
         return "";
