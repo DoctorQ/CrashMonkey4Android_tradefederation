@@ -34,6 +34,8 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.File;
@@ -41,8 +43,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TestDevice}.
@@ -53,6 +53,7 @@ public class TestDeviceTest extends TestCase {
     private IShellOutputReceiver mMockReceiver;
     private TestDevice mTestDevice;
     private TestDevice mRecoveryTestDevice;
+    private TestDevice mNoFastbootTestDevice;
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
     private IRunUtil mMockRunUtil;
@@ -129,6 +130,35 @@ public class TestDeviceTest extends TestCase {
         mRecoveryTestDevice.setRecovery(mMockRecovery);
         mRecoveryTestDevice.setCommandTimeout(100);
         mRecoveryTestDevice.setLogStartDelay(-1);
+
+        // TestDevice without fastboot
+        mNoFastbootTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
+            @Override
+            public void reboot() {
+                // reboot is too complicated to mock out correctly, so just do a adb reboot command
+                // without any of the other associated commands
+                try {
+                    mMockIDevice.reboot(null);
+                } catch (IOException e) {
+                } catch (TimeoutException e) {
+                } catch (AdbCommandRejectedException e) {
+                }
+            }
+            @Override
+            public void postBootSetup() {
+                // too annoying to mock out postBootSetup actions everyone, so do nothing
+            }
+
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
+            }
+        };
+        mNoFastbootTestDevice.setFastbootEnabled(false);
+        mNoFastbootTestDevice.setRecovery(mMockRecovery);
+        mNoFastbootTestDevice.setCommandTimeout(100);
+        mNoFastbootTestDevice.setLogStartDelay(-1);
+
     }
 
     /**
@@ -649,6 +679,31 @@ public class TestDeviceTest extends TestCase {
         mTestDevice.runInstrumentationTests(mockRunner, listeners);
     }
 
+    /**
+     * Test {@link TestDevice#executeFastbootCommand(String...)} throws an exception when fastboot
+     * is not available.
+     */
+    public void testExecuteFastbootCommand_nofastboot() throws Exception {
+        try {
+            mNoFastbootTestDevice.executeFastbootCommand("");
+            fail("UnsupportedOperationException not thrown");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link TestDevice#executeLongFastbootCommand(String...)} throws an exception when
+     * fastboot is not available.
+     */
+    public void testExecuteLongFastbootCommand_nofastboot() throws Exception {
+        try {
+            mNoFastbootTestDevice.executeFastbootCommand("");
+            fail("UnsupportedOperationException not thrown");
+        } catch (UnsupportedOperationException e) {
+            // expected
+        }
+    }
     /**
      * Test that state changes are ignore while {@link TestDevice#executeFastbootCommand(String...)}
      * is active.
