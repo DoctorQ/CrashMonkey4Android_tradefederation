@@ -21,15 +21,15 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
-import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceSelectionMatcher;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.device.IDeviceSelectionOptions;
+import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
@@ -67,85 +67,20 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private boolean mShutdown = false;
 
     /**
-     * Container for common options for each config.
-     */
-    static class CommandOptions {
-        @Option(name="help", description="display the help text")
-        private boolean mHelpMode = false;
-
-        @Option(name="min-loop-time", description=
-            "the minimum invocation time in ms when in loop mode. Default is 1 minute.")
-        private long mMinLoopTime = 60 * 1000;
-
-        @Option(name="loop", description="keep running continuously")
-        private boolean mLoopMode = true;
-
-        /**
-         * Set the help mode for the config.
-         * <p/>
-         * Exposed for testing.
-         */
-        void setHelpMode(boolean helpMode) {
-            mHelpMode = helpMode;
-        }
-
-        /**
-         * Gets the help mode.
-         */
-        public boolean isHelpMode() {
-            return mHelpMode;
-        }
-
-        /**
-         * Set the loop mode for the config.
-         * <p/>
-         * Exposed for testing.
-         */
-        void setLoopMode(boolean loopMode) {
-            mLoopMode = loopMode;
-        }
-
-        /**
-         * Return the loop mode for the config.
-         */
-        boolean isLoopMode() {
-            return mLoopMode;
-        }
-
-        /**
-         * Set the min loop time for the config.
-         * <p/>
-         * Exposed for testing.
-         */
-        void setMinLoopTime(long loopTime) {
-            mMinLoopTime = loopTime;
-        }
-
-        /**
-         * Get the min loop time for the config.
-         */
-        public long getMinLoopTime() {
-            return mMinLoopTime;
-        }
-    }
-
-    /**
      * Represents one config to be executed
      */
     private class ConfigCommand {
         private final String[] mArgs;
 
-        private final CommandOptions mCmdOptions;
-        private final DeviceSelectionOptions mDeviceOptions;
-
         /** the total amount of time this config was executing. Used to prioritize */
         private long mTotalExecTime = 0;
 
-        ConfigCommand(String[] args, CommandOptions cmdOptions,
-                DeviceSelectionOptions deviceOptions) {
+        /** the currently loaded configuration for the command */
+        protected IConfiguration mConfig;
+
+        ConfigCommand(String[] args) throws ConfigurationException {
             mArgs = args;
-            mCmdOptions = cmdOptions;
-            mDeviceOptions = deviceOptions;
+            resetConfiguration();
         }
 
         synchronized void incrementExecTime(long execTime) {
@@ -153,17 +88,18 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
 
         /**
-         * Get the {@link CommandOptions} associated with this command.
+         * Get the {@link ICommandOptions} associated with this command.
+         * @throws ConfigurationException
          */
-        CommandOptions getCommandOptions() {
-            return mCmdOptions;
+        ICommandOptions getCommandOptions() {
+            return getConfiguration().getCommandOptions();
         }
 
         /**
          * Get the {@link DeviceSelectionOptions} associated with this command.
          */
-        DeviceSelectionOptions getDeviceOptions() {
-            return mDeviceOptions;
+        IDeviceSelectionOptions getDeviceOptions() {
+            return getConfiguration().getDeviceSelectionOptions();
         }
 
         /**
@@ -174,15 +110,24 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
 
         /**
+         * Reloads a configuration for this command from args.
+         * <p/>
+         * Should be called once config is rescheduled for execution
+         *
+         * @return the newly created {@link IConfiguration}
+         */
+        public IConfiguration resetConfiguration() throws ConfigurationException  {
+            mConfig = getConfigFactory().createConfigurationFromArgs(getArgs());
+            return mConfig;
+        }
+
+        /**
          * Get the {@link IConfiguration} associated with this command.
          *
          * @return
-         * @throws ConfigurationException
          */
-        public IConfiguration getConfiguration() throws ConfigurationException {
-            // create a new config
-            return getConfigFactory().createConfigurationFromArgs(
-                    getArgs(), new CommandOptions(), new DeviceSelectionOptions());
+        public IConfiguration getConfiguration() {
+            return mConfig;
         }
     }
 
@@ -191,19 +136,26 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     private class RescheduledConfigCommand extends ConfigCommand {
 
-        private final IConfiguration mConfig;
         private final ConfigCommand mOriginalCmd;
 
-        RescheduledConfigCommand(ConfigCommand cmd, IConfiguration config) {
-            super(cmd.getArgs(), new CommandOptions(), cmd.getDeviceOptions());
-            // a resumable config should never be in loop mode
-            getCommandOptions().setLoopMode(false);
+        RescheduledConfigCommand(ConfigCommand cmd, IConfiguration config)
+                throws ConfigurationException {
+            super(cmd.getArgs());
             mConfig = config;
             mOriginalCmd = cmd;
+            // a resumable config should never be in loop mode
+            mConfig.getCommandOptions().setLoopMode(false);
         }
 
         @Override
-        public IConfiguration getConfiguration() throws ConfigurationException {
+        public IConfiguration resetConfiguration() throws ConfigurationException  {
+            // ignore, continue to use config
+            // TODO: find a cleaner solution
+            return mConfig;
+        }
+
+        @Override
+        public IConfiguration getConfiguration()  {
             return mConfig;
         }
 
@@ -234,10 +186,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 // cannot schedule configs if shut down
                 return false;
             }
-            RescheduledConfigCommand rescheduledCmd = new RescheduledConfigCommand(mOrigCmd,
-                    config);
-            mConfigQueue.add(rescheduledCmd);
-            return true;
+            try {
+                RescheduledConfigCommand rescheduledCmd = new RescheduledConfigCommand(mOrigCmd,
+                        config);
+                mConfigQueue.add(rescheduledCmd);
+                return true;
+            } catch (ConfigurationException e) {
+                Log.e(LOG_TAG, e);
+            }
+            return false;
         }
     }
 
@@ -276,7 +233,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          * {@inheritDoc}
          */
         public boolean matches(ConfigCommand cmd) {
-            DeviceSelectionOptions deviceOptions = cmd.getDeviceOptions();
+            IDeviceSelectionOptions deviceOptions = cmd.getDeviceOptions();
             return DeviceSelectionMatcher.matches(mDevice.getIDevice(), deviceOptions);
         }
     }
@@ -324,8 +281,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 Log.w(LOG_TAG, String.format("Device %s is not available",
                         mDevice.getSerialNumber()));
                 deviceState = FreeDeviceState.UNAVAILABLE;
-            } catch (ConfigurationException e) {
-                Log.e(LOG_TAG, e);
             } catch (FatalHostError e) {
                 Log.logAndDisplay(LogLevel.ERROR, LOG_TAG, String.format(
                         "Fatal error occurred: %s, shutting down", e.getMessage()));
@@ -456,41 +411,17 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     public void addConfig(String[] args) {
-        CommandOptions cmdOptions = createCommandOptions();
-        DeviceSelectionOptions deviceOptions = createDeviceOptions();
         try {
-            // load a config to parse options and validate arguments up front
-            getConfigFactory().createConfigurationFromArgs(args, cmdOptions, deviceOptions);
-            if (cmdOptions.isHelpMode()) {
-                getConfigFactory().printHelp(args, System.out, CommandOptions.class,
-                        DeviceSelectionOptions.class);
+            ConfigCommand cmd = new ConfigCommand(args);
+            if (cmd.getCommandOptions().isHelpMode()) {
+                getConfigFactory().printHelp(args, System.out);
             } else {
-                ConfigCommand cmd = new ConfigCommand(args, cmdOptions, deviceOptions);
                 mConfigQueue.add(cmd);
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
-            getConfigFactory().printHelp(args, System.out, CommandOptions.class,
-                    DeviceSelectionOptions.class);
+            getConfigFactory().printHelp(args, System.out);
         }
-    }
-
-    /**
-     * Factory method for creating {@link CommandOptions}.
-     * <p/>
-     * Exposed for testing.
-     */
-    CommandOptions createCommandOptions() {
-        return new CommandOptions();
-    }
-
-    /**
-     * Factory method for creating {@link DeviceSelectionOptions}.
-     * <p/>
-     * Exposed for testing.
-     */
-    DeviceSelectionOptions createDeviceOptions() {
-        return new DeviceSelectionOptions();
     }
 
     /**
@@ -529,7 +460,12 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 public void run() {
                     Log.d(LOG_TAG, String.format("Adding config '%s' back to queue",
                             getArgString(cmd.getArgs())));
-                    mConfigQueue.add(cmd);
+                    try {
+                        cmd.resetConfiguration();
+                        mConfigQueue.add(cmd);
+                    } catch (ConfigurationException e) {
+                        Log.e(LOG_TAG, e);
+                    }
                 }
             };
             Log.d(LOG_TAG, String.format("Delay adding config '%s' back to queue for %d ms",

@@ -126,7 +126,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice(long timeout, DeviceSelectionOptions options) {
+    public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
         throw new UnsupportedOperationException();
     }
 

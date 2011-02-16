@@ -22,6 +22,7 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.IRescheduler;
@@ -112,7 +113,7 @@ public class CommandTest extends TestCase {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(
                 mMockDeviceManager.allocateDevice(EasyMock.anyLong(),
-                        (DeviceSelectionOptions)EasyMock.anyObject())).andReturn(null);
+                        (IDeviceSelectionOptions)EasyMock.anyObject())).andReturn(null);
         mMockDeviceManager.terminate();
 
         replayMocks();
@@ -187,7 +188,7 @@ public class CommandTest extends TestCase {
     private void setAllocateDeviceExpectations() {
         // expect to be asked for device to connect to and return the mock device
         EasyMock.expect(mMockDeviceManager.allocateDevice(EasyMock.eq(Command.WAIT_DEVICE_TIME),
-                (DeviceSelectionOptions)EasyMock.anyObject()))
+                (IDeviceSelectionOptions)EasyMock.anyObject()))
                 .andReturn(mMockDevice);
     }
 

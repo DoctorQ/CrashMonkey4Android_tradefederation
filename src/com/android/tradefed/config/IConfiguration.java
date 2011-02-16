@@ -17,7 +17,9 @@
 package com.android.tradefed.config;
 
 import com.android.tradefed.build.IBuildProvider;
+import com.android.tradefed.command.ICommandOptions;
 import com.android.tradefed.device.IDeviceRecovery;
+import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.targetprep.ITargetPreparer;
@@ -76,6 +78,20 @@ public interface IConfiguration {
      * @return the {@link ILeveledLogOutput} provided in the configuration.
      */
     public ILeveledLogOutput getLogOutput();
+
+    /**
+     * Gets the {@link ICommandOptions} to use from the configuration.
+     *
+     * @return the {@link ICommandOptions} provided in the configuration.
+     */
+    public ICommandOptions getCommandOptions();
+
+    /**
+     * Gets the {@link IDeviceSelectionOptions} to use from the configuration.
+     *
+     * @return the {@link IDeviceSelectionOptions} provided in the configuration.
+     */
+    public IDeviceSelectionOptions getDeviceSelectionOptions();
 
     /**
      * Generic interface to get the configuration object with the given name.
@@ -182,7 +198,21 @@ public interface IConfiguration {
      *
      * @param listener
      */
-    void setTestInvocationListener(ITestInvocationListener listener);
+    public void setTestInvocationListener(ITestInvocationListener listener);
+
+    /**
+     * Set the {@link ICommandOptions}, replacing any existing values
+     *
+     * @param cmdOptions
+     */
+    public void setCommandOptions(ICommandOptions cmdOptions);
+
+    /**
+     * Set the {@link IDeviceSelectionOptions}, replacing any existing values
+     *
+     * @param deviceOptions
+     */
+    public void setDeviceSelectionOptions(IDeviceSelectionOptions deviceOptions);
 
     /**
      * Generic method to set the config object with the given name, replacing any existing value.
@@ -202,5 +232,6 @@ public interface IConfiguration {
      * @param configList the config object list
      * @throws ConfigurationException if any objects in the list are not the correct type
      */
-    void setConfigurationObjectList(String name, List<?> configList) throws ConfigurationException;
+    public void setConfigurationObjectList(String name, List<?> configList)
+            throws ConfigurationException;
 }

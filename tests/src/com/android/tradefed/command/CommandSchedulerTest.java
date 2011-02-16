@@ -15,16 +15,15 @@
  */
 package com.android.tradefed.command;
 
-import com.android.tradefed.command.CommandScheduler.CommandOptions;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockDeviceManager;
-import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 
@@ -74,31 +73,24 @@ public class CommandSchedulerTest extends TestCase {
             IConfigurationFactory getConfigFactory() {
                 return mMockConfigFactory;
             }
-
-            @Override
-            CommandOptions createCommandOptions() {
-                return mCommandOptions;
-            }
-
-            @Override
-            DeviceSelectionOptions createDeviceOptions() {
-                return mDeviceOptions;
-            }
         };
     }
 
     /**
      * Switch all mock objects to replay mode
      */
-    private void replayMocks() {
-        EasyMock.replay(mMockConfigFactory, mMockInvocation);
+    private void replayMocks(Object... additionalMocks) {
+        EasyMock.replay(mMockConfigFactory, mMockInvocation, mMockConfiguration);
+        for (Object mock : additionalMocks) {
+            EasyMock.replay(mock);
+        }
     }
 
     /**
      * Verify all mock objects
      */
     private void verifyMocks() {
-        EasyMock.verify(mMockConfigFactory, mMockInvocation);
+        EasyMock.verify(mMockConfigFactory, mMockInvocation, mMockConfiguration);
     }
 
     /**
@@ -123,9 +115,7 @@ public class CommandSchedulerTest extends TestCase {
     public void testAddConfig_invalidConfig() throws ConfigurationException {
         String[] args = new String[] {};
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args),
-                        (CommandOptions)EasyMock.anyObject(),
-                        (DeviceSelectionOptions)EasyMock.anyObject())).andThrow(
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args))).andThrow(
                 new ConfigurationException(""));
         setPrintHelpExpectations(args);
         replayMocks();
@@ -152,7 +142,7 @@ public class CommandSchedulerTest extends TestCase {
     public void testRun_oneConfig() throws Exception {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 2);
+        setCreateConfigExpectations(args, 1);
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
                 (IRescheduler)EasyMock.anyObject());
         replayMocks();
@@ -175,7 +165,7 @@ public class CommandSchedulerTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new FatalHostError("error"));
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 2);
+        setCreateConfigExpectations(args, 1);
         replayMocks();
         mScheduler.addConfig(args);
         mScheduler.start();
@@ -195,7 +185,7 @@ public class CommandSchedulerTest extends TestCase {
     public void testRun_configSerial() throws Exception {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 4);
+        setCreateConfigExpectations(args, 2);
         // allocate and free a device to get its serial
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addSerial(dev.getSerialNumber());
@@ -224,7 +214,7 @@ public class CommandSchedulerTest extends TestCase {
     public void testRun_configExcludeSerial() throws Exception {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 4);
+        setCreateConfigExpectations(args, 2);
         // allocate and free a device to get its serial
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addExcludeSerial(dev.getSerialNumber());
@@ -251,8 +241,12 @@ public class CommandSchedulerTest extends TestCase {
     public void testRun_rescheduled() throws Exception {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 2);
+        setCreateConfigExpectations(args, 1);
         final IConfiguration rescheduledConfig = EasyMock.createMock(IConfiguration.class);
+        EasyMock.expect(rescheduledConfig.getCommandOptions()).andStubReturn(mCommandOptions);
+        EasyMock.expect(rescheduledConfig.getDeviceSelectionOptions()).andStubReturn(
+                mDeviceOptions);
+
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
                 (IRescheduler)EasyMock.anyObject());
         EasyMock.expectLastCall().andDelegateTo(new ITestInvocation() {
@@ -265,7 +259,7 @@ public class CommandSchedulerTest extends TestCase {
         });
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(rescheduledConfig),
                 (IRescheduler)EasyMock.anyObject());
-        replayMocks();
+        replayMocks(rescheduledConfig);
         mScheduler.addConfig(args);
         mScheduler.start();
         mScheduler.waitForEmptyQueue();
@@ -301,11 +295,12 @@ public class CommandSchedulerTest extends TestCase {
     private void setCreateConfigExpectations(String[] args, int times)
             throws ConfigurationException {
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args),
-                        (CommandOptions)EasyMock.anyObject(),
-                        (DeviceSelectionOptions)EasyMock.anyObject()))
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args)))
                 .andReturn(mMockConfiguration)
                 .times(times);
+        EasyMock.expect(mMockConfiguration.getCommandOptions()).andStubReturn(mCommandOptions);
+        EasyMock.expect(mMockConfiguration.getDeviceSelectionOptions()).andStubReturn(
+                mDeviceOptions);
     }
 
     /**
