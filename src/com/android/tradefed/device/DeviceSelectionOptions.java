@@ -26,7 +26,7 @@ import java.util.Map;
 /**
  * Container for for device selection criteria.
  */
-public class DeviceSelectionOptions {
+public class DeviceSelectionOptions implements IDeviceSelectionOptions {
 
     private static final String LOG_TAG = "DeviceSelectionOptions";
 
@@ -84,37 +84,33 @@ public class DeviceSelectionOptions {
     }
 
     /**
-     * Gets a copy of the serial numbers
-     *
-     * @return a {@link Collection} of serial numbers
+     * {@inheritDoc}
      */
+    @Override
     public Collection<String> getSerials() {
         return copyCollection(mSerials);
     }
 
     /**
-     * Gets a copy of the serial numbers exclusion list
-     *
-     * @return a {@link Collection} of serial numbers
+     * {@inheritDoc}
      */
+    @Override
     public Collection<String> getExcludeSerials() {
         return copyCollection(mExcludeSerials);
     }
 
     /**
-     * Gets a copy of the product type list
-     *
-     * @return a {@link Collection} of product types
+     * {@inheritDoc}
      */
+    @Override
     public Collection<String> getProductTypes() {
         return copyCollection(mProductTypes);
     }
 
     /**
-     * Returns a map of the property list
-     *
-     * @return a {@link Map} of device property names to values
+     * {@inheritDoc}
      */
+    @Override
     public Map<String, String> getProperties() {
         Map<String, String> propertyMap = new HashMap<String, String>(mPropertyStrings.size());
         for (String propertyKeyValue : mPropertyStrings) {

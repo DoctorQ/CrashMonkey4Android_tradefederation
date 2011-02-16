@@ -17,7 +17,6 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log;
-import com.android.tradefed.command.CommandScheduler.CommandOptions;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -60,6 +59,12 @@ public class CommandSchedulerFuncTest extends TestCase {
         mCommandOptions = new CommandOptions();
         mCommandOptions.setLoopMode(true);
         mCommandOptions.setMinLoopTime(0);
+        EasyMock.expect(mSlowConfig.getCommandOptions()).andStubReturn(mCommandOptions);
+        EasyMock.expect(mFastConfig.getCommandOptions()).andStubReturn(mCommandOptions);
+        EasyMock.expect(mSlowConfig.getDeviceSelectionOptions()).andStubReturn(
+                new DeviceSelectionOptions());
+        EasyMock.expect(mFastConfig.getDeviceSelectionOptions()).andStubReturn(
+                new DeviceSelectionOptions());
 
         mCommandScheduler = new CommandScheduler() {
             @Override
@@ -75,11 +80,6 @@ public class CommandSchedulerFuncTest extends TestCase {
             @Override
             IConfigurationFactory getConfigFactory() {
                 return mMockConfigFactory;
-            }
-
-            @Override
-            CommandOptions createCommandOptions() {
-                return mCommandOptions;
             }
         };
     }
@@ -99,14 +99,10 @@ public class CommandSchedulerFuncTest extends TestCase {
         String[] slowConfigArgs = new String[] {"slowConfig"};
 
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(fastConfigArgs),
-                        (CommandOptions)EasyMock.anyObject(),
-                        (DeviceSelectionOptions)EasyMock.anyObject()))
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(fastConfigArgs)))
                 .andReturn(mFastConfig).anyTimes();
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(slowConfigArgs),
-                        (CommandOptions)EasyMock.anyObject(),
-                        (DeviceSelectionOptions)EasyMock.anyObject()))
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(slowConfigArgs)))
                 .andReturn(mSlowConfig).anyTimes();
 
         EasyMock.replay(mFastConfig, mSlowConfig, mMockConfigFactory);

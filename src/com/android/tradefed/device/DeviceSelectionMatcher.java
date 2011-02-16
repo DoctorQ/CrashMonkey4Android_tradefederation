@@ -30,7 +30,7 @@ public class DeviceSelectionMatcher {
      * @return <code>true</code> if provided <var>deviceOptions</var> matches <var>device</var>.
      * <code>false> otherwise
      */
-    public static boolean matches(IDevice device, DeviceSelectionOptions deviceOptions) {
+    public static boolean matches(IDevice device, IDeviceSelectionOptions deviceOptions) {
         Collection<String> serials = deviceOptions.getSerials();
         Collection<String> excludeSerials = deviceOptions.getExcludeSerials();
         Collection<String> productTypes = deviceOptions.getProductTypes();

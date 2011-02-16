@@ -55,7 +55,7 @@ public class DeviceManager implements IDeviceManager {
     private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 5*1000;
 
     /** a {@link DeviceSelectionOptions} that matches any device */
-    private static final DeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
+    private static final IDeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
 
     private static DeviceManager sInstance;
 
@@ -76,9 +76,9 @@ public class DeviceManager implements IDeviceManager {
 
     private static class DeviceMatcher implements IMatcher<IDevice> {
 
-        private DeviceSelectionOptions mOptions;
+        private IDeviceSelectionOptions mOptions;
 
-        DeviceMatcher(DeviceSelectionOptions options) {
+        DeviceMatcher(IDeviceSelectionOptions options) {
             mOptions = options;
         }
 
@@ -266,7 +266,7 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice(long timeout, DeviceSelectionOptions options) {
+    public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
         IDevice allocatedDevice = pollAvailableDevice(timeout, options);
         if (allocatedDevice == null) {
             return null;
@@ -283,7 +283,7 @@ public class DeviceManager implements IDeviceManager {
      *
      * @return the {@link IDevice} or <code>null</code> if interrupted
      */
-    private IDevice pollAvailableDevice(long timeout, DeviceSelectionOptions options) {
+    private IDevice pollAvailableDevice(long timeout, IDeviceSelectionOptions options) {
         try {
             return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,
                     new DeviceMatcher(options));

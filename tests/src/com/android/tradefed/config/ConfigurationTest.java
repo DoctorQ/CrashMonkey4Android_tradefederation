@@ -19,8 +19,10 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.BuildRetrievalError;
 import com.android.tradefed.build.IBuildProvider;
+import com.android.tradefed.command.ICommandOptions;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
+import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TextResultReporter;
@@ -242,6 +244,29 @@ public class ConfigurationTest extends TestCase {
                 ITestInvocationListener.class);
         mConfig.setTestInvocationListener(listener1);
         assertEquals(listener1, mConfig.getTestInvocationListeners().get(0));
+    }
+
+    /**
+     * Test method for {@link Configuration#getCommandOptions()}.
+     */
+    public void testGetCommandOptions() throws ConfigurationException {
+        // check that the default object is present
+        assertNotNull(mConfig.getCommandOptions());
+        final ICommandOptions cmdOptions = EasyMock.createMock(ICommandOptions.class);
+        mConfig.setCommandOptions(cmdOptions);
+        assertEquals(cmdOptions, mConfig.getCommandOptions());
+    }
+
+    /**
+     * Test method for {@link Configuration#getDeviceSelectionOptions()}.
+     */
+    public void testGetDeviceSelectionOptions() throws ConfigurationException {
+        // check that the default object is present
+        assertNotNull(mConfig.getDeviceSelectionOptions());
+        final IDeviceSelectionOptions deviceOptions = EasyMock.createMock(
+                IDeviceSelectionOptions.class);
+        mConfig.setDeviceSelectionOptions(deviceOptions);
+        assertEquals(deviceOptions, mConfig.getDeviceSelectionOptions());
     }
 
     /**

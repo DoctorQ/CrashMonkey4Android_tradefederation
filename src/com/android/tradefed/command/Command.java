@@ -28,6 +28,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.ITestInvocation;
@@ -70,7 +71,7 @@ public class Command {
         IDeviceManager manager = null;
 
         try {
-            DeviceSelectionOptions deviceOptions = new DeviceSelectionOptions();
+            IDeviceSelectionOptions deviceOptions = new DeviceSelectionOptions();
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(args, this,
                     deviceOptions);
 
@@ -117,7 +118,7 @@ public class Command {
      * @param config
      * @throws ConfigurationException
      */
-    private void runInvocation(IDeviceManager manager, DeviceSelectionOptions deviceOptions,
+    private void runInvocation(IDeviceManager manager, IDeviceSelectionOptions deviceOptions,
             IConfiguration config)
             throws ConfigurationException {
         ITestDevice device = null;

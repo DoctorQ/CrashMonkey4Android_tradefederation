@@ -17,7 +17,11 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.build.StubBuildProvider;
+import com.android.tradefed.command.CommandOptions;
+import com.android.tradefed.command.ICommandOptions;
+import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceRecovery;
+import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.StdoutLogger;
@@ -46,6 +50,8 @@ public class Configuration implements IConfiguration {
     public static final String DEVICE_RECOVERY_NAME = "device_recovery";
     public static final String LOGGER_NAME = "logger";
     public static final String RESULT_REPORTER_NAME = "result_reporter";
+    public static final String CMD_OPTIONS_NAME = "cmd_options";
+    public static final String DEVICE_OPTIONS_NAME = "device_options";
 
     private static Map<String, ObjTypeInfo> sObjTypeMap = null;
 
@@ -86,6 +92,11 @@ public class Configuration implements IConfiguration {
             sObjTypeMap.put(LOGGER_NAME, new ObjTypeInfo(ILeveledLogOutput.class, false));
             sObjTypeMap.put(RESULT_REPORTER_NAME, new ObjTypeInfo(ITestInvocationListener.class,
                     true));
+            sObjTypeMap.put(CMD_OPTIONS_NAME, new ObjTypeInfo(ICommandOptions.class,
+                    false));
+            sObjTypeMap.put(DEVICE_OPTIONS_NAME, new ObjTypeInfo(IDeviceSelectionOptions.class,
+                    false));
+
         }
         return sObjTypeMap;
     }
@@ -101,6 +112,8 @@ public class Configuration implements IConfiguration {
         setDeviceRecovery(new WaitDeviceRecovery());
         setLogOutput(new StdoutLogger());
         setTestInvocationListener(new TextResultReporter());
+        setCommandOptions(new CommandOptions());
+        setDeviceSelectionOptions(new DeviceSelectionOptions());
     }
 
     /**
@@ -152,6 +165,22 @@ public class Configuration implements IConfiguration {
     @Override
     public List<ITestInvocationListener> getTestInvocationListeners() {
         return (List<ITestInvocationListener>)getConfigurationObjectList(RESULT_REPORTER_NAME);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ICommandOptions getCommandOptions() {
+        return (ICommandOptions)getConfigurationObject(CMD_OPTIONS_NAME);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IDeviceSelectionOptions getDeviceSelectionOptions() {
+        return (IDeviceSelectionOptions)getConfigurationObject(DEVICE_OPTIONS_NAME);
     }
 
     /**
@@ -281,6 +310,22 @@ public class Configuration implements IConfiguration {
     @Override
     public void setTargetPreparer(ITargetPreparer preparer) {
         setConfigurationObjectNoThrow(TARGET_PREPARER_NAME, preparer);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setCommandOptions(ICommandOptions cmdOptions) {
+        setConfigurationObjectNoThrow(CMD_OPTIONS_NAME, cmdOptions);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDeviceSelectionOptions(IDeviceSelectionOptions devOptions) {
+        setConfigurationObjectNoThrow(DEVICE_OPTIONS_NAME, devOptions);
     }
 
     /**
