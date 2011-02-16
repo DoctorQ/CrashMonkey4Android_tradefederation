@@ -35,8 +35,8 @@ import java.util.regex.Pattern;
 /**
  * Parser for file that contains set of command lines.
  * <p/>
- * The syntax of the given file should be series of lines. Each line is one configuration plus its
- * options, delimited by whitespace:
+ * The syntax of the given file should be series of lines. Each line is a command; that is, a
+ * configuration plus its options:
  * <pre>
  *   [options] config-name
  *   [options] config-name2
@@ -54,19 +54,19 @@ class CommandFileParser {
     private static final Pattern mMacroPattern = Pattern.compile("([a-z][a-z0-9_-]*)\\(\\)",
             Pattern.CASE_INSENSITIVE);
 
-    private Map<String, ConfigLine> mMacros = new HashMap<String, ConfigLine>();
-    private Map<String, List<ConfigLine>> mLongMacros = new HashMap<String, List<ConfigLine>>();
-    private List<ConfigLine> mLines = new LinkedList<ConfigLine>();
+    private Map<String, CommandLine> mMacros = new HashMap<String, CommandLine>();
+    private Map<String, List<CommandLine>> mLongMacros = new HashMap<String, List<CommandLine>>();
+    private List<CommandLine> mLines = new LinkedList<CommandLine>();
 
     private List<File> mIncludedFiles = new LinkedList<File>();
 
     @SuppressWarnings("serial")
-    private class ConfigLine extends LinkedList<String> {
-        ConfigLine() {
+    private class CommandLine extends LinkedList<String> {
+        CommandLine() {
             super();
         }
 
-        ConfigLine(Collection<? extends String> c) {
+        CommandLine(Collection<? extends String> c) {
             super(c);
         }
     }
@@ -83,7 +83,7 @@ class CommandFileParser {
      *
      * @return {@code true} if the line matches the macro format, {@false} otherwise
      */
-    private static boolean isLineMacro(ConfigLine line) {
+    private static boolean isLineMacro(CommandLine line) {
         return line.size() >= 4 && "MACRO".equals(line.get(0)) && "=".equals(line.get(2));
     }
 
@@ -93,7 +93,7 @@ class CommandFileParser {
      *
      * @return {@code true} if the line matches the long macro format, {@code false} otherwise
      */
-    private static boolean isLineLongMacro(ConfigLine line) {
+    private static boolean isLineLongMacro(CommandLine line) {
         return line.size() == 3 && "LONG".equals(line.get(0)) && "MACRO".equals(line.get(1));
     }
 
@@ -102,7 +102,7 @@ class CommandFileParser {
      *
      * @return {@code true} if the line is an INCLUDE directive, {@code false} otherwise
      */
-    private static boolean isLineIncludeDirective(ConfigLine line) {
+    private static boolean isLineIncludeDirective(CommandLine line) {
         return line.size() == 2 && "INCLUDE".equals(line.get(0));
     }
 
@@ -120,7 +120,7 @@ class CommandFileParser {
 
     /**
      * Does a single pass of the input CommandFile, storing input lines as macros, long macros, or
-     * configuration lines.
+     * commands.
      *
      * Note that this method may call itself recursively to handle the INCLUDE directive.
      */
@@ -139,10 +139,10 @@ class CommandFileParser {
             while ((inputLine = fileReader.readLine()) != null) {
                 inputLine = inputLine.trim();
                 if (shouldParseLine(inputLine)) {
-                    ConfigLine lArgs = null;
+                    CommandLine lArgs = null;
                     try {
                         String[] args = QuotationAwareTokenizer.tokenizeLine(inputLine);
-                        lArgs = new ConfigLine(Arrays.asList(args));
+                        lArgs = new CommandLine(Arrays.asList(args));
                     } catch (IllegalArgumentException e) {
                         throw new ConfigurationException(e.getMessage());
                     }
@@ -150,12 +150,12 @@ class CommandFileParser {
                     if (isLineMacro(lArgs)) {
                         // Expected format: MACRO <name> = <token> [<token>...]
                         String name = lArgs.get(1);
-                        ConfigLine expansion = new ConfigLine(lArgs.subList(3, lArgs.size()));
+                        CommandLine expansion = new CommandLine(lArgs.subList(3, lArgs.size()));
                         mMacros.put(name, expansion);
                     } else if (isLineLongMacro(lArgs)) {
                         // Expected format: LONG MACRO <name>\n(multiline expansion)\nEND MACRO
                         String name = lArgs.get(2);
-                        List<ConfigLine> expansion = new LinkedList<ConfigLine>();
+                        List<CommandLine> expansion = new LinkedList<CommandLine>();
 
                         inputLine = fileReader.readLine();
                         while (!"END MACRO".equals(inputLine)) {
@@ -167,7 +167,7 @@ class CommandFileParser {
                             }
                             if (shouldParseLine(inputLine)) {
                                 // Store the tokenized line
-                                ConfigLine line = new ConfigLine(Arrays.asList(
+                                CommandLine line = new CommandLine(Arrays.asList(
                                         QuotationAwareTokenizer.tokenizeLine(inputLine)));
                                 expansion.add(line);
                             }
@@ -194,11 +194,11 @@ class CommandFileParser {
     }
 
     /**
-     * Parses the configs contained in {@code file}, doing macro expansions as necessary, and adds
+     * Parses the commands contained in {@code file}, doing macro expansions as necessary, and adds
      * them to {@code scheduler}.
      *
      * @param file the {@link File} to parse
-     * @param scheduler the {@link ICommandScheduler} to add configs to
+     * @param scheduler the {@link ICommandScheduler} to add commands to
      * @throws IOException if failed to read file
      * @throws ConfigurationException if content of file could not be parsed
      */
@@ -241,9 +241,9 @@ class CommandFileParser {
                     continue;
                 }
 
-                ConfigLine line = mLines.get(inputIdx);
+                CommandLine line = mLines.get(inputIdx);
                 boolean sawMacro = expandMacro(line);
-                List<ConfigLine> longMacroExpansion = expandLongMacro(line, !sawMacro);
+                List<CommandLine> longMacroExpansion = expandLongMacro(line, !sawMacro);
 
                 if (longMacroExpansion == null) {
                     if (sawMacro) {
@@ -251,7 +251,7 @@ class CommandFileParser {
                         // to expand, so leave inputBitmask alone.
                     } else {
                         // We did not find any macros (long or short) to expand, thus all expansions
-                        // are done for this ConfigLine.  Update inputBitmask appropriately.
+                        // are done for this CommandLine.  Update inputBitmask appropriately.
                         inputBitmask.set(inputIdx, false);
                         --inputBitmaskCount;
                     }
@@ -276,26 +276,26 @@ class CommandFileParser {
             }
         }
 
-        for (ConfigLine configLine : mLines) {
-            Log.d(LOG_TAG, String.format("Adding line: %s", configLine.toString()));
-            String[] aryCmdLine = new String[configLine.size()];
-            scheduler.addConfig(configLine.toArray(aryCmdLine));
+        for (CommandLine commandLine : mLines) {
+            Log.d(LOG_TAG, String.format("Adding line: %s", commandLine.toString()));
+            String[] aryCmdLine = new String[commandLine.size()];
+            scheduler.addConfig(commandLine.toArray(aryCmdLine));
         }
     }
 
     /**
      * Performs one level of macro expansion for the first macro used in the line
      */
-    private List<ConfigLine> expandLongMacro(ConfigLine line, boolean checkMissingMacro)
+    private List<CommandLine> expandLongMacro(CommandLine line, boolean checkMissingMacro)
             throws ConfigurationException {
         for (int idx = 0; idx < line.size(); ++idx) {
             String token = line.get(idx);
             Matcher matchMacro = mMacroPattern.matcher(token);
             if (matchMacro.matches()) {
                 // we hit a macro; expand it
-                List<ConfigLine> expansion = new LinkedList<ConfigLine>();
+                List<CommandLine> expansion = new LinkedList<CommandLine>();
                 String name = matchMacro.group(1);
-                List<ConfigLine> longMacro = mLongMacros.get(name);
+                List<CommandLine> longMacro = mLongMacros.get(name);
                 if (longMacro == null) {
                     if (checkMissingMacro) {
                         // If the expandMacro method hits an unrecognized macro, it will leave it in
@@ -308,11 +308,11 @@ class CommandFileParser {
                     }
                 }
 
-                ConfigLine prefix = new ConfigLine(line.subList(0, idx));
-                ConfigLine suffix = new ConfigLine(line.subList(idx, line.size()));
+                CommandLine prefix = new CommandLine(line.subList(0, idx));
+                CommandLine suffix = new CommandLine(line.subList(idx, line.size()));
                 suffix.remove(0);
-                for (ConfigLine macroLine : longMacro) {
-                    ConfigLine expanded = new ConfigLine();
+                for (CommandLine macroLine : longMacro) {
+                    CommandLine expanded = new CommandLine();
                     expanded.addAll(prefix);
                     expanded.addAll(macroLine);
                     expanded.addAll(suffix);
@@ -331,7 +331,7 @@ class CommandFileParser {
      *
      * @return {@code true} if a macro was found and expanded, {@code false} if no macro was found
      */
-    private boolean expandMacro(ConfigLine line) {
+    private boolean expandMacro(CommandLine line) {
         boolean sawMacro = false;
 
         int idx = 0;
@@ -341,7 +341,7 @@ class CommandFileParser {
             if (matchMacro.matches() && mMacros.containsKey(matchMacro.group(1))) {
                 // we hit a macro; expand it
                 String name = matchMacro.group(1);
-                ConfigLine macro = mMacros.get(name);
+                CommandLine macro = mMacros.get(name);
                 Log.d(LOG_TAG, String.format("Gotcha!  Expanding macro '%s' to '%s'", name, macro));
                 line.remove(idx);
                 line.addAll(idx, macro);

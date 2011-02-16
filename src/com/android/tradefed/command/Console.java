@@ -114,9 +114,9 @@ public class Console {
 
     void addDefaultCommands(RegexTrie<Runnable> trie) {
         final String helpPattern = "\\?|h|help";
-        final String showPattern = "s(?:how)?";
+        final String listPattern = "l(?:ist)?";
         final String dumpPattern = "d(?:ump)?";
-        final String loadPattern = "l(?:oad)?";
+        final String runPattern = "r(?:un)?";
 
         // Help commands
         trie.put(new Runnable() {
@@ -124,8 +124,8 @@ public class Console {
                     public void run() {
                         mTerminal.printf(
                                 "Enter 'q' or 'exit' to exit\n" +
-                                "Enter 'help show' for help with 'show' commands\n" +
-                                "Enter 'help load' for help with 'load' commands\n" +
+                                "Enter 'help list' for help with 'list' commands\n" +
+                                "Enter 'help run'  for help with 'run' commands\n" +
                                 "Enter 'help dump' for help with 'dump' commands\n");
                     }
                 }, helpPattern);
@@ -134,11 +134,11 @@ public class Console {
                     public void run() {
                         mTerminal.printf(
                                 "%s help:\n" +
-                                "\ti[nvocations]  Show all invocation threads\n" +
-                                "\td[evices]      Show all detected or known devices\n" +
-                                "\tc[configs]     Show all configs\n", showPattern);
+                                "\ti[nvocations]  List all invocation threads\n" +
+                                "\td[evices]      List all detected or known devices\n" +
+                                "\tc[configs]     List all configs\n", listPattern);
                     }
-                }, helpPattern, showPattern);
+                }, helpPattern, listPattern);
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -149,22 +149,22 @@ public class Console {
                                 dumpPattern);
                     }
                 }, helpPattern, dumpPattern);
-        Runnable runHelpLoad = new Runnable() {
+        Runnable runHelpRun = new Runnable() {
                     @Override
                     public void run() {
                         mTerminal.printf(
                                 "%s help:\n" +
-                                "\tconfig       <config.xml>  Load and run the specified config\n" +
-                                "\tcmdfile      <cmdfile.txt> Load and run the specified " +
-                                    "commandfile\n",
-                                "\tsingleConfig <config.xml>  Load and run the specified config, " +
+                                "\tcommand [options] <config>        Run the specified command\n" +
+                                "\tcmdfile <cmdfile.txt>             Run the specified " +
+                                    "commandfile\n" +
+                                "\tsingleCommand [options] <config>  Run the specified command, " +
                                     "and run 'exit' immediately afterward\n",
-                                loadPattern);
+                                runPattern);
                     }
                 };
-        trie.put(runHelpLoad, helpPattern, loadPattern);
+        trie.put(runHelpRun, helpPattern, runPattern);
 
-        // Show commands
+        // List commands
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -175,7 +175,7 @@ public class Console {
                             mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
                         }
                     }
-                }, showPattern, "i(?:nvocations)?");
+                }, listPattern, "i(?:nvocations)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -189,7 +189,7 @@ public class Console {
                         devices = manager.getAllocatedDevices();
                         mTerminal.printf("Allocated devices:   %s\n", devices);
                     }
-                }, showPattern, "d(?:evices)?");
+                }, listPattern, "d(?:evices)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -200,7 +200,7 @@ public class Console {
                             mTerminal.printf("Got config %d: %s\n", counter++, config);
                         }
                     }
-                }, showPattern, "c(?:onfigs)?");
+                }, listPattern, "c(?:onfigs)?");
 
         // Dump commands
         trie.put(new Runnable() {
@@ -216,11 +216,11 @@ public class Console {
                     }
                 }, dumpPattern, "l(?:ogs?)?");
 
-        // Load commands
-        ArgRunnable<CaptureList> runLoadConfig = new ArgRunnable<CaptureList>() {
+        // Run commands
+        ArgRunnable<CaptureList> runRunCommand = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
-                        // Skip 2 tokens to get past loadPattern and "config"
+                        // Skip 2 tokens to get past runPattern and "command"
                         String[] flatArgs = new String[args.size() - 2];
                         for (int i = 2; i < args.size(); i++) {
                             flatArgs[i - 2] = args.get(i).get(0);
@@ -228,28 +228,28 @@ public class Console {
                         mScheduler.addConfig(flatArgs);
                     }
                 };
-        trie.put(runLoadConfig, loadPattern, "(?:singleC|c)onfig", null);
+        trie.put(runRunCommand, runPattern, "(?:singleC|c)ommand", null);
         // Missing required argument: show help
-        trie.put(runHelpLoad, loadPattern, "(?:singleC|c)onfig");
+        trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
 
-        ArgRunnable<CaptureList> runLoadCmdfile = new ArgRunnable<CaptureList>() {
+        ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
-                        // Skip 2 tokens to get past loadPattern and "cmdfile"
+                        // Skip 2 tokens to get past runPattern and "cmdfile"
                         String file = args.get(2).get(0);
-                        System.out.format("Attempting to load cmdfile %s\n", file);
+                        System.out.format("Attempting to run cmdfile %s\n", file);
                         try {
                             createCommandFileParser().parseFile(new File(file), mScheduler);
                         } catch (IOException e) {
-                            mTerminal.printf("Failed to load %s: %s\n", file, e);
+                            mTerminal.printf("Failed to run %s: %s\n", file, e);
                         } catch (ConfigurationException e) {
-                            mTerminal.printf("Failed to load %s: %s\n", file, e);
+                            mTerminal.printf("Failed to run %s: %s\n", file, e);
                         }
                     }
                 };
-        trie.put(runLoadCmdfile, loadPattern, "cmdfile", "(.*)");
+        trie.put(runRunCmdfile, runPattern, "cmdfile", "(.*)");
         // Missing required argument: show help
-        trie.put(runHelpLoad, loadPattern, "cmdfile");
+        trie.put(runHelpRun, runPattern, "cmdfile");
     }
 
     /**
