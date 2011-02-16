@@ -48,6 +48,6 @@ fi;
 # ddmlib-prebuilt is still in standard dir
 ddmlib_path=$ANDROID_BUILD_TOP/out/host/$OS/framework/ddmlib-prebuilt.jar
 # add all jars in  tradefed out dir
-tf_path=$ANDROID_BUILD_TOP/out/host/$OS/tradefed/*
+tf_path=$ANDROID_BUILD_TOP/out/host/$OS/tradefed/\*
 
-java -cp $ddmlib_path:$tf_path com.android.tradefed.command.Command "$@"
+java -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"
