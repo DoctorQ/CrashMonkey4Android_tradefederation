@@ -114,6 +114,7 @@ public class TestInvocation implements ITestInvocation {
             mStatus = "fetching build";
             IBuildInfo info = config.getBuildProvider().getBuild();
             if (info != null) {
+                injectBuild(info, config.getTests());
                 if (shardConfig(config, info, rescheduler)) {
                     Log.i(LOG_TAG, String.format("Invocation for %s has been sharded, rescheduling",
                             device.getSerialNumber()));
@@ -131,6 +132,19 @@ public class TestInvocation implements ITestInvocation {
     }
 
    /**
+     * Pass the build to any {@link IBuildReceiver} tests
+     * @param buildInfo
+     * @param tests
+     */
+    private void injectBuild(IBuildInfo buildInfo, List<IRemoteTest> tests) {
+        for (IRemoteTest test : tests) {
+            if (test instanceof IBuildReceiver) {
+                ((IBuildReceiver)test).setBuild(buildInfo);
+            }
+        }
+    }
+
+/**
     * Attempt to shard the configuration into sub-configurations, to be re-scheduled to run on
     * multiple resources in parallel.
     * <p/>
@@ -155,6 +169,9 @@ public class TestInvocation implements ITestInvocation {
                     config.getTestInvocationListeners(), shardableTests.size());
             ShardListener origConfigListener = new ShardListener(resultCollector);
             config.setTestInvocationListener(origConfigListener);
+            Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "Sending build " + info);
+            // report invocation started using original buildinfo
+            resultCollector.invocationStarted(info);
             for (IRemoteTest testShard : shardableTests) {
                 Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
                 IConfiguration shardConfig = config.clone();
@@ -365,9 +382,6 @@ public class TestInvocation implements ITestInvocation {
         for (IRemoteTest test : config.getTests()) {
             if (test instanceof IDeviceTest) {
                 ((IDeviceTest)test).setDevice(device);
-            }
-            if (test instanceof IBuildReceiver) {
-                ((IBuildReceiver)test).setBuild(buildInfo);
             }
             test.run(new ResultForwarder(listeners));
         }
