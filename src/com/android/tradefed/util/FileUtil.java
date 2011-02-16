@@ -240,8 +240,10 @@ public class FileUtil {
     public static void recursiveDelete(File rootDir) {
         if (rootDir.isDirectory()) {
             File[] childFiles = rootDir.listFiles();
-            for (File child : childFiles) {
-                recursiveDelete(child);
+            if (childFiles != null) {
+                for (File child : childFiles) {
+                    recursiveDelete(child);
+                }
             }
         }
         rootDir.delete();

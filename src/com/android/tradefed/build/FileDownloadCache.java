@@ -190,7 +190,7 @@ public class FileDownloadCache {
         }
         // lock on the file, so no other thread attempts to delete it or access it before its
         // downloaded
-        File copyFile;
+        File copyFile = null;
         synchronized (cachedFile) {
             mCacheMap.put(remotePath, cachedFile);
             mCacheMapLock.unlock();
@@ -206,8 +206,11 @@ public class FileDownloadCache {
                 copyFile = FileUtil.createTempFileForRemote(remotePath, null);
                 FileUtil.copyFile(cachedFile, copyFile);
             } catch (IOException e) {
-                // TODO: could cachedFile be corrupt?
-                throw new BuildRetrievalError("could not copy cached file", e);
+                if (copyFile != null) {
+                    copyFile.delete();
+                }
+                throw new FatalHostError(String.format("could not copy cached file %s",
+                        cachedFile.getAbsolutePath(), e));
             }
         }
         if (download) {
