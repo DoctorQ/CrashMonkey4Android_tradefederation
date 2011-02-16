@@ -143,8 +143,18 @@ public class ArgsOptionParser extends OptionSetter {
      * @returns a {@link List} of the positional arguments left over after processing all options.
      * @throws ConfigurationException if error occurred parsing the arguments.
      */
-    public List<String> parse(String[] args) throws ConfigurationException {
-        return parseOptions(Arrays.asList(args).listIterator());
+    public List<String> parse(String... args) throws ConfigurationException {
+        return parse(Arrays.asList(args));
+    }
+
+    /**
+     * Alternate {@link #parse(String... args)} method that takes a {@link List} of arguments
+     *
+     * @returns a {@link List} of the positional arguments left over after processing all options.
+     * @throws ConfigurationException if error occurred parsing the arguments.
+     */
+    public List<String> parse(List<String> args) throws ConfigurationException {
+        return parseOptions(args.listIterator());
     }
 
     private List<String> parseOptions(ListIterator<String> args) throws ConfigurationException {

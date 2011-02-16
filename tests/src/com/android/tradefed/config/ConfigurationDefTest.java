@@ -17,8 +17,6 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.build.StubBuildProvider;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -78,25 +76,5 @@ public class ConfigurationDefTest extends TestCase {
         assertEquals(OPTION_VALUE, test.mOption);
     }
 
-    /**
-     * Basic test for {@link ConfigurationDef#printCommandUsage(java.io.PrintStream)}.
-     */
-    public void testPrintCommandUsage() throws ConfigurationException {
-        // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream mockPrintStream = new PrintStream(outputStream);
-        mConfigDef.printCommandUsage(mockPrintStream);
 
-        // verifying exact contents would be prone to high-maintenance, so instead, just validate
-        // all expected names are present
-        final String usageString = outputStream.toString();
-        assertTrue("Usage text does not contain config name", usageString.contains(CONFIG_NAME));
-        assertTrue("Usage text does not contain config description", usageString.contains(
-                CONFIG_DESCRIPTION));
-        assertTrue("Usage text does not contain object name", usageString.contains(
-                Configuration.BUILD_PROVIDER_NAME));
-        assertTrue("Usage text does not contain option name", usageString.contains(OPTION_NAME));
-        assertTrue("Usage text does not contain option description",
-                usageString.contains(OPTION_DESCRIPTION));
-    }
 }

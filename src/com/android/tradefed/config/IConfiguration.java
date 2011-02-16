@@ -25,7 +25,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.testtype.IRemoteTest;
 
-import java.util.Collection;
+import java.io.PrintStream;
 import java.util.List;
 
 /**
@@ -115,13 +115,6 @@ public interface IConfiguration {
      * given name does not exist.
      */
     public List<?> getConfigurationObjectList(String name);
-
-    /**
-     * Gets a copy of the list of all configuration objects.
-     *
-     * @return a {@link Collection} of all configuration objects
-     */
-    public Collection<Object> getAllConfigurationObjects();
 
     /**
      * Inject a option value into the set of configuration objects.
@@ -234,4 +227,21 @@ public interface IConfiguration {
      */
     public void setConfigurationObjectList(String name, List<?> configList)
             throws ConfigurationException;
+
+    /**
+     * Set the config {@Option} fields with given set of command line arguments
+     * <p/>
+     * @see {@link ArgsOptionParser} for expected format
+     *
+     * @param listArgs the command line arguments
+     */
+    public void setOptionsFromCommandLineArgs(List<String> listArgs) throws ConfigurationException;
+
+    /**
+     * Outputs a command line usage help text for this configuration to given printStream.
+     *
+     * @param out the {@link PrintStream} to use.
+     * @throws ConfigurationException
+     */
+    public void printCommandUsage(PrintStream out) throws ConfigurationException;
 }

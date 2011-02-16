@@ -83,7 +83,7 @@ public class TestInvocationTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        mStubConfiguration = new Configuration();
+        mStubConfiguration = new Configuration("foo", "bar");
 
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);

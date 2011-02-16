@@ -34,15 +34,6 @@ public class ConfigurationFactoryTest extends TestCase {
 
     private IConfigurationFactory mFactory;
 
-    private static final String OPTION_DESCRIPTION = "bool description";
-    private static final String OPTION_NAME = "bool";
-
-    private static class TestConfigObject {
-        @SuppressWarnings("unused")
-        @Option(name = OPTION_NAME, description = OPTION_DESCRIPTION)
-        private boolean mBool;
-    }
-
     /**
      * {@inheritDoc}
      */
@@ -91,23 +82,17 @@ public class ConfigurationFactoryTest extends TestCase {
      * Checks all config attributes are non-null
      */
     private void assertConfigValid(String name) throws ConfigurationException {
-        IConfiguration config = mFactory.getConfiguration(name);
+        IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {name});
         assertNotNull(config);
-        assertNotNull(config.getBuildProvider());
-        assertNotNull(config.getDeviceRecovery());
-        assertNotNull(config.getLogOutput());
-        assertNotNull(config.getTargetPreparers());
-        assertNotNull(config.getTests());
-        assertNotNull(config.getTestInvocationListeners());
     }
 
     /**
      * Test calling {@link ConfigurationFactory#getConfiguration(String)} with a name that does not
      * exist.
      */
-    public void testGetConfiguration_missing()  {
+    public void testCreateConfigurationFromArgs_missing()  {
         try {
-            mFactory.getConfiguration("non existent");
+            mFactory.createConfigurationFromArgs(new String[] {"non existent"});
             fail("did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
@@ -154,30 +139,16 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
-     * Test {@link ConfigurationFactory#printHelp(String[], PrintStream))} with no args specified
+     * Test {@link ConfigurationFactory#printHelp( PrintStream))}
      */
     public void testPrintHelp() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
-        mFactory.printHelp(new String[] {"--help"}, mockPrintStream);
+        mFactory.printHelp(mockPrintStream);
         // verify all the default configs names are present
         final String usageString = outputStream.toString();
         for (String config : ConfigurationFactory.sDefaultConfigs) {
             assertTrue(usageString.contains(config));
         }
-    }
-
-    /**
-     * Test {@link ConfigurationFactory#printHelp(String[], PrintStream, Class...))}
-     */
-    public void testPrintHelp_additional() {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PrintStream mockPrintStream = new PrintStream(outputStream);
-        mFactory.printHelp(new String[] {"--help", ConfigurationFactory.sDefaultConfigs[0]},
-                mockPrintStream, TestConfigObject.class);
-        // verify TestConfigObject options present
-        final String usageString = outputStream.toString();
-        assertTrue(usageString.contains(OPTION_NAME));
-        assertTrue(usageString.contains(OPTION_DESCRIPTION));
     }
 }

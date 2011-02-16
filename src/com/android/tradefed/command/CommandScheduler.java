@@ -410,17 +410,18 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addConfig(String[] args) {
         try {
             ConfigCommand cmd = new ConfigCommand(args);
             if (cmd.getCommandOptions().isHelpMode()) {
-                getConfigFactory().printHelp(args, System.out);
+                cmd.getConfiguration().printCommandUsage(System.out);
             } else {
                 mConfigQueue.add(cmd);
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
-            getConfigFactory().printHelp(args, System.out);
+            getConfigFactory().printHelp(System.out);
         }
     }
 

@@ -113,11 +113,11 @@ public class CommandSchedulerTest extends TestCase {
      * Test {@link CommandScheduler#addConfig(String[])} when passed invalid arguments.
      */
     public void testAddConfig_invalidConfig() throws ConfigurationException {
-        String[] args = new String[] {};
+        String[] args = new String[] {"arg"};
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args))).andThrow(
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(args))).andThrow(
                 new ConfigurationException(""));
-        setPrintHelpExpectations(args);
+        setPrintHelpExpectations();
         replayMocks();
         mScheduler.addConfig(args);
         verifyMocks();
@@ -130,7 +130,9 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mCommandOptions.setHelpMode(true);
         setCreateConfigExpectations(args, 1);
-        setPrintHelpExpectations(args);
+        mCommandOptions.setHelpMode(true);
+        // expect
+        mMockConfiguration.printCommandUsage(EasyMock.eq(System.out));
         replayMocks();
         mScheduler.addConfig(args);
         verifyMocks();
@@ -307,8 +309,7 @@ public class CommandSchedulerTest extends TestCase {
      * Set EasyMock expectations for a printHelp call.
      * @throws ConfigurationException
      */
-    private void setPrintHelpExpectations(String[] args) {
-        mMockConfigFactory.printHelp(EasyMock.eq(args), EasyMock.eq(System.out),
-                EasyMock.eq(CommandOptions.class), EasyMock.eq(DeviceSelectionOptions.class));
+    private void setPrintHelpExpectations() {
+        mMockConfigFactory.printHelp(EasyMock.eq(System.out));
     }
 }

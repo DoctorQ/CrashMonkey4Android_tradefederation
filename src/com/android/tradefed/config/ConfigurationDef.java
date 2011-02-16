@@ -15,9 +15,7 @@
  */
 package com.android.tradefed.config;
 
-import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -111,12 +109,14 @@ public class ConfigurationDef {
     }
 
     /**
-     * Creates a configuration from the info stored in this definition
+     * Creates a configuration from the info stored in this definition, and populate its fields with
+     * the provided option values.
+     *
      * @return the created {@link IConfiguration}
      * @throws ConfigurationException if configuration could not be created
      */
     IConfiguration createConfiguration() throws ConfigurationException {
-        IConfiguration config = new Configuration();
+        IConfiguration config = new Configuration(getName(), getDescription());
 
         for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
             List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());
@@ -126,10 +126,8 @@ public class ConfigurationDef {
             }
             config.setConfigurationObjectList(objClassEntry.getKey(), objectList);
         }
-        Collection<Object> allConfigObjs = config.getAllConfigurationObjects();
-        OptionSetter setter = new OptionSetter(allConfigObjs);
         for (OptionDef optionEntry : mOptionList) {
-            setter.setOptionValue(optionEntry.name, optionEntry.value);
+            config.injectOptionValue(optionEntry.name, optionEntry.value);
         }
 
         return config;
@@ -141,44 +139,6 @@ public class ConfigurationDef {
      */
     public String getName() {
         return mName;
-    }
-
-    /**
-     * Outputs a command line usage help text for this configuration to given printStream.
-     *
-     * @param out the {@link PrintStream} to use.
-     * @throws {@link ConfigurationException}
-     */
-    public void printCommandUsage(PrintStream out) throws ConfigurationException {
-        out.println(String.format("'%s' configuration: %s", getName(), getDescription()));
-        out.println();
-        for (Map.Entry<String, List<String>> configObjectsEntry : mObjectClassMap.entrySet()) {
-            for (String objectClass : configObjectsEntry.getValue()) {
-                String optionHelp = printOptionsForObject(configObjectsEntry.getKey(),
-                        objectClass);
-                // only print help for object if optionHelp is non zero length
-                if (optionHelp.length() > 0) {
-                    out.printf("  %s options:", configObjectsEntry.getKey());
-                    out.println();
-                    out.print(optionHelp);
-                    out.println();
-                }
-            }
-        }
-    }
-
-    /**
-     * Prints out the available config options for given configuration object.
-     *
-     * @param objectName the name of the object. Used to generate more descriptive error messages
-     * @param className the class name of the object to load
-     * @return a {@link String} of option help text
-     * @throws ConfigurationException
-     */
-    private String printOptionsForObject(String objectName, String objectClass)
-            throws ConfigurationException {
-        final Class<?> optionClass = getClassForObject(objectName, objectClass);
-        return ArgsOptionParser.getOptionHelp(optionClass);
     }
 
     /**

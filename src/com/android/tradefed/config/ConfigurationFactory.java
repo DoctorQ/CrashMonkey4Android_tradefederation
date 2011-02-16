@@ -22,7 +22,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -55,15 +56,6 @@ public class ConfigurationFactory implements IConfigurationFactory {
             sInstance = new ConfigurationFactory();
         }
         return sInstance;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public IConfiguration getConfiguration(String name)
-            throws ConfigurationException {
-        ConfigurationDef def = getConfigurationDef(name);
-        return def.createConfiguration();
     }
 
     private ConfigurationDef getConfigurationDef(String name) throws ConfigurationException {
@@ -106,83 +98,28 @@ public class ConfigurationFactory implements IConfigurationFactory {
     /**
      * {@inheritDoc}
      */
-    public IConfiguration createConfigurationFromArgs(String[] args)
+    @Override
+    public IConfiguration createConfigurationFromArgs(String[] arrayArgs)
             throws ConfigurationException {
-        return createConfigurationFromArgs(args, new Object[] {});
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public IConfiguration createConfigurationFromArgs(String[] args,
-            Object... additionalOptionSources) throws ConfigurationException {
-        if (args.length == 0) {
+        if (arrayArgs.length == 0) {
             throw new ConfigurationException("Configuration to run was not specified");
         }
-        final String configName = getConfigNameFromArgs(args);
-        IConfiguration config = getConfiguration(configName);
-        Collection<Object> optionObjects = config.getAllConfigurationObjects();
-        for (Object optionObj : additionalOptionSources) {
-            optionObjects.add(optionObj);
-        }
-        ArgsOptionParser parser = new ArgsOptionParser(optionObjects);
-        List<String> unprocessedArgs = parser.parse(args);
-        if (unprocessedArgs.size() != 1 || !unprocessedArgs.get(0).equals(configName)) {
-            throw new ConfigurationException(String.format(
-                    "Invalid arguments provided. Unprocessed arguments: %s", unprocessedArgs));
-        }
+        List<String> listArgs = new ArrayList<String>(arrayArgs.length);
+        listArgs.addAll(Arrays.asList(arrayArgs));
+        // last arg is config name
+        final String configName = listArgs.remove(listArgs.size()-1);
+        ConfigurationDef configDef = getConfigurationDef(configName);
+        IConfiguration config = configDef.createConfiguration();
+        config.setOptionsFromCommandLineArgs(listArgs);
+
         return config;
     }
 
     /**
-     * Retrieve the configuration name for an array of input arguments.
-     *
-     * @param args the input arguments. Must be non-empty
-     * @return the configuration name
-     */
-    private String getConfigNameFromArgs(String[] args) {
-        // last argument is config name
-        return args[args.length-1];
-    }
-
-    /**
      * {@inheritDoc}
      */
-    public void printHelp(String[] args, PrintStream out) {
-        printHelp(args, out, new Class[] {});
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void printHelp(String[] args, PrintStream out, Class<?>... additionalSources) {
-        out.println("Usage: [options] <configuration_name OR configuration xml file path>");
-        out.println();
-        // expected args is either just "--help", or "--help <configname>"
-        if (args.length > 1) {
-
-            String configName = getConfigNameFromArgs(args);
-            try {
-                ConfigurationDef def = getConfigurationDef(configName);
-                if (additionalSources.length > 0) {
-                    StringBuilder buf = new StringBuilder();
-                    for (Class<?> source: additionalSources) {
-                        buf.append(ArgsOptionParser.getOptionHelp(source));
-                    }
-                    if (buf.length() > 0) {
-                        out.println("General options:");
-                        out.println();
-                        out.print(buf.toString());
-                        out.println();
-                    }
-                }
-                def.printCommandUsage(out);
-                return;
-            } catch (ConfigurationException e) {
-                out.println(String.format("Could not load help for config with name '%s'",
-                        configName));
-            }
-        }
+    @Override
+    public void printHelp(PrintStream out) {
         // print general help
         out.println("Use --help <configuration_name> to get list of options for a configuration");
         out.println();

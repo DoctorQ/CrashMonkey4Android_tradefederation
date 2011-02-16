@@ -19,19 +19,9 @@ package com.android.tradefed.config;
 import java.io.PrintStream;
 
 /**
- *
+ * Factory for creating {@link IConfiguration}s
  */
 public interface IConfigurationFactory {
-
-    /**
-     * Gets a {@link IConfiguration}
-     *
-     * @param name the unique name of a built-in {@link IConfiguration} or a file path to a
-     *            configuration xml
-     * @return the {@link IConfiguration}
-     * @throws ConfigurationException if the {@link IConfiguration} could not be loaded.
-     */
-    public IConfiguration getConfiguration(String name) throws ConfigurationException;
 
     /**
      * Create the {@link IConfiguration} from command line arguments.
@@ -46,42 +36,12 @@ public interface IConfigurationFactory {
     public IConfiguration createConfigurationFromArgs(String[] args) throws ConfigurationException;
 
     /**
-     * Create the {@link IConfiguration} and populate additional {@link Option} objects from command
-     * line arguments.
+     * Prints help output for this factory.
      * <p/>
-     * Expected format is [options] <configuration name OR file path>.
+     * Prints a generic help info, and lists all available configurations.
      *
-     * @param args the command line arguments
-     * @param additionalOptionSources additional objects with {@link Option} fields to set
-     * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have
-     *         been populated with values in args.
-     * @throws {@link ConfigurationException} if configuration could not be loaded
-     */
-    public IConfiguration createConfigurationFromArgs(String[] args,
-            Object... additionalOptionSources) throws ConfigurationException;
-
-    /**
-     * Prints help output.
-     * <p/>
-     * If a configuration argument is specified prints the help info specific to that
-     * configuration. Otherwise prints a generic help info, and lists all available configurations.
-     *
-     * @param args the command line arguments
      * @param out the {@link PrintStream} to dump output to
      */
-    public void printHelp(String[] args, PrintStream out);
-
-    /**
-     * Prints help output.
-     * <p/>
-     * If a configuration argument is specified prints the help info specific to that
-     * configuration. Otherwise prints a generic help info, and lists all available configurations.
-     *
-     * @param args the command line arguments
-     * @param additionalOptionSources additional objects with {@link Option} fields to print
-     *      help for
-     * @param out the {@link PrintStream} to dump output to
-     */
-    public void printHelp(String[] args, PrintStream out, Class<?>... additionalOptionSources);
+    public void printHelp(PrintStream out);
 
 }

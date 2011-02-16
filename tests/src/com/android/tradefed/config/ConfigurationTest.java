@@ -31,6 +31,8 @@ import com.android.tradefed.testtype.IRemoteTest;
 
 import org.easymock.EasyMock;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,6 +43,8 @@ import junit.framework.TestCase;
  */
 public class ConfigurationTest extends TestCase {
 
+    private static final String CONFIG_NAME = "name";
+    private static final String CONFIG_DESCRIPTION = "config description";
     private static final String CONFIG_OBJECT_NAME = "object_name";
     private static final String OPTION_DESCRIPTION = "bool description";
     private static final String OPTION_NAME = "bool";
@@ -71,7 +75,7 @@ public class ConfigurationTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mConfig = new Configuration();
+        mConfig = new Configuration(CONFIG_NAME, CONFIG_DESCRIPTION);
     }
 
     /**
@@ -290,5 +294,34 @@ public class ConfigurationTest extends TestCase {
         mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
         mConfig.injectOptionValue(OPTION_NAME, Boolean.toString(true));
         assertTrue(testConfigObject.getBool());
+    }
+
+    /**
+     * Basic test for {@link Configuration#printCommandUsage(java.io.PrintStream)}.
+     */
+    public void testPrintCommandUsage() throws ConfigurationException {
+        TestConfigObject testConfigObject = new TestConfigObject();
+        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
+        // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream mockPrintStream = new PrintStream(outputStream);
+        mConfig.printCommandUsage(mockPrintStream);
+
+        // verifying exact contents would be prone to high-maintenance, so instead, just validate
+        // all expected names are present
+        final String usageString = outputStream.toString();
+        assertTrue("Usage text does not contain config name", usageString.contains(CONFIG_NAME));
+        assertTrue("Usage text does not contain config description", usageString.contains(
+                CONFIG_DESCRIPTION));
+        assertTrue("Usage text does not contain object name", usageString.contains(
+                CONFIG_OBJECT_NAME));
+        assertTrue("Usage text does not contain option name", usageString.contains(OPTION_NAME));
+        assertTrue("Usage text does not contain option description",
+                usageString.contains(OPTION_DESCRIPTION));
+
+        // ensure help prints out options from default config types
+        assertTrue("Usage text does not contain --serial option name",
+                usageString.contains("serial"));
+
     }
 }

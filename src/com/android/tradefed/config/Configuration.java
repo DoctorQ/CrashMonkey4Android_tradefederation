@@ -32,9 +32,11 @@ import com.android.tradefed.targetprep.StubTargetPreparer;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.StubTest;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,6 +59,8 @@ public class Configuration implements IConfiguration {
 
     /** Mapping of config object name to config objects. */
     private Map<String, List<Object>> mConfigMap;
+    private final String mName;
+    private final String mDescription;
 
     /**
      * Container struct for built-in config object type
@@ -104,16 +108,32 @@ public class Configuration implements IConfiguration {
     /**
      * Creates an {@link Configuration} with default config objects.
      */
-    public Configuration() {
-        mConfigMap = new HashMap<String, List<Object>>();
+    public Configuration(String name, String description) {
+        mName = name;
+        mDescription = description;
+        mConfigMap = new LinkedHashMap<String, List<Object>>();
+        setCommandOptions(new CommandOptions());
+        setDeviceSelectionOptions(new DeviceSelectionOptions());
         setBuildProvider(new StubBuildProvider());
         setTargetPreparer(new StubTargetPreparer());
         setTest(new StubTest());
         setDeviceRecovery(new WaitDeviceRecovery());
         setLogOutput(new StdoutLogger());
         setTestInvocationListener(new TextResultReporter());
-        setCommandOptions(new CommandOptions());
-        setDeviceSelectionOptions(new DeviceSelectionOptions());
+    }
+
+    /**
+     * @return the name of this {@link Configuration}
+     */
+    public String getName() {
+        return mName;
+    }
+
+    /**
+     * @return a short user readable description this {@link Configuration}
+     */
+    public String getDescription() {
+        return mDescription;
     }
 
     /**
@@ -215,10 +235,9 @@ public class Configuration implements IConfiguration {
     }
 
     /**
-     * {@inheritDoc}
+     * Return a copy of all config objects
      */
-    @Override
-    public Collection<Object> getAllConfigurationObjects() {
+    private Collection<Object> getAllConfigurationObjects() {
         Collection<Object> objectsCopy = new ArrayList<Object>();
         for (List<Object> objectList : mConfigMap.values()) {
             objectsCopy.addAll(objectList);
@@ -241,7 +260,7 @@ public class Configuration implements IConfiguration {
      */
     @Override
     public Configuration clone() {
-        Configuration clone = new Configuration();
+        Configuration clone = new Configuration(getName(), getDescription());
         for (Map.Entry<String, List<Object>> entry : mConfigMap.entrySet()) {
             clone.setConfigurationObjectListNoThrow(entry.getKey(), entry.getValue());
         }
@@ -424,5 +443,59 @@ public class Configuration implements IConfiguration {
             // should never happen
             throw new IllegalArgumentException(e);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOptionsFromCommandLineArgs(List<String> listArgs) throws ConfigurationException {
+        ArgsOptionParser parser = new ArgsOptionParser(getAllConfigurationObjects());
+        List<String> unprocessedArgs = parser.parse(listArgs);
+        if (unprocessedArgs.size() > 0) {
+            throw new ConfigurationException(String.format(
+                    "Invalid arguments provided. Unprocessed arguments: %s", unprocessedArgs));
+        }
+    }
+
+    /**
+     * Outputs a command line usage help text for this configuration to given printStream.
+     *
+     * @param out the {@link PrintStream} to use.
+     * @throws {@link ConfigurationException}
+     */
+    @Override
+    public void printCommandUsage(PrintStream out) throws ConfigurationException {
+        out.println("Usage: [options] <configuration_name OR configuration xml file path>");
+        out.println();
+        out.println(String.format("'%s' configuration: %s", getName(), getDescription()));
+        out.println();
+        for (Map.Entry<String, List<Object>> configObjectsEntry : mConfigMap.entrySet()) {
+            for (Object configObject : configObjectsEntry.getValue()) {
+                String optionHelp = printOptionsForObject(configObjectsEntry.getKey(),
+                        configObject);
+                // only print help for object if optionHelp is non zero length
+                if (optionHelp.length() > 0) {
+                    out.printf("  %s options:", configObjectsEntry.getKey());
+                    out.println();
+                    out.print(optionHelp);
+                    out.println();
+                }
+            }
+        }
+    }
+
+    /**
+     * Prints out the available config options for given configuration object.
+     *
+     * @param objectName the name of the object. Used to generate more descriptive error messages
+     * @param configObject the config object
+     * @return a {@link String} of option help text
+     * @throws ConfigurationException
+     */
+    private String printOptionsForObject(String objectName, Object configObject)
+            throws ConfigurationException {
+        // TODO: add support for displaying the default values for the {@link Option} fields
+        return ArgsOptionParser.getOptionHelp(configObject.getClass());
     }
 }
