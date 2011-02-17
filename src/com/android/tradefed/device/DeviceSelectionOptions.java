@@ -47,6 +47,9 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         "Expected format <propertyname>=<propertyvalue>")
     private Collection<String> mPropertyStrings = new ArrayList<String>();
 
+    // If we have tried to fetch the environment variable ANDROID_SERIAL before.
+    private boolean mFetchedEnvVariable = false;
+
     /**
      * Add a serial number to the device selection options.
      *
@@ -88,6 +91,14 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
      */
     @Override
     public Collection<String> getSerials() {
+        // If no serial was explicitly set, use the environment variable ANDROID_SERIAL.
+        if (mSerials.isEmpty() && !mFetchedEnvVariable) {
+            String env_serial = fetchEnvironmentVariable("ANDROID_SERIAL");
+            if (env_serial != null) {
+                mSerials.add(env_serial);
+            }
+            mFetchedEnvVariable = true;
+        }
         return copyCollection(mSerials);
     }
 
@@ -129,5 +140,16 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         Collection<String> listCopy = new ArrayList<String>(original.size());
         listCopy.addAll(original);
         return listCopy;
+    }
+
+    /**
+     * Helper function used to fetch environment variable. It is essentially a wrapper around
+     * {@link System#getenv(String)} This is done for unit testing purposes.
+     *
+     * @param name the environment variable to fetch.
+     * @return a {@link String} value of the environment variable or null if not available.
+     */
+    String fetchEnvironmentVariable(String name) {
+        return System.getenv(name);
     }
 }
