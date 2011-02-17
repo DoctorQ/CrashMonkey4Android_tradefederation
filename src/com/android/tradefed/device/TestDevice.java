@@ -219,12 +219,8 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public int getBuildId() throws DeviceNotAvailableException {
+    public int getBuildId() {
         String stringBuild = getIDevice().getProperty(BUILD_ID_PROP);
-        // TODO: move the 'lazy-load' of property logic to ddmlib
-        if (stringBuild == null || stringBuild.isEmpty()) {
-            stringBuild = executeShellCommand(String.format("getprop %s", BUILD_ID_PROP));
-        }
         try {
             int currentBuildId = Integer.parseInt(stringBuild);
             return currentBuildId;
@@ -1307,19 +1303,16 @@ class TestDevice implements IManagedTestDevice {
                     mTmpFile.getAbsolutePath()));
             mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
                     LOGCAT_BUFF_SIZE);
-            // TODO: temp hack: query buildId directly rather than going through getBuildId
-            // because don't want to chance entering recovery on background thread
-            String buildId = getIDevice().getProperty(BUILD_ID_PROP);
             // add an initial message to log, to give info to viewer
             if (mPreviousTmpFile == null) {
                 // first log!
-                appendDeviceLogMsg(String.format("Logcat for device %s running system build %s",
-                        getSerialNumber(), buildId));
+                appendDeviceLogMsg(String.format("Logcat for device %s running system build %d",
+                        getSerialNumber(), getBuildId()));
             } else {
                 appendDeviceLogMsg(String.format(
-                        "Continuing logcat capture for device %s running system build %s. " +
+                        "Continuing logcat capture for device %s running system build %d. " +
                         "Previous content may have been truncated.", getSerialNumber(),
-                        buildId));
+                        getBuildId()));
             }
         }
 
