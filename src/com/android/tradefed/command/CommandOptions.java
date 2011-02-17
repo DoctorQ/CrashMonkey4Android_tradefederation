@@ -30,7 +30,7 @@ public class CommandOptions implements ICommandOptions {
     private long mMinLoopTime = 60 * 1000;
 
     @Option(name="loop", description="keep running continuously")
-    private boolean mLoopMode = true;
+    private boolean mLoopMode = false;
 
     /**
      * Set the help mode for the config.
