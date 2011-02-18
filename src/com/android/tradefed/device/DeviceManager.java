@@ -70,7 +70,7 @@ public class DeviceManager implements IDeviceManager {
 
     private boolean mEnableLogcat = true;
 
-    private boolean mFastbootEnabled;
+    private boolean mFastbootEnabled = false;
 
     private Set<IFastbootListener> mFastbootListeners;
 
@@ -112,8 +112,6 @@ public class DeviceManager implements IDeviceManager {
                 checkAndAddAvailableDevice(device);
             }
         }
-        mManagedDeviceListener = new ManagedDeviceListener();
-        mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
         if (mFastbootEnabled) {
             mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
             mFastbootMonitor = new FastbootMonitor();
@@ -123,6 +121,8 @@ public class DeviceManager implements IDeviceManager {
             mFastbootListeners = null;
             mFastbootMonitor = null;
         }
+        mManagedDeviceListener = new ManagedDeviceListener();
+        mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
     }
 
     /**
