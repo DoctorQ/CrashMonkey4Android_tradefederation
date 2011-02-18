@@ -31,9 +31,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 // not importing java.io.Console because of class name conflict
 
@@ -69,13 +71,13 @@ public class Console {
      * LogRegistry.getLogRegistry().setGlobalLogTagDisplay(mLogTagsDisplay);
      */
 
-    private ICommandScheduler mScheduler;
-    private java.io.Console mTerminal;
+    protected ICommandScheduler mScheduler;
+    protected java.io.Console mTerminal;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
 
     /** A convenience type for List<List<String>> */
     @SuppressWarnings("serial")
-    private class CaptureList extends LinkedList<List<String>> {
+    protected static class CaptureList extends LinkedList<List<String>> {
         CaptureList() {
             super();
         }
@@ -88,7 +90,7 @@ public class Console {
     /**
      * A {@link Runnable} with a {@code run} method that can take an argument
      */
-    abstract class ArgRunnable<T> implements Runnable {
+    protected abstract static class ArgRunnable<T> implements Runnable {
         @Override
         public void run() {
             run(null);
@@ -97,72 +99,165 @@ public class Console {
         abstract public void run(T args);
     }
 
+    /**
+     * This is a sentinel class that will cause TF to shut down.  This enables a user to get TF to
+     * shut down via the RegexTrie input handling mechanism.
+     */
+    private static class QuitRunnable implements Runnable {
+        @Override
+        public void run() {}
+    }
+
     Console() {
         this(new CommandScheduler());
     }
 
     /**
-     * Create a {@link Console} with given scheduler.
+     * Create a {@link Console} with given scheduler.  Also, set up console command handling
      * <p/>
      * Exposed for unit testing
      */
     Console(ICommandScheduler scheduler) {
         mScheduler = scheduler;
         mTerminal = System.console();
-        addDefaultCommands(mCommandTrie);
+
+        List<String> genericHelp = new LinkedList<String>();
+        Map<String, String> commandHelp = new LinkedHashMap<String, String>();
+        addDefaultCommands(mCommandTrie, genericHelp, commandHelp);
+        setCustomCommands(mCommandTrie, genericHelp, commandHelp);
+        generateHelpListings(mCommandTrie, genericHelp, commandHelp);
     }
 
-    void addDefaultCommands(RegexTrie<Runnable> trie) {
+    /**
+     * A customization point that subclasses can use to alter which commands are available in the
+     * console.
+     * <p />
+     * Implementations should modify the {@code genericHelp} and {@code commandHelp} variables to
+     * document what functionality they may have added, modified, or removed.
+     *
+     * @param trie The {@link RegexTrie} to add the commands to
+     * @param genericHelp A {@link List} of lines to print when the user runs the "help" command
+     *        with no arguments.
+     * @param commandHelp A {@link Map} containing documentation for any new commands that may have
+     *        been added.  The key is a regular expression to use as a key for {@link RegexTrie}.
+     *        The value should be a String containing the help text to print for that command.
+     */
+    void setCustomCommands(RegexTrie<Runnable> trie, List<String> genericHelp,
+            Map<String, String> commandHelp) {
+        // Meant to be overridden by subclasses
+    }
+
+    /**
+     * Generate help listings based on the contents of {@code genericHelp} and {@code commandHelp}.
+     *
+     * @param trie The {@link RegexTrie} to add the commands to
+     * @param genericHelp A {@link List} of lines to print when the user runs the "help" command
+     *        with no arguments.
+     * @param commandHelp A {@link Map} containing documentation for any new commands that may have
+     *        been added.  The key is a regular expression to use as a key for {@link RegexTrie}.
+     *        The value should be a String containing the help text to print for that command.
+     */
+    void generateHelpListings(RegexTrie<Runnable> trie, List<String> genericHelp,
+            Map<String, String> commandHelp) {
+        final String genHelpString = join(genericHelp);
+        final String helpPattern = "\\?|h|help";
+
+        final ArgRunnable<CaptureList> genericHelpRunnable = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                mTerminal.printf(genHelpString);
+            }
+        };
+        trie.put(genericHelpRunnable, helpPattern);
+
+        // Add help entries for everything listed in the commandHelp map
+        for (Map.Entry<String, String> helpPair : commandHelp.entrySet()) {
+            final String key = helpPair.getKey();
+            final String helpText = helpPair.getValue();
+
+            trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mTerminal.printf(helpText);
+                    }
+                }, helpPattern, key);
+        }
+
+        // Add a generic "not found" help message for everything else
+        trie.put(new ArgRunnable<CaptureList>() {
+                    @Override
+                    public void run(CaptureList args) {
+                        // Command will be the only capture in the second argument
+                        // (first argument is helpPattern)
+                        mTerminal.printf("No help for '%s'; command is unknown or undocumented\n",
+                                args.get(1).get(0));
+                        genericHelpRunnable.run(args);
+                    }
+                }, helpPattern, null);
+
+        // Add a fallback input handler
+        trie.put(new ArgRunnable<CaptureList>() {
+                    @Override
+                    public void run(CaptureList args) {
+                        if (args.isEmpty()) {
+                            // User hit <Enter> with a blank line
+                            return;
+                        }
+
+                        // Command will be the only capture in the first argument
+                        mTerminal.printf("Unknown command: '%s'\n", args.get(0).get(0));
+                        genericHelpRunnable.run(args);
+                    }
+                }, (Pattern)null);
+    }
+
+    /**
+     * Add commands to create the default Console experience
+     * <p />
+     * Adds relevant documentation to {@code genericHelp} and {@code commandHelp}.
+     *
+     * @param trie The {@link RegexTrie} to add the commands to
+     * @param genericHelp A {@link List} of lines to print when the user runs the "help" command
+     *        with no arguments.
+     * @param commandHelp A {@link Map} containing documentation for any new commands that may have
+     *        been added.  The key is a regular expression to use as a key for {@link RegexTrie}.
+     *        The value should be a String containing the help text to print for that command.
+     */
+    void addDefaultCommands(RegexTrie<Runnable> trie, List<String> genericHelp,
+            Map<String, String> commandHelp) {
         final String helpPattern = "\\?|h|help";
         final String listPattern = "l(?:ist)?";
         final String dumpPattern = "d(?:ump)?";
         final String runPattern = "r(?:un)?";
 
         // Help commands
-        trie.put(new Runnable() {
-                    @Override
-                    public void run() {
-                        mTerminal.printf(
-                                "Enter 'q' or 'exit' to exit\n" +
-                                "Enter 'help list' for help with 'list' commands\n" +
-                                "Enter 'help run'  for help with 'run' commands\n" +
-                                "Enter 'help dump' for help with 'dump' commands\n");
-                    }
-                }, helpPattern);
-        trie.put(new Runnable() {
-                    @Override
-                    public void run() {
-                        mTerminal.printf(
-                                "%s help:\n" +
-                                "\ti[nvocations]  List all invocation threads\n" +
-                                "\td[evices]      List all detected or known devices\n" +
-                                "\tc[configs]     List all configs\n", listPattern);
-                    }
-                }, helpPattern, listPattern);
-        trie.put(new Runnable() {
-                    @Override
-                    public void run() {
-                        mTerminal.printf(
-                                "%s help:\n" +
-                                "\ts[tack]  Dump the stack traces of all threads\n" +
-                                "\tl[ogs]   Dump the logs of all invocations to files\n",
-                                dumpPattern);
-                    }
-                }, helpPattern, dumpPattern);
-        Runnable runHelpRun = new Runnable() {
-                    @Override
-                    public void run() {
-                        mTerminal.printf(
-                                "%s help:\n" +
-                                "\tcommand [options] <config>        Run the specified command\n" +
-                                "\tcmdfile <cmdfile.txt>             Run the specified " +
-                                    "commandfile\n" +
-                                "\tsingleCommand [options] <config>  Run the specified command, " +
-                                    "and run 'exit' immediately afterward\n",
-                                runPattern);
-                    }
-                };
-        trie.put(runHelpRun, helpPattern, runPattern);
+        genericHelp.add("Enter 'q' or 'exit' to exit");
+        genericHelp.add("Enter 'help list' for help with 'list' commands");
+        genericHelp.add("Enter 'help run'  for help with 'run' commands");
+        genericHelp.add("Enter 'help dump' for help with 'dump' commands");
+
+        commandHelp.put(listPattern, String.format(
+                "%s help:\n" +
+                "\ti[nvocations]  List all invocation threads\n" +
+                "\td[evices]      List all detected or known devices\n" +
+                "\tc[configs]     List all configs\n", listPattern));
+
+        commandHelp.put(dumpPattern, String.format(
+                "%s help:\n" +
+                "\ts[tack]  Dump the stack traces of all threads\n" +
+                "\tl[ogs]   Dump the logs of all invocations to files\n",
+                dumpPattern));
+
+        commandHelp.put(runPattern, String.format(
+                "%s help:\n" +
+                "\tcommand [options] <config>        Run the specified command\n" +
+                "\tcmdfile <cmdfile.txt>             Run the specified commandfile\n" +
+                "\tsingleCommand [options] <config>  Run the specified command, and run 'exit' " +
+                        "immediately afterward\n",
+                runPattern));
+
+        // Handle quit commands
+        trie.put(new QuitRunnable(), "(?:q|exit)");
 
         // List commands
         trie.put(new Runnable() {
@@ -230,7 +325,8 @@ public class Console {
                 };
         trie.put(runRunCommand, runPattern, "(?:singleC|c)ommand", null);
         // Missing required argument: show help
-        trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
+        // FIXME: fix this functionality
+        // trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
 
         ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
                     @Override
@@ -249,7 +345,21 @@ public class Console {
                 };
         trie.put(runRunCmdfile, runPattern, "cmdfile", "(.*)");
         // Missing required argument: show help
-        trie.put(runHelpRun, runPattern, "cmdfile");
+        // FIXME: fix this functionality
+        //trie.put(runHelpRun, runPattern, "cmdfile");
+    }
+
+    /**
+     * Convenience method to join string pieces into a single string, with newlines after each piece
+     * FIXME: add a join implementation to Util
+     */
+    private static String join(List<String> pieces) {
+        StringBuilder sb = new StringBuilder();
+        for (String piece : pieces) {
+            sb.append(piece);
+            sb.append("\n");
+        }
+        return sb.toString();
     }
 
     /**
@@ -261,6 +371,11 @@ public class Console {
         mTerminal = terminal;
     }
 
+    /**
+     * Get input from the console
+     *
+     * @return A {@link String} containing the input to parse and run
+     */
     private String getConsoleInput() throws IOException {
         String line = mTerminal.readLine(CONSOLE_PROMPT);
 
@@ -327,17 +442,20 @@ public class Console {
                 // TODO: interfaces
                 Runnable command = mCommandTrie.retrieve(groups, tokens);
                 if (command != null) {
-                    if (command instanceof ArgRunnable) {
+                    if (command instanceof QuitRunnable) {
+                        // shut down
+                        shouldExit = true;
+                        continue;
+                    } else if (command instanceof ArgRunnable) {
                         // FIXME: verify that command implements ArgRunnable<CaptureList> instead
                         // FIXME: of just ArgRunnable
                         ((ArgRunnable<CaptureList>)command).run(groups);
                     } else {
                         command.run();
                     }
-                } else if ("exit".equals(tokens[0]) || "q".equals(tokens[0])) {
-                    shouldExit = true;
                 } else {
-                    mTerminal.printf("Unknown command '%s'.  Enter 'help' for help.\n", tokens[0]);
+                    mTerminal.printf("Unable to handle command '%s'.  Enter 'help' for help.\n",
+                            tokens[0]);
                 }
 
                 // Special-case for singleConfig, which should run a config and then immediately
