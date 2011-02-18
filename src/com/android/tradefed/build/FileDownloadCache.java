@@ -194,29 +194,51 @@ public class FileDownloadCache {
         synchronized (cachedFile) {
             mCacheMap.put(remotePath, cachedFile);
             mCacheMapLock.unlock();
-            if (download) {
-                Log.d(LOG_TAG, String.format("Downloading %s to cache", remotePath));
-                downloader.downloadFile(remotePath, cachedFile);
-            } else {
-                Log.d(LOG_TAG, String.format("Retrieved remote file %s from cached file %s",
-                        remotePath, cachedFile.getAbsolutePath()));
-            }
             try {
+                if (download) {
+                    Log.d(LOG_TAG, String.format("Downloading %s to cache", remotePath));
+                    downloader.downloadFile(remotePath, cachedFile);
+                } else {
+                    Log.d(LOG_TAG, String.format("Retrieved remote file %s from cached file %s",
+                            remotePath, cachedFile.getAbsolutePath()));
+                }
                 // attempt to create a local copy of cached file with sane name
                 copyFile = FileUtil.createTempFileForRemote(remotePath, null);
                 FileUtil.copyFile(cachedFile, copyFile);
             } catch (IOException e) {
-                if (copyFile != null) {
-                    copyFile.delete();
-                }
-                throw new FatalHostError(String.format("could not copy cached file %s",
+                failedFetchFileCleanup(remotePath, copyFile, cachedFile);
+                throw new BuildRetrievalError(String.format("could not copy cached file %s",
                         cachedFile.getAbsolutePath(), e));
+            } catch (BuildRetrievalError e) {
+                failedFetchFileCleanup(remotePath, copyFile, cachedFile);
+                throw e;
             }
         }
         if (download) {
            incrementAndAdjustCache(cachedFile.length());
         }
         return copyFile;
+    }
+
+    /**
+     * Perform cleanup steps on cache after a failed fetchRemoteFile attempt.
+     * <p/>
+     * Since the cached file might be corrupt, delete and remove it from cache.
+     * Assumes caller already has lock on <var>cachedFile</var>
+     *
+     * @param remotePath the cache entry to delete
+     * @param copyFile the copy of the cached file. Will be deleted
+     * @param cachedFile the cached file to delete.
+     */
+    private void failedFetchFileCleanup(String remotePath, File copyFile, File cachedFile) {
+        if (copyFile != null) {
+            copyFile.delete();
+        }
+        mCacheMapLock.lock();
+        // something might be wrong with original file, remove from cache
+        mCacheMap.remove(remotePath);
+        mCacheMapLock.unlock();
+        cachedFile.delete();
     }
 
     /**
@@ -266,17 +288,17 @@ public class FileDownloadCache {
     }
 
     /**
-     * Checks if file for given remote path is currently cached.
+     * Returns the cached file for given remote path, or <code>null</code> if no cached file exists.
      * <p/>
      * Exposed for unit testing
      *
-     * @param downloader the {@link IFileDownloader}
      * @param remoteFilePath the remote file path
+     * @return the cached {@link File} or <code>null</code>
      */
-     boolean cacheContainsFile(String remoteFilePath) {
+     File getCachedFile(String remoteFilePath) {
         mCacheMapLock.lock();
         try {
-            return mCacheMap.containsKey(remoteFilePath);
+            return mCacheMap.get(remoteFilePath);
         } finally {
             mCacheMapLock.unlock();
         }
