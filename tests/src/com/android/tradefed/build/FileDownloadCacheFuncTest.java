@@ -103,7 +103,7 @@ public class FileDownloadCacheFuncTest extends TestCase {
         downloadThread2.start();
         downloadThread1.join();
         downloadThread2.join();
-        assertTrue(mCache.cacheContainsFile(REMOTE_PATH));
+        assertNotNull(mCache.getCachedFile(REMOTE_PATH));
         assertEquals(2, mReturnedFiles.size());
         // returned files should be identical in content, but be different files
         assertTrue(mReturnedFiles.get(0) != mReturnedFiles.get(1));
@@ -133,8 +133,8 @@ public class FileDownloadCacheFuncTest extends TestCase {
             FileUtil.writeToFile(filecontents, nestedFile);
 
             FileDownloadCache cache = new FileDownloadCache(cacheRoot);
-            assertTrue(cache.cacheContainsFile(REMOTE_PATH));
-            assertTrue(cache.cacheContainsFile("aa/anotherpath"));
+            assertNotNull(cache.getCachedFile(REMOTE_PATH));
+            assertNotNull(cache.getCachedFile("aa/anotherpath"));
             assertEquals(REMOTE_PATH, cache.getOldestEntry());
         } finally {
             FileUtil.recursiveDelete(cacheRoot);

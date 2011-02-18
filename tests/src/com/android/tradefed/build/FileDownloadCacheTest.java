@@ -90,8 +90,51 @@ public class FileDownloadCacheTest extends TestCase {
         assertFetchRemoteFile(remotePath2);
         // now retrieve another file, which will exceed size of cache
         assertFetchRemoteFile();
-        assertTrue(mCache.cacheContainsFile(REMOTE_PATH));
-        assertFalse(mCache.cacheContainsFile(remotePath2));
+        assertNotNull(mCache.getCachedFile(REMOTE_PATH));
+        assertNull(mCache.getCachedFile(remotePath2));
+        EasyMock.verify(mMockDownloader);
+    }
+
+    /**
+     * Test {@link FileDownloadCache#fetchRemoteFile(IFileDownloader, String)} when download fails
+     */
+    public void testFetchRemoteFile_downloadFailed() throws Exception {
+        mMockDownloader.downloadFile(EasyMock.eq(REMOTE_PATH),
+                (File)EasyMock.anyObject());
+        EasyMock.expectLastCall().andThrow(new BuildRetrievalError("download error"));
+        EasyMock.replay(mMockDownloader);
+        try {
+            mCache.fetchRemoteFile(mMockDownloader, REMOTE_PATH);
+            fail("BuildRetrievalError not thrown");
+        } catch (BuildRetrievalError e) {
+            // expected
+        }
+        assertNull(mCache.getCachedFile(REMOTE_PATH));
+        EasyMock.verify(mMockDownloader);
+    }
+
+    /**
+     * Test {@link FileDownloadCache#fetchRemoteFile(IFileDownloader, String)} when
+     * copy of a cached file fails
+     */
+    public void testFetchRemoteFile_copyFailed() throws Exception {
+        // perform successful download
+        setDownloadExpections(REMOTE_PATH);
+        EasyMock.replay(mMockDownloader);
+        assertFetchRemoteFile(REMOTE_PATH);
+        // now be sneaky and delete the cachedFile, so copy will fail
+        // TODO: add ability to mock FileUtil.copyFile
+        File cachedFile = mCache.getCachedFile(REMOTE_PATH);
+        assertNotNull(cachedFile);
+        cachedFile.delete();
+        try {
+            mCache.fetchRemoteFile(mMockDownloader, REMOTE_PATH);
+            fail("BuildRetrievalError not thrown");
+        } catch (BuildRetrievalError e) {
+            // expected
+        }
+        // file should be removed from cache
+        assertNull(mCache.getCachedFile(REMOTE_PATH));
         EasyMock.verify(mMockDownloader);
     }
 
@@ -109,7 +152,7 @@ public class FileDownloadCacheTest extends TestCase {
         // test downloading file not in cache
         File fileCopy = mCache.fetchRemoteFile(mMockDownloader, remotePath);
         try {
-            assertTrue(mCache.cacheContainsFile(remotePath));
+            assertNotNull(mCache.getCachedFile(remotePath));
             String contents = StreamUtil.getStringFromStream(new FileInputStream(fileCopy));
             assertEquals(DOWNLOADED_CONTENTS, contents);
         } finally {
