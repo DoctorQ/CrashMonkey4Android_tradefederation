@@ -65,14 +65,13 @@ public class DeviceManager implements IDeviceManager {
     private ConditionPriorityBlockingQueue<IDevice> mAvailableDeviceQueue;
     private IAndroidDebugBridge mAdbBridge;
     private final ManagedDeviceListener mManagedDeviceListener;
+    private final boolean mFastbootEnabled;
+    private final Set<IFastbootListener> mFastbootListeners;
     private final FastbootMonitor mFastbootMonitor;
     private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
 
     private boolean mEnableLogcat = true;
 
-    private boolean mFastbootEnabled = false;
-
-    private Set<IFastbootListener> mFastbootListeners;
 
     private static class DeviceMatcher implements IMatcher<IDevice> {
 
@@ -106,20 +105,25 @@ public class DeviceManager implements IDeviceManager {
         // assume "adb" is in PATH
         // TODO: make this configurable
         mAdbBridge.init(false /* client support */, "adb");
-        mFastbootEnabled = isFastbootAvailable();
-        for (IDevice device : mAdbBridge.getDevices()) {
-            if (device.getState() == IDevice.DeviceState.ONLINE) {
-                checkAndAddAvailableDevice(device);
-            }
-        }
-        if (mFastbootEnabled) {
+
+        if (isFastbootAvailable()) {
             mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
             mFastbootMonitor = new FastbootMonitor();
             startFastbootMonitor();
+            // don't set fastboot enabled bit until mFastbootListeners has been initialized
+            mFastbootEnabled = true;
         } else {
             Log.w(LOG_TAG, "Fastboot is not available.");
             mFastbootListeners = null;
             mFastbootMonitor = null;
+            mFastbootEnabled = false;
+        }
+
+        // don't start adding devices until fastboot support has been established
+        for (IDevice device : mAdbBridge.getDevices()) {
+            if (device.getState() == IDevice.DeviceState.ONLINE) {
+                checkAndAddAvailableDevice(device);
+            }
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
@@ -131,7 +135,7 @@ public class DeviceManager implements IDeviceManager {
     private boolean isFastbootAvailable() {
         // TODO: replace with fastboot --version when available.
         CommandResult fastbootResult = getRunUtil().runTimedCmd(
-                FASTBOOT_CMD_TIMEOUT, "fastboot", "devices");
+                5 * 1000, "fastboot", "devices");
         return (fastbootResult.getStatus() == CommandStatus.SUCCESS);
     }
 
