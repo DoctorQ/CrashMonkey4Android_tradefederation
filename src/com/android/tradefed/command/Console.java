@@ -57,6 +57,13 @@ public class Console {
     private static final String LOG_TAG = "Console";
     private static final String CONSOLE_PROMPT = "tf >";
 
+    protected final static String HELP_PATTERN = "\\?|h|help";
+    protected final static String LIST_PATTERN = "l(?:ist)?";
+    protected final static String DUMP_PATTERN = "d(?:ump)?";
+    protected final static String RUN_PATTERN = "r(?:un)?";
+
+    protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
+
     /* FIXME: reimplement these somewhere
      * @Option(name = "log-level-display", description =
      *         "minimum log level to display on stdout for global log")
@@ -108,7 +115,7 @@ public class Console {
         public void run() {}
     }
 
-    Console() {
+    protected Console() {
         this(new CommandScheduler());
     }
 
@@ -142,7 +149,7 @@ public class Console {
      *        been added.  The key is a regular expression to use as a key for {@link RegexTrie}.
      *        The value should be a String containing the help text to print for that command.
      */
-    void setCustomCommands(RegexTrie<Runnable> trie, List<String> genericHelp,
+    protected void setCustomCommands(RegexTrie<Runnable> trie, List<String> genericHelp,
             Map<String, String> commandHelp) {
         // Meant to be overridden by subclasses
     }
@@ -189,8 +196,9 @@ public class Console {
                     public void run(CaptureList args) {
                         // Command will be the only capture in the second argument
                         // (first argument is helpPattern)
-                        mTerminal.printf("No help for '%s'; command is unknown or undocumented\n",
-                                args.get(1).get(0));
+                        printLine(String.format(
+                                "No help for '%s'; command is unknown or undocumented",
+                                args.get(1).get(0)));
                         genericHelpRunnable.run(args);
                     }
                 }, helpPattern, null);
@@ -205,7 +213,7 @@ public class Console {
                         }
 
                         // Command will be the only capture in the first argument
-                        mTerminal.printf("Unknown command: '%s'\n", args.get(0).get(0));
+                        printLine(String.format("Unknown command: '%s'", args.get(0).get(0)));
                         genericHelpRunnable.run(args);
                     }
                 }, (Pattern)null);
@@ -225,10 +233,7 @@ public class Console {
      */
     void addDefaultCommands(RegexTrie<Runnable> trie, List<String> genericHelp,
             Map<String, String> commandHelp) {
-        final String helpPattern = "\\?|h|help";
-        final String listPattern = "l(?:ist)?";
-        final String dumpPattern = "d(?:ump)?";
-        final String runPattern = "r(?:un)?";
+
 
         // Help commands
         genericHelp.add("Enter 'q' or 'exit' to exit");
@@ -236,25 +241,26 @@ public class Console {
         genericHelp.add("Enter 'help run'  for help with 'run' commands");
         genericHelp.add("Enter 'help dump' for help with 'dump' commands");
 
-        commandHelp.put(listPattern, String.format(
-                "%s help:\n" +
-                "\ti[nvocations]  List all invocation threads\n" +
-                "\td[evices]      List all detected or known devices\n" +
-                "\tc[configs]     List all configs\n", listPattern));
+        commandHelp.put(LIST_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\ti[nvocations]  List all invocation threads" + LINE_SEPARATOR +
+                "\td[evices]      List all detected or known devices" + LINE_SEPARATOR +
+                "\tc[configs]     List all configs currently waiting to be executed" +
+                LINE_SEPARATOR, LIST_PATTERN));
 
-        commandHelp.put(dumpPattern, String.format(
-                "%s help:\n" +
-                "\ts[tack]  Dump the stack traces of all threads\n" +
-                "\tl[ogs]   Dump the logs of all invocations to files\n",
-                dumpPattern));
+        commandHelp.put(DUMP_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\ts[tack]  Dump the stack traces of all threads" + LINE_SEPARATOR +
+                "\tl[ogs]   Dump the logs of all invocations to files" + LINE_SEPARATOR,
+                DUMP_PATTERN));
 
-        commandHelp.put(runPattern, String.format(
-                "%s help:\n" +
-                "\tcommand [options] <config>        Run the specified command\n" +
-                "\tcmdfile <cmdfile.txt>             Run the specified commandfile\n" +
+        commandHelp.put(RUN_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\tcommand [options] <config>        Run the specified command" + LINE_SEPARATOR +
+                "\tcmdfile <cmdfile.txt>             Run the specified commandfile" + LINE_SEPARATOR +
                 "\tsingleCommand [options] <config>  Run the specified command, and run 'exit' " +
-                        "immediately afterward\n",
-                runPattern));
+                        "immediately afterward" + LINE_SEPARATOR,
+                RUN_PATTERN));
 
         // Handle quit commands
         trie.put(new QuitRunnable(), "(?:q|exit)");
@@ -267,10 +273,10 @@ public class Console {
                         int counter = 1;
 
                         for (ITestInvocation inv : invs) {
-                            mTerminal.printf("Got invocation %d: %s\n", counter++, inv);
+                            printLine(String.format("Got invocation %d: %s", counter++, inv));
                         }
                     }
-                }, listPattern, "i(?:nvocations)?");
+                }, LIST_PATTERN, "i(?:nvocations)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -278,13 +284,13 @@ public class Console {
                         Collection<String> devices = null;
 
                         devices = manager.getAvailableDevices();
-                        mTerminal.printf("Available devices:   %s\n", devices);
+                        printLine(String.format("Available devices:   %s", devices));
                         devices = manager.getUnavailableDevices();
-                        mTerminal.printf("Unavailable devices: %s\n", devices);
+                        printLine(String.format("Unavailable devices: %s", devices));
                         devices = manager.getAllocatedDevices();
-                        mTerminal.printf("Allocated devices:   %s\n", devices);
+                        printLine(String.format("Allocated devices:   %s", devices));
                     }
-                }, listPattern, "d(?:evices)?");
+                }, LIST_PATTERN, "d(?:evices)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
@@ -292,10 +298,10 @@ public class Console {
                         int counter = 1;
 
                         for (String config : configs) {
-                            mTerminal.printf("Got config %d: %s\n", counter++, config);
+                            printLine(String.format("Got config %d: %s", counter++, config));
                         }
                     }
-                }, listPattern, "c(?:onfigs)?");
+                }, LIST_PATTERN, "c(?:onfigs)?");
 
         // Dump commands
         trie.put(new Runnable() {
@@ -303,13 +309,13 @@ public class Console {
                     public void run() {
                         dumpStacks();
                     }
-                }, dumpPattern, "s(?:tacks?)?");
+                }, DUMP_PATTERN, "s(?:tacks?)?");
         trie.put(new Runnable() {
                     @Override
                     public void run() {
                         dumpLogs();
                     }
-                }, dumpPattern, "l(?:ogs?)?");
+                }, DUMP_PATTERN, "l(?:ogs?)?");
 
         // Run commands
         ArgRunnable<CaptureList> runRunCommand = new ArgRunnable<CaptureList>() {
@@ -323,7 +329,7 @@ public class Console {
                         mScheduler.addConfig(flatArgs);
                     }
                 };
-        trie.put(runRunCommand, runPattern, "(?:singleC|c)ommand", null);
+        trie.put(runRunCommand, RUN_PATTERN, "(?:singleC|c)ommand", null);
         // Missing required argument: show help
         // FIXME: fix this functionality
         // trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
@@ -333,17 +339,17 @@ public class Console {
                     public void run(CaptureList args) {
                         // Skip 2 tokens to get past runPattern and "cmdfile"
                         String file = args.get(2).get(0);
-                        System.out.format("Attempting to run cmdfile %s\n", file);
+                        printLine(String.format("Attempting to run cmdfile %s", file));
                         try {
                             createCommandFileParser().parseFile(new File(file), mScheduler);
                         } catch (IOException e) {
-                            mTerminal.printf("Failed to run %s: %s\n", file, e);
+                            printLine(String.format("Failed to run %s: %s", file, e));
                         } catch (ConfigurationException e) {
-                            mTerminal.printf("Failed to run %s: %s\n", file, e);
+                            printLine(String.format("Failed to run %s: %s", file, e));
                         }
                     }
                 };
-        trie.put(runRunCmdfile, runPattern, "cmdfile", "(.*)");
+        trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)");
         // Missing required argument: show help
         // FIXME: fix this functionality
         //trie.put(runHelpRun, runPattern, "cmdfile");
@@ -357,7 +363,7 @@ public class Console {
         StringBuilder sb = new StringBuilder();
         for (String piece : pieces) {
             sb.append(piece);
-            sb.append("\n");
+            sb.append(LINE_SEPARATOR);
         }
         return sb.toString();
     }
@@ -383,10 +389,19 @@ public class Console {
     }
 
     /**
+     * Display a line of text on console
+     * @param output
+     */
+    protected void printLine(String output) {
+        mTerminal.printf("%s%s", output, LINE_SEPARATOR);
+    }
+
+    /**
      * The main method to launch the console. Will keep running until shutdown command is issued.
      *
      * @param args
      */
+    @SuppressWarnings("unchecked")
     public void run(String[] args) {
         initLogging();
         List<String> arrrgs = new LinkedList<String>(Arrays.asList(args));
@@ -415,7 +430,8 @@ public class Console {
 
                     if (input == null) {
                         // Usually the result of getting EOF on the console
-                        mTerminal.printf("\nReceived EOF; quitting...\n");
+                        printLine("");
+                        printLine("Received EOF; quitting...");
                         shouldExit = true;
                         break;
                     }
@@ -424,7 +440,7 @@ public class Console {
                     try {
                         tokens = QuotationAwareTokenizer.tokenizeLine(input);
                     } catch (IllegalArgumentException e) {
-                        mTerminal.printf("Invalid input: %s.\n", input);
+                        printLine(String.format("Invalid input: %s.", input));
                         continue;
                     }
 
@@ -432,8 +448,8 @@ public class Console {
                         continue;
                     }
                 } else {
-                    mTerminal.printf("Using commandline arguments as starting command: %s\n",
-                            arrrgs);
+                    printLine(String.format("Using commandline arguments as starting command: %s",
+                            arrrgs));
                     tokens = arrrgs.toArray(new String[0]);
                     arrrgs.clear();
                 }
@@ -454,8 +470,8 @@ public class Console {
                         command.run();
                     }
                 } else {
-                    mTerminal.printf("Unable to handle command '%s'.  Enter 'help' for help.\n",
-                            tokens[0]);
+                    printLine(String.format(
+                            "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));
                 }
 
                 // Special-case for singleConfig, which should run a config and then immediately
@@ -521,11 +537,11 @@ public class Console {
     }
 
     private void dumpThreadStack(Thread thread, StackTraceElement[] trace) {
-        mTerminal.printf("%s\n", thread);
+        printLine(String.format("%s", thread));
         for (int i=0; i < trace.length; i++) {
-            mTerminal.printf("\t%s\n", trace[i]);
+            printLine(String.format("\t%s", trace[i]));
         }
-        mTerminal.printf("\n", "");
+        printLine("");
     }
 
     private void dumpLogs() {
