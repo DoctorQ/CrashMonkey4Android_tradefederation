@@ -191,28 +191,25 @@ public class FileDownloadCache {
         // lock on the file, so no other thread attempts to delete it or access it before its
         // downloaded
         File copyFile = null;
-        synchronized (cachedFile) {
-            mCacheMap.put(remotePath, cachedFile);
-            mCacheMapLock.unlock();
-            try {
+        try {
+            synchronized (cachedFile) {
+                mCacheMap.put(remotePath, cachedFile);
+                mCacheMapLock.unlock();
                 if (download) {
-                    Log.d(LOG_TAG, String.format("Downloading %s to cache", remotePath));
-                    downloader.downloadFile(remotePath, cachedFile);
+                    downloadFile(downloader, remotePath, cachedFile);
                 } else {
                     Log.d(LOG_TAG, String.format("Retrieved remote file %s from cached file %s",
                             remotePath, cachedFile.getAbsolutePath()));
                 }
-                // attempt to create a local copy of cached file with sane name
-                copyFile = FileUtil.createTempFileForRemote(remotePath, null);
-                FileUtil.copyFile(cachedFile, copyFile);
-            } catch (IOException e) {
-                failedFetchFileCleanup(remotePath, copyFile, cachedFile);
-                throw new BuildRetrievalError(String.format("could not copy cached file %s",
-                        cachedFile.getAbsolutePath(), e));
-            } catch (BuildRetrievalError e) {
-                failedFetchFileCleanup(remotePath, copyFile, cachedFile);
-                throw e;
+                copyFile = copyFile(remotePath, cachedFile);
+
             }
+        } catch (BuildRetrievalError e) {
+            // remove entry from cache outside of cachedFile lock, to prevent deadlock
+            mCacheMapLock.lock();
+            mCacheMap.remove(remotePath);
+            mCacheMapLock.unlock();
+            throw e;
         }
         if (download) {
            incrementAndAdjustCache(cachedFile.length());
@@ -220,25 +217,34 @@ public class FileDownloadCache {
         return copyFile;
     }
 
-    /**
-     * Perform cleanup steps on cache after a failed fetchRemoteFile attempt.
-     * <p/>
-     * Since the cached file might be corrupt, delete and remove it from cache.
-     * Assumes caller already has lock on <var>cachedFile</var>
-     *
-     * @param remotePath the cache entry to delete
-     * @param copyFile the copy of the cached file. Will be deleted
-     * @param cachedFile the cached file to delete.
-     */
-    private void failedFetchFileCleanup(String remotePath, File copyFile, File cachedFile) {
-        if (copyFile != null) {
-            copyFile.delete();
+    private void downloadFile(IFileDownloader downloader, String remotePath, File cachedFile)
+            throws BuildRetrievalError {
+        try {
+            Log.d(LOG_TAG, String.format("Downloading %s to cache", remotePath));
+            downloader.downloadFile(remotePath, cachedFile);
+        } catch (BuildRetrievalError e) {
+            // cached file is likely incomplete, delete it
+            cachedFile.delete();
+            throw e;
         }
-        mCacheMapLock.lock();
-        // something might be wrong with original file, remove from cache
-        mCacheMap.remove(remotePath);
-        mCacheMapLock.unlock();
-        cachedFile.delete();
+    }
+
+    private File copyFile(String remotePath, File cachedFile) throws BuildRetrievalError {
+        // attempt to create a local copy of cached file with sane name
+        File copyFile = null;
+        try {
+            copyFile = FileUtil.createTempFileForRemote(remotePath, null);
+            FileUtil.copyFile(cachedFile, copyFile);
+            return copyFile;
+        } catch (IOException e) {
+            if (copyFile != null) {
+                copyFile.delete();
+            }
+            // cached file might be corrupt incomplete, delete it
+            cachedFile.delete();
+            throw new BuildRetrievalError(String.format("Failed to copy cached file %s",
+                    cachedFile), e);
+        }
     }
 
     /**
