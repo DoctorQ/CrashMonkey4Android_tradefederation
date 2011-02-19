@@ -176,4 +176,16 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
     public void setAppBuild(IAppBuildInfo appBuild) {
         mAppBuildInfo = appBuild;
     }
+
+    @Override
+    public IBuildInfo clone() {
+        AppDeviceBuildInfo copy = new AppDeviceBuildInfo(getBuildId(), getTestTarget(),
+                getBuildName());
+        copy.addAllBuildAttributes(getAttributesMultiMap());
+        IDeviceBuildInfo deviceBuildClone = (IDeviceBuildInfo)mDeviceBuild.clone();
+        copy.setDeviceBuild(deviceBuildClone);
+        IAppBuildInfo appBuildClone = (IAppBuildInfo)mAppBuildInfo.clone();
+        copy.setAppBuild(appBuildClone);
+        return copy;
+    }
 }
