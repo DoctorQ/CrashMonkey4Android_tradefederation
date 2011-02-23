@@ -24,8 +24,14 @@ checkPath() {
     fi;
 }
 
+checkFile() {
+    if [ ! -f "$1" ]; then
+        echo "Unable to locate $1"
+        exit
+    fi;
+}
+
 checkPath adb
-checkPath fastboot
 checkPath java
 
 # check java version
@@ -35,19 +41,28 @@ if [ "${JAVA_VERSION}" == "" ]; then
     exit
 fi
 
-HOST=`uname`
-if [ "$HOST" == "Linux" ]; then
-    OS="linux-x86"
-elif [ "$HOST" == "Darwin" ]; then
-    OS="darwin-x86"
+# check if in Android build env
+if [ ! -z ${ANDROID_BUILD_TOP} ]; then
+    HOST=`uname`
+    if [ "$HOST" == "Linux" ]; then
+        OS="linux-x86"
+    elif [ "$HOST" == "Darwin" ]; then
+        OS="darwin-x86"
+    else
+        echo "Unrecognized OS"
+        exit
+    fi;
+    # ddmlib-prebuilt is still in standard dir
+    ddmlib_path=$ANDROID_BUILD_TOP/out/host/$OS/framework/ddmlib-prebuilt.jar
+    checkFile $ddmlib_path
+    # add all jars in tradefed out dir
+    tf_path=$ANDROID_BUILD_TOP/out/host/$OS/tradefed/\*
 else
-    echo "Unrecognized OS"
-    exit
+    TF_ROOT_PATH=$(dirname $0)
+    # assume downloaded TF, look for jars in same directory as script
+    # sanity check - ensure ddmlib-prebuilt is there
+    checkFile $TF_ROOT_PATH/ddmlib-prebuilt.jar
+    tf_path=$TF_ROOT_PATH/\*
 fi;
-
-# ddmlib-prebuilt is still in standard dir
-ddmlib_path=$ANDROID_BUILD_TOP/out/host/$OS/framework/ddmlib-prebuilt.jar
-# add all jars in  tradefed out dir
-tf_path=$ANDROID_BUILD_TOP/out/host/$OS/tradefed/\*
 
 java -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"
