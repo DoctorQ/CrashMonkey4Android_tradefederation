@@ -22,6 +22,7 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 
 import java.io.File;
 import java.util.Arrays;
@@ -99,8 +100,11 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             TargetSetupError {
         device.rebootUntilOnline();
 
-        // TODO: if any of the following commands fail, need to instruct ITestDevice to only recover
-        // until device is online, not until its available
+        device.setRecoveryMode(RecoveryMode.ONLINE);
+
+        if (device.isDeviceEncrypted()) {
+            device.unlockDevice();
+        }
 
         // Stop the runtime, so it doesn't notice us mucking with the filesystem
         Log.d(LOG_TAG, "Stopping runtime");
@@ -118,6 +122,8 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
                         dataSubDir.getFullEscapedPath()));
             }
         }
+
+        device.setRecoveryMode(RecoveryMode.AVAILABLE);
     }
 
     /**
