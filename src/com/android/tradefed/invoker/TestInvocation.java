@@ -184,6 +184,8 @@ public class TestInvocation implements ITestInvocation {
                 // config
                 rescheduler.scheduleConfig(shardConfig);
             }
+            // clean up original build
+            config.getBuildProvider().cleanUp(info);
             return true;
         }
         return false;
