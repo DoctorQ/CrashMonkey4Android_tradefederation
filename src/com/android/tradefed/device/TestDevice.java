@@ -1063,11 +1063,11 @@ class TestDevice implements IManagedTestDevice {
      *         capture logcat data.
      */
     private InputStreamSource getLogcatDump() {
-        String output = "";
+        byte[] output = new byte[0];
         try {
             // use IDevice directly because we don't want callers to handle
             // DeviceNotAvailableException for this method
-            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            CollectingByteOutputReceiver receiver = new CollectingByteOutputReceiver();
             // add -d parameter to make this a non blocking call
             getIDevice().executeShellCommand(LOGCAT_CMD + " -d", receiver);
             output = receiver.getOutput();
@@ -1084,7 +1084,7 @@ class TestDevice implements IManagedTestDevice {
             Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: ", getSerialNumber(),
                     e.getMessage()));
         }
-        return new ByteArrayInputStreamSource(output.getBytes());
+        return new ByteArrayInputStreamSource(output);
     }
 
     /**
@@ -1116,7 +1116,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public InputStreamSource getBugreport() {
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+        CollectingByteOutputReceiver receiver = new CollectingByteOutputReceiver();
         try {
             executeShellCommand(BUGREPORT_CMD, receiver, BUGREPORT_TIMEOUT, 0 /* don't retry */);
         } catch (DeviceNotAvailableException e) {
@@ -1126,7 +1126,7 @@ class TestDevice implements IManagedTestDevice {
                     getSerialNumber()));
         }
 
-        return new ByteArrayInputStreamSource(receiver.getOutput().getBytes());
+        return new ByteArrayInputStreamSource(receiver.getOutput());
     }
 
     /**

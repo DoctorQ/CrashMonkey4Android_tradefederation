@@ -15,6 +15,9 @@
  */
 package com.android.tradefed.util;
 
+import com.android.tradefed.util.ByteArrayList;
+
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,6 +44,24 @@ public class StreamUtil {
             builder.append((char)irChar);
         }
         return builder.toString();
+    }
+
+    /**
+     * Retrieves a {@link ByteArrayList} from a byte stream.
+     *
+     * @param stream the {@link InputStream}
+     * @return a {@link ByteArrayList} containing the stream contents
+     * @throws IOException if failure occurred reading the stream
+     */
+    public static ByteArrayList getByteArrayListFromStream(InputStream stream) throws IOException {
+        InputStream is = new BufferedInputStream(stream);
+        int inputByte = -1;
+        ByteArrayList list = new ByteArrayList();
+        while ((inputByte = is.read()) != -1) {
+            list.add((byte)inputByte);
+        }
+        list.trimToSize();
+        return list;
     }
 
 }
