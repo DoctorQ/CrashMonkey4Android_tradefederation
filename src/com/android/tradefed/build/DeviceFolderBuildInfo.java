@@ -24,7 +24,7 @@ import java.io.File;
 public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo, IFolderBuildInfo {
 
     private IDeviceBuildInfo mDeviceBuild;
-    private IFolderBuildInfo mFolderBuildInfo;
+    private IFolderBuildInfo mFolderBuild;
 
     /**
      * @see {@link DeviceBuildInfo#DeviceBuildInfo(int, String, String)}
@@ -142,21 +142,21 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     public File getRootDir() {
-        return mFolderBuildInfo.getRootDir();
+        return mFolderBuild.getRootDir();
     }
 
     /**
      * {@inheritDoc}
      */
     public void setRootDir(File rootDir) {
-        mFolderBuildInfo.setRootDir(rootDir);
+        mFolderBuild.setRootDir(rootDir);
     }
 
     /**
      * @param localBuild
      */
-    public void setCtsBuild(IFolderBuildInfo folderBuild) {
-        mFolderBuildInfo = folderBuild;
+    public void setFolderBuild(IFolderBuildInfo folderBuild) {
+        mFolderBuild = folderBuild;
     }
 
     /**
@@ -172,6 +172,19 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     @Override
     public void cleanUp() {
         mDeviceBuild.cleanUp();
-        mFolderBuildInfo.cleanUp();
+        mFolderBuild.cleanUp();
+    }
+
+    @Override
+    public IBuildInfo clone() {
+        DeviceFolderBuildInfo copy = new DeviceFolderBuildInfo(getBuildId(), getTestTarget(),
+                getBuildName());
+        copy.addAllBuildAttributes(getAttributesMultiMap());
+        IDeviceBuildInfo deviceBuildClone = (IDeviceBuildInfo)mDeviceBuild.clone();
+        copy.setDeviceBuild(deviceBuildClone);
+        IFolderBuildInfo folderBuildClone = (IFolderBuildInfo)mFolderBuild.clone();
+        copy.setFolderBuild(folderBuildClone);
+
+        return copy;
     }
 }
