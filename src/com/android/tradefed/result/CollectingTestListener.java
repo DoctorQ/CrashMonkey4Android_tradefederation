@@ -18,9 +18,9 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.TestResult.TestStatus;
 
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -220,7 +220,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
-    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
         // ignore
     }
 }

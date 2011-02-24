@@ -17,8 +17,8 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.result.InputStreamSource;
 
-import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +89,7 @@ public class ResultForwarder implements ITestInvocationListener {
      * {@inheritDoc}
      */
     @Override
-    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
         for (ITestInvocationListener listener : mListeners) {
             listener.testLog(dataName, dataType, dataStream);
         }

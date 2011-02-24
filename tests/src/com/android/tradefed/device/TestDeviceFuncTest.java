@@ -23,6 +23,7 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
 
@@ -56,7 +57,8 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      * Simple testcase to ensure that the grabbing a bugreport from a real TestDevice works.
      */
     public void testBugreport() throws Exception {
-        String data = mTestDevice.getBugreport();
+        String data = StreamUtil.getStringFromStream(
+                mTestDevice.getBugreport().createInputStream());
         assertTrue(String.format("Expected at least %d characters; only saw %d", mMinBugreportBytes,
                 data.length()), data.length() >= mMinBugreportBytes);
     }

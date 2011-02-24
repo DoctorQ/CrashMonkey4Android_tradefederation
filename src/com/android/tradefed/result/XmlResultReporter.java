@@ -239,9 +239,10 @@ public class XmlResultReporter extends CollectingTestListener {
      * {@inheritDoc}
      */
     @Override
-    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
         try {
-            File logFile = mLogFileSaver.saveLogData(dataName, dataType, dataStream);
+            File logFile = mLogFileSaver.saveLogData(dataName, dataType,
+                    dataStream.createInputStream());
             Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format("Saved %s log to %s", dataName,
                     logFile.getAbsolutePath()));
         } catch (IOException e) {

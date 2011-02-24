@@ -63,9 +63,12 @@ public interface ITestInvocationListener extends ITestRunListener {
      *            dataName may not be unique per invocation. ie implementers must be able to handle
      *            multiple calls with same dataName
      * @param dataType the {@link LogDataType} of the data
-     * @param dataStream the {@link InputStream} of the data.
+     * @param dataStream the {@link InputStreamSource} of the data. Implementers should call
+     *        createInputStream to start reading the data, and ensure to close the resulting
+     *        InputStream when complete. Callers should ensure the source of the data remains
+     *        present and accessible until the testLog method completes.
      */
-    public void testLog(String dataName, LogDataType dataType, InputStream dataStream);
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream);
 
     /**
      * Reports that the invocation has terminated, whether successfully or due to some error

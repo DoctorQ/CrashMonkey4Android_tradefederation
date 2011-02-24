@@ -19,6 +19,9 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.BufferedWriter;
@@ -171,19 +174,20 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
-    public InputStream getLog() {
+    public InputStreamSource getLog() {
         if (mLogWriter == null) {
             throw new IllegalStateException();
         }
         try {
             // create a InputStream from log file
             mLogWriter.flush();
-            return new FileInputStream(mTempLogFile);
+            return new SnapshotInputStreamSource(new FileInputStream(mTempLogFile));
+
         } catch (IOException e) {
             System.err.println("Failed to get log");
             e.printStackTrace();
         }
-        return new ByteArrayInputStream(new byte[0]);
+        return new ByteArrayInputStreamSource(new byte[0]);
     }
 
     /**

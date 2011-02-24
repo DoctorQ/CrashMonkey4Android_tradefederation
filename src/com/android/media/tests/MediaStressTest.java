@@ -26,7 +26,9 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.File;
@@ -105,21 +107,23 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private void logOutputFile(ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         File outputFile = null;
+        InputStreamSource outputSource = null;
         try {
             outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
 
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
-            listener.testLog(mOutputPath, LogDataType.TEXT, new FileInputStream(outputFile));
+            outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
+            listener.testLog(mOutputPath, LogDataType.TEXT, outputSource);
             parseOutputFile(outputFile, listener);
-        } catch (FileNotFoundException e) {
-            Log.e(LOG_TAG, String.format("Couldn't find the file: %s", e));
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Got an IO Exception: %s", e));
+            Log.e(LOG_TAG, String.format("IOException while reading or parsing output file: %s", e));
         } finally {
             if (outputFile != null) {
                 outputFile.delete();
-                outputFile = null;
+            }
+            if (outputSource != null) {
+                outputSource.cancel();
             }
         }
     }

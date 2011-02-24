@@ -73,7 +73,8 @@ public class FileLoggerTest extends TestCase {
             String expectedText3 = Log.getLogFormatString(LogLevel.ASSERT, LOG_TAG, Text3).trim();
 
             // Verify the 3 lines we logged
-            logFileReader = new BufferedReader(new InputStreamReader(logger.getLog()));
+            logFileReader = new BufferedReader(new InputStreamReader(
+                    logger.getLog().createInputStream()));
 
             String actualLogString = logFileReader.readLine().trim();
             assertTrue(actualLogString.equals(expectedText1));

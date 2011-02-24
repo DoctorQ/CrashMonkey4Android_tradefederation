@@ -29,6 +29,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.InvocationSummaryHelper;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
@@ -346,12 +347,25 @@ public class TestInvocation implements ITestInvocation {
 
     private void reportLogs(ITestDevice device, List<ITestInvocationListener> listeners,
             ILeveledLogOutput logger) {
-        for (ITestInvocationListener listener : listeners) {
-            if (device != null) {
-                listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, device.getLogcat());
-            }
-            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, logger.getLog());
+        InputStreamSource logcatSource = null;
+        InputStreamSource globalLogSource = logger.getLog();
+        if (device != null) {
+            logcatSource = device.getLogcat();
         }
+
+        for (ITestInvocationListener listener : listeners) {
+            if (logcatSource != null) {
+                listener.testLog(DEVICE_LOG_NAME, LogDataType.TEXT, logcatSource);
+            }
+            listener.testLog(TRADEFED_LOG_NAME, LogDataType.TEXT, globalLogSource);
+        }
+
+        // Clean up after our ISSen
+        if (logcatSource != null) {
+            logcatSource.cancel();
+        }
+        globalLogSource.cancel();
+
         // once tradefed log is reported, all further log calls for this invocation can get lost
         // unregister logger so future log calls get directed to the tradefed global log
         getLogRegistry().unregisterLogger();

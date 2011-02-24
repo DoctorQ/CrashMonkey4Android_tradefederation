@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
@@ -232,10 +233,11 @@ public interface ITestDevice {
      * The implementation of this is guaranteed to continue to work on a device without an sdcard
      * (or where the sdcard is not yet mounted).
      *
-     * @return A {@link String} containing the bugreport contents.  Will be an empty String in case
-     *         of failure.
+     * @return An {@link InputStreamSource} which will produce the bugreport contents on demand.  In
+     *         case of failure, the {@code InputStreamSource} will produce an empty
+     *         {@link InputStream}.
      */
-    public String getBugreport();
+    public InputStreamSource getBugreport();
 
     /**
      * Retrieves a file off device.
@@ -341,7 +343,7 @@ public interface ITestDevice {
     /**
      * Grabs a snapshot stream of the logcat data.
      */
-    public InputStream getLogcat();
+    public InputStreamSource getLogcat();
 
     /**
      * Connects to a wifi network.

@@ -18,9 +18,8 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
-
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
+import com.android.tradefed.result.InputStreamSource;
 
 /**
  * A {@link ILeveledLogOutput} that directs log messages to stdout.
@@ -64,9 +63,9 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
-    public InputStream getLog() {
+    public InputStreamSource getLog() {
         // not supported - return empty stream
-        return new ByteArrayInputStream(new byte[0]);
+        return new ByteArrayInputStreamSource(new byte[0]);
     }
 
     @Override

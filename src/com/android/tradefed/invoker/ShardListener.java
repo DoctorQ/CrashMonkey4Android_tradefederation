@@ -19,12 +19,12 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.result.TestResult.TestStatus;
 
-import java.io.InputStream;
 import java.util.Map;
 
 /**
@@ -74,7 +74,7 @@ class ShardListener extends CollectingTestListener {
      * {@inheritDoc}
      */
     @Override
-    public void testLog(String dataName, LogDataType dataType, InputStream dataStream) {
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
         // forward testLog results immediately, since they are not order dependent and there are
         // not stored by CollectingTestListener
         synchronized (mMasterListener) {

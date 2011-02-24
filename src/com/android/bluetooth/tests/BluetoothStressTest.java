@@ -28,7 +28,9 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.BufferedInputStream;
@@ -204,13 +206,15 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     private void logOutputFile(String testName, TestInfo testInfo, ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         File outputFile = null;
+        InputStreamSource outputSource = null;
         try {
             outputFile = mTestDevice.pullFileFromExternal(OUTPUT_PATH);
 
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
+            outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
             listener.testLog(String.format("output-%s.txt", testName), LogDataType.TEXT,
-                    new FileInputStream(outputFile));
+                    outputSource);
             parseOutputFile(testName, testInfo, new FileInputStream(outputFile), listener);
         } catch (FileNotFoundException e) {
             Log.e(LOG_TAG, String.format("Couldn't find the file: %s", e));
@@ -219,7 +223,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         } finally {
             if (outputFile != null) {
                 outputFile.delete();
-                outputFile = null;
+            }
+            if (outputSource != null) {
+                outputSource.cancel();
             }
         }
     }

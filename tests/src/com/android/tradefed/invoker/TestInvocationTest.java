@@ -30,7 +30,9 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.StubLogRegistry;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.ITestSummaryListener;
 import com.android.tradefed.result.InvocationStatus;
 import com.android.tradefed.result.LogDataType;
@@ -44,8 +46,6 @@ import com.android.tradefed.testtype.IResumableTest;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -307,9 +307,9 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expectLastCall().andThrow(exception);
         setupMockFailureListeners(exception);
 
-        EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]))
-                .times(2);
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]))
+        EasyMock.expect(mMockDevice.getLogcat())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0])).times(2);
+        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStreamSource(new byte[0]))
                 .times(2);
 
         mMockLogger.closeLog();
@@ -346,12 +346,14 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.expect(resumableTest.isResumable()).andReturn(Boolean.TRUE);
 
-        EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]));
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
+        EasyMock.expect(mMockDevice.getLogcat())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0]));
+        EasyMock.expect(mMockLogger.getLog())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0]));
         resumeListener.testLog(EasyMock.eq(TestInvocation.DEVICE_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         resumeListener.testLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         mMockLogger.closeLog();
 
         // just return same build and logger for simplicity
@@ -369,12 +371,14 @@ public class TestInvocationTest extends TestCase {
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
         mMockDevice.setRecovery(mMockRecovery);
         resumableTest.run((ITestInvocationListener)EasyMock.anyObject());
-        EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]));
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]));
+        EasyMock.expect(mMockDevice.getLogcat())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0]));
+        EasyMock.expect(mMockLogger.getLog())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0]));
         resumeListener.testLog(EasyMock.eq(TestInvocation.DEVICE_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         resumeListener.testLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         resumeListener.invocationEnded(EasyMock.anyLong());
         EasyMock.expect(resumeListener.getSummary()).andReturn(null);
         mMockBuildInfo.cleanUp();
@@ -408,10 +412,10 @@ public class TestInvocationTest extends TestCase {
                 (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
 
-        EasyMock.expect(mMockDevice.getLogcat()).andReturn(new ByteArrayInputStream(new byte[0]))
-                .times(2);
+        EasyMock.expect(mMockDevice.getLogcat())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0])).times(2);
 
-        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStream(new byte[0]))
+        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStreamSource(new byte[0]))
                 .times(2);
 
         mMockLogger.closeLog();
@@ -448,15 +452,15 @@ public class TestInvocationTest extends TestCase {
 
         // testLog (mMockTestListener)
         mMockTestListener.testLog(EasyMock.eq(TestInvocation.DEVICE_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         mMockTestListener.testLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
 
         // testLog (mMockSummaryListener)
         mMockSummaryListener.testLog(EasyMock.eq(TestInvocation.DEVICE_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
         mMockSummaryListener.testLog(EasyMock.eq(TestInvocation.TRADEFED_LOG_NAME),
-                EasyMock.eq(LogDataType.TEXT), (InputStream)EasyMock.anyObject());
+                EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
 
         // invocationEnded, getSummary (mMockTestListener)
         mMockTestListener.invocationEnded(EasyMock.anyLong());

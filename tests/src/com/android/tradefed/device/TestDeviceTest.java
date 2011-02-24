@@ -382,7 +382,8 @@ public class TestDeviceTest extends TestCase {
             synchronized (notifier) {
                 notifier.wait();
             }
-            String actualString = StreamUtil.getStringFromStream(receiver.getLogcatData());
+            String actualString = StreamUtil.getStringFromStream(
+                    receiver.getLogcatData().createInputStream());
             // verify that data from both the backup log file (input2) and current log file
             // (input3) is retrieved
             assertFalse(actualString.contains(input));
@@ -417,7 +418,8 @@ public class TestDeviceTest extends TestCase {
 
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
-        assertEquals(expectedOutput, mTestDevice.getBugreport());
+        assertEquals(expectedOutput, StreamUtil.getStringFromStream(
+                mTestDevice.getBugreport().createInputStream()));
     }
 
     /**

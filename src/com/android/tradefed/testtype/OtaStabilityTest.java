@@ -24,7 +24,9 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.targetprep.BuildError;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.targetprep.TargetSetupError;
@@ -278,17 +280,27 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
 
     private void sendRecoveryLog(ITestInvocationListener listener) throws
             DeviceNotAvailableException {
+        File destFile = null;
+        InputStreamSource destSource = null;
         try {
             // get recovery log
-            File destFile = FileUtil.createTempFile("recovery", "log");
+            destFile = FileUtil.createTempFile("recovery", "log");
             boolean gotFile = mDevice.pullFile("/tmp/recovery.log", destFile);
             if (gotFile) {
-                listener.testLog("recovery_log", LogDataType.TEXT, new FileInputStream(destFile));
+                destSource = new SnapshotInputStreamSource(new FileInputStream(destFile));
+                listener.testLog("recovery_log", LogDataType.TEXT, destSource);
             }
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Failed to get recovery log from device %s",
                     mDevice.getSerialNumber()));
             Log.e(LOG_TAG, e);
+        } finally {
+            if (destFile != null) {
+                destFile.delete();
+            }
+            if (destSource != null) {
+                destSource.cancel();
+            }
         }
     }
 

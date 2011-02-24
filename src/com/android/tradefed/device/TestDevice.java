@@ -31,7 +31,10 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.StubTestListener;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -1043,7 +1046,7 @@ class TestDevice implements IManagedTestDevice {
      * contents of the background logcat capture.
      * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
-    public InputStream getLogcat() {
+    public InputStreamSource getLogcat() {
         if (mLogcatReceiver == null) {
             Log.w(LOG_TAG, String.format("Not capturing logcat for %s in background, " +
                     "returning a logcat dump", getSerialNumber()));
@@ -1059,7 +1062,7 @@ class TestDevice implements IManagedTestDevice {
      * @return a {@link InputStream} of the logcat data. An empty stream is returned if fail to
      *         capture logcat data.
      */
-    private InputStream getLogcatDump() {
+    private InputStreamSource getLogcatDump() {
         String output = "";
         try {
             // use IDevice directly because we don't want callers to handle
@@ -1081,7 +1084,7 @@ class TestDevice implements IManagedTestDevice {
             Log.w(LOG_TAG, String.format("Failed to get logcat dump from %s: ", getSerialNumber(),
                     e.getMessage()));
         }
-        return new ByteArrayInputStream(output.getBytes());
+        return new ByteArrayInputStreamSource(output.getBytes());
     }
 
     /**
@@ -1112,7 +1115,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
-    public String getBugreport() {
+    public InputStreamSource getBugreport() {
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         try {
             executeShellCommand(BUGREPORT_CMD, receiver, BUGREPORT_TIMEOUT, 0 /* don't retry */);
@@ -1123,7 +1126,7 @@ class TestDevice implements IManagedTestDevice {
                     getSerialNumber()));
         }
 
-        return receiver.getOutput();
+        return new ByteArrayInputStreamSource(receiver.getOutput().getBytes());
     }
 
     /**
@@ -1170,19 +1173,20 @@ class TestDevice implements IManagedTestDevice {
             }
         }
 
-        public synchronized InputStream getLogcatData() {
+        public synchronized InputStreamSource getLogcatData() {
             if (mTmpFile != null) {
                 flush();
                 try {
                     FileInputStream fileStream = new FileInputStream(mTmpFile);
                     if (mPreviousTmpFile != null) {
-                        // return a input stream that first reads from mPreviousTmpFile, then reads
+                        // return an input stream that first reads from mPreviousTmpFile, then reads
                         // from mTmpFile
-                        return new SequenceInputStream(new FileInputStream(mPreviousTmpFile),
-                                fileStream);
+                        InputStream stream = new SequenceInputStream(
+                                new FileInputStream(mPreviousTmpFile), fileStream);
+                        return new SnapshotInputStreamSource(stream);
                     } else {
-                        // no previous file, just return mTmpFile's stream
-                        return fileStream;
+                        // no previous file, just return a wrapper around mTmpFile's stream
+                        return new SnapshotInputStreamSource(fileStream);
                     }
                 } catch (IOException e) {
                     Log.e(LOG_TAG,
@@ -1190,8 +1194,9 @@ class TestDevice implements IManagedTestDevice {
                     Log.e(LOG_TAG, e);
                 }
             }
-            // return an empty input stream
-            return new ByteArrayInputStream(new byte[0]);
+
+            // return an empty InputStreamSource
+            return new ByteArrayInputStreamSource(new byte[0]);
         }
 
         /**

@@ -18,10 +18,10 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.TestSummary;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;
@@ -52,6 +52,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         mJUnitListener.endTest(new TestIdentifierResult(test));
     }
@@ -59,6 +60,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testFailed(TestFailure status, TestIdentifier testId, String trace) {
         Test test = new TestIdentifierResult(testId);
 
@@ -74,6 +76,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
        // TODO: no run ended method on TestListener - would be good to propagate the elaspedTime
        // info up
@@ -83,6 +86,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunFailed(String errorMessage) {
         // TODO: no run failed method on TestListener - would be good to propagate this up
         Log.e(LOG_TAG, String.format("run failed: %s", errorMessage));
@@ -91,6 +95,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStarted(String runName, int testCount) {
         // TODO: no run started method on TestResult - would be good to propagate this up
         Log.i(LOG_TAG, String.format("run %s started: %d tests", runName, testCount));
@@ -99,6 +104,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStopped(long elapsedTime) {
         Log.i(LOG_TAG, String.format("run stopped: %d ms", elapsedTime));
     }
@@ -106,6 +112,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testStarted(TestIdentifier test) {
         Log.d(LOG_TAG, test.toString());
         mJUnitListener.startTest(new TestIdentifierResult(test));
@@ -215,6 +222,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationEnded(long elapsedTime) {
         // ignore
     }
@@ -222,6 +230,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationFailed(Throwable cause) {
         // ignore
     }
@@ -229,6 +238,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public TestSummary getSummary() {
         // ignore
         return null;
@@ -237,6 +247,7 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationStarted(IBuildInfo buildInfo) {
         // ignore
     }
@@ -244,14 +255,8 @@ import junit.framework.TestResult;
     /**
      * {@inheritDoc}
      */
-    public void testRunFailed(String errorMessage, File log) {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public void testLog(String dataName, LogDataType logData, InputStream dataStream) {
+    @Override
+    public void testLog(String dataName, LogDataType logData, InputStreamSource dataStream) {
         // ignore
     }
 }

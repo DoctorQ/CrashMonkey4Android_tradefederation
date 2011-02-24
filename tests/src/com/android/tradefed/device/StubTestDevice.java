@@ -20,10 +20,10 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
-import java.io.InputStream;
 import java.util.Collection;
 
 /**
@@ -36,56 +36,67 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void executeShellCommand(String command, IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
         // ignore
     }
 
+    @Override
     public String executeShellCommand(String command) throws DeviceNotAvailableException {
         // ignore
         return null;
     }
 
+    @Override
     public IDevice getIDevice() {
         // ignore
         return null;
     }
 
+    @Override
     public String getSerialNumber() {
         // ignore
         return null;
     }
 
+    @Override
     public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
         // ignore
         return true;
     }
 
+    @Override
     public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException {
         // ignore
         return true;
     }
 
+    @Override
     public boolean pullFile(String remoteFilePath, File localFile)
             throws DeviceNotAvailableException {
         return false;
     }
 
+    @Override
     public File pullFile(String remoteFilePath) throws DeviceNotAvailableException {
         return null;
     }
 
+    @Override
     public File pullFileFromExternal(String remoteFilePath) throws DeviceNotAvailableException {
         return null;
     }
 
+    @Override
     public boolean pushFile(File localFile, String deviceFilePath)
             throws DeviceNotAvailableException {
         return false;
     }
 
+    @Override
     public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException {
         return false;
     }
@@ -93,25 +104,29 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public InputStream getLogcat() {
+    @Override
+    public InputStreamSource getLogcat() {
         return null;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void startLogcat() {
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void stopLogcat() {
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setFastbootEnabled(boolean fastbootEnabled) {
         // ignore
     }
@@ -119,6 +134,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String executeAdbCommand(String... commandArgs) throws DeviceNotAvailableException {
         // ignore
         return "";
@@ -127,6 +143,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public CommandResult executeFastbootCommand(String... commandArgs)
             throws DeviceNotAvailableException {
         // ignore
@@ -136,6 +153,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public CommandResult executeLongFastbootCommand(String... commandArgs)
             throws DeviceNotAvailableException {
         // ignore
@@ -145,6 +163,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean enableAdbRoot() throws DeviceNotAvailableException {
         // ignore
         return true;
@@ -153,6 +172,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void postBootSetup() throws DeviceNotAvailableException {
         // ignore
     }
@@ -160,6 +180,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void reboot() throws DeviceNotAvailableException {
         // ignore
     }
@@ -167,6 +188,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebootUntilOnline() throws DeviceNotAvailableException {
         // ignore
     }
@@ -174,6 +196,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebootIntoBootloader() throws DeviceNotAvailableException {
         // ignore
     }
@@ -181,13 +204,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public void waitForDevice(long time) throws DeviceNotAvailableException {
-        // ignore
-    }
-
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
         // ignore
 
@@ -196,6 +213,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceAvailable() throws DeviceNotAvailableException {
         // ignore
     }
@@ -203,6 +221,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceOnline() throws DeviceNotAvailableException {
         // ignore
     }
@@ -210,6 +229,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
         // ignore
     }
@@ -217,6 +237,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
         return 0;
     }
@@ -224,6 +245,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
         // ignore
@@ -233,6 +255,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getProductType() {
         // ignore
         return "";
@@ -241,6 +264,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setIDevice(IDevice device) {
         // ignore
     }
@@ -248,6 +272,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDeviceState(TestDeviceState deviceState) {
         // ignore
     }
@@ -255,10 +280,12 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public TestDeviceState getDeviceState() {
         return null;
     }
 
+    @Override
     public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
             throws DeviceNotAvailableException {
         // ignore
@@ -268,6 +295,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
         // ignore
         return false;
@@ -276,18 +304,16 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean clearErrorDialogs() throws DeviceNotAvailableException {
         // ignore
         return false;
     }
 
-    public void preBootSetup() {
-       // ignore
-    }
-
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceNotAvailable(long waitTime) {
         // ignore
         return false;
@@ -296,6 +322,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String installPackage(File packageFile, boolean reinstall)
             throws DeviceNotAvailableException {
         // ignore
@@ -305,6 +332,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String uninstallPackage(String packageName) throws DeviceNotAvailableException {
         // ignore
         return null;
@@ -313,6 +341,7 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getMountPoint(String mountName) {
         return null;
     }
@@ -320,13 +349,15 @@ public class StubTestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public String getBugreport() {
+    @Override
+    public InputStreamSource getBugreport() {
         return null;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setRecovery(IDeviceRecovery recovery) {
         // ignore
     }

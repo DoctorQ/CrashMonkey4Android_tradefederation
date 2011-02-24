@@ -19,6 +19,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
@@ -184,10 +185,10 @@ public class LogRegistry implements ILogOutput {
      * @param filePrefix the file name prefix
      * @param logData the textual log data
      */
-    private void saveLog(String filePrefix, InputStream logData) {
+    private void saveLog(String filePrefix, InputStreamSource logData) {
         try {
             File tradefedLog = FileUtil.createTempFile(filePrefix, ".txt");
-            FileUtil.writeToFile(logData, tradefedLog);
+            FileUtil.writeToFile(logData.createInputStream(), tradefedLog);
             System.out.println(String.format("Saved log to %s", tradefedLog.getAbsolutePath()));
         } catch (IOException e) {
             // ignore
