@@ -66,8 +66,14 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
             description = "Restrict tests to a specific test size")
     private String mTestSize = null;
 
+    @Option(name = "rerun",
+            description = "Rerun unexecuted tests individually on same device if test run " +
+            "fails to complete. Default true")
+    private boolean mIsRerunMode = true;
+
     @Option(name = "resume",
-            description = "Rerun non-executed tests individually if test run fails to complete. Default true")
+            description = "Schedule unexecuted tests for resumption on another device " +
+            "if first device becomes unavailable. Default true")
     private boolean mIsResumeMode = true;
 
     @Option(name = "local-file-path",
@@ -198,7 +204,8 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
                     if (def.getClassName() != null) {
                         test.setClassName(def.getClassName());
                     }
-                    test.setRerunMode(mIsResumeMode);
+                    test.setRerunMode(mIsRerunMode);
+                    test.setResumeMode(mIsResumeMode);
                     test.setTestSize(getTestSize());
                     test.setTestTimeout(getTestTimeout());
                     test.setCoverageTarget(def.getCoverageTarget());
@@ -318,6 +325,11 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
      */
     @Override
     public boolean isResumable() {
+        // hack to not resume if tests were never run
+        // TODO: fix this properly in TestInvocation
+        if (mTests == null) {
+            return false;
+        }
         return mIsResumeMode;
     }
 
