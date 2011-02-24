@@ -38,11 +38,13 @@ public class FileUtil {
 
     private static final String LOG_TAG = "FileUtil";
     /**
-     * The minimum allowed disk space in bytes. File creation methods will throw
+     * The minimum allowed disk space in megabytes. File creation methods will throw
      * {@link LowDiskSpaceException} if the usable disk space in desired partition is less than
      * this amount.
      */
-    private static final long MIN_DISK_SPACE = 100 * 1024 * 1024;
+    private static final long MIN_DISK_SPACE_MB = 100;
+    /** The min disk space in bytes */
+    private static final long MIN_DISK_SPACE = MIN_DISK_SPACE_MB * 1024 * 1024;
 
     /**
      * Thrown if usable disk space is below minimum threshold.
@@ -229,8 +231,8 @@ public class FileUtil {
         // created
         if (file.getUsableSpace() < MIN_DISK_SPACE) {
             throw new LowDiskSpaceException(String.format(
-                    "Available space on %s is less than %s bytes", file.getAbsolutePath(),
-                    MIN_DISK_SPACE));
+                    "Available space on %s is less than %s MB", file.getAbsolutePath(),
+                    MIN_DISK_SPACE_MB));
         }
     }
 
@@ -358,6 +360,4 @@ public class FileUtil {
         File tmpFile =  FileUtil.createTempFile(prefix + "_", fileExt, parentDir);
         return tmpFile;
     }
-
-
 }
