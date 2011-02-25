@@ -53,4 +53,9 @@ public interface IAndroidDebugBridge {
      */
     void terminate();
 
+    /**
+     * Wrapper for {@link AndroidDebugBridge#disconnectBridge()}
+     */
+    void disconnectBridge();
+
 }

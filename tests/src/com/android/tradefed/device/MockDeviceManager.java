@@ -130,4 +130,11 @@ public class MockDeviceManager implements IDeviceManager {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void terminateHard() {
+        // ignore
+    }
 }
