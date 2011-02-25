@@ -59,18 +59,20 @@ public class DeviceManager implements IDeviceManager {
 
     private static DeviceManager sInstance;
 
+    private boolean mIsInitialized = false;
     /** A thread-safe map that tracks the devices currently allocated for testing.*/
     private Map<String, IManagedTestDevice> mAllocatedDeviceMap;
     /** A FIFO, thread-safe queue for holding devices visible on adb available for testing */
     private ConditionPriorityBlockingQueue<IDevice> mAvailableDeviceQueue;
     private IAndroidDebugBridge mAdbBridge;
-    private final ManagedDeviceListener mManagedDeviceListener;
-    private final boolean mFastbootEnabled;
-    private final Set<IFastbootListener> mFastbootListeners;
-    private final FastbootMonitor mFastbootMonitor;
+    private ManagedDeviceListener mManagedDeviceListener;
+    private boolean mFastbootEnabled;
+    private Set<IFastbootListener> mFastbootListeners;
+    private FastbootMonitor mFastbootMonitor;
     private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
     private boolean mEnableLogcat = true;
     private boolean mIsTerminated = false;
+    private DeviceMatcher mGlobalDeviceFilter;
 
     private static class DeviceMatcher implements IMatcher<IDevice> {
 
@@ -94,6 +96,23 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager() {
+    }
+
+    public void init() {
+        init(ANY_DEVICE_OPTIONS);
+    }
+
+    /**
+     * Initialize the device manager. This must be called once and only once before any other
+     * methods are called.
+     */
+    @Override
+    public synchronized void init(IDeviceSelectionOptions globalDeviceFilter) {
+        if (mIsInitialized) {
+            throw new IllegalStateException("already initialized");
+        }
+        mIsInitialized = true;
+        mGlobalDeviceFilter = new DeviceMatcher(globalDeviceFilter);
         // use Hashtable since it is synchronized
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
@@ -126,6 +145,12 @@ public class DeviceManager implements IDeviceManager {
         }
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
+    }
+
+    private void checkInit() {
+        if (!mIsInitialized) {
+            throw new IllegalStateException("DeviceManager has not been initialized");
+        }
     }
 
     /**
@@ -171,6 +196,11 @@ public class DeviceManager implements IDeviceManager {
         if (mCheckDeviceMap.containsKey(device.getSerialNumber())) {
             // device already being checked, ignore
             Log.d(LOG_TAG, String.format("Already checking new device %s, ignoring",
+                    device.getSerialNumber()));
+            return;
+        }
+        if (!mGlobalDeviceFilter.matches(device)) {
+            Log.v(LOG_TAG, String.format("New device %s doesn't match global filter, ignoring",
                     device.getSerialNumber()));
             return;
         }
@@ -232,7 +262,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice() {
+        checkInit();
         IDevice allocatedDevice = takeAvailableDevice();
         if (allocatedDevice == null) {
             return null;
@@ -258,7 +290,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice(long timeout) {
+        checkInit();
         IDevice allocatedDevice = pollAvailableDevice(timeout, ANY_DEVICE_OPTIONS);
         if (allocatedDevice == null) {
             return null;
@@ -269,7 +303,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
+        checkInit();
         IDevice allocatedDevice = pollAvailableDevice(timeout, options);
         if (allocatedDevice == null) {
             return null;
@@ -335,7 +371,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void freeDevice(ITestDevice device, FreeDeviceState deviceState) {
+        checkInit();
         if (device instanceof IManagedTestDevice) {
             final IManagedTestDevice managedDevice = (IManagedTestDevice)device;
             managedDevice.stopLogcat();
@@ -360,7 +398,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void terminate() {
+        checkInit();
         if (!mIsTerminated ) {
             mIsTerminated = true;
             mAdbBridge.removeDeviceChangeListener(mManagedDeviceListener);
@@ -373,6 +413,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public synchronized void terminateHard() {
+        checkInit();
         if (!mIsTerminated ) {
             for (IManagedTestDevice device : mAllocatedDeviceMap.values()) {
                 device.setRecovery(new AbortRecovery());
@@ -405,7 +446,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getAllocatedDevices() {
+        checkInit();
         Collection<String> allocatedDeviceSerials = new ArrayList<String>(
                 mAllocatedDeviceMap.size());
         allocatedDeviceSerials.addAll(mAllocatedDeviceMap.keySet());
@@ -415,7 +458,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getAvailableDevices() {
+        checkInit();
         Collection<String> availableDeviceSerials = new ArrayList<String>(
                 mAvailableDeviceQueue.size());
         synchronized (mAvailableDeviceQueue) {
@@ -430,7 +475,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getUnavailableDevices() {
+        checkInit();
         IDevice[] visibleDevices = mAdbBridge.getDevices();
         Collection<String> unavailableSerials = new ArrayList<String>(
                 visibleDevices.length);
@@ -519,7 +566,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addFastbootListener(IFastbootListener listener) {
+        checkInit();
         if (mFastbootEnabled) {
             mFastbootListeners.add(listener);
         }
@@ -528,7 +577,9 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void removeFastbootListener(IFastbootListener listener) {
+        checkInit();
         if (mFastbootEnabled) {
             mFastbootListeners.remove(listener);
         }

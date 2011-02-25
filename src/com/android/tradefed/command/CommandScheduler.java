@@ -367,6 +367,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     public void run() {
         mConfigTimer = new Timer("config timer");
         IDeviceManager manager = getDeviceManager();
+        manager.init();
         while (!isShutdown()) {
             Log.d(LOG_TAG, "Waiting for device to test");
             // Spawn off a thread for each allocated device.

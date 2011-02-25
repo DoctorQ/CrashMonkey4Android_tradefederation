@@ -40,6 +40,18 @@ public interface IDeviceManager {
     }
 
     /**
+     * Initialize the device manager. This must be called once and only once before any other
+     * methods are called.
+     */
+    public void init();
+
+    /**
+     * Initialize the device manager with a device filter. This filter can be used to instruct
+     * the DeviceManager to ignore certain connected devices.
+     */
+    public void init(IDeviceSelectionOptions globalDeviceFilter);
+
+    /**
      * Request a device for testing, waiting indefinitely until one becomes available.
      *
      * @return a {@link ITestDevice} for testing, or <code>null</code> if interrupted

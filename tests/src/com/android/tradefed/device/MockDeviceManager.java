@@ -137,4 +137,17 @@ public class MockDeviceManager implements IDeviceManager {
     public void terminateHard() {
         // ignore
     }
+
+    @Override
+    public void init() {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void init(IDeviceSelectionOptions globalDeviceFilter) {
+        // ignore
+    }
 }

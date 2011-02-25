@@ -89,6 +89,12 @@ public class DeviceManagerTest extends TestCase {
     }
 
     private DeviceManager createDeviceManager() {
+        DeviceManager mgr = createDeviceManagerNoInit();
+        mgr.init();
+        return mgr;
+    }
+
+    private DeviceManager createDeviceManagerNoInit() {
         DeviceManager mgr = new DeviceManager() {
 
 
@@ -305,6 +311,54 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManager();
         mDeviceListener.deviceChanged(mMockIDevice, IDevice.CHANGE_STATE);
         assertNotNull(manager.allocateDevice());
+    }
+
+    /**
+     * Test {@link DeviceManager#allocateDevice()} when {@link DeviceManager#init()} has not
+     * been called.
+     */
+    public void testAllocateDevice_noInit() throws DeviceNotAvailableException {
+        try {
+            createDeviceManagerNoInit().allocateDevice();
+            fail("IllegalStateException not thrown when manager has not been initialized");
+        } catch (IllegalStateException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link DeviceManager#init(IDeviceSelectionOptions)} with a global exclusion filter
+     */
+    public void testInit_excludeDevice() throws DeviceNotAvailableException {
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mMockIDevice});
+        EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
+        replayMocks();
+        DeviceManager manager = createDeviceManagerNoInit();
+        DeviceSelectionOptions excludeFilter = new DeviceSelectionOptions();
+        excludeFilter.addExcludeSerial(mMockIDevice.getSerialNumber());
+        manager.init(excludeFilter);
+        assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
+    }
+
+    /**
+     * Test {@link DeviceManager#init(IDeviceSelectionOptions)} with a global inclusion filter
+     */
+    public void testInit_includeDevice() throws DeviceNotAvailableException {
+        IDevice excludedDevice = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(excludedDevice.getSerialNumber()).andStubReturn("excluded");
+        EasyMock.expect(excludedDevice.getState()).andStubReturn(DeviceState.ONLINE);
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {mMockIDevice,
+                excludedDevice});
+        setCheckAvailableDeviceExpectations();
+        replayMocks(excludedDevice);
+        DeviceManager manager = createDeviceManagerNoInit();
+        DeviceSelectionOptions includeFilter = new DeviceSelectionOptions();
+        includeFilter.addSerial(mMockIDevice.getSerialNumber());
+        manager.init(includeFilter);
+        assertEquals(mMockTestDevice, manager.allocateDevice());
+        // ensure excludedDevice cannot be allocated
+        assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
+        EasyMock.verify(mMockMonitor);
     }
 
     /**
