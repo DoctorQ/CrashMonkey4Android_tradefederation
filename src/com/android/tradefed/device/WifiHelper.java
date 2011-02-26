@@ -295,7 +295,7 @@ class WifiHelper {
      *         otherwise
      * @throws DeviceNotAvailableException
      */
-    boolean waitForDhcp(long timeout) throws DeviceNotAvailableException {
+    boolean waitForIp(long timeout) throws DeviceNotAvailableException {
         Map<String, String> statusMap = getWifiStatus();
         if (statusMap == null ) {
             return false;
@@ -307,14 +307,28 @@ class WifiHelper {
         long startTime = System.currentTimeMillis();
 
         while (System.currentTimeMillis() < (startTime + timeout)) {
-            DhcpOutput output = new DhcpOutput(interfaceName);
-            mDevice.executeShellCommand("netcfg", output);
-            if (output.mDhcpSuccess) {
+            if (getIpAddress(interfaceName) != null) {
                 return true;
             }
             getRunUtil().sleep(getPollTime());
         }
         return false;
+    }
+
+    /**
+     * Returns the IP address.
+     *
+     * @param interfaceName the interface name to look for. Provide <code>null</code> to return IP
+     * address of any active interface.
+     *
+     * @return the IP address in {@link String} form, or <code>null</code> if device does not have
+     * a valid IP address.
+     * @throws DeviceNotAvailableException
+     */
+    public String getIpAddress(String interfaceName) throws DeviceNotAvailableException {
+        NetCfgOutputParser output = new NetCfgOutputParser(interfaceName);
+        mDevice.executeShellCommand("netcfg", output);
+        return output.mIpAddress;
     }
 
     /**
@@ -433,15 +447,19 @@ class WifiHelper {
     /**
      * Process the output of a 'netcfg' command.
      * <p/>
-     * Looks for valid IP being assigned to a given network interface. 'Valid' is interpreted as
-     * != "0.0.0.0".
+     * Looks for valid IP being assigned to a given network interface. 'Valid' is interpreted as:
+     * <ul>
+     * <li>IP != "0.0.0.0"</li>
+     * <li>status == "UP"</li>
+     * <li>interface name != "lo"</li>
+     * </ul>
      */
-    private static class DhcpOutput extends MultiLineReceiver {
+    private static class NetCfgOutputParser extends MultiLineReceiver {
 
-        boolean mDhcpSuccess = false;
+        String mIpAddress = null;
         final String mInterfaceName;
 
-        DhcpOutput(String interfaceName) {
+        NetCfgOutputParser(String interfaceName) {
             mInterfaceName = interfaceName;
         }
 
@@ -451,12 +469,16 @@ class WifiHelper {
         @Override
         public void processNewLines(String[] lines) {
             for (String line : lines) {
-                if (line.contains(mInterfaceName)) {
-                    String[] fields = line.split("\\s+");
-                    if (fields.length >= 2 && fields[1].equals("UP") &&
-                            !fields[2].equals("0.0.0.0")) {
-                        mDhcpSuccess = true;
-                    }
+                String[] fields = line.split("\\s+");
+                // expect space delimited output in form of
+                // interfaceName status ipAddress
+                if (fields.length >= 2 &&
+                    !fields[0].equals("lo") &&
+                    (mInterfaceName == null || fields[0].equals(mInterfaceName)) &&
+                    fields[1].equals("UP") &&
+                    !fields[2].equals("0.0.0.0")) {
+
+                    mIpAddress = fields[2];
                     break;
                 }
             }
@@ -466,7 +488,7 @@ class WifiHelper {
          * {@inheritDoc}
          */
         public boolean isCancelled() {
-            return false ;
+            return false;
         }
     }
 }

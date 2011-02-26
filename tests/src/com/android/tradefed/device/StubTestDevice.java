@@ -372,4 +372,13 @@ public class StubTestDevice implements IManagedTestDevice {
     public int getBuildId() {
         return -1;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getIpAddress() throws DeviceNotAvailableException {
+        // ignore
+        return null;
+    }
 }

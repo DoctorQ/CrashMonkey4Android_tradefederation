@@ -30,6 +30,11 @@ public class WifiHelperTest extends TestCase {
     private ITestDevice mMockDevice;
     private WifiHelper mWifi;
 
+    private static final String NETCFG_WIFI_RESPONSE =
+        "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
+        "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
+        "eth0     UP    192.168.1.1 255.255.254.0   0x00001043\r\n";
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -43,33 +48,51 @@ public class WifiHelperTest extends TestCase {
     }
 
     /**
-     * Test {@link WifiHelper#waitForDhcp(long)} success case.
+     * Test {@link WifiHelper#waitForIp(long)} success case
      */
-    public void testWaitForDhcp() throws DeviceNotAvailableException {
+    public void testWaitForIp() throws DeviceNotAvailableException {
         // expect a wifi status query followed by a 'netcfg' query
         injectStatusResult(WifiState.COMPLETED);
-        final String dhcpResponse =
-            "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
-            "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
-            "eth0     UP    192.168.1.1 255.255.254.0   0x00001043\r\n";
-        injectShellResponse(dhcpResponse);
+        injectShellResponse(NETCFG_WIFI_RESPONSE);
         EasyMock.replay(mMockDevice);
-        assertTrue(mWifi.waitForDhcp(1));
+        assertTrue(mWifi.waitForIp(1));
     }
 
     /**
-     * Test {@link WifiHelper#waitForDhcp(long)} when ip is not assigned.
+     * Test {@link WifiHelper#getIpAddress(String)} for any interface
      */
-    public void testWaitForDhcp_failed() throws DeviceNotAvailableException {
-        // expect a wifi status query followed by a 'netcfg' query
-        injectStatusResult(WifiState.COMPLETED);
-        final String dhcpResponse =
+    public void testGetIpAddress_interface() throws DeviceNotAvailableException {
+        injectShellResponse(NETCFG_WIFI_RESPONSE);
+        EasyMock.replay(mMockDevice);
+        assertEquals("192.168.1.1", mWifi.getIpAddress(null));
+    }
+
+    /**
+     * Test {@link WifiHelper#getIpAddress(String)} when ip is not assigned.
+     */
+    public void testGetIpAddress_failed() throws DeviceNotAvailableException {
+        final String netcfgResponse =
             "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
             "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
             "eth0     UP    0.0.0.0 255.255.254.0   0x00001043\r\n";
-        injectShellResponse(dhcpResponse);
+        injectShellResponse(netcfgResponse);
         EasyMock.replay(mMockDevice);
-        assertFalse(mWifi.waitForDhcp(1));
+        assertNull(mWifi.getIpAddress(null));
+    }
+
+    /**
+     * Test {@link WifiHelper#getIpAddress(String)} when a specific interface is requested, that
+     * does not have an ip.
+     */
+    public void testGetIpAddress_diffInterface() throws DeviceNotAvailableException {
+        final String netcfgResponse =
+            "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
+            "rmnet0   UP    192.168.1.1     255.255.255.0   0x000010d1\r\n" +
+            "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
+            "eth0     UP    0.0.0.0 255.255.254.0   0x00001043\r\n";
+        injectShellResponse(netcfgResponse);
+        EasyMock.replay(mMockDevice);
+        assertNull(mWifi.getIpAddress("eth0"));
     }
 
     /**
