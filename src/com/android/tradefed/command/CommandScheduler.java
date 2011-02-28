@@ -27,9 +27,9 @@ import com.android.tradefed.device.DeviceSelectionMatcher;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.device.IDeviceSelectionOptions;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
@@ -545,7 +545,16 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
     }
 
-    // Implementations of the optional managment interfaces
+    /**
+     * {@inheritDoc}
+     */
+    public synchronized void shutdownHard() {
+        shutdown();
+        Log.logAndDisplay(LogLevel.WARN, LOG_TAG, "Force killing adb connection");
+        getDeviceManager().terminateHard();
+    }
+
+    // Implementations of the optional management interfaces
     /**
      * {@inheritDoc}
      */

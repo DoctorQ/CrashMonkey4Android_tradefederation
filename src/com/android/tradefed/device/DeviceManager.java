@@ -49,10 +49,10 @@ public class DeviceManager implements IDeviceManager {
     /** max wait time in ms for fastboot devices command to complete */
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
-    private static final long FASTBOOT_POLL_WAIT_TIME = 5*1000;
+    private static final long FASTBOOT_POLL_WAIT_TIME = 5 * 1000;
     /** time to monitor device adb connection before declaring it available for testing */
     // TODO: 5 seconds is a bit annoyingly long. Try to reduce in future
-    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 5*1000;
+    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 5 * 1000;
 
     /** a {@link DeviceSelectionOptions} that matches any device */
     private static final IDeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
@@ -69,9 +69,8 @@ public class DeviceManager implements IDeviceManager {
     private final Set<IFastbootListener> mFastbootListeners;
     private final FastbootMonitor mFastbootMonitor;
     private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
-
     private boolean mEnableLogcat = true;
-
+    private boolean mIsTerminated = false;
 
     private static class DeviceMatcher implements IMatcher<IDevice> {
 
@@ -362,9 +361,45 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public void terminate() {
-        mAdbBridge.removeDeviceChangeListener(mManagedDeviceListener);
-        mAdbBridge.terminate();
-        mFastbootMonitor.terminate();
+        if (!mIsTerminated ) {
+            mIsTerminated = true;
+            mAdbBridge.removeDeviceChangeListener(mManagedDeviceListener);
+            mAdbBridge.terminate();
+            mFastbootMonitor.terminate();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public synchronized void terminateHard() {
+        if (!mIsTerminated ) {
+            for (IManagedTestDevice device : mAllocatedDeviceMap.values()) {
+                device.setRecovery(new AbortRecovery());
+            }
+            mAdbBridge.disconnectBridge();
+            terminate();
+        }
+    }
+
+    private static class AbortRecovery implements IDeviceRecovery {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void recoverDevice(IDeviceStateMonitor monitor) throws DeviceNotAvailableException {
+            throw new DeviceNotAvailableException("aborted test session");
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
+                throws DeviceNotAvailableException {
+            throw new DeviceNotAvailableException("aborted test session");
+        }
     }
 
     /**
@@ -516,7 +551,7 @@ public class DeviceManager implements IDeviceManager {
         public void run() {
             while (!mQuit) {
                 // only poll fastboot devices if there are listeners, as polling it
-                // indiscriminiately can cause fastboot commands to hang
+                // indiscriminately can cause fastboot commands to hang
                 if (!mFastbootListeners.isEmpty()) {
                     CommandResult fastbootResult = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT,
                             "fastboot", "devices");

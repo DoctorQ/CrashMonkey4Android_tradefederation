@@ -71,4 +71,12 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     public void terminate() {
         AndroidDebugBridge.terminate();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void disconnectBridge() {
+        AndroidDebugBridge.disconnectBridge();
+    }
 }

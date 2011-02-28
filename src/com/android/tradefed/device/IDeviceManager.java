@@ -77,11 +77,18 @@ public interface IDeviceManager {
     public void freeDevice(ITestDevice device, FreeDeviceState state);
 
     /**
-     * Terminates the ddm library. This must be called upon application termination.
+     * Stops device monitoring services, and terminates the ddm library.
+     * <p/>
+     * This must be called upon application termination.
      *
      * @see AndroidDebugBridge#terminate()
      */
     public void terminate();
+
+    /**
+     * Like {@link #terminate()}, but attempts to forcefully shut down adb as well.
+     */
+    public void terminateHard();
 
     /**
      * Diagnostic method that returns a list of the devices available for allocation.

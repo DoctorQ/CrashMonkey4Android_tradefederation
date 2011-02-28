@@ -61,6 +61,7 @@ public class Console {
     protected final static String LIST_PATTERN = "l(?:ist)?";
     protected final static String DUMP_PATTERN = "d(?:ump)?";
     protected final static String RUN_PATTERN = "r(?:un)?";
+    protected static final String EXIT_PATTERN = "(?:q|exit)";
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
@@ -81,6 +82,7 @@ public class Console {
     protected ICommandScheduler mScheduler;
     protected java.io.Console mTerminal;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
+    private boolean mShouldExit = false;
 
     /** A convenience type for List<List<String>> */
     @SuppressWarnings("serial")
@@ -110,9 +112,23 @@ public class Console {
      * This is a sentinel class that will cause TF to shut down.  This enables a user to get TF to
      * shut down via the RegexTrie input handling mechanism.
      */
-    private static class QuitRunnable implements Runnable {
+    private class QuitRunnable implements Runnable {
         @Override
-        public void run() {}
+        public void run() {
+            mShouldExit = true;
+        }
+    }
+
+    /**
+     * Like {@link QuitRunnable}, but attempts to harshly shut down current invocations by
+     * killing the adb connection
+     */
+    private class ForceQuitRunnable extends QuitRunnable {
+        @Override
+        public void run() {
+            super.run();
+            mScheduler.shutdownHard();
+        }
     }
 
     protected Console() {
@@ -237,6 +253,7 @@ public class Console {
 
         // Help commands
         genericHelp.add("Enter 'q' or 'exit' to exit");
+        genericHelp.add("Enter 'kill' to attempt to forcibly exit, by shutting down adb");
         genericHelp.add("Enter 'help list' for help with 'list' commands");
         genericHelp.add("Enter 'help run'  for help with 'run' commands");
         genericHelp.add("Enter 'help dump' for help with 'dump' commands");
@@ -263,7 +280,8 @@ public class Console {
                 RUN_PATTERN));
 
         // Handle quit commands
-        trie.put(new QuitRunnable(), "(?:q|exit)");
+        trie.put(new QuitRunnable(), EXIT_PATTERN);
+        trie.put(new ForceQuitRunnable(), "kill");
 
         // List commands
         trie.put(new Runnable() {
@@ -420,11 +438,10 @@ public class Console {
             }
 
             String input = "";
-            boolean shouldExit = false;
             CaptureList groups = new CaptureList();
             String[] tokens;
 
-            while (!shouldExit) {
+            while (!mShouldExit) {
                 if (arrrgs.isEmpty()) {
                     input = getConsoleInput();
 
@@ -432,7 +449,7 @@ public class Console {
                         // Usually the result of getting EOF on the console
                         printLine("");
                         printLine("Received EOF; quitting...");
-                        shouldExit = true;
+                        mShouldExit = true;
                         break;
                     }
 
@@ -458,17 +475,14 @@ public class Console {
                 // TODO: interfaces
                 Runnable command = mCommandTrie.retrieve(groups, tokens);
                 if (command != null) {
-                    if (command instanceof QuitRunnable) {
-                        // shut down
-                        shouldExit = true;
-                        continue;
-                    } else if (command instanceof ArgRunnable) {
+                    if (command instanceof ArgRunnable) {
                         // FIXME: verify that command implements ArgRunnable<CaptureList> instead
                         // FIXME: of just ArgRunnable
                         ((ArgRunnable<CaptureList>)command).run(groups);
                     } else {
                         command.run();
                     }
+
                 } else {
                     printLine(String.format(
                             "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));
@@ -484,7 +498,7 @@ public class Console {
                     } catch (InterruptedException e) {
                         // ignore
                     }
-                    shouldExit = true;
+                    mShouldExit = true;
                 }
 
                 Thread.sleep(100);

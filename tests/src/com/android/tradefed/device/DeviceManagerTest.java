@@ -75,6 +75,9 @@ public class DeviceManagerTest extends TestCase {
             public void terminate() {
             }
 
+            @Override
+            public void disconnectBridge() {
+            }
         });
         mMockIDevice = EasyMock.createMock(IDevice.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
