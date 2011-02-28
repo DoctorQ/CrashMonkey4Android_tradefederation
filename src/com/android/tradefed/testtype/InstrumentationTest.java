@@ -72,8 +72,14 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     private String mTestSize = null;
 
     @Option(name = "rerun",
-            description="Rerun non-executed tests individually if test run fails to complete")
+            description = "Rerun unexecuted tests individually on same device if test run " +
+            "fails to complete. Default true")
     private boolean mIsRerunMode = true;
+
+    @Option(name = "resume",
+            description = "Schedule unexecuted tests for resumption on another device " +
+            "if first device becomes unavailable. Default true")
+    private boolean mIsResumeMode = true;
 
     @Option(name = "log-delay",
             description="Delay in msec between each test when collecting test information")
@@ -204,8 +210,12 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     @Override
     public boolean isResumable() {
-        // TODO: should rerun mode and resume mode be separated?
-        return mIsRerunMode;
+        // hack to not resume if tests were never run
+        // TODO: fix this properly in TestInvocation
+        if (mRemainingTests == null) {
+            return false;
+        }
+        return mIsResumeMode;
     }
 
     /**
@@ -213,6 +223,13 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     public void setRerunMode(boolean rerun) {
         mIsRerunMode = rerun;
+    }
+
+    /**
+     * Optionally, set the resume mode.
+     */
+    public void setResumeMode(boolean resume) {
+        mIsResumeMode = resume;
     }
 
     /**
