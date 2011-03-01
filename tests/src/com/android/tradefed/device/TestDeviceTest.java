@@ -178,10 +178,31 @@ public class TestDeviceTest extends TestCase {
                         (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
                         (String)EasyMock.anyObject(), (String)EasyMock.anyObject())).andReturn(
                 fastbootResult);
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRunUtil);
+        EasyMock.replay(mMockIDevice, mMockRunUtil);
         mRecoveryTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
         assertEquals("nexusone", mRecoveryTestDevice.getProductType());
+    }
+
+    /**
+     * Test {@link TestDevice#getProductType()} for a device with a non-alphanumeric fastboot
+     * product type
+     */
+    public void testGetProductType_fastbootNonalpha() throws DeviceNotAvailableException {
+        mMockIDevice.getProperty((String)EasyMock.anyObject());
+        EasyMock.expectLastCall().andReturn((String)null);
+        CommandResult fastbootResult = new CommandResult();
+        fastbootResult.setStatus(CommandStatus.SUCCESS);
+        // output of this cmd goes to stderr
+        fastbootResult.setStdout("");
+        fastbootResult.setStderr("product: foo-bar\n" + "finished. total time: 0.001s");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
+                        (String)EasyMock.anyObject(), (String)EasyMock.anyObject())).andReturn(
+                fastbootResult);
+        EasyMock.replay(mMockIDevice, mMockRunUtil);
+        mRecoveryTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        assertEquals("foo-bar", mRecoveryTestDevice.getProductType());
     }
 
     /**

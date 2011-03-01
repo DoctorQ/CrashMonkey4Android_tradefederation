@@ -283,9 +283,10 @@ class TestDevice implements IManagedTestDevice {
 
     private String getFastbootProduct()
             throws DeviceNotAvailableException, UnsupportedOperationException {
+        // TODO: extract this into a common getFastbootVariable() method
         CommandResult result = executeFastbootCommand("getvar", "product");
         if (result.getStatus() == CommandStatus.SUCCESS) {
-            Pattern fastbootProductPattern = Pattern.compile("product:[ ]+(\\w+)");
+            Pattern fastbootProductPattern = Pattern.compile("product:\\s(.*)\\s");
             // fastboot is weird, and may dump the output on stderr instead of stdout
             String resultText = result.getStdout();
             if (resultText == null || resultText.length() < 1) {
