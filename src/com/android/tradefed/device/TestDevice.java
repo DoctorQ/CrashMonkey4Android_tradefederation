@@ -1372,7 +1372,7 @@ class TestDevice implements IManagedTestDevice {
             return false;
         }
         // TODO: make timeout configurable
-        if (!wifi.waitForDhcp(30 * 1000)) {
+        if (!wifi.waitForIp(30 * 1000)) {
             Log.e(LOG_TAG, String.format("dhcp timeout when connecting to wifi network %s on %s",
                     wifiSsid, getSerialNumber()));
             return false;
@@ -1398,6 +1398,15 @@ class TestDevice implements IManagedTestDevice {
         wifi.removeAllNetworks();
         wifi.disableWifi();
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getIpAddress() throws DeviceNotAvailableException {
+        WifiHelper wifi = new WifiHelper(this);
+        return wifi.getIpAddress(null);
     }
 
     /**

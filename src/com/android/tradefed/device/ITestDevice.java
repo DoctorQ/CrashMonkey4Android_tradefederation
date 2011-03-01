@@ -372,6 +372,15 @@ public interface ITestDevice {
     public boolean disconnectFromWifi() throws DeviceNotAvailableException;
 
     /**
+     * Gets the device's IP address.
+     *
+     * @return the device's IP address, or <code>null</code> if device has no IP address
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String getIpAddress() throws DeviceNotAvailableException;
+
+    /**
      * Attempt to dismiss any error dialogs currently displayed on device UI.
      *
      * @return <code>true</code> if no dialogs were present or dialogs were successfully cleared.
