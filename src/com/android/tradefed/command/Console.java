@@ -62,6 +62,7 @@ public class Console {
     protected final static String DUMP_PATTERN = "d(?:ump)?";
     protected final static String RUN_PATTERN = "r(?:un)?";
     protected static final String EXIT_PATTERN = "(?:q|exit)";
+    protected final static String SET_PATTERN = "s(?:et)?";
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
@@ -257,6 +258,7 @@ public class Console {
         genericHelp.add("Enter 'help list' for help with 'list' commands");
         genericHelp.add("Enter 'help run'  for help with 'run' commands");
         genericHelp.add("Enter 'help dump' for help with 'dump' commands");
+        genericHelp.add("Enter 'help set'  for help with 'set' commands");
 
         commandHelp.put(LIST_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
@@ -278,6 +280,12 @@ public class Console {
                 "\tsingleCommand [options] <config>  Run the specified command, and run 'exit' " +
                         "immediately afterward" + LINE_SEPARATOR,
                 RUN_PATTERN));
+
+        commandHelp.put(SET_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\tlog-level-display <level>     Sets the global display log level to <level>" +
+                LINE_SEPARATOR,
+                SET_PATTERN));
 
         // Handle quit commands
         trie.put(new QuitRunnable(), EXIT_PATTERN);
@@ -371,6 +379,33 @@ public class Console {
         // Missing required argument: show help
         // FIXME: fix this functionality
         //trie.put(runHelpRun, runPattern, "cmdfile");
+
+        // Set commands
+        ArgRunnable<CaptureList> runSetLog = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                // Skip 2 tokens to get past "set" and "log-level-display"
+                String logLevel = args.get(2).get(0);
+                String currentLogLevel = LogRegistry.getLogRegistry().getGlobalLogDisplayLevel();
+                if (LogLevel.getByString(logLevel) != null) {
+                    LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(logLevel);
+                    // Make sure that the level was set.
+                    currentLogLevel = LogRegistry.getLogRegistry().getGlobalLogDisplayLevel();
+                    if (currentLogLevel != null) {
+                        printLine(String.format("Current logging set to '%s'.", currentLogLevel));
+                    }
+                } else {
+                    if (currentLogLevel == null) {
+                        printLine(String.format("Invalid log level '%s'.", logLevel));
+                    } else{
+                        printLine(String.format(
+                                "Invalid log level '%s'; log level remains at '%s'.",
+                                logLevel, currentLogLevel));
+                    }
+                }
+            }
+        };
+        trie.put(runSetLog, SET_PATTERN, "log-level-display", "(.*)");
     }
 
     /**

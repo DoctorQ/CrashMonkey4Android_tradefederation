@@ -64,12 +64,12 @@ public class FileLogger implements ILeveledLogOutput {
     }
 
     /**
-     * Sets the log level filtering.
+     * Gets the log level filtering for stdout.
      *
-     * @param logLevel the {@link LogLevel#getStringValue()} log level to display
+     * @return the {@link String} form of the {@link LogLevel}
      */
-    void setLogLevel(String logLevel) {
-        mLogLevel = logLevel;
+    String getLogLevelDisplay() {
+        return mLogLevelStringDisplay;
     }
 
     /**
@@ -121,6 +121,7 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
         printLog(logLevel, tag, message);
         Log.printLog(logLevel, tag, message);
@@ -129,6 +130,7 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printLog(LogLevel logLevel, String tag, String message) {
         String outMessage = Log.getLogFormatString(logLevel, tag, message);
         LogLevel displayLevel = LogLevel.getByString(mLogLevelStringDisplay);
@@ -160,8 +162,17 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getLogLevel() {
         return mLogLevel;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setLogLevel(String logLevel) {
+        mLogLevel = logLevel;
     }
 
     /**
@@ -193,6 +204,7 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void closeLog() {
         try {
             doCloseLog();

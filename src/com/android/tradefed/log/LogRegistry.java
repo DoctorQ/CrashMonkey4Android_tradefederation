@@ -24,7 +24,6 @@ import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -88,6 +87,15 @@ public class LogRegistry implements ILogOutput {
      */
     public void setGlobalLogTagDisplay(Collection<String> logTagsDisplay) {
         mGlobalLogger.addLogTagsDisplay(logTagsDisplay);
+    }
+
+    /**
+    * Returns current log level display for the global log
+    *
+    * @return logLevel the {@link String} form of the {@link LogLevel} to use
+    */
+    public String getGlobalLogDisplayLevel() {
+        return mGlobalLogger.getLogLevelDisplay();
     }
 
     /**

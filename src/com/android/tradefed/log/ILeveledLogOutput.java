@@ -35,9 +35,16 @@ public interface ILeveledLogOutput extends ILogOutput {
     public String getLogLevel();
 
     /**
+     * Sets the minimum log level to display.
+     *
+     * @param logLevel to display; must be recognized by {@link LogLevel#getStringValue()}
+     */
+    public void setLogLevel(String logLevel);
+
+    /**
      * Grabs a snapshot stream of the log data.
      * <p/>
-     * Must not be called after {@link closeLog}.
+     * Must not be called after {@link ILeveledLogOutput#closeLog()}.
      * <p/>
      * The returned stream is not guaranteed to have optimal performance. Callers may wish to
      * wrap result in a {@link BufferedInputStream}.
@@ -53,8 +60,7 @@ public interface ILeveledLogOutput extends ILogOutput {
     public void closeLog();
 
     /**
-     * @return
+     * @return a {@link ILeveledLogOutput}
      */
     public ILeveledLogOutput clone();
-
 }

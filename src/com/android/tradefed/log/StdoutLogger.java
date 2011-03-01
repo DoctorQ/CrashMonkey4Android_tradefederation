@@ -49,6 +49,13 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    public void setLogLevel(String logLevel) {
+        mLogLevel = logLevel;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String getLogLevel() {
         return mLogLevel;
     }
