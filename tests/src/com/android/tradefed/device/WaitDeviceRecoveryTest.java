@@ -93,14 +93,15 @@ public class WaitDeviceRecoveryTest extends TestCase {
      * Test {@link WaitDeviceRecovery#recoverDevice(IDeviceStateMonitor)} when device is not
      * responsive.
      */
-    public void testRecoverDevice_unresponsive() throws DeviceNotAvailableException {
+    public void testRecoverDevice_unresponsive() throws Exception {
         // expect initial sleep
         mMockRunUtil.sleep(EasyMock.anyLong());
         mMockMonitor.waitForDeviceBootloaderStateUpdate();
         EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE);
-        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
-        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
-                null);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice).anyTimes();
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong()))
+                .andReturn(null).anyTimes();
+        mMockDevice.reboot((String)EasyMock.isNull());
         replayMocks();
         try {
             mRecovery.recoverDevice(mMockMonitor);
