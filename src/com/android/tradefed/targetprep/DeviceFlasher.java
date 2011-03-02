@@ -120,11 +120,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
             throw new DeviceNotAvailableException(String.format(
                     "Could not determine product type for device %s", device.getSerialNumber()));
         }
-        if (!resourceParser.getRequiredBoards().contains(deviceProductType)) {
-            throw new TargetSetupError(String.format("Device %s is %s. Expected %s",
-                    device.getSerialNumber(), deviceProductType,
-                    resourceParser.getRequiredBoards()));
-        }
+        verifyRequiredBoards(device, resourceParser, deviceProductType);
 
         String bootloaderVersion = resourceParser.getRequiredBootloaderVersion();
         if (bootloaderVersion != null) {
@@ -137,6 +133,27 @@ public class DeviceFlasher implements IDeviceFlasher  {
                     basebandVersion), basebandVersion);
         }
         downloadExtraImageFiles(resourceParser, mResourceRetriever, localBuild);
+    }
+
+    /**
+     * Verify that the device's product type supports the build-to-be-flashed.
+     * <p/>
+     * The base implementation will verify that the deviceProductType is included in the
+     * {@link IFlashingResourcesParser#getRequiredBoards()} collection. Subclasses may override
+     * as desired.
+     *
+     * @param device the {@link ITestDevice} to be flashed
+     * @param resourceParser the {@link IFlashingResourcesParser}
+     * @param deviceProductType the <var>device</var>'s product type
+     * @throws TargetSetupError if the build's required board info did not match the device
+     */
+    protected void verifyRequiredBoards(ITestDevice device, IFlashingResourcesParser resourceParser,
+            String deviceProductType) throws TargetSetupError {
+        if (!resourceParser.getRequiredBoards().contains(deviceProductType)) {
+            throw new TargetSetupError(String.format("Device %s is %s. Expected %s",
+                    device.getSerialNumber(), deviceProductType,
+                    resourceParser.getRequiredBoards()));
+        }
     }
 
     /**
