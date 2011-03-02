@@ -25,8 +25,20 @@ public class ArrayUtilTest extends TestCase {
     /**
      * Simple test for {@link ArrayUtil#buildArray(String[], String...)}
      */
-    public void testBuildArray() {
+    public void testBuildArray_strings() {
         String[] newArray = ArrayUtil.buildArray(new String[] {"3", "4"}, "1", "2");
+        assertEquals(4, newArray.length);
+        for (int i = 0; i < 4; i++) {
+            assertEquals(Integer.toString(i+1), newArray[i]);
+        }
+    }
+
+    /**
+     * Simple test for {@link ArrayUtil#buildArray(String[]...)}
+     */
+    public void testBuildArray_arrays() {
+        String[] newArray = ArrayUtil.buildArray(new String[] {"1", "2"}, new String[] {"3"},
+                new String[] {"4"});
         assertEquals(4, newArray.length);
         for (int i = 0; i < 4; i++) {
             assertEquals(Integer.toString(i+1), newArray[i]);
