@@ -21,7 +21,6 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.TestSummary;
 
-import java.io.File;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.Map;

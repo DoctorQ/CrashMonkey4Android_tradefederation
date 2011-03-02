@@ -18,11 +18,6 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tradefed.util.ByteArrayList;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-
 /**
  * A {@link IShellOutputReceiver} which collects the whole shell output into a {@link byte[]}.
  * This is useful for shell commands that will produce a significant amount of output, where the
@@ -30,7 +25,6 @@ import java.util.List;
  */
 class CollectingByteOutputReceiver implements IShellOutputReceiver {
     private ByteArrayList mData = new ByteArrayList();
-    private int mByteSize = 0;
     private boolean mIsCanceled = false;
 
     public byte[] getOutput() {

@@ -216,8 +216,6 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             listener.testLog(String.format("output-%s.txt", testName), LogDataType.TEXT,
                     outputSource);
             parseOutputFile(testName, testInfo, new FileInputStream(outputFile), listener);
-        } catch (FileNotFoundException e) {
-            Log.e(LOG_TAG, String.format("Couldn't find the file: %s", e));
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Got an IO Exception: %s", e));
         } finally {
@@ -249,7 +247,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         ListIterator<String> lineIter = lines.listIterator();
         String line;
         int iterCount = 0;
-        int totalIterCount = 0;
+        //int totalIterCount = 0;
         Map<String, List<Integer>> perfData = new HashMap<String, List<Integer>>();
 
         // Iterate through each line of output
@@ -259,7 +257,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             Matcher m = ITERATION_PATTERN.matcher(line);
             if (m.matches()) {
                 iterCount = Integer.parseInt(m.group(1));
-                totalIterCount = Integer.parseInt(m.group(2));
+                //totalIterCount = Integer.parseInt(m.group(2));
                 continue;
             }
 
@@ -354,6 +352,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             return sb.toString();
         }
 
+        @Override
         public void setUp() throws Exception {
             mTestInstance = new BluetoothStressTest() {
                 @Override

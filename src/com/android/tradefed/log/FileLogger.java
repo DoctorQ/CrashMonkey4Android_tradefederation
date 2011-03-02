@@ -25,12 +25,10 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.BufferedWriter;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 
