@@ -399,7 +399,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public void terminate() {
+    public synchronized void terminate() {
         checkInit();
         if (!mIsTerminated ) {
             mIsTerminated = true;
@@ -447,7 +447,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public Collection<String> getAllocatedDevices() {
+    public synchronized Collection<String> getAllocatedDevices() {
         checkInit();
         Collection<String> allocatedDeviceSerials = new ArrayList<String>(
                 mAllocatedDeviceMap.size());
@@ -459,7 +459,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public Collection<String> getAvailableDevices() {
+    public synchronized Collection<String> getAvailableDevices() {
         checkInit();
         Collection<String> availableDeviceSerials = new ArrayList<String>(
                 mAvailableDeviceQueue.size());
@@ -476,7 +476,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public Collection<String> getUnavailableDevices() {
+    public synchronized Collection<String> getUnavailableDevices() {
         checkInit();
         IDevice[] visibleDevices = mAdbBridge.getDevices();
         Collection<String> unavailableSerials = new ArrayList<String>(
