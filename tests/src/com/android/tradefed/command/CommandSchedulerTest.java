@@ -110,7 +110,7 @@ public class CommandSchedulerTest extends TestCase {
     }
 
     /**
-     * Test {@link CommandScheduler#addConfig(String[])} when passed invalid arguments.
+     * Test {@link CommandScheduler#addCommand(String[])} when passed invalid arguments.
      */
     public void testAddConfig_invalidConfig() throws ConfigurationException {
         String[] args = new String[] {"arg"};
@@ -119,12 +119,12 @@ public class CommandSchedulerTest extends TestCase {
                 new ConfigurationException(""));
         setPrintHelpExpectations();
         replayMocks();
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
         verifyMocks();
     }
 
     /**
-     * Test {@link CommandScheduler#addConfig(String[])} when help mode is specified
+     * Test {@link CommandScheduler#addCommand(String[])} when help mode is specified
      */
     public void testAddConfig_configHelp() throws ConfigurationException {
         String[] args = new String[] {};
@@ -134,7 +134,7 @@ public class CommandSchedulerTest extends TestCase {
         // expect
         mMockConfiguration.printCommandUsage(EasyMock.eq(System.out));
         replayMocks();
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
         verifyMocks();
     }
 
@@ -148,7 +148,7 @@ public class CommandSchedulerTest extends TestCase {
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(mMockConfiguration),
                 (IRescheduler)EasyMock.anyObject());
         replayMocks();
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
         mScheduler.start();
         mScheduler.waitForEmptyQueue();
         mScheduler.shutdown();
@@ -169,7 +169,7 @@ public class CommandSchedulerTest extends TestCase {
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);
         replayMocks();
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
         mScheduler.start();
         mScheduler.waitForEmptyQueue();
         // no need to call shutdown explicitly - scheduler should shutdown by itself
@@ -194,8 +194,8 @@ public class CommandSchedulerTest extends TestCase {
         mMockInvocation.invoke(EasyMock.eq(dev), EasyMock.eq(mMockConfiguration),
                 (IRescheduler)EasyMock.anyObject());
         replayMocks();
-        mScheduler.addConfig(args);
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
+        mScheduler.addCommand(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
 
         mScheduler.start();
@@ -224,8 +224,8 @@ public class CommandSchedulerTest extends TestCase {
         mMockInvocation.invoke(EasyMock.eq(expectedDevice), EasyMock.eq(mMockConfiguration),
                 (IRescheduler)EasyMock.anyObject());
         replayMocks();
-        mScheduler.addConfig(args);
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
+        mScheduler.addCommand(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
         mMockManager.freeDevice(expectedDevice, FreeDeviceState.AVAILABLE);
         mScheduler.start();
@@ -262,7 +262,7 @@ public class CommandSchedulerTest extends TestCase {
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(), EasyMock.eq(rescheduledConfig),
                 (IRescheduler)EasyMock.anyObject());
         replayMocks(rescheduledConfig);
-        mScheduler.addConfig(args);
+        mScheduler.addCommand(args);
         mScheduler.start();
         mScheduler.waitForEmptyQueue();
         // hack, wait again for rescheduled invocation to run
