@@ -23,7 +23,6 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.DeviceSelectionMatcher;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
@@ -34,17 +33,19 @@ import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
-import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A scheduler for running TradeFederation commands across all available devices.
@@ -60,12 +61,21 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private static final String LOG_TAG = "CommandScheduler";
     /** the queue of commands ready to be executed. */
     private ConditionPriorityBlockingQueue<ConfigCommand> mCommandQueue;
+    /**
+     * The thread-safe list of all commands. Unlike mConfigQueue will contain commands currently
+     * rescheduled for execution at a later time.
+     */
+    private List<ConfigCommand> mAllCommands;
     /**  list of active invocation threads */
     private Set<InvocationThread> mInvocationThreads;
 
-    /** timer for scheduling the commands so invocations honor the mMinLoopTime constraint */
-    private Timer mCommandTimer;
-    private boolean mShutdown = false;
+    /** timer for scheduling commands to be re-queued for execution */
+    private ScheduledThreadPoolExecutor mCommandTimer;
+
+    /**
+     * Delay time in ms for adding a command back to the queue if it failed to allocate a device.
+     */
+    private static final int NO_DEVICE_DELAY_TIME = 20;
 
     /**
      * Represents one command to be executed
@@ -182,7 +192,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         @Override
         public boolean scheduleConfig(IConfiguration config) {
-            if (mShutdown) {
+            if (isShutdown()) {
                 // cannot schedule configs if shut down
                 return false;
             }
@@ -219,36 +229,19 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
     }
 
-    /**
-     * Class that matches a device against a {@link ConfigCommand}
-     */
-    private static class DeviceCmdMatcher implements IMatcher<ConfigCommand> {
-        private final ITestDevice mDevice;
-
-        DeviceCmdMatcher(ITestDevice device) {
-            mDevice = device;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public boolean matches(ConfigCommand cmd) {
-            IDeviceSelectionOptions deviceOptions = cmd.getDeviceOptions();
-            return DeviceSelectionMatcher.matches(mDevice.getIDevice(), deviceOptions);
-        }
-    }
-
     private class InvocationThread extends Thread {
-        private IDeviceManager mManager;
-        private ITestDevice mDevice;
+        private final IDeviceManager mManager;
+        private final ITestDevice mDevice;
+        private final ConfigCommand mCmd;
         private ITestInvocation mInvocation = null;
-        private boolean mIsStarted = false;
 
-        public InvocationThread(String name, IDeviceManager manager, ITestDevice device) {
+        public InvocationThread(String name, IDeviceManager manager, ITestDevice device,
+                ConfigCommand command) {
             // create a thread group so LoggerRegistry can identify this as an invocationThread
             super (new ThreadGroup(name), name);
             mManager = manager;
             mDevice = device;
+            mCmd = command;
         }
 
         private synchronized ITestInvocation createInvocation() {
@@ -258,21 +251,12 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
         @Override
         public void run() {
-            mIsStarted = true;
             FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
-            ConfigCommand cmd = dequeueConfigCommand(mDevice);
-            if (cmd == null) {
-                Log.d(LOG_TAG, String.format("No configs to test for device %s.",
-                        mDevice.getSerialNumber()));
-                mManager.freeDevice(mDevice, deviceState);
-                removeInvocationThread(this);
-                return;
-            }
             long startTime = System.currentTimeMillis();
             ITestInvocation instance = createInvocation();
             try {
-                IConfiguration config = cmd.getConfiguration();
-                instance.invoke(mDevice, config, new Rescheduler(cmd));
+                IConfiguration config = mCmd.getConfiguration();
+                instance.invoke(mDevice, config, new Rescheduler(mCmd));
             } catch (DeviceUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s is unresponsive",
                         mDevice.getSerialNumber()));
@@ -293,8 +277,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } finally {
                 long elapsedTime = System.currentTimeMillis() - startTime;
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
-                        getArgString(cmd.getArgs()), elapsedTime));
-                cmd.incrementExecTime(elapsedTime);
+                        getArgString(mCmd.getArgs()), elapsedTime));
+                mCmd.incrementExecTime(elapsedTime);
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
             }
@@ -303,24 +287,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         private synchronized ITestInvocation getInvocation() {
             return mInvocation;
         }
-
-        /**
-         * Attempt to gracefully shut down this invocation.
-         * <p/>
-         * There's three possible cases to handle:
-         * <ol>
-         * <li>Thread has not started yet: We want to wait for it to start, so it can free its
-         * allocated device
-         * <li>Thread has started but invocation has not been started (ie thread is blocked waiting
-         * for a command): Interrupt the thread in this case
-         * <li>Thread is running the invocation: Do nothing - wait for it to complete normally
-         * </ol>
-         */
-        public void shutdownInvocation() {
-            if (getInvocation() == null && mIsStarted) {
-                interrupt();
-            }
-        }
     }
 
     /**
@@ -328,7 +294,11 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     CommandScheduler() {
         mCommandQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
+        mAllCommands =  Collections.synchronizedList(new LinkedList<ConfigCommand>());
         mInvocationThreads = new HashSet<InvocationThread>();
+        // use a ScheduledThreadPoolExecutorTimer as a single-threaded timer. This class
+        // is used instead of a java.util.Timer because it offers advanced shutdown options
+        mCommandTimer = new ScheduledThreadPoolExecutor(1);
         // Don't hold TF alive if there are no other threads running
         setDaemon(true);
     }
@@ -365,18 +335,33 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     @Override
     public void run() {
-        mCommandTimer = new Timer("command timer");
+
         IDeviceManager manager = getDeviceManager();
         manager.init();
         while (!isShutdown()) {
-            Log.d(LOG_TAG, "Waiting for device to test");
-            // Spawn off a thread for each allocated device.
-            // The retrieval of a command to run on the device is done on this separate thread, to
-            // prevent commands which only run on a specific device from blocking the rest
-            final ITestDevice device = manager.allocateDevice();
-            if (device != null) {
-                InvocationThread invThread = startInvocation(manager, device);
-                addInvocationThread(invThread);
+            ConfigCommand cmd = dequeueConfigCommand();
+            if (cmd != null) {
+                ITestDevice device = manager.allocateDevice(0, cmd.getDeviceOptions());
+                if (device != null) {
+                    // Spawn off a thread to perform the invocation
+                    InvocationThread invThread = startInvocation(manager, device, cmd);
+                    addInvocationThread(invThread);
+                    if (cmd.getCommandOptions().isLoopMode()) {
+                        try {
+                            cmd.resetConfiguration();
+                            returnCommandToQueue(cmd, cmd.getCommandOptions().getMinLoopTime());
+                        } catch (ConfigurationException e) {
+                            Log.e(LOG_TAG, e);
+                        }
+                    }
+                }
+                else {
+                    // no device available for command, put back in queue
+                    // increment exec time to ensure fair scheduling among commands when devices are
+                    // scarce
+                    cmd.incrementExecTime(1);
+                    returnCommandToQueue(cmd, NO_DEVICE_DELAY_TIME);
+                }
             }
         }
         Log.i(LOG_TAG, "Waiting for invocation threads to complete");
@@ -427,41 +412,42 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     /**
-     * Dequeue the highest priority command from the queue that can run against the provided device.
+     * Dequeue the highest priority command from the queue.
      *
-     * @param device the {@link ITestDevice} to run against
      * @return the {@link ConfigCommand} or <code>null</code>
      */
-    private ConfigCommand dequeueConfigCommand(ITestDevice device) {
-        if (isShutdown()) {
-            return null;
-        }
-        ConfigCommand cmd = null;
+    private ConfigCommand dequeueConfigCommand() {
         try {
-            cmd = mCommandQueue.take(new DeviceCmdMatcher(device));
-            if (cmd.getCommandOptions().isLoopMode()) {
-                returnCommandToQueue(cmd);
-            }
+            // poll for a commmand, rather than block indefinitely, to handle shutdown case
+            return mCommandQueue.poll(getCommandPollTimeMs(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             Log.i(LOG_TAG, "Waiting for command interrupted");
         }
-        return cmd;
+        return null;
+    }
+
+    /**
+     * Get the poll time to wait for a command to execute.
+     * <p/>
+     * Exposed so unit tests can mock.
+     * @return
+     */
+    long getCommandPollTimeMs() {
+        return 1000;
     }
 
     /**
      * Return command to queue, with delay if necessary
      *
      * @param cmd the {@link ConfigCommand} to return to queue
+     * @param delayTime the time in ms to delay before adding command to queue
      */
-    private void returnCommandToQueue(final ConfigCommand cmd) {
-        final long minLoopTime = cmd.getCommandOptions().getMinLoopTime();
-        if (minLoopTime > 0) {
+    private void returnCommandToQueue(final ConfigCommand cmd, long delayTime) {
+        if (delayTime > 0) {
             // delay before adding command back to queue
-            TimerTask delayCommand = new TimerTask() {
+            Runnable delayCommand = new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(LOG_TAG, String.format("Adding command '%s' back to queue",
-                            getArgString(cmd.getArgs())));
                     try {
                         cmd.resetConfiguration();
                         mCommandQueue.add(cmd);
@@ -470,9 +456,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                     }
                 }
             };
-            Log.d(LOG_TAG, String.format("Delay adding command '%s' back to queue for %d ms",
-                    getArgString(cmd.getArgs()), minLoopTime));
-            mCommandTimer.schedule(delayCommand, minLoopTime);
+            mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);
         } else {
             // return to queue immediately
             mCommandQueue.add(cmd);
@@ -499,11 +483,14 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      *
      * @param manager the {@link IDeviceManager} to return device to when complete
      * @param device the {@link ITestDevice}
+     * @param cmd the {@link ConfigCommand} to execute
      * @return the invocation's thread
      */
-    private InvocationThread startInvocation(IDeviceManager manager, ITestDevice device) {
+    private InvocationThread startInvocation(IDeviceManager manager, ITestDevice device,
+            ConfigCommand cmd) {
         final String invocationName = String.format("Invocation-%s", device.getSerialNumber());
-        InvocationThread invocationThread = new InvocationThread(invocationName, manager, device);
+        InvocationThread invocationThread = new InvocationThread(invocationName, manager, device,
+                cmd);
         invocationThread.start();
         return invocationThread;
     }
@@ -523,24 +510,17 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     private synchronized boolean isShutdown() {
-        return mShutdown;
+        return mCommandTimer.isTerminated();
     }
 
     /**
      * {@inheritDoc}
      */
     public synchronized void shutdown() {
-        if (!mShutdown) {
-            mShutdown = true;
+        if (!isShutdown()) {
             mCommandQueue.clear();
             if (mCommandTimer != null) {
-                mCommandTimer.cancel();
-            }
-            // interrupt current thread in case its blocked on allocateDevice call
-            interrupt();
-
-            for (InvocationThread invThread : mInvocationThreads) {
-                invThread.shutdownInvocation();
+                mCommandTimer.shutdownNow();
             }
         }
     }
@@ -583,26 +563,14 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     public Collection<String> listCommands() throws UnsupportedOperationException {
-        Iterator<ConfigCommand> cmdIter = mCommandQueue.iterator();
         Collection<String> stringCommands = new ArrayList<String>();
-        ConfigCommand command;
-
-        while (cmdIter.hasNext()) {
-            command = cmdIter.next();
-            stringCommands.add(getArgString(command.getArgs()));
+        synchronized (mAllCommands) {
+            for (ConfigCommand cmd : mAllCommands) {
+                stringCommands.add(getArgString(cmd.getArgs()));
+            }
         }
-
         return stringCommands;
     }
 
-    /**
-     * Helper method for unit testing. Blocks until command queue is empty
-     *
-     * @throws InterruptedException
-     */
-    void waitForEmptyQueue() throws InterruptedException {
-        while (mCommandQueue.size() > 0) {
-            Thread.sleep(10);
-        }
-    }
+
 }

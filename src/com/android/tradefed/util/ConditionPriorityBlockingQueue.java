@@ -145,6 +145,20 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
 
     /**
      * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
+     * the queue.
+     * <p/>
+     * Blocks up to <var>timeout</var> time for an element to become available.
+     *
+     * @param timeout the amount of time to wait for an element to become available
+     * @param unit the {@link TimeUnit} of timeout
+     * @return the minimum matched element or <code>null</code> if there are no matching elements
+     */
+    public T poll(long timeout, TimeUnit unit) throws InterruptedException {
+        return poll(timeout, unit, new AlwaysMatch<T>());
+    }
+
+    /**
+     * Retrieves and removes the minimum (as judged by the provided {@link Comparator} element T in
      * the queue where <var>matcher.matches(T)</var> is <code>true</code>.
      * <p/>
      * Blocks up to <var>timeout</var> time for an element to become available.
@@ -320,5 +334,12 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      */
     public boolean remove(T object) {
         return mList.remove(object);
+    }
+
+    /**
+     * @return
+     */
+    public boolean isEmpty() {
+        return mList.isEmpty();
     }
 }

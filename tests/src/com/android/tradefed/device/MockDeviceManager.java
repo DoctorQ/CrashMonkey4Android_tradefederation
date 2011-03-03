@@ -16,12 +16,17 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
+import com.android.tradefed.device.DeviceManager.DeviceMatcher;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.TimeUnit;
+
+import junit.framework.Assert;
 
 /**
  * A {@link IDeviceManager} that simulates the resource allocation of {@link DeviceManager}
@@ -29,8 +34,30 @@ import java.util.Collection;
  */
 public class MockDeviceManager implements IDeviceManager {
 
+    private static class TestDeviceMatcher implements IMatcher<ITestDevice> {
+
+        private DeviceMatcher mDeviceMatcher;
+
+        /**
+         * @param deviceSelectionOptions
+         */
+        public TestDeviceMatcher(IDeviceSelectionOptions deviceSelectionOptions) {
+            mDeviceMatcher = new DeviceMatcher(deviceSelectionOptions);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean matches(ITestDevice element) {
+            return mDeviceMatcher.matches(element.getIDevice());
+        }
+    }
+
     ConditionPriorityBlockingQueue<ITestDevice> mDeviceQueue =
         new ConditionPriorityBlockingQueue<ITestDevice>();
+
+    private int mTotalDevices;
 
     public MockDeviceManager(int numDevices) {
         setNumDevices(numDevices);
@@ -38,6 +65,7 @@ public class MockDeviceManager implements IDeviceManager {
 
     public void setNumDevices(int numDevices) {
         mDeviceQueue.clear();
+        mTotalDevices = numDevices;
         for (int i = 0; i < numDevices; i++) {
             ITestDevice mockDevice = EasyMock.createNiceMock(ITestDevice.class);
             EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("serial" + i);
@@ -127,7 +155,12 @@ public class MockDeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
-        throw new UnsupportedOperationException();
+        try {
+            return mDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,
+                    new TestDeviceMatcher(options));
+        } catch (InterruptedException e) {
+            return null;
+        }
     }
 
     /**
@@ -149,5 +182,14 @@ public class MockDeviceManager implements IDeviceManager {
     @Override
     public void init(IDeviceSelectionOptions globalDeviceFilter) {
         // ignore
+    }
+
+    /**
+     * Verifies that all devices were returned to queue.
+     * @throws AssertionError
+     */
+    public void assertDevicesFreed() throws AssertionError {
+        Assert.assertEquals("allocated device was not returned to queue", mTotalDevices,
+                getAvailableDevices().size());
     }
 }

@@ -74,7 +74,7 @@ public class DeviceManager implements IDeviceManager {
     private boolean mIsTerminated = false;
     private DeviceMatcher mGlobalDeviceFilter;
 
-    private static class DeviceMatcher implements IMatcher<IDevice> {
+    static class DeviceMatcher implements IMatcher<IDevice> {
 
         private IDeviceSelectionOptions mOptions;
 
