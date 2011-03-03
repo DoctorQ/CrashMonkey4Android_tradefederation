@@ -279,7 +279,7 @@ class CommandFileParser {
         for (CommandLine commandLine : mLines) {
             Log.d(LOG_TAG, String.format("Adding line: %s", commandLine.toString()));
             String[] aryCmdLine = new String[commandLine.size()];
-            scheduler.addConfig(commandLine.toArray(aryCmdLine));
+            scheduler.addCommand(commandLine.toArray(aryCmdLine));
         }
     }
 

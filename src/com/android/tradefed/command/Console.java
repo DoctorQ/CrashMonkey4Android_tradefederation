@@ -264,7 +264,7 @@ public class Console {
                 "%s help:" + LINE_SEPARATOR +
                 "\ti[nvocations]  List all invocation threads" + LINE_SEPARATOR +
                 "\td[evices]      List all detected or known devices" + LINE_SEPARATOR +
-                "\tc[configs]     List all configs currently waiting to be executed" +
+                "\tc[ommands]     List all commands currently waiting to be executed" +
                 LINE_SEPARATOR, LIST_PATTERN));
 
         commandHelp.put(DUMP_PATTERN, String.format(
@@ -299,7 +299,7 @@ public class Console {
                         int counter = 1;
 
                         for (ITestInvocation inv : invs) {
-                            printLine(String.format("Got invocation %d: %s", counter++, inv));
+                            printLine(String.format("Invocation %d: %s", counter++, inv));
                         }
                     }
                 }, LIST_PATTERN, "i(?:nvocations)?");
@@ -320,14 +320,14 @@ public class Console {
         trie.put(new Runnable() {
                     @Override
                     public void run() {
-                        Collection<String> configs = mScheduler.listConfigs();
+                        Collection<String> commands = mScheduler.listCommands();
                         int counter = 1;
 
-                        for (String config : configs) {
-                            printLine(String.format("Got config %d: %s", counter++, config));
+                        for (String cmd : commands) {
+                            printLine(String.format("Command %d: %s", counter++, cmd));
                         }
                     }
-                }, LIST_PATTERN, "c(?:onfigs)?");
+                }, LIST_PATTERN, "c(?:ommands)?");
 
         // Dump commands
         trie.put(new Runnable() {
@@ -352,7 +352,7 @@ public class Console {
                         for (int i = 2; i < args.size(); i++) {
                             flatArgs[i - 2] = args.get(i).get(0);
                         }
-                        mScheduler.addConfig(flatArgs);
+                        mScheduler.addCommand(flatArgs);
                     }
                 };
         trie.put(runRunCommand, RUN_PATTERN, "(?:singleC|c)ommand", null);
@@ -523,9 +523,9 @@ public class Console {
                             "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));
                 }
 
-                // Special-case for singleConfig, which should run a config and then immediately
+                // Special-case for singleCommand, which should run a command and then immediately
                 // attempt to exit
-                if (tokens.length >= 2 && "singleConfig".equals(tokens[1])) {
+                if (tokens.length >= 2 && "singleCommand".equals(tokens[1])) {
                     try {
                         // FIXME: This is a horrible hack to wait until there _should_ be devices
                         // FIXME: available.

@@ -107,8 +107,8 @@ public class CommandSchedulerFuncTest extends TestCase {
 
         EasyMock.replay(mFastConfig, mSlowConfig, mMockConfigFactory);
 
-        mCommandScheduler.addConfig(fastConfigArgs);
-        mCommandScheduler.addConfig(slowConfigArgs);
+        mCommandScheduler.addCommand(fastConfigArgs);
+        mCommandScheduler.addCommand(slowConfigArgs);
         mCommandScheduler.start();
 
         synchronized (mMockTestInvoker) {

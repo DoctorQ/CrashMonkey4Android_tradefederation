@@ -24,12 +24,14 @@ import java.lang.UnsupportedOperationException;
 import java.util.Collection;
 
 /**
- * A scheduler for running TradeFederation configs.
+ * A scheduler for running TradeFederation commands.
  */
 public interface ICommandScheduler {
 
     /**
-     * Adds a configuration to the scheduler.
+     * Adds a command to the scheduler.
+     * <p/>
+     * A command is essentially an instance of a configuration to run and its associated arguments.
      * <p/>
      * If "--help" argument is specified, or the config arguments are invalid, the help text for
      * the config will be outputed to stdout. Otherwise, the config will be added to the queue to
@@ -39,12 +41,12 @@ public interface ICommandScheduler {
      *
      * @see {@link IConfigurationFactory#createConfigurationFromArgs(String[])}
      */
-    public void addConfig(String[] args);
+    public void addCommand(String[] args);
 
     /**
      * Attempt to gracefully shutdown the command scheduler.
      * <p/>
-     * Clears configurations waiting to be tested, and requests that all invocations in progress
+     * Clears commands waiting to be tested, and requests that all invocations in progress
      * shut down gracefully.
      * <p/>
      * After shutdown is called, the scheduler main loop will wait for all invocations in progress
@@ -95,11 +97,11 @@ public interface ICommandScheduler {
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException;
 
     /**
-     * Get a list of current configurations.
+     * Get a list of current commands.
      *
-     * @return A list of current configurations, pre-serialized
+     * @return A list of current commands, pre-serialized
      * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
      */
-    public Collection<String> listConfigs() throws UnsupportedOperationException;
+    public Collection<String> listCommands() throws UnsupportedOperationException;
 }
 
