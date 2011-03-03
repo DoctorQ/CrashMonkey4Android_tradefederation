@@ -186,7 +186,10 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 Log.e(LOG_TAG, String.format("Grabbing bugreport after test '%s' finished with " +
                         "%d failures and %d errors.", testName, auxListener.getNumFailedTests(),
                         auxListener.getNumErrorTests()));
-                // FIXME: actually grab the bugreport
+                InputStreamSource bugreport = mTestDevice.getBugreport();
+                listener.testLog(String.format("bugreport-%s.txt", testName), LogDataType.TEXT,
+                        bugreport);
+                bugreport.cancel();
             }
         }
     }
