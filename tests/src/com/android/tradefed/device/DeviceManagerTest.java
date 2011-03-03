@@ -19,6 +19,8 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.IRunUtil;
 
 import org.easymock.EasyMock;
 
@@ -44,6 +46,7 @@ public class DeviceManagerTest extends TestCase {
     private IDevice mMockIDevice;
     private IDeviceStateMonitor mMockMonitor;
     private IManagedTestDevice mMockTestDevice;
+    private IRunUtil mMockRunUtil;
 
     /** a reference to the DeviceManager's IDeviceChangeListener. Used for triggering device
      * connection events */
@@ -82,10 +85,14 @@ public class DeviceManagerTest extends TestCase {
         mMockIDevice = EasyMock.createMock(IDevice.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockTestDevice = EasyMock.createMock(IManagedTestDevice.class);
+        mMockRunUtil = EasyMock.createMock(IRunUtil.class);
 
         EasyMock.expect(mMockIDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockTestDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockTestDevice.getIDevice()).andStubReturn(mMockIDevice);
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
+                (String)EasyMock.anyObject())).andStubReturn(new CommandResult());
+
     }
 
     private DeviceManager createDeviceManager() {
@@ -116,6 +123,11 @@ public class DeviceManagerTest extends TestCase {
             IManagedTestDevice createTestDevice(IDevice allocatedDevice,
                     IDeviceStateMonitor monitor) {
                 return mMockTestDevice;
+            }
+
+            @Override
+            IRunUtil getRunUtil() {
+                return mMockRunUtil;
             }
         };
         mgr.setEnableLogcat(false);
@@ -327,6 +339,86 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
+     * Verify {@link DeviceManager#allocateDevice()} serves callers in a first-called-first-served
+     * order.
+     */
+    public void testAllocateDevice_firstCalledFirstServed() throws Exception {
+        // simulate no devices available on DeviceManager start up
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
+        setCheckAvailableDeviceExpectations();
+        // keep EasyMock happy - expect stopLogcat call on each freeDevice call
+        mMockTestDevice.stopLogcat();
+        EasyMock.expectLastCall().times(2);
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        AllocateCaller firstCaller = new AllocateCaller(manager);
+        AllocateCaller secondCaller = new AllocateCaller(manager);
+        AllocateCaller thirdCaller = new AllocateCaller(manager);
+        firstCaller.startAndWait();
+        secondCaller.startAndWait();
+        thirdCaller.startAndWait();
+        // add a device which can be allocated
+        mDeviceListener.deviceConnected(mMockIDevice);
+        // expect that the firstCaller receives this device
+        assertTrue(firstCaller.waitForAllocate());
+        manager.freeDevice(firstCaller.mAllocatedDevice, FreeDeviceState.AVAILABLE);
+        // expect that the second caller gets the device once freed
+        assertTrue(secondCaller.waitForAllocate());
+        manager.freeDevice(secondCaller.mAllocatedDevice, FreeDeviceState.AVAILABLE);
+        // expect that, finally, the thirdCaller gets the device once freed for the second time
+        assertTrue(thirdCaller.waitForAllocate());
+    }
+
+    /**
+     * A helper class for performing {@link DeviceManager#allocateDevice()} calls on a background
+     * thread
+     */
+    private static class AllocateCaller extends Thread {
+        ITestDevice mAllocatedDevice = null;
+        final IDeviceManager mManager;
+        AllocateCaller(IDeviceManager manager) {
+            mManager = manager;
+        }
+
+        @Override
+        public void run() {
+            synchronized (this) {
+                notify();
+            }
+            mAllocatedDevice = mManager.allocateDevice();
+            synchronized (this) {
+                notify();
+            }
+        }
+
+        /**
+         * Starts this thread, and blocks until it actually starts
+         */
+        public void startAndWait() throws InterruptedException {
+            mAllocatedDevice = null;
+            synchronized (this) {
+                start();
+                wait();
+            }
+            // hack, sleep a small amount for allocate call to really occur
+            Thread.sleep(10);
+        }
+
+        /**
+         * Waits for the {@link DeviceManager#allocateDevice()} call to occur. Assumes thread is
+         * already started
+         * @return <code>true</code> if device was allocated, <code>false</code> otherwise
+         * @throws InterruptedException
+         */
+        public boolean waitForAllocate() throws InterruptedException  {
+            synchronized (this) {
+                wait(MIN_ALLOCATE_WAIT_TIME);
+            }
+            return mAllocatedDevice != null;
+        }
+    }
+
+    /**
      * Test {@link DeviceManager#init(IDeviceSelectionOptions)} with a global exclusion filter
      */
     public void testInit_excludeDevice() throws DeviceNotAvailableException {
@@ -442,7 +534,7 @@ public class DeviceManagerTest extends TestCase {
      * @param additionalMocks extra local mock objects to set to replay mode
      */
     private void replayMocks(Object... additionalMocks) {
-        EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge);
+        EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge, mMockRunUtil);
         for (Object mock : additionalMocks) {
             EasyMock.replay(mock);
         }
