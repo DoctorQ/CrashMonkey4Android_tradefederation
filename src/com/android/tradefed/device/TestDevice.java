@@ -249,7 +249,7 @@ class TestDevice implements IManagedTestDevice {
              * directly.
              */
             if (getDeviceState() == TestDeviceState.FASTBOOT) {
-                Log.w(LOG_TAG, String.format(
+                Log.i(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying in fastboot",
                         getSerialNumber()));
                 productType = getFastbootProduct();
@@ -261,7 +261,7 @@ class TestDevice implements IManagedTestDevice {
                 if (productType.isEmpty()) {
                     // last ditch effort; try ro.product.device
                     productType = executeShellCommand("getprop ro.product.device").trim();
-                    Log.w(LOG_TAG, String.format("Fell back to ro.product.device because " +
+                    Log.i(LOG_TAG, String.format("Fell back to ro.product.device because " +
                             "ro.product.board is unset. product type is %s.", productType));
                 }
             }
