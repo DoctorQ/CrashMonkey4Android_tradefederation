@@ -443,6 +443,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * @param delayTime the time in ms to delay before adding command to queue
      */
     private void returnCommandToQueue(final ConfigCommand cmd, long delayTime) {
+        if (isShutdown()) {
+            return;
+        }
         if (delayTime > 0) {
             // delay before adding command back to queue
             Runnable delayCommand = new Runnable() {

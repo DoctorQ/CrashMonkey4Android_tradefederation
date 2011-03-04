@@ -335,11 +335,4 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
     public boolean remove(T object) {
         return mList.remove(object);
     }
-
-    /**
-     * @return
-     */
-    public boolean isEmpty() {
-        return mList.isEmpty();
-    }
 }
