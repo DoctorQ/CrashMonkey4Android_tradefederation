@@ -16,6 +16,7 @@
 
 package com.android.tradefed.util;
 
+import java.util.Arrays;
 
 /**
  * A class to represent a lightweight byte array.  The goal of this class is to avoid the
@@ -217,6 +218,13 @@ public class ByteArrayList {
             }
         }
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public int hashCode() {
+        return Arrays.hashCode(mStorage);
     }
 
     /**
