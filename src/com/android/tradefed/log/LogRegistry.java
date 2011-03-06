@@ -184,7 +184,9 @@ public class LogRegistry implements ILogOutput {
      * Saves global logger contents to a tmp file.
      */
     public void saveGlobalLog() {
-        saveLog("tradefed_global_log_", mGlobalLogger.getLog());
+        InputStreamSource globalLog = mGlobalLogger.getLog();
+        saveLog("tradefed_global_log_", globalLog);
+        globalLog.cancel();
     }
 
     /**

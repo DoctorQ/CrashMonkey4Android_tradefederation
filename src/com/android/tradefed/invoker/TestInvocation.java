@@ -132,7 +132,7 @@ public class TestInvocation implements ITestInvocation {
         }
     }
 
-   /**
+    /**
      * Pass the build to any {@link IBuildReceiver} tests
      * @param buildInfo
      * @param tests
@@ -145,19 +145,19 @@ public class TestInvocation implements ITestInvocation {
         }
     }
 
-/**
-    * Attempt to shard the configuration into sub-configurations, to be re-scheduled to run on
-    * multiple resources in parallel.
-    * <p/>
-    * A successful shard action renders the current config empty, and invocation should not proceed.
-    *
-    * @see {@link IShardableTest}, {@link IRescheduler}
-    *
-    * @param config the current {@link IConfiguration}.
-    * @param info the {@link IBuildInfo} to test
-    * @param rescheduler the {@link IRescheduler}
-    * @return true if test was sharded. Otherwise return <code>false</code>
-    */
+    /**
+     * Attempt to shard the configuration into sub-configurations, to be re-scheduled to run on
+     * multiple resources in parallel.
+     * <p/>
+     * A successful shard action renders the current config empty, and invocation should not proceed.
+     *
+     * @see {@link IShardableTest}, {@link IRescheduler}
+     *
+     * @param config the current {@link IConfiguration}.
+     * @param info the {@link IBuildInfo} to test
+     * @param rescheduler the {@link IRescheduler}
+     * @return true if test was sharded. Otherwise return <code>false</code>
+     */
     private boolean shardConfig(IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
         mStatus = "sharding";
         List<IRemoteTest> shardableTests = new ArrayList<IRemoteTest>();
@@ -369,7 +369,6 @@ public class TestInvocation implements ITestInvocation {
         // once tradefed log is reported, all further log calls for this invocation can get lost
         // unregister logger so future log calls get directed to the tradefed global log
         getLogRegistry().unregisterLogger();
-        logger.closeLog();
     }
 
     /**

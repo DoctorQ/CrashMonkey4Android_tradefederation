@@ -127,6 +127,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          * @return the newly created {@link IConfiguration}
          */
         public IConfiguration resetConfiguration() throws ConfigurationException  {
+            if (mConfig != null) {
+                mConfig.cancel();
+            }
             mConfig = getConfigFactory().createConfigurationFromArgs(getArgs());
             return mConfig;
         }
@@ -245,7 +248,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
 
         private synchronized ITestInvocation createInvocation() {
-            mInvocation  = createRunInstance();
+            mInvocation = createRunInstance();
             return mInvocation;
         }
 
@@ -279,6 +282,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
                         getArgString(mCmd.getArgs()), elapsedTime));
                 mCmd.incrementExecTime(elapsedTime);
+                mCmd.getConfiguration().cancel();
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
             }
@@ -347,12 +351,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                     InvocationThread invThread = startInvocation(manager, device, cmd);
                     addInvocationThread(invThread);
                     if (cmd.getCommandOptions().isLoopMode()) {
-                        try {
-                            cmd.resetConfiguration();
-                            returnCommandToQueue(cmd, cmd.getCommandOptions().getMinLoopTime());
-                        } catch (ConfigurationException e) {
-                            Log.e(LOG_TAG, e);
-                        }
+                        returnCommandToQueue(cmd, cmd.getCommandOptions().getMinLoopTime());
                     }
                 }
                 else {
@@ -446,17 +445,19 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         if (isShutdown()) {
             return;
         }
+
+        try {
+            cmd.resetConfiguration();
+        } catch (ConfigurationException e) {
+            Log.e(LOG_TAG, e);
+        }
+
         if (delayTime > 0) {
             // delay before adding command back to queue
             Runnable delayCommand = new Runnable() {
                 @Override
                 public void run() {
-                    try {
-                        cmd.resetConfiguration();
-                        mCommandQueue.add(cmd);
-                    } catch (ConfigurationException e) {
-                        Log.e(LOG_TAG, e);
-                    }
+                    mCommandQueue.add(cmd);
                 }
             };
             mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);

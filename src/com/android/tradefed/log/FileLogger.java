@@ -90,6 +90,9 @@ public class FileLogger implements ILeveledLogOutput {
             mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
         }
         catch (IOException e) {
+            if (mTempLogFile != null) {
+                mTempLogFile.delete();
+            }
             throw new ConfigurationException(String.format("Could not create output log file : %s",
                     e.getMessage()));
         }
@@ -219,17 +222,20 @@ public class FileLogger implements ILeveledLogOutput {
      * @throws IOException
      */
     void doCloseLog() throws IOException {
-        if (mLogWriter == null) {
-            return;
-        }
-        // set mLogWriter to null first before closing, to prevent "write" calls after "close"
-        BufferedWriter writer = mLogWriter;
-        mLogWriter = null;
         try {
-            writer.flush();
-            writer.close();
+            if (mLogWriter != null) {
+                // set mLogWriter to null first before closing, to prevent "write" calls after "close"
+                BufferedWriter writer = mLogWriter;
+                mLogWriter = null;
+
+                writer.flush();
+                writer.close();
+            }
         } finally {
-            mTempLogFile.delete();
+            if (mTempLogFile != null) {
+                mTempLogFile.delete();
+                mTempLogFile = null;
+            }
         }
     }
 }
