@@ -160,6 +160,8 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
             listener.testRunStarted(resultParser.getRunName(), 0);
             try {
                 for (int i = 0; i < mNumRuns; i++) {
+                    Log.i(LOG_TAG, String.format("Running %s for %d iterations",
+                            rootEntry.getName(), mNumIterations));
                     // -s is start iteration, -e means end iteration
                     // use maxShellOutputResponseTime to enforce the max iteration time
                     // it won't be exact, but should be close

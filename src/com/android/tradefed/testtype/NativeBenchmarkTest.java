@@ -188,6 +188,8 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
                     NativeBenchmarkTestParser resultParser = createResultParser(runName);
                     // convert delay to seconds
                     double delayFloat = ((double)delay)/1000000;
+                    Log.i(LOG_TAG, String.format("Running %s for %d iterations with delay %f",
+                            rootEntry.getName(), mNumIterations, delayFloat));
                     String cmd = String.format("%s -n %d -d %f -c %d -s %d", fullPath,
                             mNumIterations, delayFloat, mClientCpu, mServerCpu);
                     Log.i(LOG_TAG, String.format("Running native benchmark test on %s: %s",
