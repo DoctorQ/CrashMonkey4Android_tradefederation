@@ -117,13 +117,6 @@ public interface IConfiguration {
     public List<?> getConfigurationObjectList(String name);
 
     /**
-     * Invalidate this {@link IConfiguration} and do any required cleanup.  After this method is
-     * called, the behavior of all other methods on this instance are undefined.  This method may be
-     * called multiple times, but calls other than the first will have no effect.
-     */
-    public void cancel();
-
-    /**
      * Inject a option value into the set of configuration objects.
      * <p/>
      * Useful to provide values for options that are generated dynamically.

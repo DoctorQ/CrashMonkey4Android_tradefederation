@@ -125,9 +125,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          * @return the newly created {@link IConfiguration}
          */
         public IConfiguration resetConfiguration() throws ConfigurationException  {
-            if (mConfig != null) {
-                mConfig.cancel();
-            }
             mConfig = getConfigFactory().createConfigurationFromArgs(getArgs());
             return mConfig;
         }
@@ -280,7 +277,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
                         getArgString(mCmd.getArgs()), elapsedTime));
                 mCmd.incrementExecTime(elapsedTime);
-                mCmd.getConfiguration().cancel();
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
             }
@@ -349,7 +345,12 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                     InvocationThread invThread = startInvocation(manager, device, cmd);
                     addInvocationThread(invThread);
                     if (cmd.getCommandOptions().isLoopMode()) {
-                        returnCommandToQueue(cmd, cmd.getCommandOptions().getMinLoopTime());
+                        try {
+                            cmd.resetConfiguration();
+                            returnCommandToQueue(cmd, cmd.getCommandOptions().getMinLoopTime());
+                        } catch (ConfigurationException e) {
+                            Log.e(LOG_TAG, e);
+                        }
                     }
                 }
                 else {
@@ -443,13 +444,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         if (isShutdown()) {
             return;
         }
-
-        try {
-            cmd.resetConfiguration();
-        } catch (ConfigurationException e) {
-            Log.e(LOG_TAG, e);
-        }
-
         if (delayTime > 0) {
             // delay before adding command back to queue
             Runnable delayCommand = new Runnable() {

@@ -18,6 +18,7 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.result.InputStreamSource;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,8 +40,9 @@ public class FileLoggerTest extends TestCase {
      * @throws ConfigurationException if unable to create log file
      * @throws SecurityException if unable to delete the log file on cleanup
      */
-    public void testCreateLogger() throws ConfigurationException, SecurityException {
+    public void testCreateLogger() throws IOException, SecurityException {
         FileLogger logger = new FileLogger();
+        logger.init();
         String tempFile = logger.getFilename();
         File logFile = new File(tempFile);
         assertTrue(logFile.exists());
@@ -60,10 +62,12 @@ public class FileLoggerTest extends TestCase {
         String Text2 = "Betty Botter bought some butter, 'But,' she said, 'this butter's bitter.'";
         String Text3 = "Wolf zombies quickly spot the jinxed grave.";
         BufferedReader logFileReader = null;
-        File logFile = null;
+        FileLogger logger = new FileLogger();
+        InputStreamSource logSource = null;
 
         try {
-            FileLogger logger = new FileLogger();
+
+            logger.init();
             // Write 3 lines of text to the log...
             logger.printLog(LogLevel.INFO, LOG_TAG, Text1);
             String expectedText1 = Log.getLogFormatString(LogLevel.INFO, LOG_TAG, Text1).trim();
@@ -73,8 +77,9 @@ public class FileLoggerTest extends TestCase {
             String expectedText3 = Log.getLogFormatString(LogLevel.ASSERT, LOG_TAG, Text3).trim();
 
             // Verify the 3 lines we logged
+            logSource = logger.getLog();
             logFileReader = new BufferedReader(new InputStreamReader(
-                    logger.getLog().createInputStream()));
+                    logSource.createInputStream()));
 
             String actualLogString = logFileReader.readLine().trim();
             assertTrue(actualLogString.equals(expectedText1));
@@ -84,24 +89,27 @@ public class FileLoggerTest extends TestCase {
 
             actualLogString = logFileReader.readLine().trim();
             assertTrue(actualLogString.equals(expectedText3));
-            logger.closeLog();
+
         }
         finally {
             if (logFileReader != null) {
                 logFileReader.close();
             }
-            if (logFile != null) {
-                logFile.delete();
+            if (logSource != null) {
+                logSource.cancel();
             }
+            logger.closeLog();
         }
     }
 
     /**
      * Test that an {@link IllegalStateException} is thrown if {@link FileLogger#getLog()} is
      * called after {@link FileLogger#closeLog()}.
+     * @throws IOException
      */
-    public void testGetLog_afterClose() throws ConfigurationException {
+    public void testGetLog_afterClose() throws ConfigurationException, IOException {
         FileLogger logger = new FileLogger();
+        logger.init();
         logger.closeLog();
         try {
             logger.getLog();
@@ -118,8 +126,24 @@ public class FileLoggerTest extends TestCase {
      */
     public void testCloseLog() throws ConfigurationException, IOException {
         FileLogger logger = new FileLogger();
+        logger.init();
         // test the package-private methods to capture any exceptions that occur
         logger.doCloseLog();
         logger.writeToLog("test2");
+    }
+
+    /**
+     * Test that an {@link IllegalStateException} is thrown if {@link FileLogger#getLog()} is
+     * called when  {@link FileLogger#init()} has not been called.
+     * @throws IOException
+     */
+    public void testGetLog_NoInit() {
+        FileLogger logger = new FileLogger();
+        try {
+            logger.getLog();
+            fail("IllegalStateException not thrown");
+        } catch (IllegalStateException e) {
+            // expected
+        }
     }
 }

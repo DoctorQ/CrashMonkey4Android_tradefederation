@@ -21,6 +21,8 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 
+import java.io.IOException;
+
 /**
  * A {@link ILeveledLogOutput} that directs log messages to stdout.
  */
@@ -80,4 +82,8 @@ public class StdoutLogger implements ILeveledLogOutput {
         return new StdoutLogger();
     }
 
+    @Override
+    public void init() throws IOException {
+        // ignore
+    }
 }

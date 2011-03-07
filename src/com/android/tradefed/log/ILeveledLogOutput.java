@@ -20,12 +20,18 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.result.InputStreamSource;
 
 import java.io.BufferedInputStream;
+import java.io.IOException;
 
 /**
  * Classes which implement this interface provides methods that deal with outputting log
  * messages.
  */
 public interface ILeveledLogOutput extends ILogOutput {
+
+    /**
+     * Initialize the log, creating any required IO resources.
+     */
+    public void init() throws IOException;
 
     /**
      * Gets the minimum log level to display.

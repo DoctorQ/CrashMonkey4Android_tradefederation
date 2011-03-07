@@ -18,7 +18,6 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.FileUtil;
 
@@ -52,7 +51,8 @@ public class LogRegistry implements ILogOutput {
     LogRegistry() {
         try {
             mGlobalLogger = new FileLogger();
-        } catch (ConfigurationException e) {
+            mGlobalLogger.init();
+        } catch (IOException e) {
             System.err.println("Failed to create global logger");
             throw new IllegalStateException(e);
         }

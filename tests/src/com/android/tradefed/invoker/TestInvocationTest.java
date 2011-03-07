@@ -94,7 +94,7 @@ public class TestInvocationTest extends TestCase {
         mMockTestListener = EasyMock.createStrictMock(ITestInvocationListener.class);
         mMockSummaryListener = EasyMock.createStrictMock(ITestSummaryListener.class);
         mMockBuildInfo = EasyMock.createMock(IBuildInfo.class);
-        mMockLogger = EasyMock.createNiceMock(ILeveledLogOutput.class);
+        mMockLogger = EasyMock.createMock(ILeveledLogOutput.class);
 
         mStubConfiguration.setDeviceRecovery(mMockRecovery);
         mStubConfiguration.setTargetPreparer(mMockPreparer);
@@ -303,6 +303,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
+        mMockLogger.init();
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
         EasyMock.expectLastCall().andThrow(exception);
         setupMockFailureListeners(exception);
@@ -346,6 +347,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.expect(resumableTest.isResumable()).andReturn(Boolean.TRUE);
 
+        mMockLogger.init();
         EasyMock.expect(mMockDevice.getLogcat())
                 .andReturn(new ByteArrayInputStreamSource(new byte[0]));
         EasyMock.expect(mMockLogger.getLog())
@@ -365,6 +367,7 @@ public class TestInvocationTest extends TestCase {
                 .andReturn(Boolean.TRUE);
         mMockBuildProvider.cleanUp(mMockBuildInfo);
 
+        mMockLogger.init();
         // now set resumed invocation expectations
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
@@ -406,6 +409,7 @@ public class TestInvocationTest extends TestCase {
      * @param test the {@link Test} to use.
      */
     private void setupNormalInvoke(IRemoteTest test) throws Exception {
+        mMockLogger.init();
         mStubConfiguration.setTest(test);
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
