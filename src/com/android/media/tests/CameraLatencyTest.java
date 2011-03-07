@@ -279,6 +279,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
             return sb.toString();
         }
 
+        @Override
         public void setUp() throws Exception {
             mTestInstance = new CameraLatencyTest() {
                 @Override

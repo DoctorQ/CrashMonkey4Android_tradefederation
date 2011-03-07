@@ -33,6 +33,7 @@ import java.util.zip.ZipEntry;
 public class ClassPathScanner {
 
     private static final String DOT_CLASS = ".class";
+    @SuppressWarnings("unused") // will be used in future
     private String[] mClassPath;
 
     ClassPathScanner() {

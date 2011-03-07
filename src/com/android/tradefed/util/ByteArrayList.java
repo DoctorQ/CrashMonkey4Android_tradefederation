@@ -223,6 +223,7 @@ public class ByteArrayList {
     /**
      * {@inheritDoc}
      */
+    @Override
     public int hashCode() {
         return Arrays.hashCode(mStorage);
     }
