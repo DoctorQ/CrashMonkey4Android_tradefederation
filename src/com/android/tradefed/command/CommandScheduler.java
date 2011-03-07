@@ -277,6 +277,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
                         getArgString(mCmd.getArgs()), elapsedTime));
                 mCmd.incrementExecTime(elapsedTime);
+                mAllCommands.remove(mCmd);
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
             }
@@ -292,7 +293,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     CommandScheduler() {
         mCommandQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
-        mAllCommands =  Collections.synchronizedList(new LinkedList<ConfigCommand>());
+        mAllCommands = Collections.synchronizedList(new LinkedList<ConfigCommand>());
         mInvocationThreads = new HashSet<InvocationThread>();
         // use a ScheduledThreadPoolExecutorTimer as a single-threaded timer. This class
         // is used instead of a java.util.Timer because it offers advanced shutdown options
@@ -402,6 +403,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 cmd.getConfiguration().printCommandUsage(System.out);
             } else {
                 mCommandQueue.add(cmd);
+                mAllCommands.add(cmd);
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
@@ -444,18 +446,27 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         if (isShutdown()) {
             return;
         }
-        if (delayTime > 0) {
-            // delay before adding command back to queue
-            Runnable delayCommand = new Runnable() {
-                @Override
-                public void run() {
-                    mCommandQueue.add(cmd);
-                }
-            };
-            mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);
-        } else {
-            // return to queue immediately
-            mCommandQueue.add(cmd);
+
+        /* FIXME
+         * This is a hack to make TF not crash on exit
+         */
+        try {
+            if (delayTime > 0) {
+                // delay before adding command back to queue
+                Runnable delayCommand = new Runnable() {
+                    @Override
+                    public void run() {
+                        mCommandQueue.add(cmd);
+                    }
+                };
+                mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);
+            } else {
+                // return to queue immediately
+                mCommandQueue.add(cmd);
+            }
+        } catch (java.util.concurrent.RejectedExecutionException e) {
+            // Somehow we're getting to mCommandTimer.schedule above on shutdown
+            Log.e(LOG_TAG, e);
         }
     }
 
@@ -518,6 +529,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             if (mCommandTimer != null) {
                 mCommandTimer.shutdownNow();
             }
+            mAllCommands.clear();
         }
     }
 
