@@ -45,7 +45,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 
-import static junit.framework.Assert.*;
+import junit.framework.Assert;
 import junit.framework.TestCase;
 
 /**
@@ -119,7 +119,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        assertNotNull(mTestDevice);
+        Assert.assertNotNull(mTestDevice);
 
         for (TestInfo test : mTestCases) {
             cleanTmpFiles();

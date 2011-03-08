@@ -43,7 +43,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static junit.framework.Assert.*;
+import junit.framework.Assert;
 
 /**
  * Runs the Media stress testcases.
@@ -77,7 +77,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        assertNotNull(mTestDevice);
+        Assert.assertNotNull(mTestDevice);
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 mTestRunnerName, mTestDevice.getIDevice());

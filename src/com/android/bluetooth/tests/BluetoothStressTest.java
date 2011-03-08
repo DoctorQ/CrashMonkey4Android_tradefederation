@@ -16,8 +16,6 @@
 
 package com.android.bluetooth.tests;
 
-import static junit.framework.Assert.assertNotNull;
-
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
@@ -51,6 +49,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import junit.framework.Assert;
 import junit.framework.TestCase;
 
 /**
@@ -147,7 +146,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        assertNotNull(mTestDevice);
+        Assert.assertNotNull(mTestDevice);
         setupTests();
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,

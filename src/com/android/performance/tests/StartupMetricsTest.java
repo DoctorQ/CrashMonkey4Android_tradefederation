@@ -16,8 +16,6 @@
 
 package com.android.performance.tests;
 
-import static junit.framework.Assert.assertNotNull;
-
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 
@@ -30,6 +28,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import java.util.HashMap;
 import java.util.Map;
 
+import junit.framework.Assert;
+
 /**
  * Tests to gather device metrics from during and immediately after boot
  */
@@ -40,7 +40,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        assertNotNull(mTestDevice);
+        Assert.assertNotNull(mTestDevice);
 
         executeRebootTest(listener);
     }
