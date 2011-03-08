@@ -42,6 +42,7 @@ import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
 import com.android.tradefed.testtype.IShardableTest;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -128,6 +129,8 @@ public class TestInvocation implements ITestInvocation {
                 Log.i(LOG_TAG, "No build to test");
             }
         } catch (BuildRetrievalError e) {
+            Log.e(LOG_TAG, e);
+        } catch (IOException e) {
             Log.e(LOG_TAG, e);
         }
     }
@@ -244,20 +247,17 @@ public class TestInvocation implements ITestInvocation {
      * @param info the {@link IBuildInfo}
      *
      * @throws DeviceNotAvailableException
+     * @throws IOException if log could not be created
      * @throws ConfigurationException
      */
     private void performInvocation(IConfiguration config, ITestDevice device, IBuildInfo info,
-            IRescheduler rescheduler) throws DeviceNotAvailableException {
+            IRescheduler rescheduler) throws DeviceNotAvailableException, IOException {
 
         boolean resumed = false;
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
 
-        getLogRegistry().registerLogger(config.getLogOutput());
-        logStartInvocation(info, device);
-        for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
-            listener.invocationStarted(info);
-        }
+        startInvocation(config, device, info);
         try {
             // TODO: find a cleaner way to add this info
             if (device != null) {
@@ -300,6 +300,31 @@ public class TestInvocation implements ITestInvocation {
                 }
             } finally {
                 config.getBuildProvider().cleanUp(info);
+            }
+        }
+    }
+
+    /**
+     * Starts the invocation.
+     *
+     * Starts logging, and informs listeners that invocation has been started
+     *
+     * @param config
+     * @param device
+     * @param info
+     * @throws IOException if logger fails to initialize
+     */
+    private void startInvocation(IConfiguration config, ITestDevice device, IBuildInfo info)
+            throws IOException {
+        config.getLogOutput().init();
+        getLogRegistry().registerLogger(config.getLogOutput());
+        logStartInvocation(info, device);
+        for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
+            try {
+                listener.invocationStarted(info);
+            } catch (RuntimeException e) {
+                // don't let one listener leave the invocation in a bad state
+                Log.e(LOG_TAG, e);
             }
         }
     }
@@ -369,6 +394,7 @@ public class TestInvocation implements ITestInvocation {
         // once tradefed log is reported, all further log calls for this invocation can get lost
         // unregister logger so future log calls get directed to the tradefed global log
         getLogRegistry().unregisterLogger();
+        logger.closeLog();
     }
 
     /**

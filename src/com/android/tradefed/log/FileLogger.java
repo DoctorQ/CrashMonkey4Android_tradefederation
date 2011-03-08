@@ -17,7 +17,6 @@ package com.android.tradefed.log;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
@@ -79,12 +78,14 @@ public class FileLogger implements ILeveledLogOutput {
         mLogTagsDisplay.addAll(tags);
     }
 
+    public FileLogger() {
+    }
+
     /**
-     * Constructor for creating a temporary log file in the system's default temp directory
-     *
-     * @throws ConfigurationException if unable to create log file
+     * {@inheritDoc}
      */
-    public FileLogger() throws ConfigurationException {
+    @Override
+    public void init() throws IOException {
         try {
             mTempLogFile = FileUtil.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
             mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
@@ -93,8 +94,7 @@ public class FileLogger implements ILeveledLogOutput {
             if (mTempLogFile != null) {
                 mTempLogFile.delete();
             }
-            throw new ConfigurationException(String.format("Could not create output log file : %s",
-                    e.getMessage()));
+            throw e;
         }
     }
 
@@ -106,17 +106,11 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public ILeveledLogOutput clone()  {
-        try {
-            FileLogger logger = new FileLogger();
-            logger.setLogLevelDisplay(mLogLevelStringDisplay);
-            logger.setLogLevel(mLogLevel);
-            logger.addLogTagsDisplay(mLogTagsDisplay);
-            return logger;
-        } catch (ConfigurationException e) {
-            // throw this as a RuntimeException, since declaring a ConfigurationException would
-            // conflict with Object#clone()
-            throw new RuntimeException(e);
-        }
+        FileLogger logger = new FileLogger();
+        logger.setLogLevelDisplay(mLogLevelStringDisplay);
+        logger.setLogLevel(mLogLevel);
+        logger.addLogTagsDisplay(mLogTagsDisplay);
+        return logger;
     }
 
     /**
@@ -180,6 +174,10 @@ public class FileLogger implements ILeveledLogOutput {
      * Returns the path representation of the file being logged to by this file logger
      */
     String getFilename() throws SecurityException {
+        if (mTempLogFile == null) {
+            throw new IllegalStateException(
+                    "logger has already been closed or has not been initialized");
+        }
         return mTempLogFile.getAbsolutePath();
     }
 
@@ -188,7 +186,8 @@ public class FileLogger implements ILeveledLogOutput {
      */
     public InputStreamSource getLog() {
         if (mLogWriter == null) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(
+                    "logger has already been closed or has not been initialized");
         }
         try {
             // create a InputStream from log file

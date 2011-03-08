@@ -235,18 +235,6 @@ public class Configuration implements IConfiguration {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public void cancel() {
-        ILeveledLogOutput logger = getLogOutput();
-        mConfigMap.clear();
-
-        if (logger != null) {
-            logger.closeLog();
-        }
-    }
-
-    /**
      * Return a copy of all config objects
      */
     private Collection<Object> getAllConfigurationObjects() {
