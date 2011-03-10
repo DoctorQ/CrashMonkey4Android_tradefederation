@@ -26,6 +26,8 @@ import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * A {@link ITargetPreparer} that configures a device for testing based on provided {@link Option}s.
@@ -71,6 +73,10 @@ public class DeviceSetup implements ITargetPreparer {
         + "Allows package-private framework tests to run.")
     private boolean mDisableDalvikVerifier = false;
 
+    @Option(name="setprop", description="set the specified property on boot.  " +
+            "Format: --setprop key=value.  May be repeated.")
+    private Collection<String> mSetProps = new ArrayList<String>();
+
     /**
      * Sets the local data path to use
      * <p/>
@@ -105,6 +111,15 @@ public class DeviceSetup implements ITargetPreparer {
      */
     void setMinExternalStoreSpace(int minKBytes) {
         mMinExternalStoreSpace = minKBytes;
+    }
+
+    /**
+     * Adds a property to the list of properties to set
+     * <p/>
+     * Exposed for unit testing
+     */
+    void addSetProperty(String prop) {
+        mSetProps.add(prop);
     }
 
     /**
@@ -158,7 +173,11 @@ public class DeviceSetup implements ITargetPreparer {
             propertyBuilder.append("ro.audio.silent=1\n");
         }
         if (mDisableDalvikVerifier) {
-            propertyBuilder.append("dalvik.vm.dexopt-flags = v=n");
+            propertyBuilder.append("dalvik.vm.dexopt-flags=v\n");
+        }
+        for (String prop : mSetProps) {
+            propertyBuilder.append(prop);
+            propertyBuilder.append("\n");
         }
         if (propertyBuilder.length() > 0) {
             // create a local.prop file, and push it to /data/local.prop
