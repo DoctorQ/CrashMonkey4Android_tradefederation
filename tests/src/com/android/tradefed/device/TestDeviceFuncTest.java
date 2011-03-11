@@ -132,6 +132,23 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         }
     }
 
+    /**
+     * Test pulling a file from device that does not exist.
+     * <p/>
+     * Expect {@link TestDevice#pullFile(String)} to return <code>false</code>
+     */
+    public void testPull_noexist() throws IOException, DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testPull_noexist");
+
+        // make sure the root path is valid
+        String externalStorePath =  mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        assertNotNull(externalStorePath);
+        String deviceFilePath = String.format("%s/%s", externalStorePath, "thisfiledoesntexist");
+        assertFalse(String.format("%s exists", deviceFilePath),
+                mTestDevice.doesFileExist(deviceFilePath));
+        assertNull(mTestDevice.pullFile(deviceFilePath));
+    }
+
     private File createTempTestFile(File dir) throws IOException {
         File tmpFile = null;
         try {
