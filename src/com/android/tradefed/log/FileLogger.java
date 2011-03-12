@@ -118,8 +118,7 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
-        printLog(logLevel, tag, message);
-        Log.printLog(logLevel, tag, message);
+        internalPrintLog(logLevel, tag, message, true /* force print to stdout */);
     }
 
     /**
@@ -127,15 +126,25 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public void printLog(LogLevel logLevel, String tag, String message) {
-        String outMessage = Log.getLogFormatString(logLevel, tag, message);
+        internalPrintLog(logLevel, tag, message, false /* don't force stdout */);
+    }
+
+    /**
+     * A version of printLog(...) which can be forced to print to stdout, even if the log level
+     * isn't above the urgency threshold.
+     */
+    private void internalPrintLog(LogLevel logLevel, String tag, String message,
+            boolean forceStdout) {
+        String outMessage = LogUtil.getLogFormatString(logLevel, tag, message);
         LogLevel displayLevel = LogLevel.getByString(mLogLevelStringDisplay);
-        if (logLevel.getPriority() >= displayLevel.getPriority() || mLogTagsDisplay.contains(tag)) {
+        if (forceStdout
+                || logLevel.getPriority() >= displayLevel.getPriority()
+                || mLogTagsDisplay.contains(tag)) {
             System.out.print(outMessage);
         }
         try {
             writeToLog(outMessage);
-        }
-        catch (IOException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }

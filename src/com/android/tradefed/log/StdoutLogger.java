@@ -43,9 +43,7 @@ public class StdoutLogger implements ILeveledLogOutput {
      * {@inheritDoc}
      */
     public void printLog(LogLevel logLevel, String tag, String message) {
-        // TODO: for now, jst redirect back to the standard ddms logger
-        Log.printLog(logLevel, tag, message);
-
+        LogUtil.printLog(logLevel, tag, message);
     }
 
     /**
