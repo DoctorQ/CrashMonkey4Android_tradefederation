@@ -19,6 +19,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
+import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -978,8 +979,16 @@ class TestDevice implements IManagedTestDevice {
             } catch (SyncException e) {
                 Log.w(LOG_TAG, String.format("SyncException when attempting %s on device %s",
                         actionDescription, getSerialNumber()));
+                // a SyncException is not necessarily a device communication problem
+                // do additional diagnosis
+                if (!e.getErrorCode().equals(SyncError.BUFFER_OVERRUN) &&
+                        !e.getErrorCode().equals(SyncError.TRANSFER_PROTOCOL_ERROR)) {
+                    // this is a logic problem, doesn't need recovery or to be retried
+                    return false;
+                }
             } catch (AdbCommandRejectedException e) {
-                Log.w(LOG_TAG, String.format("AdbCommandRejectedException when attempting %s on device %s",
+                Log.w(LOG_TAG, String.format(
+                        "AdbCommandRejectedException when attempting %s on device %s",
                         actionDescription, getSerialNumber()));
             } catch (ShellCommandUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s stopped responding when attempting %s",
