@@ -71,6 +71,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             Pattern.compile("\\S+ iteration (\\d+) of (\\d+)");
     private static final Pattern PERF_PATTERN =
             Pattern.compile("((?:\\w|-)+)\\(\\) completed in (\\d+) ms");
+    private static final Pattern METHOD_PATTERN =
+            Pattern.compile("((?:\\w|-)+)\\(\\) completed.*");
 
     private static final String OUTPUT_PATH = "BluetoothStressTestOutput.txt";
 
@@ -258,6 +260,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         int iterCount = 0;
         //int totalIterCount = 0;
         Map<String, List<Integer>> perfData = new HashMap<String, List<Integer>>();
+        Map<String, Integer> iterData = new HashMap<String, Integer>();
 
         // Iterate through each line of output
         while (lineIter.hasNext()) {
@@ -279,6 +282,16 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 }
                 perfData.get(method).add(time);
             }
+
+            m = METHOD_PATTERN.matcher(line);
+            if (m.matches()) {
+                String method = m.group(1);
+                if (!iterData.containsKey(method)) {
+                    iterData.put(method, 1);
+                } else {
+                    iterData.put(method, iterData.get(method).intValue() + 1);
+                }
+            }
         }
 
         // Coalesce the parsed values into metrics that we can report
@@ -288,8 +301,11 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 List<Integer> values = perfData.get(metric);
                 String key = String.format("performance_%s_mean", metric);
                 runMetrics.put(key, Float.toString(mean(values)));
+            }
 
-                iterCount = min(iterCount, values.size());
+            if (iterData.containsKey(metric)) {
+                Integer iters = iterData.get(metric);
+                iterCount = min(iterCount, iters);
             } else {
                 iterCount = 0;
             }
@@ -347,7 +363,6 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     public static class MetaTest extends TestCase {
         private BluetoothStressTest mTestInstance = null;
 
-        private static String mScanName = "scan";
         private TestInfo mScanInfo = null;
 
         private TestInfo mReportedTestInfo = null;
@@ -431,9 +446,37 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         }
 
         /**
-         * Check parsing when the output is missing datums
+         * Check parsing when the output is missing optional datums
          */
-        public void testParse_missing() throws Exception {
+        public void testParse_missingDatums() throws Exception {
+            // stopScan is missing datums but completes successfully
+            String output = join(
+                    "enable() completed in 5759 ms",
+                    "scan iteration 1 of 3",
+                    "startScan() completed in 102 ms",
+                    "stopScan() completed",
+                    "scan iteration 2 of 3",
+                    "startScan() completed in 103 ms",
+                    "stopScan() completed",
+                    "scan iteration 3 of 3",
+                    "startScan() completed in 107 ms",
+                    "stopScan() completed",
+                    "disable() completed in 3763 ms");
+
+            InputStream iStream = new ByteArrayInputStream(output.getBytes());
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
+            assertNotNull(mReportedMetrics);
+            assertEquals(2, mReportedMetrics.size());
+            // Parser should realize that one of the optional datums is missing
+            assertEquals("3", mReportedMetrics.get("iterations"));
+            assertEquals("104.0", mReportedMetrics.get("performance_startScan_mean"));
+        }
+
+        /**
+         * Check parsing when the output is missing mandatory methods
+         */
+        public void testParse_missingMethods() throws Exception {
             String output = join(
                     "enable() completed in 5759 ms",
                     "scan iteration 1 of 3",
@@ -452,7 +495,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             assertEquals(mScanInfo, mReportedTestInfo);
             assertNotNull(mReportedMetrics);
             assertEquals(2, mReportedMetrics.size());
-            // Parser should realize that one of the mandatory datums is missing
+            // Parser should realize that one of the mandatory methods is missing
             assertEquals("0", mReportedMetrics.get("iterations"));
             assertEquals("104.0", mReportedMetrics.get("performance_startScan_mean"));
         }
