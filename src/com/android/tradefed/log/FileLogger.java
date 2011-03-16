@@ -36,6 +36,8 @@ import java.util.HashSet;
  */
 public class FileLogger implements ILeveledLogOutput {
 
+    private static final String LOG_TAG = "FileLogger";
+
     private static final String TEMP_FILE_PREFIX = "tradefed_log_";
     private static final String TEMP_FILE_SUFFIX = ".txt";
 
@@ -186,17 +188,20 @@ public class FileLogger implements ILeveledLogOutput {
      */
     public InputStreamSource getLog() {
         if (mLogWriter == null) {
-            throw new IllegalStateException(
-                    "logger has already been closed or has not been initialized");
-        }
-        try {
-            // create a InputStream from log file
-            mLogWriter.flush();
-            return new SnapshotInputStreamSource(new FileInputStream(mTempLogFile));
+            // TODO: change this back to throw new IllegalStateException(
+            System.err.println(String.format(
+                    "logger has already been closed or has not been initialized, Thread %s",
+                    Thread.currentThread().getName()));
+        } else {
+            try {
+                // create a InputStream from log file
+                mLogWriter.flush();
+                return new SnapshotInputStreamSource(new FileInputStream(mTempLogFile));
 
-        } catch (IOException e) {
-            System.err.println("Failed to get log");
-            e.printStackTrace();
+            } catch (IOException e) {
+                System.err.println("Failed to get log");
+                e.printStackTrace();
+            }
         }
         return new ByteArrayInputStreamSource(new byte[0]);
     }
