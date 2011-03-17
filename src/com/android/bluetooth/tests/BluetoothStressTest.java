@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -78,15 +79,23 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
      * <p/>
      * This currently includes "discoverable", "enable", and "scan"
      */
-    private Map<String, TestInfo> mTestCases = null;
+    private List<TestInfo> mTestCases = null;
 
     /**
      * A struct that contains useful info about the tests to run
      */
     static class TestInfo {
+        public String mTestName = null;
         public String mTestMethod = null;
         public Integer mIterCount = null;
         public Set<String> mPerfMetrics = new HashSet<String>();
+
+        public String getTestMetricsName() {
+            if (mTestName == null) {
+                return null;
+            }
+            return String.format("bt_%s_stress", mTestName);
+        }
 
         @Override
         public String toString() {
@@ -116,32 +125,31 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             // assume already set up
             return;
         }
-        mTestCases = new HashMap<String, TestInfo>();
+        mTestCases = new ArrayList<TestInfo>(3);
 
-        // FIXME: add test name to TestInfo
-        // "discoverable" test
         TestInfo t = new TestInfo();
+        t.mTestName = "discoverable";
         t.mTestMethod = "testDiscoverable";
         t.mIterCount = mDiscoverableIterations;
         t.mPerfMetrics.add("discoverable");
         t.mPerfMetrics.add("undiscoverable");
-        mTestCases.put("discoverable", t);
+        mTestCases.add(t);
 
-        // "enable" test
         t = new TestInfo();
+        t.mTestName = "enable";
         t.mTestMethod = "testEnable";
         t.mIterCount = mEnableIterations;
         t.mPerfMetrics.add("enable");
         t.mPerfMetrics.add("disable");
-        mTestCases.put("enable", t);
+        mTestCases.add(t);
 
-        // "scan" test
         t = new TestInfo();
+        t.mTestName = "scan";
         t.mTestMethod = "testScan";
         t.mIterCount = mScanIterations;
         t.mPerfMetrics.add("startScan");
         t.mPerfMetrics.add("stopScan");
-        mTestCases.put("scan", t);
+        mTestCases.add(t);
     }
 
     @Override
@@ -153,9 +161,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
 
-        for (Map.Entry<String, TestInfo> test : mTestCases.entrySet()) {
-            String testName = test.getKey();
-            TestInfo t = test.getValue();
+        for (TestInfo test : mTestCases) {
+            String testName = test.mTestName;
+            TestInfo t = test;
             CollectingTestListener auxListener = new CollectingTestListener();
 
             if (t.mIterCount != null && t.mIterCount <= 0) {
@@ -176,7 +184,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             }
 
             // Log the output file
-            logOutputFile(testName, t, listener);
+            logOutputFile(t, listener);
             cleanOutputFile();
 
             // Grab a bugreport if warranted
@@ -204,7 +212,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
      * Pull the output file from the device, add it to the logs, and also parse out the relevant
      * test metrics and report them.
      */
-    private void logOutputFile(String testName, TestInfo testInfo, ITestInvocationListener listener)
+    private void logOutputFile(TestInfo testInfo, ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         File outputFile = null;
         InputStreamSource outputSource = null;
@@ -214,9 +222,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(String.format("output-%s.txt", testName), LogDataType.TEXT,
+            listener.testLog(String.format("output-%s.txt", testInfo.mTestName), LogDataType.TEXT,
                     outputSource);
-            parseOutputFile(testName, testInfo, new FileInputStream(outputFile), listener);
+            parseOutputFile(testInfo, new FileInputStream(outputFile), listener);
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Got an IO Exception: %s", e));
         } finally {
@@ -232,7 +240,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     /**
      * Parse the relevant metrics from the Instrumentation test output file
      */
-    private void parseOutputFile(String testName, TestInfo testInfo, InputStream dataStream,
+    private void parseOutputFile(TestInfo testInfo, InputStream dataStream,
             ITestInvocationListener listener) {
         // Read output file contents into memory
         String contents;
@@ -289,7 +297,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         runMetrics.put("iterations", Integer.toString(iterCount));
 
         // And finally, report the coalesced metrics
-        reportMetrics(listener, testName, runMetrics);
+        reportMetrics(listener, testInfo, runMetrics);
     }
 
     private static int min(int x, int y) {
@@ -313,11 +321,12 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
      * <p />
      * Exposed for unit testing
      */
-    void reportMetrics(ITestInvocationListener listener, String runName,
+    void reportMetrics(ITestInvocationListener listener, TestInfo test,
             Map<String, String> metrics) {
         // Create an empty testRun to report the parsed runMetrics
-        Log.d(LOG_TAG, String.format("About to report metrics: %s", metrics));
-        listener.testRunStarted(runName, 0);
+        Log.d(LOG_TAG, String.format("About to report metrics to %s: %s", test.getTestMetricsName(),
+                metrics));
+        listener.testRunStarted(test.getTestMetricsName(), 0);
         listener.testRunEnded(0, metrics);
     }
 
@@ -341,7 +350,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         private static String mScanName = "scan";
         private TestInfo mScanInfo = null;
 
-        private String mReportedTestName = null;
+        private TestInfo mReportedTestInfo = null;
         private Map<String, String> mReportedMetrics = null;
 
         private static String join(String... pieces) {
@@ -357,13 +366,14 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         public void setUp() throws Exception {
             mTestInstance = new BluetoothStressTest() {
                 @Override
-                void reportMetrics(ITestInvocationListener l, String name,
+                void reportMetrics(ITestInvocationListener l, TestInfo test,
                         Map<String, String> metrics) {
-                    mReportedTestName = name;
+                    mReportedTestInfo = test;
                     mReportedMetrics = metrics;
                 }
             };
             mScanInfo = new TestInfo();
+            mScanInfo.mTestName = "scan";
             mScanInfo.mTestMethod = "testScan";
             mScanInfo.mIterCount = 1;
             mScanInfo.mPerfMetrics.add("startScan");
@@ -388,8 +398,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     "disable() completed in 3763 ms");
 
             InputStream iStream = new ByteArrayInputStream(output.getBytes());
-            mTestInstance.parseOutputFile(mScanName, mScanInfo, iStream, null);
-            assertEquals(mScanName, mReportedTestName);
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
             assertNotNull(mReportedMetrics);
             assertEquals(3, mReportedMetrics.size());
             assertEquals("3", mReportedMetrics.get("iterations"));
@@ -410,8 +420,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     "disable() completed in 3763 ms");
 
             InputStream iStream = new ByteArrayInputStream(output.getBytes());
-            mTestInstance.parseOutputFile(mScanName, mScanInfo, iStream, null);
-            assertEquals(mScanName, mReportedTestName);
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
             assertNotNull(mReportedMetrics);
             assertEquals(3, mReportedMetrics.size());
             // Parser should realize that there was only 1 iteration reported
@@ -438,8 +448,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     "disable() completed in 3763 ms");
 
             InputStream iStream = new ByteArrayInputStream(output.getBytes());
-            mTestInstance.parseOutputFile(mScanName, mScanInfo, iStream, null);
-            assertEquals(mScanName, mReportedTestName);
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
             assertNotNull(mReportedMetrics);
             assertEquals(2, mReportedMetrics.size());
             // Parser should realize that one of the mandatory datums is missing
