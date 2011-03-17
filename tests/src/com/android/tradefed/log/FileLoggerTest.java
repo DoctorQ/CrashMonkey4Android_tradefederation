@@ -70,11 +70,13 @@ public class FileLoggerTest extends TestCase {
             logger.init();
             // Write 3 lines of text to the log...
             logger.printLog(LogLevel.INFO, LOG_TAG, Text1);
-            String expectedText1 = Log.getLogFormatString(LogLevel.INFO, LOG_TAG, Text1).trim();
+            String expectedText1 = LogUtil.getLogFormatString(LogLevel.INFO, LOG_TAG, Text1).trim();
             logger.printLog(LogLevel.VERBOSE, LOG_TAG, Text2);
-            String expectedText2 = Log.getLogFormatString(LogLevel.VERBOSE, LOG_TAG, Text2).trim();
+            String expectedText2 =
+                    LogUtil.getLogFormatString(LogLevel.VERBOSE, LOG_TAG, Text2).trim();
             logger.printLog(LogLevel.ASSERT, LOG_TAG, Text3);
-            String expectedText3 = Log.getLogFormatString(LogLevel.ASSERT, LOG_TAG, Text3).trim();
+            String expectedText3 =
+                    LogUtil.getLogFormatString(LogLevel.ASSERT, LOG_TAG, Text3).trim();
 
             // Verify the 3 lines we logged
             logSource = logger.getLog();
