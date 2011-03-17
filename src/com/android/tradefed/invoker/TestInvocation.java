@@ -291,9 +291,9 @@ public class TestInvocation implements ITestInvocation {
             throw e;
         } finally {
             mStatus = "done running tests";
-            reportLogs(device, config.getTestInvocationListeners(), config.getLogOutput());
-            elapsedTime = System.currentTimeMillis() - startTime;
             try {
+                reportLogs(device, config.getTestInvocationListeners(), config.getLogOutput());
+                elapsedTime = System.currentTimeMillis() - startTime;
                 if (!resumed) {
                     InvocationSummaryHelper.reportInvocationEnded(
                             config.getTestInvocationListeners(), elapsedTime);
