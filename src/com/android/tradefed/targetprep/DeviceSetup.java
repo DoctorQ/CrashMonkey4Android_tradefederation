@@ -173,7 +173,7 @@ public class DeviceSetup implements ITargetPreparer {
             propertyBuilder.append("ro.audio.silent=1\n");
         }
         if (mDisableDalvikVerifier) {
-            propertyBuilder.append("dalvik.vm.dexopt-flags=v\n");
+            propertyBuilder.append("dalvik.vm.dexopt-flags = v=n\n");
         }
         for (String prop : mSetProps) {
             propertyBuilder.append(prop);
