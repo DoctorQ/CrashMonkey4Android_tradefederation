@@ -212,7 +212,9 @@ public class LogRegistry implements ILogOutput {
         for (Map.Entry<ThreadGroup, ILeveledLogOutput> logEntry : mLogTable.entrySet()) {
             // use thread group name as file name - assume its descriptive
             String filePrefix = String.format("%s_log_", logEntry.getKey().getName());
-            saveLog(filePrefix, logEntry.getValue().getLog());
+            InputStreamSource logSource = logEntry.getValue().getLog();
+            saveLog(filePrefix, logSource);
+            logSource.cancel();
         }
         // save global log last
         saveGlobalLog();
