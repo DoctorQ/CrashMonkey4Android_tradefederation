@@ -57,12 +57,13 @@ public class Console {
     private static final String LOG_TAG = "Console";
     private static final String CONSOLE_PROMPT = "tf >";
 
-    protected final static String HELP_PATTERN = "\\?|h|help";
-    protected final static String LIST_PATTERN = "l(?:ist)?";
-    protected final static String DUMP_PATTERN = "d(?:ump)?";
-    protected final static String RUN_PATTERN = "r(?:un)?";
+    protected static final String HELP_PATTERN = "\\?|h|help";
+    protected static final String LIST_PATTERN = "l(?:ist)?";
+    protected static final String DUMP_PATTERN = "d(?:ump)?";
+    protected static final String RUN_PATTERN = "r(?:un)?";
     protected static final String EXIT_PATTERN = "(?:q|exit)";
-    protected final static String SET_PATTERN = "s(?:et)?";
+    protected static final String SET_PATTERN = "s(?:et)?";
+    protected static final String DEBUG_PATTERN = "debug";
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
@@ -255,10 +256,12 @@ public class Console {
         // Help commands
         genericHelp.add("Enter 'q' or 'exit' to exit");
         genericHelp.add("Enter 'kill' to attempt to forcibly exit, by shutting down adb");
-        genericHelp.add("Enter 'help list' for help with 'list' commands");
-        genericHelp.add("Enter 'help run'  for help with 'run' commands");
-        genericHelp.add("Enter 'help dump' for help with 'dump' commands");
-        genericHelp.add("Enter 'help set'  for help with 'set' commands");
+        genericHelp.add("");
+        genericHelp.add("Enter 'help list'  for help with 'list' commands");
+        genericHelp.add("Enter 'help run'   for help with 'run' commands");
+        genericHelp.add("Enter 'help dump'  for help with 'dump' commands");
+        genericHelp.add("Enter 'help set'   for help with 'set' commands");
+        genericHelp.add("Enter 'help debug' for help with 'debug' commands");
 
         commandHelp.put(LIST_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
@@ -286,6 +289,11 @@ public class Console {
                 "\tlog-level-display <level>     Sets the global display log level to <level>" +
                 LINE_SEPARATOR,
                 SET_PATTERN));
+
+        commandHelp.put(DEBUG_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\tgc      Attempt to force a GC" + LINE_SEPARATOR,
+                DEBUG_PATTERN));
 
         // Handle quit commands
         trie.put(new QuitRunnable(), EXIT_PATTERN);
@@ -406,6 +414,14 @@ public class Console {
             }
         };
         trie.put(runSetLog, SET_PATTERN, "log-level-display", "(.*)");
+
+        // Debug commands
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.gc();
+                    }
+                }, DEBUG_PATTERN, "gc");
     }
 
     /**

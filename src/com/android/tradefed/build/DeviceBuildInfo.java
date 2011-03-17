@@ -16,7 +16,7 @@
 
 package com.android.tradefed.build;
 
-
+import com.android.ddmlib.Log;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
@@ -28,6 +28,7 @@ import java.util.Map;
  * A {@link IBuildInfo} that represents a complete Android device build and (optionally) its tests.
  */
 public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
+    private static final String LOG_TAG = "DeviceBuildInfo";
 
     private Map<String, ImageFile> mImageFileMap;
 
@@ -212,6 +213,22 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             return copy;
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Override finalize to determine when a DeviceBuildInfo is being destroyed without having been
+     * cleaned up.  This is temporary as we try to hunt down file leaks.
+     */
+    @Override
+    protected void finalize() throws Throwable {
+        super.finalize();
+        String name = String.format("%s[%s]", LOG_TAG, Thread.currentThread().getName());
+        Log.d(LOG_TAG, String.format("%s in finalizer", name));
+        if (!mImageFileMap.isEmpty()) {
+            Log.e(LOG_TAG, String.format("%s was not cleaned up: %s", name,
+                    mImageFileMap.toString()));
+            cleanUp();
         }
     }
 }
