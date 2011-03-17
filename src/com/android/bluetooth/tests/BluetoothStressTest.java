@@ -69,10 +69,15 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
     private static final Pattern ITERATION_PATTERN =
             Pattern.compile("\\S+ iteration (\\d+) of (\\d+)");
+
+    /**
+     * Matches {@code methodName(arg1=arg1, arg2=arg2) completed} where {@code args} are
+     * additional information used for debugging the logs.
+     */
+    private static final String METHOD_COMPLETED_STR = "((?:\\w|-)+)\\((?:.*)\\) completed";
     private static final Pattern PERF_PATTERN =
-            Pattern.compile("((?:\\w|-)+)\\(\\) completed in (\\d+) ms");
-    private static final Pattern METHOD_PATTERN =
-            Pattern.compile("((?:\\w|-)+)\\(\\) completed.*");
+            Pattern.compile(METHOD_COMPLETED_STR + " in (\\d+) ms");
+    private static final Pattern METHOD_PATTERN = Pattern.compile(METHOD_COMPLETED_STR + ".*");
 
     private static final String OUTPUT_PATH = "BluetoothStressTestOutput.txt";
 
@@ -89,6 +94,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     static class TestInfo {
         public String mTestName = null;
         public String mTestMethod = null;
+        public String mIterKey = null;
         public Integer mIterCount = null;
         public Set<String> mPerfMetrics = new HashSet<String>();
 
@@ -122,6 +128,10 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             description="Number of iterations to run for the 'scan' test")
     private Integer mScanIterations = null;
 
+    @Option(name="enable-pan-iterations",
+            description="Number of iterations to run for the 'enable_pan' test")
+    private Integer mEnablePanIterations = null;
+
     private void setupTests() {
         if (mTestCases != null) {
             // assume already set up
@@ -132,6 +142,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         TestInfo t = new TestInfo();
         t.mTestName = "discoverable";
         t.mTestMethod = "testDiscoverable";
+        t.mIterKey = "discoverable_iterations";
         t.mIterCount = mDiscoverableIterations;
         t.mPerfMetrics.add("discoverable");
         t.mPerfMetrics.add("undiscoverable");
@@ -140,6 +151,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t = new TestInfo();
         t.mTestName = "enable";
         t.mTestMethod = "testEnable";
+        t.mIterKey = "enable_iterations";
         t.mIterCount = mEnableIterations;
         t.mPerfMetrics.add("enable");
         t.mPerfMetrics.add("disable");
@@ -148,9 +160,19 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t = new TestInfo();
         t.mTestName = "scan";
         t.mTestMethod = "testScan";
+        t.mIterKey = "scan_iterations";
         t.mIterCount = mScanIterations;
         t.mPerfMetrics.add("startScan");
         t.mPerfMetrics.add("stopScan");
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "enable_pan";
+        t.mTestMethod = "testEnablePan";
+        t.mIterKey = "enable_pan_iterations";
+        t.mIterCount = mEnablePanIterations;
+        t.mPerfMetrics.add("enablePan");
+        t.mPerfMetrics.add("disablePan");
         mTestCases.add(t);
     }
 
@@ -176,13 +198,13 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
             // Run the test
             cleanOutputFile();
-            if (t.mIterCount != null) {
-                runner.addInstrumentationArg(testName + "_iterations", t.mIterCount.toString());
+            if (t.mIterKey != null && t.mIterCount != null) {
+                runner.addInstrumentationArg(t.mIterKey, t.mIterCount.toString());
             }
             runner.setMethodName(TEST_CLASS_NAME, t.mTestMethod);
             mTestDevice.runInstrumentationTests(runner, listener, auxListener);
-            if (t.mIterCount != null) {
-                runner.removeInstrumentationArg(testName + "_iterations");
+            if (t.mIterKey != null && t.mIterCount != null) {
+                runner.removeInstrumentationArg(t.mIterKey);
             }
 
             // Log the output file
@@ -221,12 +243,14 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         try {
             outputFile = mTestDevice.pullFileFromExternal(OUTPUT_PATH);
 
-            Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
-                    outputFile.length(), outputFile));
-            outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(String.format("output-%s.txt", testInfo.mTestName), LogDataType.TEXT,
-                    outputSource);
-            parseOutputFile(testInfo, new FileInputStream(outputFile), listener);
+            if (outputFile != null) {
+                Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
+                        outputFile.length(), outputFile));
+                outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
+                listener.testLog(String.format("output-%s.txt", testInfo.mTestName),
+                        LogDataType.TEXT, outputSource);
+                parseOutputFile(testInfo, new FileInputStream(outputFile), listener);
+            }
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("Got an IO Exception: %s", e));
         } finally {
@@ -257,8 +281,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         List<String> lines = Arrays.asList(contents.split("\n"));
         ListIterator<String> lineIter = lines.listIterator();
         String line;
-        int iterCount = 0;
-        //int totalIterCount = 0;
+        Integer iterCount = null;
         Map<String, List<Integer>> perfData = new HashMap<String, List<Integer>>();
         Map<String, Integer> iterData = new HashMap<String, Integer>();
 
@@ -269,7 +292,10 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             Matcher m = ITERATION_PATTERN.matcher(line);
             if (m.matches()) {
                 iterCount = Integer.parseInt(m.group(1));
-                //totalIterCount = Integer.parseInt(m.group(2));
+                continue;
+            }
+
+            if (iterCount == null) {
                 continue;
             }
 
@@ -295,6 +321,10 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         }
 
         // Coalesce the parsed values into metrics that we can report
+        if (iterCount == null) {
+            iterCount = 0;
+        }
+
         Map<String, String> runMetrics = new HashMap<String, String>();
         for (String metric : testInfo.mPerfMetrics) {
             if (perfData.containsKey(metric)) {
@@ -310,17 +340,17 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 iterCount = 0;
             }
         }
-        runMetrics.put("iterations", Integer.toString(iterCount));
+        runMetrics.put("iterations", iterCount.toString());
 
         // And finally, report the coalesced metrics
         reportMetrics(listener, testInfo, runMetrics);
     }
 
-    private static int min(int x, int y) {
-        if (x <= y) {
-            return x;
-        } else {
+    private static Integer min(Integer x, Integer y) {
+        if (x == null || x.compareTo(y) > 0) {
             return y;
+        } else {
+            return x;
         }
     }
 
@@ -497,6 +527,63 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             assertEquals(2, mReportedMetrics.size());
             // Parser should realize that one of the mandatory methods is missing
             assertEquals("0", mReportedMetrics.get("iterations"));
+            assertEquals("104.0", mReportedMetrics.get("performance_startScan_mean"));
+        }
+
+        /**
+         * Make sure that parsing works with additional information added.
+         */
+        public void testParse_extras() throws Exception {
+            String output = join(
+                    "enable() completed in 5759 ms",
+                    "scan iteration 1 of 3",
+                    "startScan(profile=1, device=12:34:45:78:9A:BC) completed in 102 ms",
+                    "stopScan(profile=1, device=12:34:45:78:9A:BC) completed in 104 ms",
+                    "scan iteration 2 of 3",
+                    "startScan(profile=1, device=12:34:45:78:9A:BC) completed in 103 ms",
+                    "stopScan(profile=1, device=12:34:45:78:9A:BC) completed in 106 ms",
+                    "scan iteration 3 of 3",
+                    "startScan(profile=1, device=12:34:45:78:9A:BC) completed in 107 ms",
+                    "stopScan(profile=1, device=12:34:45:78:9A:BC) completed in 103 ms",
+                    "disable() completed in 3763 ms");
+
+            InputStream iStream = new ByteArrayInputStream(output.getBytes());
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
+            assertNotNull(mReportedMetrics);
+            assertEquals(3, mReportedMetrics.size());
+            assertEquals("3", mReportedMetrics.get("iterations"));
+            assertEquals("104.333",
+                    mReportedMetrics.get("performance_stopScan_mean").substring(0, 7));
+            assertEquals("104.0", mReportedMetrics.get("performance_startScan_mean"));
+        }
+
+        /**
+         * Make sure that parsing ignores anything before the first iterations
+         */
+        public void testParse_ignoreSetup() throws Exception {
+            String output = join(
+                    "enable() completed in 5759 ms",
+                    "stopScan() completed in 10000 ms", // Should not be counted
+                    "scan iteration 1 of 3",
+                    "startScan() completed in 102 ms",
+                    "stopScan() completed in 104 ms",
+                    "scan iteration 2 of 3",
+                    "startScan() completed in 103 ms",
+                    "stopScan() completed in 106 ms",
+                    "scan iteration 3 of 3",
+                    "startScan() completed in 107 ms",
+                    "stopScan() completed in 103 ms",
+                    "disable() completed in 3763 ms");
+
+            InputStream iStream = new ByteArrayInputStream(output.getBytes());
+            mTestInstance.parseOutputFile(mScanInfo, iStream, null);
+            assertEquals(mScanInfo, mReportedTestInfo);
+            assertNotNull(mReportedMetrics);
+            assertEquals(3, mReportedMetrics.size());
+            assertEquals("3", mReportedMetrics.get("iterations"));
+            assertEquals("104.333",
+                    mReportedMetrics.get("performance_stopScan_mean").substring(0, 7));
             assertEquals("104.0", mReportedMetrics.get("performance_startScan_mean"));
         }
     }
