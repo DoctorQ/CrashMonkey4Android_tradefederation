@@ -21,6 +21,7 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
@@ -414,7 +415,7 @@ public class DeviceManager implements IDeviceManager {
         }
         if (mAllocatedDeviceMap.remove(device.getSerialNumber()) == null) {
             Log.e(LOG_TAG, String.format("freeDevice called with unallocated device %s",
-                        device.getSerialNumber()));
+                    device.getSerialNumber()));
         } else if (deviceState == FreeDeviceState.UNRESPONSIVE) {
             // TODO: add class flag to control if unresponsive device's are returned to pool
             // TODO: also consider tracking unresponsive events received per device - so a
@@ -427,6 +428,109 @@ public class DeviceManager implements IDeviceManager {
                     "Freed device %s is unavailable. Removing from use.",
                     device.getSerialNumber()));
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice connectToTcpDevice(String ipAndPort) {
+        if (mAllocatedDeviceMap.containsKey(ipAndPort)) {
+            Log.w(LOG_TAG, String.format("Device with tcp serial %s is already allocated",
+                    ipAndPort));
+            return null;
+        }
+        // create a mapping between this device, and its soon-to-be associated tcp serial number
+        // this is done so a) the device can get state updates and b) this device isn't allocated
+        // to another caller when it goes online with new serial
+        ITestDevice tcpDevice = createAllocatedDevice(new StubDevice(ipAndPort));
+        if (doAdbConnect(ipAndPort)) {
+            try {
+                tcpDevice.setRecovery(new WaitDeviceRecovery());
+                tcpDevice.waitForDeviceOnline();
+                return tcpDevice;
+            } catch (DeviceNotAvailableException e) {
+                Log.w(LOG_TAG, String.format("Device with tcp serial %s did not come online",
+                        ipAndPort));
+            }
+        }
+        freeDevice(tcpDevice, FreeDeviceState.IGNORE);
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice reconnectDeviceToTcp(ITestDevice usbDevice)
+            throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Reconnecting device %s to adb over tcpip",
+                usbDevice.getSerialNumber()));
+        ITestDevice tcpDevice = null;
+        if (usbDevice instanceof IManagedTestDevice) {
+            IManagedTestDevice managedUsbDevice = (IManagedTestDevice)usbDevice;
+            String ipAndPort = managedUsbDevice.switchToAdbTcp();
+            if (ipAndPort != null) {
+                Log.d(LOG_TAG, String.format("Device %s was switched to adb tcp on %s",
+                        usbDevice.getSerialNumber(), ipAndPort));
+                tcpDevice = connectToTcpDevice(ipAndPort);
+                if (tcpDevice == null) {
+                    // ruh roh, could not connect to device
+                    // Try to re-establish connection back to usb device
+                    managedUsbDevice.recoverDevice();
+                }
+            }
+        } else {
+            Log.e(LOG_TAG, "reconnectDeviceToTcp: unrecognized device type.");
+        }
+        return tcpDevice;
+    }
+
+    @Override
+    public boolean disconnectFromTcpDevice(ITestDevice tcpDevice) {
+        Log.i(LOG_TAG, String.format("Disconnecting and freeing tcp device %s",
+                tcpDevice.getSerialNumber()));
+        boolean result = false;
+        try {
+            result = tcpDevice.switchToAdbUsb();
+        } catch (DeviceNotAvailableException e) {
+            Log.w(LOG_TAG, String.format("Failed to switch device %s to usb mode: %s",
+                    tcpDevice.getSerialNumber(), e.getMessage()));
+        }
+        freeDevice(tcpDevice, FreeDeviceState.IGNORE);
+        return result;
+    }
+
+    private boolean doAdbConnect(String ipAndPort) {
+        final String resultSuccess = String.format("connected to %s", ipAndPort);
+        for (int i = 1; i <= 3; i++) {
+            String adbConnectResult = executeGlobalAdbCommand("connect", ipAndPort);
+            // runcommand "adb connect ipAndPort"
+            if (adbConnectResult.startsWith(resultSuccess)) {
+                return true;
+            }
+            Log.w(LOG_TAG, String.format(
+                    "Failed to connect to device on %s, attempt %d of 3. Response: %s.",
+                    ipAndPort, i, adbConnectResult));
+            getRunUtil().sleep(5*1000);
+        }
+        return false;
+    }
+
+    /**
+     * Execute a adb command not targeted to a particular device eg. 'adb connect'
+     *
+     * @param cmdArgs
+     * @return
+     */
+    public String executeGlobalAdbCommand(String... cmdArgs) {
+        String[] fullCmd = ArrayUtil.buildArray(cmdArgs, "adb");
+        CommandResult result = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT, fullCmd);
+        if (CommandStatus.SUCCESS.equals(result.getStatus())) {
+            return result.getStdout();
+        }
+        Log.w(LOG_TAG, String.format("adb %s failed", cmdArgs[0]));
+        return null;
     }
 
     /**

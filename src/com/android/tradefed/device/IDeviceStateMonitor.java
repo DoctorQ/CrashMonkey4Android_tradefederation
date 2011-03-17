@@ -139,4 +139,10 @@ public interface IDeviceStateMonitor {
      * @see {@link IManagedTestDevice#setIDevice(IDevice)}
      */
     public void setIDevice(IDevice device);
+
+    /**
+     * @return <code>true</code> if device is connected to adb via tcp
+     */
+    public boolean isAdbTcp();
+
 }

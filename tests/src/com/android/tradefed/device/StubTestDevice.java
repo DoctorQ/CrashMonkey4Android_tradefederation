@@ -57,7 +57,7 @@ public class StubTestDevice implements IManagedTestDevice {
     @Override
     public String getSerialNumber() {
         // ignore
-        return null;
+        return "stub";
     }
 
     @Override
@@ -411,5 +411,37 @@ public class StubTestDevice implements IManagedTestDevice {
     public String getIpAddress() throws DeviceNotAvailableException {
         // ignore
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String switchToAdbTcp() throws DeviceNotAvailableException {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean switchToAdbUsb() throws DeviceNotAvailableException {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isAdbTcp() {
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void recoverDevice() throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException();
     }
 }

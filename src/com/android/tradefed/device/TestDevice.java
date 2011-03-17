@@ -36,6 +36,7 @@ import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.StubTestListener;
 import com.android.tradefed.result.SnapshotInputStreamSource;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -922,28 +923,14 @@ class TestDevice implements IManagedTestDevice {
      * Builds the OS command for the given adb command and args
      */
     private String[] buildAdbCommand(String... commandArgs) {
-        final int numAdbArgs = 3;
-        String[] newCmdArgs = new String[commandArgs.length + numAdbArgs];
-        // TODO: use full adb path
-        newCmdArgs[0] = "adb";
-        newCmdArgs[1] = "-s";
-        newCmdArgs[2] = getSerialNumber();
-        System.arraycopy(commandArgs, 0, newCmdArgs, numAdbArgs, commandArgs.length);
-        return newCmdArgs;
+        return ArrayUtil.buildArray(commandArgs, "adb", "-s", getSerialNumber());
     }
 
     /**
      * Builds the OS command for the given fastboot command and args
      */
     private String[] buildFastbootCommand(String... commandArgs) {
-        final int numAdbArgs = 3;
-        String[] newCmdArgs = new String[commandArgs.length + numAdbArgs];
-        // TODO: use full fastboot path
-        newCmdArgs[0] = "fastboot";
-        newCmdArgs[1] = "-s";
-        newCmdArgs[2] = getSerialNumber();
-        System.arraycopy(commandArgs, 0, newCmdArgs, numAdbArgs, commandArgs.length);
-        return newCmdArgs;
+        return ArrayUtil.buildArray(commandArgs, "fastboot", "-s", getSerialNumber());
     }
 
     /**
@@ -1008,12 +995,10 @@ class TestDevice implements IManagedTestDevice {
 
     /**
      * Attempts to recover device communication.
-     * <p/>
-     * Exposed for testing.
      *
      * @throws DeviceNotAvailableException if device is not longer available
      */
-    void recoverDevice() throws DeviceNotAvailableException {
+    public void recoverDevice() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
@@ -1358,7 +1343,7 @@ class TestDevice implements IManagedTestDevice {
             throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Connecting to wifi network %s on %s", wifiSsid,
                 getSerialNumber()));
-        WifiHelper wifi = new WifiHelper(this);
+        IWifiHelper wifi = createWifiHelper();
         wifi.enableWifi();
         // TODO: return false here if failed?
         wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
@@ -1408,7 +1393,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
-        WifiHelper wifi = new WifiHelper(this);
+        IWifiHelper wifi = createWifiHelper();
         wifi.removeAllNetworks();
         wifi.disableWifi();
         return true;
@@ -1419,8 +1404,17 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public String getIpAddress() throws DeviceNotAvailableException {
-        WifiHelper wifi = new WifiHelper(this);
+        IWifiHelper wifi = createWifiHelper();
         return wifi.getIpAddress(null);
+    }
+
+    /**
+     * Create a {@link WifiHelper} to use
+     * <p/>
+     * Exposed so unit tests can mock
+     */
+    IWifiHelper createWifiHelper() {
+        return new WifiHelper(this);
     }
 
     /**
@@ -1767,5 +1761,37 @@ class TestDevice implements IManagedTestDevice {
      */
     public TestDeviceState getDeviceState() {
         return mState;
+    }
+
+    @Override
+    public boolean isAdbTcp() {
+        return mMonitor.isAdbTcp();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String switchToAdbTcp() throws DeviceNotAvailableException {
+        String ipAddress = getIpAddress();
+        if (ipAddress == null) {
+            Log.e(LOG_TAG, String.format("connectToTcp failed: Device %s doesn't have an IP",
+                    getSerialNumber()));
+            return null;
+        }
+        String port = "5555";
+        executeAdbCommand("tcpip", port);
+        // TODO: analyze result? wait for device offline?
+        return String.format("%s:%s", ipAddress, port);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean switchToAdbUsb() throws DeviceNotAvailableException {
+        executeAdbCommand("usb");
+        // TODO: analyze result? wait for device offline?
+        return true;
     }
 }

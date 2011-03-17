@@ -192,4 +192,29 @@ public class MockDeviceManager implements IDeviceManager {
         Assert.assertEquals("allocated device was not returned to queue", mTotalDevices,
                 getAvailableDevices().size());
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice reconnectDeviceToTcp(ITestDevice usbDevice)
+            throws DeviceNotAvailableException {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice connectToTcpDevice(String ipAndPort) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean disconnectFromTcpDevice(ITestDevice tcpDevice) {
+        return false;
+    }
 }

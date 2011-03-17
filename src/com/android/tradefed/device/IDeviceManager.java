@@ -26,7 +26,25 @@ import java.util.Collection;
 public interface IDeviceManager {
 
     public enum FreeDeviceState {
-        AVAILABLE, UNAVAILABLE, UNRESPONSIVE;
+        /** device is responsive, and can be returned to the available device queue */
+        AVAILABLE,
+
+        /**
+         * Device is not visible via adb, and should not be returned to the available device
+         * queue
+         */
+        UNAVAILABLE,
+
+        /**
+         * Device is visible on adb, but is not responsive. Depending on configuration this
+         * device may be returned to available queue.
+         */
+        UNRESPONSIVE,
+
+        /**
+         * Device should be ignored, and not returned to the available device queue.
+         */
+        IGNORE;
     }
 
     /**
@@ -87,6 +105,46 @@ public interface IDeviceManager {
      *            device pool.
      */
     public void freeDevice(ITestDevice device, FreeDeviceState state);
+
+    /**
+     * Connect to a device with adb-over-tcp
+     * <p/>
+     * This method allocates a new device, which should eventually be freed via
+     * {@link #disconnectFromTcpDevice()}
+     * <p/>
+     * The returned {@link ITestDevice} will be online, but may not be responsive.
+     * <p/>
+     * Note that performing action such as a reboot on a tcp connected device, will sever the
+     * tcp connection to the device, and result in a {@link DeviceNotAvailableException}
+     *
+     * @param ipAndPort the original ip address and port of the device to connect to
+     * @return the {@link ITestDevice} or <code>null</code> if a tcp connection could not be formed
+     */
+    public ITestDevice connectToTcpDevice(String ipAndPort);
+
+    /**
+     * Disconnect from an adb-over-tcp connected device.
+     * <p/>
+     * Switches the device back to usb mode, and frees it.
+     *
+     * @param tcpDevice the device currently in tcp mode, previously allocated via
+     *            {@link connectToTcpDevice}
+     * @return <code>true</code> if switch to usb mode was successful
+     */
+    public boolean disconnectFromTcpDevice(ITestDevice tcpDevice);
+
+    /**
+     * A helper method that switches the given usb device to adb-over-tcp mode, and then connects to
+     * it via {@link #connectToTcpDevice(String)}.
+     *
+     * @param usbDevice the device currently in usb mode
+     * @return the newly allocated {@link ITestDevice} in tcp mode or <code>null</code> if a tcp
+     *         connection could not be formed
+     * @throws DeviceNotAvailableException if the connection with <var>usbDevice</var> was lost and
+     *             could not be recovered
+     */
+    public ITestDevice reconnectDeviceToTcp(ITestDevice usbDevice)
+            throws DeviceNotAvailableException;
 
     /**
      * Stops device monitoring services, and terminates the ddm library.

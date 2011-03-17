@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * Helper class for manipulating wifi services on device.
  */
-class WifiHelper {
+class WifiHelper implements IWifiHelper {
 
     private static final String INTERFACE_KEY = "interface";
 
@@ -61,43 +61,34 @@ class WifiHelper {
     }
 
     /**
-     * Enables wifi state on device.
-     *
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    void enableWifi() throws DeviceNotAvailableException {
+    @Override
+    public void enableWifi() throws DeviceNotAvailableException {
         mDevice.executeShellCommand("svc wifi enable");
     }
 
     /**
-     * Disables wifi state on device.
-     *
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    void disableWifi() throws DeviceNotAvailableException {
+    @Override
+    public void disableWifi() throws DeviceNotAvailableException {
         mDevice.executeShellCommand("svc wifi disable");
     }
 
     /**
-     * Disconnect from the wifi network identified by the provided integer.
-     *
-     * @param networkId the network id identifying its profile in wpa_supplicant configuration
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    void disconnectFromNetwork(int networkId) throws DeviceNotAvailableException {
+    @Override
+    public void disconnectFromNetwork(int networkId) throws DeviceNotAvailableException {
         callWpaCli(String.format("disable_network %d", networkId));
     }
 
     /**
-     * Waits until one of the expected wifi states occurs.
-     *
-     * @param expectedStates one or more wifi states to expect
-     * @param timeout max time in ms to wait
-     * @return <code>true</code> if the one of the expected states occurred. <code>false</code> if
-     *         none of the states occurred before timeout is reached
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    boolean waitForWifiState(WifiState... expectedStates) throws DeviceNotAvailableException {
+    @Override
+    public boolean waitForWifiState(WifiState... expectedStates) throws DeviceNotAvailableException {
         return waitForWifiState(DEFAULT_WIFI_STATE_TIMEOUT, expectedStates);
     }
 
@@ -110,7 +101,7 @@ class WifiHelper {
      *         none of the states occurred before timeout is reached
      * @throws DeviceNotAvailableException
      */
-    boolean waitForWifiState(long timeout, WifiState... expectedStates)
+     boolean waitForWifiState(long timeout, WifiState... expectedStates)
             throws DeviceNotAvailableException {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (startTime + timeout)) {
@@ -188,18 +179,10 @@ class WifiHelper {
     }
 
     /**
-     * Adds the open security network identified by ssid.
-     * <p/>
-     * To connect to any wifi network, a network profile must be created in wpa_supplicant
-     * configuration first. This will call wpa_cli to add the open security network identified by
-     * ssid.
-     *
-     * @param ssid the ssid of network to add.
-     * @return an integer number identifying the profile created in wpa_supplicant configuration.
-     *         <code>null</code> if an error occured.
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    Integer addOpenNetwork(String ssid) throws DeviceNotAvailableException {
+    @Override
+    public Integer addOpenNetwork(String ssid) throws DeviceNotAvailableException {
         WpaCliOutput output = callWpaCli("add_network");
         if (!output.isSuccess()) {
             return null;
@@ -232,15 +215,10 @@ class WifiHelper {
     }
 
     /**
-     * Adds the WPA-PSK security network identified by ssid.
-     *
-     * @param ssid the ssid of network to add.
-     * @param psk the WPA-PSK passphrase to use
-     * @return an integer number identifying the profile created in wpa_supplicant configuration.
-     *         <code>null</code> if an error occured.
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
+    @Override
+    public Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
         Integer networkId = addOpenNetwork(ssid);
         if (networkId == null) {
             return null;
@@ -258,17 +236,10 @@ class WifiHelper {
     }
 
     /**
-     * Associate with the wifi network identified by the provided integer.
-     *
-     * @param networkId the network id identifying its profile in wpa_supplicant configuration,
-     *            e.g. returned by AddOpenNetwork
-     * @return <code>true</code> if the call is successful. <code>false</code> if the call failed.
-     *         Note that a <code>true</code> return does not necessarily mean that the device has
-     *         successfully associated with the network, must call {@link #getWifiStatus()} or
-     *         {@link #waitForWifiState(WifiState...)} to verify.
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    boolean associateNetwork(int networkId) throws DeviceNotAvailableException {
+    @Override
+    public boolean associateNetwork(int networkId) throws DeviceNotAvailableException {
         if (!callWpaCliChecked("disconnect")) {
             return false;
         }
@@ -288,14 +259,10 @@ class WifiHelper {
     }
 
     /**
-     * Wait until an ip address is assigned to wifi adapter.
-     *
-     * @param timeout how long to wait
-     * @return <code>true</code> if an ip address is assigned before timeout, <code>false</code>
-     *         otherwise
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    boolean waitForIp(long timeout) throws DeviceNotAvailableException {
+    @Override
+    public boolean waitForIp(long timeout) throws DeviceNotAvailableException {
         Map<String, String> statusMap = getWifiStatus();
         if (statusMap == null ) {
             return false;
@@ -316,15 +283,9 @@ class WifiHelper {
     }
 
     /**
-     * Returns the IP address.
-     *
-     * @param interfaceName the interface name to look for. Provide <code>null</code> to return IP
-     * address of any active interface.
-     *
-     * @return the IP address in {@link String} form, or <code>null</code> if device does not have
-     * a valid IP address.
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
+    @Override
     public String getIpAddress(String interfaceName) throws DeviceNotAvailableException {
         NetCfgOutputParser output = new NetCfgOutputParser(interfaceName);
         mDevice.executeShellCommand("netcfg", output);
@@ -332,11 +293,10 @@ class WifiHelper {
     }
 
     /**
-     * Removes all known networks.
-     *
-     * @throws DeviceNotAvailableException
+     * {@inheritDoc}
      */
-    void removeAllNetworks() throws DeviceNotAvailableException {
+    @Override
+    public void removeAllNetworks() throws DeviceNotAvailableException {
         WpaCliOutput output = callWpaCli("list_networks");
         if (!output.isSuccess()) {
             return;

@@ -26,6 +26,21 @@ public class CommandResult {
     private String mStderr = null;
 
     /**
+     * Create a {@link CommandResult} with the default {@link CommandStatus#TIMED_OUT} status.
+     */
+    public CommandResult() {
+    }
+
+    /**
+     * Create a {@link CommandResult} with the given status.
+     *
+     * @param status the {@link CommandStatus}
+     */
+    public CommandResult(CommandStatus status) {
+        mCmdStatus = status;
+    }
+
+    /**
      * Get status of command.
      *
      * @return the {@link CommandStatus}

@@ -512,4 +512,27 @@ public interface ITestDevice {
      * recovered.
      */
     public void postBootSetup() throws DeviceNotAvailableException;
+
+    /**
+     * @return <code>true</code> if device is connected to adb-over-tcp, <code>false</code>
+     * otherwise.
+     */
+    public boolean isAdbTcp();
+
+    /**
+     * Switch device to adb-over-tcp mode.
+     *
+     * @return the tcp serial number or <code>null</code> if device could not be switched
+     * @throws DeviceNotAvailableException
+     */
+    public String switchToAdbTcp() throws DeviceNotAvailableException;
+
+    /**
+     * Switch device to adb over usb mode.
+     *
+     * @return <code>true</code> if switch was successful, <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    public boolean switchToAdbUsb() throws DeviceNotAvailableException;
+
 }

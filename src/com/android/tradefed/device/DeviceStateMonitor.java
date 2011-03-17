@@ -416,4 +416,12 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             }
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isAdbTcp() {
+        return mDevice.getSerialNumber().contains(":");
+    }
 }

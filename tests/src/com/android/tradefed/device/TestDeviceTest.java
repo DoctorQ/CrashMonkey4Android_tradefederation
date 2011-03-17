@@ -34,8 +34,6 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.StreamUtil;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 
 import java.io.File;
@@ -43,6 +41,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TestDevice}.
@@ -57,6 +57,7 @@ public class TestDeviceTest extends TestCase {
     private IDeviceRecovery mMockRecovery;
     private IDeviceStateMonitor mMockMonitor;
     private IRunUtil mMockRunUtil;
+    private IWifiHelper mMockWifi;
 
     /**
      * {@inheritDoc}
@@ -70,6 +71,7 @@ public class TestDeviceTest extends TestCase {
         mMockRecovery = EasyMock.createMock(IDeviceRecovery.class);
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
+        mMockWifi = EasyMock.createMock(IWifiHelper.class);
 
         // A TestDevice with a no-op recoverDevice() implementation
         mTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
@@ -87,7 +89,7 @@ public class TestDeviceTest extends TestCase {
 
             @Override
             public void postBootSetup() {
-                // too annoying to mock out postBootSetup actions everyone, so do nothing
+                // too annoying to mock out postBootSetup actions everywhere, so do nothing
             }
 
             @Override
@@ -96,8 +98,13 @@ public class TestDeviceTest extends TestCase {
             }
 
             @Override
-            void recoverDevice() throws DeviceNotAvailableException {
+            public void recoverDevice() throws DeviceNotAvailableException {
                 // ignore
+            }
+
+            @Override
+            IWifiHelper createWifiHelper() {
+                return mMockWifi;
             }
         };
         mTestDevice.setRecovery(mMockRecovery);
@@ -569,8 +576,16 @@ public class TestDeviceTest extends TestCase {
      * Puts all the mock objects into replay mode
      */
     private void replayMocks() {
-        EasyMock.replay(mMockIDevice, mMockRecovery, mMockMonitor);
+        EasyMock.replay(mMockIDevice, mMockRecovery, mMockMonitor, mMockRunUtil, mMockWifi);
     }
+
+    /**
+     * Verify all the mock objects
+     */
+    private void verifyMocks() {
+        EasyMock.verify(mMockIDevice, mMockRecovery, mMockMonitor, mMockRunUtil, mMockWifi);
+    }
+
 
     /**
      * Unit test for {@link TestDevice#getExternalStoreFreeSpace()}.
@@ -733,6 +748,42 @@ public class TestDeviceTest extends TestCase {
      */
     public void testExecuteFastbootCommand_state() {
         // TODO: implement this when RunUtil.runTimedCommand can be mocked
+    }
+
+    /**
+     * Simple test for {@link TestDevice#switchToAdbUsb()}
+     */
+    public void testSwitchToAdbUsb() throws Exception  {
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
+                EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("usb"))).andReturn(
+                        new CommandResult(CommandStatus.SUCCESS));
+        replayMocks();
+        mTestDevice.switchToAdbUsb();
+        verifyMocks();
+    }
+
+    /**
+     * Test for {@link TestDevice#switchToAdbTcp()} when device has no ip address
+     */
+    public void testSwitchToAdbTcp_noIp() throws Exception  {
+        EasyMock.expect(mMockWifi.getIpAddress(null)).andReturn(null);
+        replayMocks();
+        assertNull(mTestDevice.switchToAdbTcp());
+        verifyMocks();
+    }
+
+    /**
+     * Test normal success case for {@link TestDevice#switchToAdbTcp()}.
+     */
+    public void testSwitchToAdbTcp() throws Exception  {
+        EasyMock.expect(mMockWifi.getIpAddress(null)).andReturn("ip");
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
+                EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("tcpip"),
+                EasyMock.eq("5555"))).andReturn(
+                        new CommandResult(CommandStatus.SUCCESS));
+        replayMocks();
+        assertEquals("ip:5555", mTestDevice.switchToAdbTcp());
+        verifyMocks();
     }
 
     /**
