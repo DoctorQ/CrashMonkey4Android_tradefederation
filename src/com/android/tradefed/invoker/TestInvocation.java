@@ -173,7 +173,6 @@ public class TestInvocation implements ITestInvocation {
                     config.getTestInvocationListeners(), shardableTests.size());
             ShardListener origConfigListener = new ShardListener(resultCollector);
             config.setTestInvocationListener(origConfigListener);
-            Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "Sending build " + info);
             // report invocation started using original buildinfo
             resultCollector.invocationStarted(info);
             for (IRemoteTest testShard : shardableTests) {
