@@ -31,6 +31,8 @@ import com.android.tradefed.targetprep.BuildError;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -65,16 +67,16 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
 
     @Option(name = "iterations", description =
         "Number of ota stability 'flash + wait for ota' iterations to run")
-    private int mIterations = 10;
+    private int mIterations = 20;
 
     @Option(name = "wait-recovery-time", description =
-        "Number of seconds to wait for device to begin installing ota. Default 15 min")
-    private int mWaitRecoveryTime = 15 * 60;
+        "Number of minutes to wait for device to begin installing ota. Default 15 min")
+    private int mWaitRecoveryTime = 15;
 
     @Option(name = "wait-install-time", description =
-        "Number of seconds to wait for device to be online after beginning ota installation. " +
+        "Number of minutes to wait for device to be online after beginning ota installation. " +
         "Default 10 min")
-    private int mWaitInstallTime = 10 * 60;
+    private int mWaitInstallTime = 10;
 
     @Option(name = "shards", description = "Optional number of shards to split test into. " +
             "Iterations will be split evenly among shards.")
@@ -238,6 +240,15 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
     }
 
     /**
+     * Get the {@link IRunUtil} instance to use.
+     * <p/>
+     * Exposed so unit tests can mock.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
+    }
+
+    /**
      * Blocks and waits for OTA package to be installed.
      *
      * @param listener the {@link ITestInvocationListener}
@@ -250,12 +261,16 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
         int currentBuildId =  mDevice.getBuildId();
         Assert.assertEquals(String.format("device %s does not have expected build id on boot.",
                 mDevice.getSerialNumber()), currentBuildId, mDeviceBuild.getBuildId());
+        // give some time for device to settle
+        getRunUtil().sleep(5*1000);
+        // force a checkin so device downloads OTA immediately
+        mDevice.executeShellCommand("am broadcast -a android.server.checkin.CHECKIN");
         Assert.assertTrue(String.format(
-                "Device %s did not enter recovery after %d s.",
+                "Device %s did not enter recovery after %d min.",
                 mDevice.getSerialNumber(), mWaitRecoveryTime),
-                mDevice.waitForDeviceInRecovery(mWaitRecoveryTime * 1000));
+                mDevice.waitForDeviceInRecovery(mWaitRecoveryTime * 60 * 1000));
         try {
-            mDevice.waitForDeviceOnline(mWaitInstallTime * 1000);
+            mDevice.waitForDeviceOnline(mWaitInstallTime * 60 * 1000);
         } catch (DeviceNotAvailableException e) {
             Log.e(LOG_TAG, String.format(
                     "Device %s did not come back online after leaving recovery",
