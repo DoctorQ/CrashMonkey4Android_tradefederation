@@ -73,8 +73,8 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
 
     @Option(name = "resume",
             description = "Schedule unexecuted tests for resumption on another device " +
-            "if first device becomes unavailable. Default true")
-    private boolean mIsResumeMode = true;
+            "if first device becomes unavailable. Default false")
+    private boolean mIsResumeMode = false;
 
     @Option(name = "local-file-path",
             description = "local file path to test_defs.xml file to run")
