@@ -47,6 +47,14 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         "Expected format <propertyname>=<propertyvalue>")
     private Collection<String> mPropertyStrings = new ArrayList<String>();
 
+    @Option(name = "emulator", shortName = 'e', description=
+        "run this test on emulator")
+    private boolean mEmulatorRequested = false;
+
+    @Option(name = "no-device", shortName = 'n', description=
+        "do not allocate a device for this test")
+    private boolean mNullDeviceRequested = false;
+
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.
     private boolean mFetchedEnvVariable = false;
 
@@ -116,6 +124,36 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     @Override
     public Collection<String> getProductTypes() {
         return copyCollection(mProductTypes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean emulatorRequested() {
+        return mEmulatorRequested;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean nullDeviceRequested() {
+        return mNullDeviceRequested;
+    }
+
+    /**
+     * Sets the emulator requested flag
+     */
+    public void setEmulatorRequested(boolean emulatorRequested) {
+        mEmulatorRequested = emulatorRequested;
+    }
+
+    /**
+     * Sets the null device requested flag
+     */
+    public void setNullDeviceRequested(boolean nullDeviceRequested) {
+        mNullDeviceRequested = nullDeviceRequested;
     }
 
     /**

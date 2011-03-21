@@ -52,4 +52,14 @@ public interface IDeviceSelectionOptions {
      */
     public Map<String, String> getProperties();
 
+    /**
+     * @return <code>true</code> if an emulator has been requested
+     */
+    public boolean emulatorRequested();
+
+    /**
+     * @return <code>true</code> if a null device (aka no device required) has been requested
+     */
+    public boolean nullDeviceRequested();
+
 }

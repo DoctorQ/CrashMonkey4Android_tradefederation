@@ -52,14 +52,14 @@ public interface IDeviceManager {
     public void init(IDeviceSelectionOptions globalDeviceFilter);
 
     /**
-     * Request a device for testing, waiting indefinitely until one becomes available.
+     * Request a physical device for testing, waiting indefinitely until one becomes available.
      *
      * @return a {@link ITestDevice} for testing, or <code>null</code> if interrupted
      */
     public ITestDevice allocateDevice();
 
     /**
-     * Request a device for testing, waiting for timeout ms until one becomes available.
+     * Request a physical device for testing, waiting for timeout ms until one becomes available.
      *
      * @param timeout max time in ms to wait for a device to become available.
      * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before one

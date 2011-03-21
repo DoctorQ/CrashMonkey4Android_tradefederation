@@ -39,6 +39,7 @@ public class DeviceSelectionMatcherTest extends TestCase {
     protected void setUp() throws Exception {
         mMockDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
+        EasyMock.expect(mMockDevice.isEmulator()).andStubReturn(Boolean.FALSE);
     }
 
     public void testGetProductType_mismatchWithEmptyBoard() {
@@ -139,6 +140,45 @@ public class DeviceSelectionMatcherTest extends TestCase {
         assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
         // don't verify in this case, because order of property checks is not deterministic
         // EasyMock.verify(mMockDevice);
+    }
+
+    /**
+     * Test for matching with an emulator
+     */
+    public void testMatches_emulator() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setEmulatorRequested(true);
+        IDevice emulatorDevice = new StubDevice("emulator", true);
+        assertTrue(DeviceSelectionMatcher.matches(emulatorDevice, options));
+    }
+
+    /**
+     * Test that an emulator is not matched by default
+     */
+    public void testMatches_emulatorNotDefault() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        IDevice emulatorDevice = new StubDevice("emulator", true);
+        assertFalse(DeviceSelectionMatcher.matches(emulatorDevice, options));
+    }
+
+    /**
+     * Test for matching with no device requested flag
+     */
+    public void testMatches_noDevice() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setNullDeviceRequested(true);
+        IDevice stubDevice = new NullDevice("no device");
+        assertTrue(DeviceSelectionMatcher.matches(stubDevice, options));
+    }
+
+    /**
+     * Test that a real device is not matched if the 'no device requested' flag is set
+     */
+    public void testMatches_emulatorNot() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setNullDeviceRequested(true);
+        EasyMock.replay(mMockDevice);
+        assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
     }
 }
 

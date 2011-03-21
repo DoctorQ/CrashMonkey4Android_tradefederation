@@ -52,6 +52,14 @@ public class DeviceSelectionMatcher {
                 return false;
             }
         }
+        if (deviceOptions.emulatorRequested() != device.isEmulator()) {
+            // only match with emulator if explicitly requested
+            return false;
+        }
+        if (deviceOptions.nullDeviceRequested() != (device instanceof NullDevice)) {
+            return false;
+        }
+
         return true;
     }
 

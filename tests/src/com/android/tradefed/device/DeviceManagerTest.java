@@ -88,6 +88,8 @@ public class DeviceManagerTest extends TestCase {
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
 
         EasyMock.expect(mMockIDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
+        EasyMock.expect(mMockIDevice.isEmulator()).andStubReturn(Boolean.FALSE);
+
         EasyMock.expect(mMockTestDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockTestDevice.getIDevice()).andStubReturn(mMockIDevice);
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
@@ -218,6 +220,32 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManager();
         assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME, options));
         assertNotNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
+    }
+
+    /**
+     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when emulator is
+     * requested
+     */
+    public void testAllocateDevice_emulator() throws DeviceNotAvailableException {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setEmulatorRequested(true);
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertNotNull(manager.allocateDevice(100, options));
+    }
+
+    /**
+     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when a null device
+     * is requested.
+     */
+    public void testAllocateDevice_nullDevice() throws DeviceNotAvailableException {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setNullDeviceRequested(true);
+        EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertNotNull(manager.allocateDevice(100, options));
     }
 
     /**

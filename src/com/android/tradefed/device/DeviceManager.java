@@ -73,6 +73,10 @@ public class DeviceManager implements IDeviceManager {
     private boolean mEnableLogcat = true;
     private boolean mIsTerminated = false;
     private DeviceMatcher mGlobalDeviceFilter;
+    /** the maximum number of emulators that can be allocated at one time */
+    private int mNumEmulatorSupported = 1;
+    /** the maximum number of no device runs that can be allocated at one time */
+    private int mNumNullDevicesSupported = 1;
 
     static class DeviceMatcher implements IMatcher<IDevice> {
 
@@ -143,6 +147,8 @@ public class DeviceManager implements IDeviceManager {
                 checkAndAddAvailableDevice(device);
             }
         }
+        addEmulators();
+        addNullDevices();
         mManagedDeviceListener = new ManagedDeviceListener();
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
     }
@@ -244,6 +250,27 @@ public class DeviceManager implements IDeviceManager {
     }
 
     /**
+     * Add placeholder objects for the max number of 'no device required' concurrent allocations
+     */
+    private void addNullDevices() {
+        for (int i = 0; i < mNumNullDevicesSupported; i++) {
+            mAvailableDeviceQueue.add(new NullDevice(String.format("null-device-%d", i)));
+        }
+    }
+
+    /**
+     * Add placeholder objects for the max number of emulators that can be allocated
+     */
+    private void addEmulators() {
+        // TODO currently this means 'additional emulators not already running'
+        int port = 5554;
+        for (int i = 0; i < mNumEmulatorSupported; i++) {
+            mAvailableDeviceQueue.add(new StubDevice(String.format("emulator-%d", port), true));
+            port += 2;
+        }
+    }
+
+    /**
      * Creates a {@link IDeviceStateMonitor} to use.
      * <p/>
      * Exposed so unit tests can mock
@@ -254,7 +281,6 @@ public class DeviceManager implements IDeviceManager {
 
     private void addAvailableDevice(IDevice device) {
         mAvailableDeviceQueue.add(device);
-
     }
 
     /**
@@ -288,7 +314,7 @@ public class DeviceManager implements IDeviceManager {
      */
     private IDevice takeAvailableDevice() {
         try {
-            return mAvailableDeviceQueue.take();
+            return mAvailableDeviceQueue.take(new DeviceMatcher(ANY_DEVICE_OPTIONS));
         } catch (InterruptedException e) {
             Log.w(LOG_TAG, "interrupted while taking device");
             return null;
@@ -473,7 +499,10 @@ public class DeviceManager implements IDeviceManager {
                 mAvailableDeviceQueue.size());
         synchronized (mAvailableDeviceQueue) {
             for (IDevice device : mAvailableDeviceQueue) {
-                availableDeviceSerials.add(device.getSerialNumber());
+                // don't add placeholder devices to available devices display
+                if (!(device instanceof StubDevice)) {
+                    availableDeviceSerials.add(device.getSerialNumber());
+                }
             }
         }
         return availableDeviceSerials;
