@@ -356,6 +356,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
             return sb.toString();
         }
 
+        @Override
         public void setUp() throws Exception {
             mTestInstance = new CameraStressTest() {
                 @Override

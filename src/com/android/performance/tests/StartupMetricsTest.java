@@ -16,14 +16,12 @@
 
 package com.android.performance.tests;
 
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
-
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.HashMap;
 import java.util.Map;
