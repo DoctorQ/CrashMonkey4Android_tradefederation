@@ -37,6 +37,7 @@ public class SnapshotInputStreamSourceTest extends TestCase {
      * Ensure that the {@link SnapshotInputStreamSource#cancel()} method cleans up the backing file
      * as expected
      */
+    @SuppressWarnings("serial")
     public void testCancel() {
         final String deletedMsg = "File was deleted";
         final File fakeFile = new File("noexist") {
