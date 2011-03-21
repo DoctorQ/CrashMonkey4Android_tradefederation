@@ -104,20 +104,15 @@ public class FileLoggerTest extends TestCase {
     }
 
     /**
-     * Test that an {@link IllegalStateException} is thrown if {@link FileLogger#getLog()} is
-     * called after {@link FileLogger#closeLog()}.
-     * @throws IOException
+     * Test behavior when  {@link FileLogger#getLog()} is called after
+     * {@link FileLogger#closeLog()}.
      */
-    public void testGetLog_afterClose() throws ConfigurationException, IOException {
+    public void testGetLog_afterClose() throws Exception {
         FileLogger logger = new FileLogger();
         logger.init();
         logger.closeLog();
-        try {
-            logger.getLog();
-            fail("IllegalStateException not thrown");
-        } catch (IllegalStateException e) {
-            // expected
-        }
+        // expect this to be silently handled
+        logger.getLog();
     }
 
     /**
@@ -125,7 +120,7 @@ public class FileLoggerTest extends TestCase {
      * {@link FileLogger#printLog(LogLevel, String, String)} is called after
      * {@link FileLogger#closeLog()}
      */
-    public void testCloseLog() throws ConfigurationException, IOException {
+    public void testCloseLog() throws Exception {
         FileLogger logger = new FileLogger();
         logger.init();
         // test the package-private methods to capture any exceptions that occur
@@ -134,17 +129,12 @@ public class FileLoggerTest extends TestCase {
     }
 
     /**
-     * Test that an {@link IllegalStateException} is thrown if {@link FileLogger#getLog()} is
-     * called when  {@link FileLogger#init()} has not been called.
-     * @throws IOException
+     * Test behavior when {@link FileLogger#getLog()} is called when {@link FileLogger#init()} has
+     * not been called.
      */
     public void testGetLog_NoInit() {
         FileLogger logger = new FileLogger();
-        try {
-            logger.getLog();
-            fail("IllegalStateException not thrown");
-        } catch (IllegalStateException e) {
-            // expected
-        }
+        // expect this to be silently handled
+        logger.getLog();
     }
 }
