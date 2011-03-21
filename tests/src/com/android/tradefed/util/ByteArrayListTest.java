@@ -15,8 +15,6 @@
  */
 package com.android.tradefed.util;
 
-import java.util.Arrays;
-
 import junit.framework.TestCase;
 
 /**
