@@ -78,8 +78,8 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
 
     @Option(name = "resume",
             description = "Schedule unexecuted tests for resumption on another device " +
-            "if first device becomes unavailable. Default true")
-    private boolean mIsResumeMode = true;
+            "if first device becomes unavailable. Default false")
+    private boolean mIsResumeMode = false;
 
     @Option(name = "log-delay",
             description="Delay in msec between each test when collecting test information")
