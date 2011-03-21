@@ -345,13 +345,21 @@ public class TestInvocation implements ITestInvocation {
                     // resume this config if any test is resumable
                     IConfiguration resumeConfig = config.clone();
                     // reuse the same build for the resumed invocation
-                    resumeConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
+                    IBuildInfo clonedBuild = info.clone();
+                    resumeConfig.setBuildProvider(new ExistingBuildProvider(clonedBuild,
                             config.getBuildProvider()));
                     // create a result forwarder, to prevent sending two invocationStarted events
                     resumeConfig.setTestInvocationListener(new ResumeResultForwarder(
                             config.getTestInvocationListeners(), elapsedTime));
                     resumeConfig.setLogOutput(config.getLogOutput().clone());
-                    return rescheduler.scheduleConfig(resumeConfig);
+                    boolean canReschedule = rescheduler.scheduleConfig(resumeConfig);
+                    if (!canReschedule) {
+                        Log.i(LOG_TAG, String.format(
+                                "Cannot reschedule resumed config for %d build. Cleaning up build.",
+                                info.getBuildId()));
+                        resumeConfig.getBuildProvider().cleanUp(clonedBuild);
+                    }
+                    return canReschedule;
                 }
             }
         }
