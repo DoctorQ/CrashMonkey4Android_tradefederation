@@ -157,10 +157,18 @@ public class DeviceManager implements IDeviceManager {
      * Determine if fastboot is available for use.
      */
     private boolean isFastbootAvailable() {
-        // TODO: replace with fastboot --version when available.
         CommandResult fastbootResult = getRunUtil().runTimedCmd(
-                5 * 1000, "fastboot", "devices");
-        return (fastbootResult.getStatus() == CommandStatus.SUCCESS);
+                5 * 1000, "fastboot", "help");
+        if (fastbootResult.getStatus() == CommandStatus.SUCCESS) {
+            return true;
+        }
+        if (fastbootResult.getStderr() != null &&
+            fastbootResult.getStderr().indexOf("usage: fastboot") >= 0) {
+            Log.logAndDisplay(LogLevel.WARN, LOG_TAG,
+                              "You are running an older version of fastboot, please update it.");
+            return true;
+        }
+        return false;
     }
 
     /**
