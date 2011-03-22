@@ -33,11 +33,13 @@ import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -66,6 +68,22 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_CLASS_NAME = "android.bluetooth.BluetoothStressTest";
     private static final String TEST_PACKAGE_NAME = "com.android.frameworks.coretests";
     private static final String TEST_RUNNER_NAME = "android.bluetooth.BluetoothTestRunner";
+
+    /**
+     * Generic string for running the instrumentation on the second device. Completed with:
+     * <p/>
+     * {@code String.format(INSTRUCTIONS_INSTRUMENT_CMD, remoteSerial, localAddress, iterKey,
+     * iterCount, testName);}
+     * <p/>
+     * where {@code remoteSerial} is the device on which you want to run the instrumentation,
+     * {@code localAddress} is the bluetooth address of the DUT, {@code iterKey} is the key for the
+     * number of iterations, {@code iterCount} is the number of iterations to run, and
+     * {@code testName} is the test method to run.
+     */
+    private static final String INSTRUCTIONS_INSTRUMENT_CMD = (
+            "adb -s %s shell am instrument -w -r -e device_address %s "
+            + "-e %s %d -e class android.bluetooth.BluetoothStressTest#%s "
+            + "com.android.frameworks.coretests/android.bluetooth.BluetoothTestRunner");
 
     private static final Pattern ITERATION_PATTERN =
             Pattern.compile("\\S+ iteration (\\d+) of (\\d+)");
@@ -97,6 +115,13 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         public String mIterKey = null;
         public Integer mIterCount = null;
         public Set<String> mPerfMetrics = new HashSet<String>();
+
+        // Arguments for remote device tests
+        public boolean mRemoteDeviceTest = false;
+        public String mRemoteAddress = null;
+        public String mPairPin = null;
+        public String mPairPasskey = null;
+        public String mInstructions = null;
 
         public String getTestMetricsName() {
             if (mTestName == null) {
@@ -131,6 +156,94 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     @Option(name="enable-pan-iterations",
             description="Number of iterations to run for the 'enable_pan' test")
     private Integer mEnablePanIterations = null;
+
+    @Option(name="pair-iterations",
+            description="Number of iterations to run for the 'pair' test")
+    private Integer mPairIterations = 0;
+
+    @Option(name="accept-pair-iterations",
+            description="Number of iterations to run for the 'accept_pair' test")
+    private Integer mAcceptPairIterations = 0;
+
+    @Option(name="connect-headset-iterations",
+            description="Number of iterations to run for the 'connect_headset' test")
+    private Integer mConnectHeadsetIterations = 0;
+
+    @Option(name="connect-a2dp-iterations",
+            description="Number of iterations to run for the 'connect_a2dp' test")
+    private Integer mConnectA2dpIterations = 0;
+
+    @Option(name="connect-input-iterations",
+            description="Number of iterations to run for the 'connect_input' test")
+    private Integer mConnectInputIterations = 0;
+
+    @Option(name="connect-pan-iterations",
+            description="Number of iterations to run for the 'connect_pan' test")
+    private Integer mConnectPanIterations = 0;
+
+    @Option(name="incoming-pan-connection-iterations",
+            description="Number of iterations to run for the 'incoming_pan_connection' test")
+    private Integer mIncomingPanConnectionIterations = 0;
+
+    @Option(name="start-stop-sco-iterations",
+            description="Number of iterations to run for the 'start_stop_sco' test")
+    private Integer mStartStopScoIterations = 0;
+
+    @Option(name="local-address",
+            description="Address for the local Android device")
+    private String mLocalAddress = null;
+
+    @Option(name="device-serial",
+            description="Serial number for the remote Android device")
+    private String mDeviceSerial = null;
+
+    @Option(name="device-address",
+            description="Address for the remote Android device")
+    private String mDeviceAddress = null;
+
+    @Option(name="device-pair-pin",
+            description="Pair pin for the remote Android device")
+    private String mDevicePairPin = null;
+
+    @Option(name="device-pair-passkey",
+            description="Pair passkey for the remote Android device")
+    private String mDevicePairPasskey = null;
+
+    @Option(name="headset-address",
+            description="Address for the headset device")
+    private String mHeadsetAddress = null;
+
+    @Option(name="headset-pair-pin",
+            description="Pair pin for the headset device")
+    private String mHeadsetPairPin = null;
+
+    @Option(name="headset-pair-passkey",
+            description="Pair passkey for the headset device")
+    private String mHeadsetPairPasskey = null;
+
+    @Option(name="a2dp-address",
+            description="Remote device address for the A2DP device")
+    private String mA2dpAddress = null;
+
+    @Option(name="a2dp-pair-pin",
+            description="Pair pin for the A2DP device")
+    private String mA2dpPairPin = null;
+
+    @Option(name="a2dp-pair-passkey",
+            description="Pair passkey for the A2DP device")
+    private String mA2dpPairPasskey = null;
+
+    @Option(name="input-address",
+            description="Remote device address for the input device")
+    private String mInputAddress = null;
+
+    @Option(name="input-pair-pin",
+            description="Pair pin for the input device")
+    private String mInputPairPin = null;
+
+    @Option(name="input-pair-passkey",
+            description="Pair passkey for the input device")
+    private String mInputPairPasskey = null;
 
     private void setupTests() {
         if (mTestCases != null) {
@@ -174,6 +287,128 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t.mPerfMetrics.add("enablePan");
         t.mPerfMetrics.add("disablePan");
         mTestCases.add(t);
+
+        // Remote device tests
+        t = new TestInfo();
+        t.mTestName = "pair";
+        t.mTestMethod = "testPair";
+        t.mIterKey = "pair_iterations";
+        t.mIterCount = mPairIterations;
+        t.mPerfMetrics.add("pair");
+        t.mPerfMetrics.add("unpair");
+        t.mRemoteAddress = mDeviceAddress;
+        t.mPairPin = mDevicePairPin;
+        t.mPairPasskey = mDevicePairPasskey;
+        t.mInstructions = String.format("Start the testAcceptPair instrumentation on the remote "
+                + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
+                String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
+                        "pair_iterations", mPairIterations, "testAcceptPair"));
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "accept_pair";
+        t.mTestMethod = "testAcceptPair";
+        t.mIterKey = "pair_iterations";
+        t.mIterCount = mAcceptPairIterations;
+        t.mPerfMetrics.add("acceptPair");
+        t.mPerfMetrics.add("unpair");
+        t.mRemoteAddress = mDeviceAddress;
+        t.mPairPin = mDevicePairPin;
+        t.mPairPasskey = mDevicePairPasskey;
+        t.mInstructions = String.format("Start the testPair instrumentation on the remote "
+                + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
+                String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
+                        "pair_iterations", mAcceptPairIterations, "testPair"));
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "connect_headset";
+        t.mTestMethod = "testConnectHeadset";
+        t.mIterKey = "connect_headset_iterations";
+        t.mIterCount = mConnectHeadsetIterations;
+        t.mPerfMetrics.add("connectHeadset");
+        t.mPerfMetrics.add("disconnectHeadset");
+        t.mRemoteAddress = mHeadsetAddress;
+        t.mPairPin = mHeadsetPairPin;
+        t.mPairPasskey = mHeadsetPairPasskey;
+        t.mInstructions = "Put the remote headset device in pairing mode. Hit Enter when done.";
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "connect_a2dp";
+        t.mTestMethod = "testConnectA2dp";
+        t.mIterKey = "connect_a2dp_iterations";
+        t.mIterCount = mConnectA2dpIterations;
+        t.mPerfMetrics.add("connectA2dp");
+        t.mPerfMetrics.add("disconnectA2dp");
+        t.mRemoteAddress = mA2dpAddress;
+        t.mPairPin = mA2dpPairPin;
+        t.mPairPasskey = mA2dpPairPasskey;
+        t.mInstructions = "Put the remote A2DP device in pairing mode. Hit Enter when done.";
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "connect_input";
+        t.mTestMethod = "testConnectInput";
+        t.mIterKey = "connect_input_iterations";
+        t.mIterCount = mConnectInputIterations;
+        t.mPerfMetrics.add("connectInput");
+        t.mPerfMetrics.add("disconnectInput");
+        t.mRemoteAddress = mInputAddress;
+        t.mPairPin = mInputPairPin;
+        t.mPairPasskey = mInputPairPasskey;
+        t.mInstructions = "Put the remote input device in pairing mode. Hit Enter when done.";
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "connect_pan";
+        t.mTestMethod = "testConnectPan";
+        t.mIterKey = "connect_pan_iterations";
+        t.mIterCount = mConnectPanIterations;
+        t.mPerfMetrics.add("connectPan");
+        t.mPerfMetrics.add("disconnectPan");
+        t.mRemoteAddress = mDeviceAddress;
+        t.mPairPin = mDevicePairPin;
+        t.mPairPasskey = mDevicePairPasskey;
+        t.mInstructions = String.format("Start the testIncomingPanConnection instrumentation on "
+                + "the remote Android device with the following command:\n\n%s\n\nHit Enter when "
+                + "done.",
+                String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
+                        "connect_pan_iterations", mConnectPanIterations,
+                        "testIncomingPanConnection"));
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "incoming_pan_connection";
+        t.mTestMethod = "testIncomingPanConnection";
+        t.mIterKey = "connect_pan_iterations";
+        t.mIterCount = mIncomingPanConnectionIterations;
+        t.mPerfMetrics.add("incomingPanConnection");
+        t.mPerfMetrics.add("incomingPanDisconnection");
+        t.mRemoteAddress = mDeviceAddress;
+        t.mPairPin = mDevicePairPin;
+        t.mPairPasskey = mDevicePairPasskey;
+        t.mInstructions = ("Start the testConnectPan instrumentation on the remote Android " +
+                "device. Hit Enter when done.");
+        t.mInstructions = String.format("Start the testConnectPan instrumentation on the remote "
+                + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
+                String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
+                        "connect_pan_iterations",  mIncomingPanConnectionIterations,
+                        "testConnectPan"));
+        mTestCases.add(t);
+
+        t = new TestInfo();
+        t.mTestName = "start_stop_sco";
+        t.mTestMethod = "testStartStopSco";
+        t.mIterKey = "start_stop_sco_iterations";
+        t.mIterCount = mStartStopScoIterations;
+        t.mPerfMetrics.add("startSco");
+        t.mPerfMetrics.add("stopSco");
+        t.mRemoteAddress = mHeadsetAddress;
+        t.mPairPin = mHeadsetPairPin;
+        t.mPairPasskey = mHeadsetPairPasskey;
+        t.mInstructions = "Put the remote headset device in pairing mode. Hit Enter when done.";
+        mTestCases.add(t);
     }
 
     @Override
@@ -196,15 +431,46 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 continue;
             }
 
+            // For semi-manual tests, print instructions and wait for user to continue.
+            if (t.mInstructions != null) {
+                BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+                System.out.println("========================================");
+                System.out.println(t.mInstructions);
+                System.out.println("========================================");
+                try {
+                    br.readLine();
+                } catch (IOException e) {
+                    Log.e(LOG_TAG, "IOException waiting for confirmation. Continuing.");
+                }
+            }
+
             // Run the test
             cleanOutputFile();
             if (t.mIterKey != null && t.mIterCount != null) {
                 runner.addInstrumentationArg(t.mIterKey, t.mIterCount.toString());
             }
+            if (t.mRemoteAddress != null) {
+                runner.addInstrumentationArg("device_address", t.mRemoteAddress);
+                if (t.mPairPasskey != null) {
+                    runner.addInstrumentationArg("device_pair_passkey", t.mPairPasskey);
+                }
+                if (t.mPairPin != null) {
+                    runner.addInstrumentationArg("device_pair_pin", t.mPairPin);
+                }
+            }
             runner.setMethodName(TEST_CLASS_NAME, t.mTestMethod);
             mTestDevice.runInstrumentationTests(runner, listener, auxListener);
             if (t.mIterKey != null && t.mIterCount != null) {
                 runner.removeInstrumentationArg(t.mIterKey);
+            }
+            if (t.mRemoteAddress != null) {
+                runner.removeInstrumentationArg("device_address");
+                if (t.mPairPasskey != null) {
+                    runner.removeInstrumentationArg("device_pair_passkey");
+                }
+                if (t.mPairPin != null) {
+                    runner.removeInstrumentationArg("device_pair_pin");
+                }
             }
 
             // Log the output file
@@ -588,4 +854,3 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         }
     }
 }
-
