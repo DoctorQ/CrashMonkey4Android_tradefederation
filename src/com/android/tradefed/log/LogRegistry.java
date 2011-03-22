@@ -126,10 +126,12 @@ public class LogRegistry implements ILogOutput {
 
     /**
      * Gets the current thread Group.
+     * <p/>
+     * Exposed so unit tests can mock
      *
      * @return the ThreadGroup that the current thread belongs to
      */
-    private static ThreadGroup getCurrentThreadGroup() {
+    ThreadGroup getCurrentThreadGroup() {
         return Thread.currentThread().getThreadGroup();
     }
 
