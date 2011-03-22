@@ -31,25 +31,39 @@ public class LogRegistryTest extends TestCase {
 
     private static String LOG_TAG = "LogRegistryTest";
 
-    /**
-     * Tests that {@link LogRegistry#getLogRegistry} returns an instance of a LogRegistry.
-     */
-    public void testGetLogRegistry() {
-        LogRegistry logRegistry = LogRegistry.getLogRegistry();
-        assertNotNull(logRegistry);
+    private LogRegistry mLogRegistry;
+    private ThreadGroup mStubThreadGroup;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mStubThreadGroup = new ThreadGroup("LogRegistryTest");
+        mLogRegistry = new LogRegistry() {
+            // override thread group to avoid conflict with the "real" LogRegistry and the logger
+            // in use for this test run
+            @Override
+            ThreadGroup getCurrentThreadGroup() {
+                return mStubThreadGroup;
+            }
+        };
+    }
+
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        mLogRegistry.closeAndRemoveAllLogs();
     }
 
     /**
      * Tests that {@link LogRegistry#getLogger} returns the logger that was previously registered.
      */
     public void testGetLogger() {
-        LogRegistry logRegistry = LogRegistry.getLogRegistry();
         StdoutLogger stdoutLogger = new StdoutLogger();
-        logRegistry.registerLogger(stdoutLogger);
+        mLogRegistry.registerLogger(stdoutLogger);
 
-        ILeveledLogOutput returnedLogger = logRegistry.getLogger();
+        ILeveledLogOutput returnedLogger = mLogRegistry.getLogger();
         assertEquals(stdoutLogger, returnedLogger);
-        logRegistry.unregisterLogger();
+        mLogRegistry.unregisterLogger();
     }
 
     /**
@@ -59,15 +73,14 @@ public class LogRegistryTest extends TestCase {
     public void testPrintLog_sameLogLevel() {
         String testMessage = "This is a test message.";
         ILeveledLogOutput mockLogger = EasyMock.createMock(ILeveledLogOutput.class);
-        LogRegistry logRegistry = LogRegistry.getLogRegistry();
-        logRegistry.registerLogger(mockLogger);
+        mLogRegistry.registerLogger(mockLogger);
 
         EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
         mockLogger.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
 
         EasyMock.replay(mockLogger);
-        logRegistry.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
-        logRegistry.unregisterLogger();
+        mLogRegistry.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
+        mLogRegistry.unregisterLogger();
     }
 
     /**
@@ -77,15 +90,14 @@ public class LogRegistryTest extends TestCase {
     public void testPrintLog_lowerLogLevel() {
         String testMessage = "This is a test message.";
         ILeveledLogOutput mockLogger = EasyMock.createMock(ILeveledLogOutput.class);
-        LogRegistry logRegistry = LogRegistry.getLogRegistry();
-        logRegistry.registerLogger(mockLogger);
+        mLogRegistry.registerLogger(mockLogger);
 
         // Setting LogLevel == ERROR will let everything print
         EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.ERROR.getStringValue());
 
         EasyMock.replay(mockLogger);
-        Log.v(LOG_TAG, testMessage);
-        logRegistry.unregisterLogger();
+        mLogRegistry.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
+        mLogRegistry.unregisterLogger();
     }
 
     /**
@@ -105,8 +117,7 @@ public class LogRegistryTest extends TestCase {
         // Simple class that will run in a thread, simulating a new Invocation
         class FirstThread implements Runnable {
             public void run() {
-                LogRegistry logRegistry = LogRegistry.getLogRegistry();
-                logRegistry.registerLogger(mockLogger);
+                mLogRegistry.registerLogger(mockLogger);
                 Log.v(LOG_TAG, testMessage);
                 Thread secondThread = new Thread(new SecondThread());  // no explicit ThreadGroup
                 secondThread.start();
@@ -117,7 +128,7 @@ public class LogRegistryTest extends TestCase {
                     fail("Thread was unexpectedly interrupted.");
                 }
                 finally {
-                    logRegistry.unregisterLogger();
+                    mLogRegistry.unregisterLogger();
                 }
             }
         }
