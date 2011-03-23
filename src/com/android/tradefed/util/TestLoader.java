@@ -19,9 +19,11 @@ import com.android.ddmlib.Log;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.Set;
 
 import junit.framework.Test;
@@ -37,22 +39,36 @@ public class TestLoader {
 
     /**
      * Creates a {@link Test} containing all the {@link TestCase} found in given jar
-     * @param jarFile
+     *
+     * @param testJarFile the jar file to load tests from
+     * @param libraries the additional jar files classes in testJarFile are dependent on.
      * @return the {@link Test} containing all tests
      */
-    public Test loadTests(File jarFile) {
+    public Test loadTests(File testJarFile, Collection<File> dependentJars) {
         ClassPathScanner scanner = new ClassPathScanner();
         try {
-            Set<String> classNames = scanner.getClassNamesFromJar(jarFile);
-            URI jarUri = jarFile.toURI();
-            ClassLoader jarClassLoader = new URLClassLoader(new URL[] {jarUri.toURL()}) ;
+            Set<String> classNames = scanner.getClassNamesFromJar(testJarFile);
+
+            ClassLoader jarClassLoader = buildJarClassLoader(testJarFile, dependentJars);
             return loadTests(classNames, jarClassLoader);
         } catch (IOException e) {
             Log.e(LOG_TAG, String.format("IOException when loading test classes from jar %s",
-                    jarFile.getAbsolutePath()));
+                    testJarFile.getAbsolutePath()));
             Log.e(LOG_TAG, e);
         }
         return null;
+    }
+
+
+    private ClassLoader buildJarClassLoader(File jarFile, Collection<File> dependentJars)
+            throws MalformedURLException {
+        URL[] urls = new URL[dependentJars.size() + 1];
+        urls[0] = jarFile.toURI().toURL();
+        Iterator<File> jarIter = dependentJars.iterator();
+        for (int i=1; i < dependentJars.size(); i++) {
+            urls[i] = jarIter.next().toURI().toURL();
+        }
+        return new URLClassLoader(urls);
     }
 
     private Test loadTests(Set<String> classNames, ClassLoader classLoader) {

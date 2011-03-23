@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2011 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.android.tradefed.build;
+
+import com.android.tradefed.config.Option;
+
+import java.io.File;
+
+/**
+ * A {@link IBuildProvider} that constructs a {@link ISdkBuildInfo} based on a provided local path
+ */
+public class LocalSdkBuildProvider implements IBuildProvider {
+
+    @Option(name = "sdk-build-path", description =
+            "the local filesystem path to a sdk build to test")
+    private File mLocalSdkPath;
+
+    @Option(name = "adt-build-path", description =
+            "the local filesystem path to a adt build to test")
+    private File mLocalAdtPath;
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IBuildInfo getBuild() throws BuildRetrievalError {
+        ISdkBuildInfo sdkBuild = new SdkBuildInfo(0, "local-sdk", "sdk");
+        if (mLocalSdkPath == null) {
+            throw new IllegalArgumentException("missing --sdk-build-path option");
+        }
+        // allow a null adt-build-path
+        sdkBuild.setSdkDir(mLocalSdkPath);
+        sdkBuild.setAdtDir(mLocalAdtPath);
+        return sdkBuild;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void buildNotTested(IBuildInfo info) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void cleanUp(IBuildInfo info) {
+        // ignore
+    }
+}
