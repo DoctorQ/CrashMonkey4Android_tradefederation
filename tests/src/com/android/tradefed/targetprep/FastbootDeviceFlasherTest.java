@@ -16,17 +16,10 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.FileListingService;
 import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.device.MockFileUtil;
-import com.android.tradefed.targetprep.DeviceFlasher;
-import com.android.tradefed.targetprep.FlashingResourcesParser;
-import com.android.tradefed.targetprep.IFlashingResourcesParser;
-import com.android.tradefed.targetprep.IFlashingResourcesRetriever;
-import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -41,13 +34,13 @@ import java.io.StringReader;
 import junit.framework.TestCase;
 
 /**
- * Unit tests for {@link DeviceFlasher}.
+ * Unit tests for {@link FastbootDeviceFlasher}.
  */
-public class DeviceFlasherTest extends TestCase {
+public class FastbootDeviceFlasherTest extends TestCase {
 
     /** a temp 'don't care value' string to use */
     private static final String TEST_STRING = "foo";
-    private DeviceFlasher mFlasher;
+    private FastbootDeviceFlasher mFlasher;
     private ITestDevice mMockDevice;
     private IDeviceBuildInfo mMockBuildInfo;
     private IFlashingResourcesRetriever mMockRetriever;
@@ -69,28 +62,19 @@ public class DeviceFlasherTest extends TestCase {
         mMockRetriever = EasyMock.createNiceMock(IFlashingResourcesRetriever.class);
         mMockParser = EasyMock.createNiceMock(IFlashingResourcesParser.class);
 
-        mFlasher = new DeviceFlasher(mMockRetriever) {
+        mFlasher = new FastbootDeviceFlasher(mMockRetriever) {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
                     IDeviceBuildInfo localBuild) {
                 return mMockParser;
-            }
-
-            @Override
-            void extractZip(IDeviceBuildInfo deviceBuild, File unzipDir) {
-                // skip
-            }
-
-            @Override
-            File[] getTestsZipDataFiles(File hostDir) {
-                return new File[] {new File("foo")};
             }
         };
         mFlasher.setUserDataFlashOption(UserDataFlashOption.RETAIN);
     }
 
     /**
-     * Test {@link DeviceFlasher#flash(ITestDevice, IDeviceBuildInfo)} when device is not available.
+     * Test {@link FastbootDeviceFlasher#flash(ITestDevice, IDeviceBuildInfo)}
+     * when device is not available.
      */
     public void testFlash_deviceNotAvailable() throws DeviceNotAvailableException  {
        try {
@@ -124,7 +108,7 @@ public class DeviceFlasherTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceFlasher#getImageVersion(ITestDevice, String)}
+     * Test {@link FastbootDeviceFlasher#getImageVersion(ITestDevice, String)}
      */
     public void testGetImageVersion() throws DeviceNotAvailableException, TargetSetupError {
         CommandResult fastbootResult = new CommandResult();
@@ -154,7 +138,7 @@ public class DeviceFlasherTest extends TestCase {
         mockDevice.rebootIntoBootloader();
         EasyMock.replay(mockDevice);
 
-        DeviceFlasher flasher = getFlasherWithParserData(
+        FastbootDeviceFlasher flasher = getFlasherWithParserData(
                 String.format("require version-baseband=%s", newBasebandVersion));
 
         IDeviceBuildInfo build = new DeviceBuildInfo(1234, "target", "build-name");
@@ -171,36 +155,16 @@ public class DeviceFlasherTest extends TestCase {
     public void testFlashUserData_testsZip() throws DeviceNotAvailableException, TargetSetupError {
         mFlasher.setUserDataFlashOption(UserDataFlashOption.TESTS_ZIP);
 
-        // mock a filesystem with these contents:
-        // /data/app
-        // /data/media
-        MockFileUtil.setMockDirContents(mMockDevice, FileListingService.DIRECTORY_DATA, "app",
-                "media");
-
-        // expect
-        mMockDevice.rebootUntilOnline();
-        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
-
-        // expect 'rm app' but not 'rm media'
-        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))
-                .andReturn("");
-        EasyMock.expect(
-                mMockDevice.syncFiles((File)EasyMock.anyObject(),
-                        EasyMock.contains(FileListingService.DIRECTORY_DATA))).andReturn(
-                Boolean.TRUE);
-
-        // expect chmod operations
-        EasyMock.expect(
-                mMockDevice.executeShellCommand(EasyMock.contains(
-                        "chown system.system data/app data/app/*")))
-                .andReturn("");
-
+        ITestsZipInstaller mockZipInstaller = EasyMock.createMock(ITestsZipInstaller.class);
+        mFlasher.setTestsZipInstaller(mockZipInstaller);
+        //expect
+        mockZipInstaller.pushTestsZipOntoData(EasyMock.eq(mMockDevice), EasyMock.eq(mMockBuildInfo));
         // expect
         mMockDevice.rebootIntoBootloader();
 
-        EasyMock.replay(mMockDevice);
+        EasyMock.replay(mMockDevice, mockZipInstaller);
         mFlasher.flashUserData(mMockDevice, mMockBuildInfo);
-        EasyMock.verify(mMockDevice);
+        EasyMock.verify(mMockDevice, mockZipInstaller);
     }
 
     /**
@@ -237,9 +201,10 @@ public class DeviceFlasherTest extends TestCase {
                         (String)EasyMock.anyObject())).andReturn(result);
     }
 
-    private DeviceFlasher getFlasherWithParserData(final String androidInfoData)
+    private FastbootDeviceFlasher getFlasherWithParserData(final String androidInfoData)
             throws IOException {
-        return new DeviceFlasher(EasyMock.createNiceMock(IFlashingResourcesRetriever.class)) {
+        return new FastbootDeviceFlasher(EasyMock.createNiceMock(
+                IFlashingResourcesRetriever.class)) {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
                     IDeviceBuildInfo localBuild) throws TargetSetupError {

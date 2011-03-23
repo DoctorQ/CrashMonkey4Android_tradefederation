@@ -44,7 +44,7 @@ import java.util.zip.ZipFile;
  * radio baseband, since it is typically the case that the radio and bootloader can't communicate
  * directly.  Typically, they use the RIL (which runs in userspace) as a proxy.
  */
-public class CdmaDeviceFlasher extends DeviceFlasher {
+public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
     private static final String LOG_TAG = "CdmaDeviceFlasher";
 
     private boolean mShouldFlashBaseband = false;
