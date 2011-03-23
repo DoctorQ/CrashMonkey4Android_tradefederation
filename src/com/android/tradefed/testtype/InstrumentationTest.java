@@ -267,7 +267,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * <p/>
      * Exposed for testing.
      */
-    void setCollectsTestsShellTimeout(int timeout) {
+    public void setCollectsTestsShellTimeout(int timeout) {
         mCollectTestsShellTimeout = timeout;
     }
 
