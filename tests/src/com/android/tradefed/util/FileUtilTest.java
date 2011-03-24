@@ -20,6 +20,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.zip.ZipFile;
 
 import junit.framework.TestCase;
 
@@ -132,8 +133,38 @@ public class FileUtilTest extends TestCase {
         assertFalse(tmpParentDir.exists());
     }
 
-    public void testExtractZip() throws IOException {
-        // TODO: implement this - maybe create a zip programmatically than extract it ?
+    /**
+     * Test creating then extracting a zip file
+     *
+     * @throws IOException
+     */
+    public void testCreateAndExtractZip() throws IOException {
+        File tmpParentDir = FileUtil.createTempDir("foo");
+        File zipFile = null;
+        File extractedDir = FileUtil.createTempDir("extract-foo");
+        try {
+            File childDir = new File(tmpParentDir, "foochild");
+            assertTrue(childDir.mkdir());
+            File subFile = new File(childDir, "foo.txt");
+            FileUtil.writeToFile("contents", subFile);
+            zipFile = FileUtil.createZip(tmpParentDir);
+            FileUtil.extractZip(new ZipFile(zipFile), extractedDir);
+
+            // assert all contents of original zipped dir are extracted
+            File extractedParentDir = new File(extractedDir, tmpParentDir.getName());
+            File extractedChildDir = new File(extractedParentDir, childDir.getName());
+            File extractedSubFile = new File(extractedChildDir, subFile.getName());
+            assertTrue(extractedParentDir.exists());
+            assertTrue(extractedChildDir.exists());
+            assertTrue(extractedSubFile.exists());
+            assertTrue(FileUtil.compareFileContents(subFile, extractedSubFile));
+        } finally {
+            FileUtil.recursiveDelete(tmpParentDir);
+            FileUtil.recursiveDelete(extractedDir);
+            if (zipFile != null) {
+                zipFile.delete();
+            }
+        }
     }
 
     public void testGetExtension() {
@@ -141,7 +172,6 @@ public class FileUtilTest extends TestCase {
         assertEquals(".txt", FileUtil.getExtension("file.txt"));
         assertEquals(".txt", FileUtil.getExtension("foo.file.txt"));
     }
-
 
     /**
      * Test method for {@link FileUtil#createTempFileForRemote(String, File)}.

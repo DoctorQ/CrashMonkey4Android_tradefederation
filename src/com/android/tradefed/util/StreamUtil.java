@@ -22,6 +22,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.Reader;
 
 /**
@@ -64,4 +65,50 @@ public class StreamUtil {
         return list;
     }
 
+    /**
+     * Copies contents of origStream to destStream.
+     * <p/>
+     * Recommended to provide a buffered stream for input and output
+     *
+     * @param inStream the {@link InputStream}
+     * @param outStream the {@link OutputStream}
+     * @throws IOException
+     */
+    public static void copyStreams(InputStream inStream, OutputStream outStream)
+            throws IOException {
+        int data = -1;
+        while ((data = inStream.read()) != -1) {
+            outStream.write(data);
+        }
+    }
+
+    /**
+     * Closes given input stream.
+     *
+     * @param inStream the {@link InputStream}. No action taken if inStream is null.
+     */
+    public static void closeStream(InputStream inStream) {
+        if (inStream != null) {
+            try {
+                inStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Closes given output stream.
+     *
+     * @param outStream the {@link InputStream}. No action taken if outStream is null.
+     */
+    public static void closeStream(OutputStream outStream) {
+        if (outStream != null) {
+            try {
+                outStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
 }

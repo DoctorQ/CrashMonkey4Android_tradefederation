@@ -28,8 +28,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Enumeration;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 /**
  * A helper class for file related operations
@@ -203,25 +206,10 @@ public class FileUtil {
         try {
             origStream = new BufferedInputStream(input);
             destStream = new BufferedOutputStream(new FileOutputStream(destFile));
-            int data = -1;
-            while ((data = origStream.read()) != -1) {
-                destStream.write(data);
-            }
+            StreamUtil.copyStreams(origStream, destStream);
         } finally {
-            if (origStream != null) {
-                try {
-                    origStream.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            if (destStream != null) {
-                try {
-                    destStream.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+            StreamUtil.closeStream(origStream);
+            StreamUtil.closeStream(destStream);
         }
     }
 
@@ -269,6 +257,103 @@ public class FileUtil {
                 FileUtil.writeToFile(zipFile.getInputStream(entry), childFile);
             }
         }
+    }
+
+    /**
+     * Utility method to create a temporary zip file containing the given directory and
+     * all its contents.
+     *
+     * @param dir the directory to zip
+     * @return a temporary zip {@link File} containing directory contents
+     * @throws IOException if failed to create zip file
+     */
+    public static File createZip(File dir) throws IOException {
+        File zipFile = FileUtil.createTempFile("dir", ".zip");
+        ZipOutputStream out = null;
+        try {
+            FileOutputStream fileStream = new FileOutputStream(zipFile);
+            out = new ZipOutputStream(new BufferedOutputStream(fileStream));
+            addToZip(out, dir, new LinkedList<String>());
+        } catch (IOException e) {
+            zipFile.delete();
+            throw e;
+        } catch (RuntimeException e) {
+            zipFile.delete();
+            throw e;
+        } finally {
+            StreamUtil.closeStream(out);
+        }
+        return zipFile;
+    }
+
+    /**
+     * Recursively adds given file and its contents to ZipOutputStream
+     *
+     * @param out the {@link ZipOutputStream}
+     * @param file the {@link File} to add to the stream
+     * @param relativePathSegs the relative path of file, including separators
+     * @throws IOException if failed to add file to zip
+     */
+    private static void addToZip(ZipOutputStream out, File file, List<String> relativePathSegs)
+            throws IOException {
+        relativePathSegs.add(file.getName());
+        if (file.isDirectory()) {
+            // note: it appears even on windows, ZipEntry expects '/' as a path separator
+            relativePathSegs.add("/");
+        }
+        ZipEntry zipEntry = new ZipEntry(buildPath(relativePathSegs));
+        out.putNextEntry(zipEntry);
+        if (file.isFile()) {
+            writeToStream(file, out);
+        }
+        out.closeEntry();
+        if (file.isDirectory()) {
+            // recursively add contents
+            File[] subFiles = file.listFiles();
+            if (subFiles == null) {
+                throw new IOException(String.format("Could not read directory %s",
+                        file.getAbsolutePath()));
+            }
+            for (File subFile : subFiles) {
+                addToZip(out, subFile, relativePathSegs);
+            }
+            // remove the path separator
+            relativePathSegs.remove(relativePathSegs.size()-1);
+        }
+        // remove the last segment, added at beginning of method
+        relativePathSegs.remove(relativePathSegs.size()-1);
+    }
+
+    /**
+     * Helper method to write input file contents to output stream.
+     *
+     * @param file the input {@link File}
+     * @param out the {@link OutputStream}
+     *
+     * @throws IOException
+     */
+    private static void writeToStream(File file, OutputStream out) throws IOException {
+        InputStream inputStream = null;
+        try {
+            inputStream = new BufferedInputStream(new FileInputStream(file));
+            StreamUtil.copyStreams(inputStream, out);
+        } finally {
+            StreamUtil.closeStream(inputStream);
+        }
+    }
+
+    /**
+     * Builds a file system path from a stack of relative path segments
+     *
+     * @param relativePathSegs the list of relative paths
+     * @return a {@link String} containing all relativePathSegs
+     */
+    private static String buildPath(List<String> relativePathSegs) {
+        StringBuilder pathBuilder = new StringBuilder();
+        for (String segment : relativePathSegs) {
+            pathBuilder.append(segment);
+        }
+        return pathBuilder.toString();
     }
 
     /**
@@ -326,12 +411,8 @@ public class FileUtil {
             }
             return true;
         } finally {
-            if (stream1 != null) {
-                stream1.close();
-            }
-            if (stream2 != null) {
-                stream2.close();
-            }
+            StreamUtil.closeStream(stream1);
+            StreamUtil.closeStream(stream2);
         }
     }
 
