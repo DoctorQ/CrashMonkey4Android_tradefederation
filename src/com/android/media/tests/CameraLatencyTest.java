@@ -95,7 +95,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         TestInfo t = new TestInfo();
         t.mTestName = "latency";
         t.mClassName = "com.android.camera.stress.CameraLatency";
-        t.mTestMetricsName = "camera_latency";
+        t.mTestMetricsName = "CameraLatency";
         RegexTrie<String> map = t.mPatternMap;
         map.put("AutoFocus", "^Avg AutoFocus = (\\d+)");
         map.put("ShutterLag", "^Avg mShutterLag = (\\d+)");
@@ -108,7 +108,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         t = new TestInfo();
         t.mTestName = "startup";
         t.mClassName = "com.android.camera.stress.CameraStartUp";
-        t.mTestMetricsName = "camera_video_recorder_startup";
+        t.mTestMetricsName = "CameraVideoRecorderStartup";
         map = t.mPatternMap;
         map.put("FirstCameraStartup", "^First Camera Startup: (\\d+)");
         map.put("CameraStartup", "^Camera average startup time: (\\d+) ms");

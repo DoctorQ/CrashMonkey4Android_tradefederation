@@ -55,7 +55,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private static final String LOG_TAG = "MediaStressTest";
 
     ITestDevice mTestDevice = null;
-    private static final String METRICS_RUN_NAME = "media_stress";
+    private static final String METRICS_RUN_NAME = "VideoRecordingStress";
 
     // Constants for running the tests
     private static final String mTestClassName =
@@ -149,13 +149,13 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
             line = lineIter.next();
             String key = null;
             if (PREVIEW_STANZA.equals(line)) {
-                key = "preview";
+                key = "StopPreviewAndRelease";
             } else if (SWITCH_STANZA.equals(line)) {
-                key = "switch";
+                key = "SwitchModeCameraVideo";
             } else if (PLAYBACK_STANZA.equals(line)) {
-                key = "playback";
+                key = "VideoRecordPlayback";
             } else if (line.startsWith(RECORDING_STANZA)) {
-                key = "recording";
+                key = "VideoRecording";
             } else if (line.isEmpty()) {
                 // ignore
                 continue;
