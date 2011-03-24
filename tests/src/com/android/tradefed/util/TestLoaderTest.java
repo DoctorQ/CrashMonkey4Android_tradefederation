@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Collections;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -32,13 +33,14 @@ public class TestLoaderTest extends TestCase {
      * <p/>
      * Extracts a tests.jar containing one test, and ensure the test is loaded
      */
+    @SuppressWarnings("unchecked")
     public void testLoadTests() throws Exception {
         // extract the tests.jar from classpath into a tmp file
         InputStream testJarStream = getClass().getResourceAsStream("/util/tests.jar");
         File tmpJar = FileUtil.createTempFile("tests", ".jar");
         try {
             FileUtil.writeToFile(testJarStream, tmpJar);
-            Test loadedSuite = new TestLoader().loadTests(tmpJar);
+            Test loadedSuite = new TestLoader().loadTests(tmpJar, Collections.EMPTY_LIST);
             assertNotNull(loadedSuite);
             TestResult result = new TestResult();
             loadedSuite.run(result);
