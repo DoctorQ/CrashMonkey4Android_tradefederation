@@ -31,12 +31,22 @@ import java.util.ListIterator;
  */
 public class EmailResultReporter extends CollectingTestListener implements ITestSummaryListener {
     private static final String LOG_TAG = "EmailResultReporter";
+    private static final String DEFAULT_SUBJECT_TAG = "Tradefed";
 
     @Option(name="sender", description="The envelope-sender address to use for the messages")
     private String mSender = null;
 
     @Option(name="destination", description="One or more destination addresses")
     private Collection<String> mDestinations = new HashSet<String>();
+
+    @Option(name = "subject-tag",
+            description = "The tag to be added to the begining of the email subject. "+
+            "Default: "+DEFAULT_SUBJECT_TAG)
+    private String mSubjectTag = DEFAULT_SUBJECT_TAG;
+
+    @Option(name = "send-only-on-failure",
+            description = "Flag for sending email only on failure")
+    private boolean mSendOnlyOnFailure = false;
 
     private List<TestSummary> mSummaries = null;
 
@@ -55,6 +65,12 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return {@code true} if a notification email should be sent, {@code false} if not
      */
     protected boolean shouldSendMessage() {
+        if (mSendOnlyOnFailure) {
+            if (!hasFailedTests()) {
+                Log.v(LOG_TAG, "Not sending email because there are no failures to report.");
+                return false;
+            }
+        }
         return true;
     }
 
@@ -65,7 +81,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return A {@link String} containing the subject to use for an email report
      */
     protected String generateEmailSubject() {
-        return String.format("Tradefed: %d passed, %d failed, %d error", getNumPassedTests(),
+        return String.format("%s: %d passed, %d failed, %d error", mSubjectTag, getNumPassedTests(),
                 getNumFailedTests(), getNumErrorTests());
     }
 
@@ -97,6 +113,10 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      */
     @Override
     public void invocationEnded(long elapsedTime) {
+        if (!shouldSendMessage()) {
+            return;
+        }
+
         if (mDestinations.isEmpty()) {
             Log.e(LOG_TAG, "Failed to send email because no destination addresses were set.");
             return;
