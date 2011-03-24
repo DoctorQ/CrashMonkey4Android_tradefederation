@@ -27,6 +27,7 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
 
     private File mAdtDir = null;
     private File mSdkDir = null;
+    private boolean mDeleteSdkDirParent;
 
     /**
      * Creates a {@link SdkBuildInfo} using default attribute values.
@@ -74,13 +75,26 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
      */
     @Override
     public void setSdkDir(File sdkDir) {
+        setSdkDir(sdkDir, false);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSdkDir(File sdkDir, boolean deleteParent) {
         mSdkDir = sdkDir;
+        mDeleteSdkDirParent = deleteParent;
     }
 
     @Override
     public void cleanUp() {
         if (mSdkDir != null) {
-            FileUtil.recursiveDelete(mSdkDir);
+            if (mDeleteSdkDirParent) {
+                FileUtil.recursiveDelete(mSdkDir.getParentFile());
+            } else {
+                FileUtil.recursiveDelete(mSdkDir);
+            }
         }
         if (mAdtDir != null) {
             FileUtil.recursiveDelete(mAdtDir);

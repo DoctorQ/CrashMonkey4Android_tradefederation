@@ -39,7 +39,18 @@ public interface ISdkBuildInfo extends IBuildInfo {
 
     /**
      * Sets the directory that contains the extracted SDK build.
+     *
+     * @param sdkDir the path to the sdk.
      */
     public void setSdkDir(File sdkDir);
+
+    /**
+     * Sets the directory that contains the extracted SDK build.
+     *
+     * @param sdkDir the path to the sdk
+     * @param deleteParent if <code>true</code>, delete the parent directory of sdkDir on
+     *            {@link #cleanUp()}. If <code>false</code>, only sdkDir will be deleted.
+     */
+    public void setSdkDir(File sdkDir, boolean deleteParent);
 
 }
