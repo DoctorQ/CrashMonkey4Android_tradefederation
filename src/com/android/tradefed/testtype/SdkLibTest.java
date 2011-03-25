@@ -24,8 +24,10 @@ import com.android.tradefed.util.TestLoader;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 
 import junit.framework.Assert;
 import junit.framework.Test;
@@ -72,8 +74,18 @@ public class SdkLibTest implements IRemoteTest, IBuildReceiver {
          Assert.assertTrue(String.format("could not find tests/libtests folder in sdk %s",
                  mSdkBuild.getSdkDir()), sdkLibTestDir.exists());
 
+         // also add the x86_64 swt.jar. TODO: include proper swt according to
+         // host arch
+         File swtJarDir = new File(sdkLibDir, "x86_64");
+         Assert.assertTrue(String.format("could not find tools/lib/x86_64 folder in sdk %s",
+                 mSdkBuild.getSdkDir()), swtJarDir.exists());
+
          Collection<File> libraries = collectJars(sdkLibDir);
          Collection<File> testLibs = collectJars(sdkLibTestDir);
+         // also add testLibs to the dependentJars, since sdkuilib-tests depends on sdklib-tests
+         libraries.addAll(testLibs);
+         libraries.addAll(collectJars(swtJarDir));
+
          TestLoader loader = new TestLoader();
 
          for (File testLib : testLibs) {
@@ -87,7 +99,9 @@ public class SdkLibTest implements IRemoteTest, IBuildReceiver {
      * Returns all jar files found in given directory
      */
     private Collection<File> collectJars(File dir) {
-        return Arrays.asList(dir.listFiles(new JarFilter()));
+        List<File> list = new ArrayList<File>();
+        list.addAll(Arrays.asList(dir.listFiles(new JarFilter())));
+        return list;
     }
 
     private static class JarFilter implements FilenameFilter {

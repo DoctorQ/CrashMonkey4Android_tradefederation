@@ -75,12 +75,18 @@ public class TestLoader {
         TestSuite testSuite = new TestSuite();
         for (String className : classNames) {
             try {
-                Class<?> testClass = Class.forName(className, true, classLoader);
-                if (TestCase.class.isAssignableFrom(testClass)) {
-                    testSuite.addTestSuite(testClass);
+                // ignore inner classes
+                if (!className.contains("$")) {
+                    Class<?> testClass = Class.forName(className, true, classLoader);
+                    if (TestCase.class.isAssignableFrom(testClass)) {
+                        testSuite.addTestSuite(testClass);
+                    }
                 }
-            }   catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException e) {
                 // ignore for now
+            } catch (RuntimeException e) {
+                // catch this to prevent one bad test from stopping run
+                Log.e(LOG_TAG, e);
             }
         }
         return testSuite;
