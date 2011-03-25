@@ -94,17 +94,17 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
      */
     static RegexTrie<String> getPatternMap() {
         RegexTrie<String> patMap = new RegexTrie<String>();
-        patMap.put("switch", "^Camera Switch Mode:");
+        patMap.put("SwitchPreview", "^Camera Switch Mode:");
 
         // For versions of the on-device test that don't differentiate between front and back camera
-        patMap.put("image", "^Camera Image Capture");
-        patMap.put("video", "^Camera Video Capture");
+        patMap.put("ImageCapture", "^Camera Image Capture");
+        patMap.put("VideoRecording", "^Camera Video Capture");
 
         // For versions that do differentiate
-        patMap.put("f_image", "^Front Camera Image Capture");
-        patMap.put("b_image", "^Back Camera Image Capture");
-        patMap.put("f_video", "^Front Camera Video Capture");
-        patMap.put("b_video", "^Back Camera Video Capture");
+        patMap.put("FrontImageCapture", "^Front Camera Image Capture");
+        patMap.put("ImageCapture", "^Back Camera Image Capture");
+        patMap.put("FrontVideoRecording", "^Front Camera Video Capture");
+        patMap.put("VideoRecording", "^Back Camera Video Capture");
 
         // Actual metrics to collect for a given key
         patMap.put("loopCount", "^No of loops :(\\d+)");
@@ -123,7 +123,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         TestInfo t = new TestInfo();
         t.mTestName = "imagecap";
         t.mClassName = "com.android.camera.stress.ImageCapture";
-        t.mTestMetricsName = "camera_application_stress";
+        t.mTestMetricsName = "CameraApplicationStress";
         t.mPatternMap = patMap;
         mTestCases.add(t);
 
@@ -131,7 +131,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         t = new TestInfo();
         t.mTestName = "videocap";
         t.mClassName = "com.android.camera.stress.VideoCapture";
-        t.mTestMetricsName = "camera_application_stress";
+        t.mTestMetricsName = "CameraApplicationStress";
         t.mPatternMap = patMap;
         mTestCases.add(t);
 
@@ -139,7 +139,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         t = new TestInfo();
         t.mTestName = "switch";
         t.mClassName = "com.android.camera.stress.SwitchPreview";
-        t.mTestMetricsName = "camera_application_stress";
+        t.mTestMetricsName = "CameraApplicationStress";
         t.mPatternMap = patMap;
         mTestCases.add(t);
     }
@@ -404,9 +404,9 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
             assertNotNull(mReportedMetrics);
             Log.e(LOG_TAG, String.format("Got reported metrics: %s", mReportedMetrics.toString()));
             assertEquals(3, mReportedMetrics.size());
-            assertEquals("43", mReportedMetrics.get("image"));
-            assertEquals("100", mReportedMetrics.get("video"));
-            assertEquals("14", mReportedMetrics.get("switch"));
+            assertEquals("43", mReportedMetrics.get("ImageCapture"));
+            assertEquals("100", mReportedMetrics.get("VideoRecording"));
+            assertEquals("14", mReportedMetrics.get("SwitchPreview"));
         }
 
         /**
@@ -471,11 +471,11 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
             assertNotNull(mReportedMetrics);
             Log.e(LOG_TAG, String.format("Got reported metrics: %s", mReportedMetrics.toString()));
             assertEquals(5, mReportedMetrics.size());
-            assertEquals("100", mReportedMetrics.get("b_image"));
-            assertEquals("99", mReportedMetrics.get("f_image"));
-            assertEquals("98", mReportedMetrics.get("b_video"));
-            assertEquals("100", mReportedMetrics.get("f_video"));
-            assertEquals("200", mReportedMetrics.get("switch"));
+            assertEquals("100", mReportedMetrics.get("ImageCapture"));
+            assertEquals("99", mReportedMetrics.get("FrontImageCapture"));
+            assertEquals("98", mReportedMetrics.get("VideoRecording"));
+            assertEquals("100", mReportedMetrics.get("FrontVideoRecording"));
+            assertEquals("200", mReportedMetrics.get("SwitchPreview"));
         }
     }
 }
