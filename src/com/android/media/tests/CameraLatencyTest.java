@@ -173,6 +173,10 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         try {
             outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
 
+            if (outputFile == null) {
+                return;
+            }
+
             // Upload a verbatim copy of the output file
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
