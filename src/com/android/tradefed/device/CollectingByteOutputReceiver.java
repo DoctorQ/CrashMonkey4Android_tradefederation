@@ -23,7 +23,7 @@ import com.android.tradefed.util.ByteArrayList;
  * This is useful for shell commands that will produce a significant amount of output, where the
  * 2x {@link String} memory overhead will be significant.
  */
-class CollectingByteOutputReceiver implements IShellOutputReceiver {
+public class CollectingByteOutputReceiver implements IShellOutputReceiver {
     private ByteArrayList mData = new ByteArrayList();
     private boolean mIsCanceled = false;
 
