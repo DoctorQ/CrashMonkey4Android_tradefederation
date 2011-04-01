@@ -291,7 +291,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Creates a {@link CommandScheduler}.
      */
-    CommandScheduler() {
+    public CommandScheduler() {
         mCommandQueue = new ConditionPriorityBlockingQueue<ConfigCommand>(new ConfigComparator());
         mAllCommands = Collections.synchronizedList(new LinkedList<ConfigCommand>());
         mInvocationThreads = new HashSet<InvocationThread>();
