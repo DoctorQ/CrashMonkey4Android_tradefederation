@@ -277,7 +277,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
                         getArgString(mCmd.getArgs()), elapsedTime));
                 mCmd.incrementExecTime(elapsedTime);
-                mAllCommands.remove(mCmd);
+                if (!mCmd.getCommandOptions().isLoopMode()) {
+                    mAllCommands.remove(mCmd);
+                }
                 mManager.freeDevice(mDevice, deviceState);
                 removeInvocationThread(this);
             }
