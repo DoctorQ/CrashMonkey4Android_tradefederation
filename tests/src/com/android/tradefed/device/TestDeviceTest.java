@@ -75,23 +75,14 @@ public class TestDeviceTest extends TestCase {
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
         mMockWifi = EasyMock.createMock(IWifiHelper.class);
 
-        // A TestDevice with a no-op recoverDevice() implementation
-        mTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
-            @Override
-            public void reboot() {
-                // reboot is too complicated to mock out correctly, so just do a adb reboot command
-                // without any of the other associated commands
-                try {
-                    mMockIDevice.reboot(null);
-                } catch (IOException e) {
-                } catch (TimeoutException e) {
-                } catch (AdbCommandRejectedException e) {
-                }
+        class TestableTestDevice extends TestDevice {
+            public TestableTestDevice() {
+                super(mMockIDevice, mMockMonitor);
             }
 
             @Override
             public void postBootSetup() {
-                // too annoying to mock out postBootSetup actions everywhere, so do nothing
+                // too annoying to mock out postBootSetup actions everyone, so do nothing
             }
 
             @Override
@@ -99,6 +90,13 @@ public class TestDeviceTest extends TestCase {
                 return mMockRunUtil;
             }
 
+            @Override
+            void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
+            }
+        }
+
+        // A TestDevice with a no-op recoverDevice() implementation
+        mTestDevice = new TestableTestDevice() {
             @Override
             public void recoverDevice() throws DeviceNotAvailableException {
                 // ignore
@@ -114,55 +112,13 @@ public class TestDeviceTest extends TestCase {
         mTestDevice.setLogStartDelay(-1);
 
         // TestDevice with intact recoverDevice()
-        mRecoveryTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
-            @Override
-            public void reboot() {
-                // reboot is too complicated to mock out correctly, so just do a adb reboot command
-                // without any of the other associated commands
-                try {
-                    mMockIDevice.reboot(null);
-                } catch (IOException e) {
-                } catch (TimeoutException e) {
-                } catch (AdbCommandRejectedException e) {
-                }
-            }
-            @Override
-            public void postBootSetup() {
-                // too annoying to mock out postBootSetup actions everyone, so do nothing
-            }
-
-            @Override
-            IRunUtil getRunUtil() {
-                return mMockRunUtil;
-            }
-        };
+        mRecoveryTestDevice = new TestableTestDevice();
         mRecoveryTestDevice.setRecovery(mMockRecovery);
         mRecoveryTestDevice.setCommandTimeout(100);
         mRecoveryTestDevice.setLogStartDelay(-1);
 
         // TestDevice without fastboot
-        mNoFastbootTestDevice = new TestDevice(mMockIDevice, mMockMonitor) {
-            @Override
-            public void reboot() {
-                // reboot is too complicated to mock out correctly, so just do a adb reboot command
-                // without any of the other associated commands
-                try {
-                    mMockIDevice.reboot(null);
-                } catch (IOException e) {
-                } catch (TimeoutException e) {
-                } catch (AdbCommandRejectedException e) {
-                }
-            }
-            @Override
-            public void postBootSetup() {
-                // too annoying to mock out postBootSetup actions everyone, so do nothing
-            }
-
-            @Override
-            IRunUtil getRunUtil() {
-                return mMockRunUtil;
-            }
-        };
+        mNoFastbootTestDevice = new TestableTestDevice();
         mNoFastbootTestDevice.setFastbootEnabled(false);
         mNoFastbootTestDevice.setRecovery(mMockRecovery);
         mNoFastbootTestDevice.setCommandTimeout(100);
@@ -958,6 +914,28 @@ public class TestDeviceTest extends TestCase {
                 (IShellOutputReceiver)EasyMock.anyObject(),
                 EasyMock.anyInt());
         EasyMock.expectLastCall().andAnswer(shellAnswer);
+    }
+
+    /**
+     * Test normal success case for {@link TestDevice#reboot()}
+     */
+    public void testReboot() throws DeviceNotAvailableException {
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
+                mMockIDevice);
+        replayMocks();
+        mTestDevice.reboot();
+        verifyMocks();
+    }
+
+    /**
+     * Test {@link TestDevice#reboot()} attempts a recovery upon failure
+     */
+    public void testRebootRecovers() throws DeviceNotAvailableException {
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(null);
+        mMockRecovery.recoverDevice(mMockMonitor);
+        replayMocks();
+        mRecoveryTestDevice.reboot();
+        verifyMocks();
     }
 
     /**

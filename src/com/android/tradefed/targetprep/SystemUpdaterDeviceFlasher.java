@@ -23,6 +23,8 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A {@link IDeviceFlasher} that relies on the system updater to install a
@@ -59,11 +61,11 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         // on the target is different
 
         if (installUpdate(device, deviceBuild)) {
-            // we only support installing tests from a zip file for now, so no
-            // need to for the flash option passed in
-            mTestsZipInstaller.pushTestsZipOntoData(device, deviceBuild);
-            Log.d(LOG_TAG, "rebooting after installing tests");
-            device.reboot();
+            if (mFlashOption == UserDataFlashOption.TESTS_ZIP) {
+                mTestsZipInstaller.pushTestsZipOntoData(device, deviceBuild);
+                Log.d(LOG_TAG, "rebooting after installing tests");
+                device.reboot();
+            }
         }
     }
 
@@ -106,13 +108,15 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
      * {@inheritDoc}
      * <p>
      * This implementation only supports {@link IDeviceFlasher.UserDataFlashOption#TESTS_ZIP}
-     * as a valid option
+     * and {@link UserDataFlashOption.RETAIN} as a valid options
      */
     public void setUserDataFlashOption(UserDataFlashOption flashOption) {
-        if (flashOption != UserDataFlashOption.TESTS_ZIP) {
+        List<UserDataFlashOption> supported = Arrays.asList(
+                UserDataFlashOption.TESTS_ZIP, UserDataFlashOption.RETAIN);
+        if (!supported.contains(flashOption)) {
             throw new IllegalArgumentException(String.format(
                     "%s not supported. This implementation only supports flashing %s", flashOption,
-                    UserDataFlashOption.TESTS_ZIP));
+                    supported.toString()));
         }
         mFlashOption = flashOption;
     }

@@ -497,7 +497,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             CLog.w("Ignoring repeated communication failure when collecting tests %s for device %s",
                     mPackageName, mDevice.getSerialNumber());
         }
-        CLog.e("Failed to collect tests to run to run for %s on device %s.",
+        CLog.e("Failed to collect tests to run for %s on device %s.",
                 mPackageName, mDevice.getSerialNumber());
         return null;
     }

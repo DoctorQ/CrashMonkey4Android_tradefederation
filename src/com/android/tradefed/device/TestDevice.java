@@ -106,6 +106,10 @@ class TestDevice implements IManagedTestDevice {
     private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
     /** The time in ms to wait for a device to boot into recovery. */
     private static final int ADB_RECOVERY_TIMEOUT = 1 * 60 * 1000;
+    /** The time in ms to wait for a device to reboot to full system. */
+    private static final int REBOOT_TIMEOUT = 2 * 60 * 1000;
+    /** The time in ms to wait for a device to become unavailable. Should usually be short */
+    private static final int DEFAULT_UNAVAILABLE_TIMEOUT = 10 * 1000;
     /** number of attempts made to clear dialogs */
     private static final int NUM_CLEAR_ATTEMPTS = 5;
     /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
@@ -122,7 +126,7 @@ class TestDevice implements IManagedTestDevice {
     private IDeviceRecovery mRecovery;
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
-    private Semaphore mFastbootLock = new Semaphore(1);
+    private final Semaphore mFastbootLock = new Semaphore(1);
     private LogCatReceiver mLogcatReceiver;
     private IFileEntry mRootFile = null;
     private boolean mFastbootEnabled = true;
@@ -531,7 +535,7 @@ class TestDevice implements IManagedTestDevice {
                 runner.getPackageName()), runTestsAction, 0);
         if (failureListener.isRunFailure()) {
             // run failed, might be system crash. Ensure device is up
-            if (mMonitor.waitForDeviceAvailable(5*1000) == null) {
+            if (mMonitor.waitForDeviceAvailable(5 * 1000) == null) {
                 // device isn't up, recover
                 recoverDevice();
             }
@@ -931,8 +935,8 @@ class TestDevice implements IManagedTestDevice {
     private class FileQueryAction implements DeviceAction {
 
         FileEntry[] mFileContents = null;
-        private FileEntry mRemoteFileEntry;
-        private FileListingService mService;
+        private final FileEntry mRemoteFileEntry;
+        private final FileListingService mService;
 
         FileQueryAction(FileEntry remoteFileEntry, FileListingService service) {
             mRemoteFileEntry = remoteFileEntry;
@@ -1229,6 +1233,13 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s in bootloader", getSerialNumber()));
         mRecovery.recoverDeviceBootloader(mMonitor);
         Log.i(LOG_TAG, String.format("Bootloader recovery successful for %s", getSerialNumber()));
+    }
+
+    private void recoverDeviceInRecovery() throws DeviceNotAvailableException {
+        Log.i(LOG_TAG, String.format("Attempting recovery on %s in recovery", getSerialNumber()));
+        mRecovery.recoverDeviceRecovery(mMonitor);
+        Log.i(LOG_TAG,
+                String.format("Recovery mode recovery successful for %s", getSerialNumber()));
     }
 
     /**
@@ -1880,7 +1891,7 @@ class TestDevice implements IManagedTestDevice {
 
         setRecoveryMode(RecoveryMode.AVAILABLE);
 
-        if (mMonitor.waitForDeviceAvailable() != null) {
+        if (mMonitor.waitForDeviceAvailable(REBOOT_TIMEOUT) != null) {
             postBootSetup();
             return;
         } else {
@@ -1916,8 +1927,7 @@ class TestDevice implements IManagedTestDevice {
         }
         doAdbReboot("recovery");
         if (!waitForDeviceInRecovery(ADB_RECOVERY_TIMEOUT)) {
-            // TODO: add a recoverDeviceInRecovery() type method
-            throw new DeviceNotAvailableException();
+            recoverDeviceInRecovery();
         }
     }
 
@@ -1929,9 +1939,11 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Exposed for unit testing.
+     *
      * @throws DeviceNotAvailableException
      */
-    private void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
+    void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
         if (TestDeviceState.FASTBOOT == getDeviceState()) {
             Log.i(LOG_TAG, String.format("device %s in fastboot. Rebooting to userspace.",
                     getSerialNumber()));
@@ -1939,7 +1951,7 @@ class TestDevice implements IManagedTestDevice {
         } else {
             Log.i(LOG_TAG, String.format("Rebooting device %s", getSerialNumber()));
             doAdbReboot(null);
-            waitForDeviceNotAvailable("reboot", getCommandTimeout());
+            waitForDeviceNotAvailable("reboot", DEFAULT_UNAVAILABLE_TIMEOUT);
         }
     }
 
@@ -1961,7 +1973,7 @@ class TestDevice implements IManagedTestDevice {
     }
 
     private void waitForDeviceNotAvailable(String operationDesc, long time) {
-        // TODO: a bit of a race condition here. Would be better to start a device listener
+        // TODO: a bit of a race condition here. Would be better to start a
         // before the operation
         if (!mMonitor.waitForDeviceNotAvailable(time)) {
             // above check is flaky, ignore till better solution is found

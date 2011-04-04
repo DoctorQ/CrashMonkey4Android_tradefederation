@@ -37,4 +37,13 @@ public class StubDeviceRecovery implements IDeviceRecovery {
             throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException("device recovery not implemented");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void recoverDeviceRecovery(IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException("device recovery not implemented");
+    }
 }

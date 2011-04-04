@@ -249,4 +249,13 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         throw new DeviceNotAvailableException(String.format(
                 "Could not find device %s in bootloader", monitor.getSerialNumber()));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void recoverDeviceRecovery(IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException {
+        throw new DeviceNotAvailableException("device recovery not implemented");
+    }
 }

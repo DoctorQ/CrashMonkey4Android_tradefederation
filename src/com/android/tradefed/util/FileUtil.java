@@ -431,6 +431,21 @@ public class FileUtil {
     }
 
     /**
+     * Close an open {@link ZipFile}, ignoring any exceptions.
+     *
+     * @param otaZip the file to close
+     */
+    public static void closeZip(ZipFile otaZip) {
+        if (otaZip != null) {
+            try {
+                otaZip.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
      * Helper method to write input file contents to output stream.
      *
      * @param file the input {@link File}

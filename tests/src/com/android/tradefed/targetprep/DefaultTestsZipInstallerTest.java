@@ -65,20 +65,21 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         MockFileUtil.setMockDirContents(
                 mMockDevice, FileListingService.DIRECTORY_DATA, "app", SKIP_THIS);
 
-        // expect
+        // expect initial reboot and android stop
         mMockDevice.rebootUntilOnline();
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))
                 .andReturn("");
+
+        // expect second reboot and android stop
+        mMockDevice.rebootUntilOnline();
+        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+
         EasyMock.expect(mMockDevice.syncFiles((File) EasyMock.anyObject(),
                 EasyMock.contains(FileListingService.DIRECTORY_DATA)))
                 .andReturn(Boolean.TRUE);
-
-        // expect chmod operations
-        EasyMock.expect(mMockDevice.executeShellCommand(
-                EasyMock.contains("chown system.system data/app data/app/*"))).andReturn("");
 
         EasyMock.replay(mMockDevice);
         mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);

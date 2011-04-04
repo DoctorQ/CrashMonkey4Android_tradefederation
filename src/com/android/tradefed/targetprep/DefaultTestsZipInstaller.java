@@ -124,6 +124,12 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         }
 
         device.setRecoveryMode(RecoveryMode.AVAILABLE);
+        // reboot and let the system recreate top level dirs under /data/ upon
+        // reboot, so they have the right permissions and ownership
+        device.rebootUntilOnline();
+        Log.d(LOG_TAG, "Stopping runtime again");
+        device.executeShellCommand("stop");
+
     }
 
     /**

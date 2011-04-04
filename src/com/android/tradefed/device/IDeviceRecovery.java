@@ -35,6 +35,15 @@ public interface IDeviceRecovery {
             throws DeviceNotAvailableException;
 
     /**
+     * Attempt to recover the given unresponsive device in recovery mode.
+     *
+     * @param monitor the {@link IDeviceStateMonitor} to use.
+     * @throws DeviceNotAvailableException if device could not be recovered
+     */
+    public void recoverDeviceRecovery(IDeviceStateMonitor monitor)
+            throws DeviceNotAvailableException;
+
+    /**
      * Attempt to recover the given unresponsive device in bootloader mode.
      *
      * @param monitor the {@link IDeviceStateMonitor} to use.

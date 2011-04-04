@@ -685,6 +685,15 @@ public class DeviceManager implements IDeviceManager {
                 throws DeviceNotAvailableException {
             throw new DeviceNotAvailableException("aborted test session");
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void recoverDeviceRecovery(IDeviceStateMonitor monitor)
+                throws DeviceNotAvailableException {
+            throw new DeviceNotAvailableException("aborted test session");
+        }
     }
 
     /**

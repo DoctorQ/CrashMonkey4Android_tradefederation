@@ -17,6 +17,7 @@ package com.android.tradefed;
 
 import com.android.tradefed.build.DeviceBuildInfoTest;
 import com.android.tradefed.build.FileDownloadCacheTest;
+import com.android.tradefed.build.OtaZipfileBuildProviderTest;
 import com.android.tradefed.build.SdkBuildInfoTest;
 import com.android.tradefed.command.CommandFileParserTest;
 import com.android.tradefed.command.CommandSchedulerTest;
@@ -30,6 +31,7 @@ import com.android.tradefed.config.OptionSetterTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.DeviceSelectionOptionsTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
+import com.android.tradefed.device.ReconnectingRecoveryTest;
 import com.android.tradefed.device.TestDeviceTest;
 import com.android.tradefed.device.WaitDeviceRecoveryTest;
 import com.android.tradefed.device.WifiHelperTest;
@@ -88,6 +90,7 @@ public class UnitTests extends DeviceTestSuite {
         // build
         addTestSuite(DeviceBuildInfoTest.class);
         addTestSuite(FileDownloadCacheTest.class);
+        addTestSuite(OtaZipfileBuildProviderTest.class);
         addTestSuite(SdkBuildInfoTest.class);
 
         // command
@@ -107,6 +110,7 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(DeviceManagerTest.class);
         addTestSuite(DeviceSelectionOptionsTest.class);
         addTestSuite(DeviceStateMonitorTest.class);
+        addTestSuite(ReconnectingRecoveryTest.class);
         addTestSuite(TestDeviceTest.class);
         addTestSuite(WaitDeviceRecoveryTest.class);
         addTestSuite(WifiHelperTest.class);

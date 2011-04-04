@@ -13,17 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * No-op empty test implementation.
  */
-public class StubTest implements IRemoteTest {
+public class StubTest implements IShardableTest {
+
+    @Option(
+            name = "num-shards",
+            description = "Shard this test into given number of separately runnable chunks")
+    private int mNumShards = 1;
 
     /**
      * {@inheritDoc}
@@ -32,5 +43,19 @@ public class StubTest implements IRemoteTest {
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Log.logAndDisplay(LogLevel.INFO, "StubTest", "nothing to test!");
 
+    }
+
+    @Override
+    public Collection<IRemoteTest> split() {
+        if (mNumShards > 1) {
+            List<IRemoteTest> shards = new ArrayList<IRemoteTest>(mNumShards);
+            for (int i=0; i < mNumShards; i++) {
+                shards.add(new StubTest());
+            }
+            Log.logAndDisplay(
+                    LogLevel.INFO, "StubTest", "splitting into " + mNumShards + " shards");
+            return shards;
+        }
+        return null;
     }
 }
