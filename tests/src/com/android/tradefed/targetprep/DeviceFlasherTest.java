@@ -148,6 +148,7 @@ public class DeviceFlasherTest extends TestCase {
         ITestDevice mockDevice = EasyMock.createMock(ITestDevice.class);
         // expect a fastboot getvar version-baseband command
         setFastbootResponseExpectations(mockDevice, "version-baseband: \n");
+        setFastbootResponseExpectations(mockDevice, "version-baseband: \n");
         // expect a 'flash radio' command
         setFastbootFlashExpectations(mockDevice, "radio");
         mockDevice.rebootIntoBootloader();

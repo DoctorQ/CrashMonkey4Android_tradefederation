@@ -38,12 +38,13 @@ import java.util.zip.ZipFile;
 /**
  * A class that flashes an image on physical Android hardware.
  */
-public class DeviceFlasher implements IDeviceFlasher  {
+public class DeviceFlasher implements IDeviceFlasher {
 
     private static final String LOG_TAG = "DeviceFlasher";
     public static final String BASEBAND_IMAGE_NAME = "radio";
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
+
     /**
      * A list of /data subdirectories to NOT wipe when doing UserDataFlashOption.TESTS_ZIP
      */
@@ -65,6 +66,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUserDataFlashOption(UserDataFlashOption flashOption) {
         mUserDataFlashOption = flashOption;
     }
@@ -76,6 +78,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
 
@@ -106,7 +109,7 @@ public class DeviceFlasher implements IDeviceFlasher  {
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to retrieve resources
      */
-    private void downloadFlashingResources(ITestDevice device, IDeviceBuildInfo localBuild)
+    protected void downloadFlashingResources(ITestDevice device, IDeviceBuildInfo localBuild)
             throws TargetSetupError, DeviceNotAvailableException {
         IFlashingResourcesParser resourceParser = createFlashingResourcesParser(localBuild);
 
@@ -261,14 +264,28 @@ public class DeviceFlasher implements IDeviceFlasher  {
     protected void checkAndFlashBaseband(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         String currentBasebandVersion = getImageVersion(device, "baseband");
-        if (deviceBuild.getBasebandVersion() != null &&
-                !deviceBuild.getBasebandVersion().equals(currentBasebandVersion)) {
+        if (checkShouldFlashBaseband(device, deviceBuild)) {
             Log.i(LOG_TAG, String.format("Flashing baseband %s", deviceBuild.getBasebandVersion()));
             flashBaseband(device, deviceBuild.getBasebandImageFile());
         } else {
             Log.i(LOG_TAG, String.format("Baseband is already version %s, skipping flashing",
                     currentBasebandVersion));
         }
+    }
+
+    /**
+     * Check if the baseband on the provided device needs to be flashed.
+     *
+     * @param device the {@link ITestDevice} to check
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the baseband image to check
+     * @throws DeviceNotAvailableException if device is not available
+     * @throws TargetSetupError if failed to flash baseband
+     */
+    protected boolean checkShouldFlashBaseband(ITestDevice device, IDeviceBuildInfo deviceBuild)
+            throws DeviceNotAvailableException, TargetSetupError {
+        String currentBasebandVersion = getImageVersion(device, "baseband");
+        return (deviceBuild.getBasebandVersion() != null &&
+                !deviceBuild.getBasebandVersion().equals(currentBasebandVersion));
     }
 
     /**
