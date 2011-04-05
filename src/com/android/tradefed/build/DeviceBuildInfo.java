@@ -97,6 +97,12 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      * {@inheritDoc}
      */
     public void setImageFile(String imageName, File file, String version) {
+        if (mImageFileMap.containsKey(imageName)) {
+            Log.e(LOG_TAG, String.format(
+                    "Device build already contains an image for %s in thread %s", imageName,
+                    Thread.currentThread().getName()));
+            return;
+        }
         mImageFileMap.put(imageName, new ImageFile(file, version));
     }
 
