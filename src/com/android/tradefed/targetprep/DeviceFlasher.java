@@ -123,12 +123,15 @@ public class DeviceFlasher implements IDeviceFlasher  {
         verifyRequiredBoards(device, resourceParser, deviceProductType);
 
         String bootloaderVersion = resourceParser.getRequiredBootloaderVersion();
-        if (bootloaderVersion != null) {
+        // only set bootloader image if this build doesn't have one already
+        // TODO: move this logic to the BuildProvider step
+        if (bootloaderVersion != null && localBuild.getBootloaderImageFile() == null) {
            localBuild.setBootloaderImageFile(mResourceRetriever.retrieveFile(
                    getBootloaderFilePrefix(device), bootloaderVersion), bootloaderVersion);
         }
         String basebandVersion = resourceParser.getRequiredBasebandVersion();
-        if (basebandVersion != null) {
+        // only set baseband image if this build doesn't have one already
+        if (basebandVersion != null && localBuild.getBasebandImageFile() == null) {
             localBuild.setBasebandImage(mResourceRetriever.retrieveFile(BASEBAND_IMAGE_NAME,
                     basebandVersion), basebandVersion);
         }
