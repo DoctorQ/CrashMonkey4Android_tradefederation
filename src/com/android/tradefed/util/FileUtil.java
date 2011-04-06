@@ -441,4 +441,14 @@ public class FileUtil {
         File tmpFile =  FileUtil.createTempFile(prefix + "_", fileExt, parentDir);
         return tmpFile;
     }
+
+    /**
+     * Try to delete a file and silently ignore IOExceptions.  Intended for use when cleaning up
+     * in {@code finally} stanzas. {@param file} may be null.
+     */
+    public static void deleteFile(File file) {
+        if (file != null) {
+            file.delete();
+        }
+    }
 }

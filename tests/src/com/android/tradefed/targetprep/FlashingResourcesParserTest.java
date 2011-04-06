@@ -17,9 +17,11 @@
 package com.android.tradefed.targetprep;
 
 import com.android.tradefed.targetprep.FlashingResourcesParser;
+import com.android.tradefed.targetprep.FlashingResourcesParser.AndroidInfo;
 import com.android.tradefed.targetprep.IFlashingResourcesParser;
 import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.MultiMap;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -46,7 +48,9 @@ public class FlashingResourcesParserTest extends TestCase {
                 "cylon=blah\n" + // valid
                 "blah"; // not valid
         BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
-        Map<String, List<String>> result = FlashingResourcesParser.parseAndroidInfo(reader);
+        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader);
+        MultiMap<String, String> result = fullInfo.get(null);
+
         assertEquals(3, result.size());
         List<String> boards = result.get(FlashingResourcesParser.BOARD_KEY);
         assertEquals(2, boards.size());
@@ -106,6 +110,67 @@ public class FlashingResourcesParserTest extends TestCase {
         assertEquals(2, reqBoards.size());
         assertTrue(reqBoards.contains("alpha"));
         assertTrue(reqBoards.contains("beta"));
+    }
+
+    /**
+     * Test that {@link FlashingResourcesParser#parseAndroidInfo(BufferedReader)} parses valid data
+     * correctly.
+     *
+     * In particular, this tests that the "require-for-product:(productName)" requirement is parsed
+     * properly and causes the expected internal state.
+     */
+    public void testRequireForProduct_internalState() throws Exception {
+        final String validInfoData =
+                "require product=alpha|beta|gamma\n" +
+                "require version-bootloader=1234\n" +
+                "require-for-product:gamma " +
+                    "version-bootloader=istanbul|constantinople\n";
+        BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
+
+        // Verify parsing for the first line
+        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader);
+        // 1 for global reqs, 1 for gamma-specific reqs
+        System.err.println(fullInfo.toString());
+        assertEquals(2, fullInfo.size());
+
+        MultiMap<String, String> globalReqs = fullInfo.get(null);
+        assertEquals(2, globalReqs.size());
+        List<String> products = globalReqs.get(FlashingResourcesParser.PRODUCT_KEY);
+        assertEquals(3, products.size());
+        assertEquals("alpha", products.get(0));
+        assertEquals("beta", products.get(1));
+        assertEquals("gamma", products.get(2));
+        List<String> bootloaders = globalReqs.get(FlashingResourcesParser.BOOTLOADER_VERSION_KEY);
+        assertEquals("1234", bootloaders.get(0));
+
+        MultiMap<String, String> gammaReqs = fullInfo.get("gamma");
+        assertNotNull(gammaReqs);
+        assertEquals(1, gammaReqs.size());
+        List<String> gammaBoot = gammaReqs.get("version-bootloader");
+        assertEquals(2, gammaBoot.size());
+        assertEquals("istanbul", gammaBoot.get(0));
+        assertEquals("constantinople", gammaBoot.get(1));
+    }
+
+    /**
+     * Test that {@link FlashingResourcesParser#parseAndroidInfo(BufferedReader)} parses valid data
+     * correctly.
+     *
+     * In particular, this tests that the "require-for-product:(productName)" requirement is parsed
+     * properly and causes the expected internal state.
+     */
+    public void testRequireForProduct_api() throws Exception {
+        final String validInfoData =
+                "require product=alpha|beta|gamma\n" +
+                "require version-bootloader=1234\n" +
+                "require-for-product:gamma " +
+                    "version-bootloader=istanbul|constantinople\n";
+        BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
+        IFlashingResourcesParser parser = new FlashingResourcesParser(reader);
+        assertEquals("1234", parser.getRequiredImageVersion("version-bootloader"));
+        assertEquals("1234", parser.getRequiredImageVersion("version-bootloader", null));
+        assertEquals("1234", parser.getRequiredImageVersion("version-bootloader", "alpha"));
+        assertEquals("istanbul", parser.getRequiredImageVersion("version-bootloader", "gamma"));
     }
 
     /**

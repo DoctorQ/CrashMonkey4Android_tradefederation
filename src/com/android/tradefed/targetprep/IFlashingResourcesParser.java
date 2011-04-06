@@ -46,6 +46,19 @@ public interface IFlashingResourcesParser {
     public String getRequiredImageVersion(String versionKey);
 
     /**
+     * Gets the required custom image version specified in the device image zip.  If
+     * {@code productName} is non-{@code null}, this method will check for (and return if present)
+     * image requirements specified for that particular product.  If no product-specific requirement
+     * exists, it will fall back to returning the global requirement, or {@code null} if no
+     * requirement of any sort exists for that particular {@code versionKey}.
+     *
+     * @param versionKey the expected identifier of the image's version information
+     * @param productName A specific product name to check
+     * @return the required version for given image or <code>null</code> if not specified
+     */
+    public String getRequiredImageVersion(String versionKey, String productName);
+
+    /**
      * Gets the required board type(s) specified in the device image zip.
      * @return the board types or <code>null</code> if not specified
      */
