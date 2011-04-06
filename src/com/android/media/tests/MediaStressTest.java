@@ -109,6 +109,10 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
         try {
             outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
 
+            if (outputFile == null) {
+                return;
+            }
+
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
