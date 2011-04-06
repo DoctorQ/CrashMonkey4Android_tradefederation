@@ -15,9 +15,9 @@
  */
 package com.android.tradefed.util;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -26,10 +26,10 @@ import java.util.Set;
  */
 public class MultiMap<K, V> {
 
-    private Map<K, Collection<V>> mInternalMap;
+    private Map<K, List<V>> mInternalMap;
 
     public MultiMap() {
-        mInternalMap = new HashMap<K, Collection<V>>();
+        mInternalMap = new HashMap<K, List<V>>();
     }
 
     /**
@@ -54,7 +54,7 @@ public class MultiMap<K, V> {
      * @see {@link Map#containsValue()}
      */
     public boolean containsValue(V value) {
-        for (Collection<V> valueList : mInternalMap.values()) {
+        for (List<V> valueList : mInternalMap.values()) {
             if (valueList.contains(value)) {
                 return true;
             }
@@ -65,7 +65,7 @@ public class MultiMap<K, V> {
     /**
      * Gets the list of values associated with each key.
      */
-    public Collection<V> get(K key) {
+    public List<V> get(K key) {
         return mInternalMap.get(key);
     }
 
@@ -89,7 +89,7 @@ public class MultiMap<K, V> {
      * @see {@link Map#put()}
      */
     public V put(K key, V value) {
-        Collection<V> valueList = mInternalMap.get(key);
+        List<V> valueList = mInternalMap.get(key);
         if (valueList == null) {
             valueList = new LinkedList<V>();
             mInternalMap.put(key, valueList);
@@ -122,7 +122,7 @@ public class MultiMap<K, V> {
     /**
      * Removes all values associated with the specified key.
      */
-    public Collection<V> remove(K key) {
+    public List<V> remove(K key) {
         return mInternalMap.remove(key);
     }
 
@@ -134,11 +134,11 @@ public class MultiMap<K, V> {
     }
 
     /**
-     * Returns collection of all values.
+     * Returns list of all values.
      */
-    public Collection<V> values() {
-        Collection<V> allValues = new LinkedList<V>();
-        for (Collection<V> valueList : mInternalMap.values()) {
+    public List<V> values() {
+        List<V> allValues = new LinkedList<V>();
+        for (List<V> valueList : mInternalMap.values()) {
             allValues.addAll(valueList);
         }
         return allValues;
@@ -154,7 +154,7 @@ public class MultiMap<K, V> {
      */
     public Map<String, V> getUniqueMap() {
         Map<String, V> uniqueMap = new HashMap<String, V>();
-        for (Map.Entry<K, Collection<V>> entry : mInternalMap.entrySet()) {
+        for (Map.Entry<K, List<V>> entry : mInternalMap.entrySet()) {
             int count = 1;
             for (V value : entry.getValue()) {
                 if (count == 1) {
