@@ -207,6 +207,7 @@ public class ArgsOptionParser extends OptionSetter {
             throws ConfigurationException {
         // remove prefix to just get name
         String name = arg.replaceFirst("^" + OPTION_NAME_PREFIX, "");
+        String key = null;
         String value = null;
 
         // Support "--name=value" as well as "--name value".
@@ -219,11 +220,18 @@ public class ArgsOptionParser extends OptionSetter {
         if (value == null) {
             if (isBooleanOption(name)) {
                 value = name.startsWith(BOOL_FALSE_PREFIX) ? "false" : "true";
+            } else if (isMapOption(name)) {
+                key = grabNextValue(args, name, "for its key");
+                value = grabNextValue(args, name, "for its value");
             } else {
                 value = grabNextValue(args, name);
             }
         }
-        setOptionValue(name, value);
+        if (isMapOption(name)) {
+            setOptionMapValue(name, key, value);
+        } else {
+            setOptionValue(name, value);
+        }
     }
 
     // Given boolean options a and b, and non-boolean option f, we want to allow:
@@ -265,10 +273,26 @@ public class ArgsOptionParser extends OptionSetter {
      */
     private String grabNextValue(ListIterator<String> args, String name)
             throws ConfigurationException {
+        return grabNextValue(args, name, "");
+    }
+
+    /**
+     * Returns the next element of 'args' if there is one. Uses 'name' to construct a helpful error
+     * message.
+     *
+     * @param args the arg iterator
+     * @param name the name of current argument
+     * @param detail a string to append to the ConfigurationException message, if one is thrown
+     * @throws ConfigurationException if no argument is present
+     *
+     * @returns the next element
+     */
+    private String grabNextValue(ListIterator<String> args, String name, String detail)
+            throws ConfigurationException {
         if (!args.hasNext()) {
             String type = getTypeForOption(name);
-            throw new ConfigurationException(String.format("option '%s' requires a '%s' argument",
-                    name, type));
+            throw new ConfigurationException(String.format("option '%s' requires a '%s' argument%s",
+                    name, type, detail));
         }
         return args.next();
     }

@@ -122,10 +122,23 @@ public interface IConfiguration {
      * Useful to provide values for options that are generated dynamically.
      *
      * @param optionName the option name
-     * @param optionValue the option value
+     * @param optionValues the option value(s)
      * @throws ConfigurationException if failed to set the option's value
      */
     public void injectOptionValue(String optionName, String optionValue)
+            throws ConfigurationException;
+
+    /**
+     * Inject a option value into the set of configuration objects.
+     * <p/>
+     * Useful to provide values for options that are generated dynamically.
+     *
+     * @param optionName the map option name
+     * @param optionName the map option key
+     * @param optionValues the map option value
+     * @throws ConfigurationException if failed to set the option's value
+     */
+    public void injectOptionValue(String optionName, String optionKey, String optionValue)
             throws ConfigurationException;
 
     /**

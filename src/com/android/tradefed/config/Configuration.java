@@ -249,10 +249,20 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public void injectOptionValue(String optionName, String valueText)
+    public void injectOptionValue(String optionName, String optionValue)
             throws ConfigurationException {
         OptionSetter optionSetter = new OptionSetter(getAllConfigurationObjects());
-        optionSetter.setOptionValue(optionName, valueText);
+        optionSetter.setOptionValue(optionName, optionValue);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void injectOptionValue(String optionName, String optionKey, String optionValue)
+            throws ConfigurationException {
+        OptionSetter optionSetter = new OptionSetter(getAllConfigurationObjects());
+        optionSetter.setOptionMapValue(optionName, optionKey, optionValue);
     }
 
     /**

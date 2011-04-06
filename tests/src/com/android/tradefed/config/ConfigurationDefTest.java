@@ -19,6 +19,8 @@ import com.android.tradefed.build.StubBuildProvider;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -29,15 +31,21 @@ public class ConfigurationDefTest extends TestCase {
 
     private static final String CONFIG_NAME = "name";
     private static final String CONFIG_DESCRIPTION = "config description";
+    private static final String OPTION_KEY = "key";
+    private static final String OPTION_KEY2 = "key2";
     private static final String OPTION_VALUE = "val";
     private static final String OPTION_VALUE2 = "val2";
     private static final String OPTION_NAME = "option";
     private static final String COLLECTION_OPTION_NAME = "collection";
+    private static final String MAP_OPTION_NAME = "map";
     private static final String OPTION_DESCRIPTION = "option description";
 
     public static class OptionTest extends StubBuildProvider {
         @Option(name=COLLECTION_OPTION_NAME, description=OPTION_DESCRIPTION)
         private Collection<String> mCollectionOption = new ArrayList<String>();
+
+        @Option(name=MAP_OPTION_NAME, description=OPTION_DESCRIPTION)
+        private Map<String, String> mMapOption = new HashMap<String, String>();
 
         @Option(name=OPTION_NAME, description=OPTION_DESCRIPTION)
         private String mOption;
@@ -55,11 +63,25 @@ public class ConfigurationDefTest extends TestCase {
     }
 
     /**
+     * Test {@link ConfigurationDef#createConfiguration()} for a map option.
+     */
+    public void testCreateConfiguration_optionMap() throws ConfigurationException {
+        mConfigDef.addOptionDef(MAP_OPTION_NAME, OPTION_KEY, OPTION_VALUE);
+        mConfigDef.addOptionDef(MAP_OPTION_NAME, OPTION_KEY2, OPTION_VALUE2);
+        IConfiguration config = mConfigDef.createConfiguration();
+        OptionTest test = (OptionTest)config.getBuildProvider();
+        assertNotNull(test.mMapOption);
+        assertEquals(2, test.mMapOption.size());
+        assertEquals(OPTION_VALUE, test.mMapOption.get(OPTION_KEY));
+        assertEquals(OPTION_VALUE2, test.mMapOption.get(OPTION_KEY2));
+    }
+
+    /**
      * Test {@link ConfigurationDef#createConfiguration()} for a collection option.
      */
     public void testCreateConfiguration_optionCollection() throws ConfigurationException {
-        mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, OPTION_VALUE);
-        mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, OPTION_VALUE2);
+        mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, null, OPTION_VALUE);
+        mConfigDef.addOptionDef(COLLECTION_OPTION_NAME, null, OPTION_VALUE2);
         IConfiguration config = mConfigDef.createConfiguration();
         OptionTest test = (OptionTest)config.getBuildProvider();
         assertTrue(test.mCollectionOption.contains(OPTION_VALUE));
@@ -70,7 +92,7 @@ public class ConfigurationDefTest extends TestCase {
      * Test {@link ConfigurationDef#createConfiguration()} for a String field.
      */
     public void testCreateConfiguration() throws ConfigurationException  {
-        mConfigDef.addOptionDef(OPTION_NAME, OPTION_VALUE);
+        mConfigDef.addOptionDef(OPTION_NAME, null, OPTION_VALUE);
         IConfiguration config = mConfigDef.createConfiguration();
         OptionTest test = (OptionTest)config.getBuildProvider();
         assertEquals(OPTION_VALUE, test.mOption);

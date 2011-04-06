@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -89,6 +91,9 @@ public class OptionSetterTest extends TestCase {
     private static class AllTypesOptionSource {
         @Option(name = "string_collection")
         private Collection<String> mStringCollection = new ArrayList<String>();
+
+        @Option(name = "string_string_map")
+        private Map<String, String> mStringMap = new HashMap<String, String>();
 
         @Option(name = "string")
         private String mString = null;
@@ -380,6 +385,23 @@ public class OptionSetterTest extends TestCase {
         assertSetOptionValue(optionSource, "string_collection", expectedValue);
         assertEquals(1, optionSource.mStringCollection.size());
         assertTrue(optionSource.mStringCollection.contains(expectedValue));
+    }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for a Map.
+     */
+    public void testSetOptionValue_map() throws ConfigurationException, IOException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+        final String expectedKey = "stringkey";
+        final String expectedValue = "stringvalue";
+
+        // Actually set the key/value pair
+        OptionSetter parser = new OptionSetter(optionSource);
+        parser.setOptionMapValue("string_string_map", expectedKey, expectedValue);
+
+        assertEquals(1, optionSource.mStringMap.size());
+        assertNotNull(optionSource.mStringMap.get(expectedKey));
+        assertEquals(expectedValue, optionSource.mStringMap.get(expectedKey));
     }
 
     /**

@@ -34,7 +34,9 @@ import org.easymock.EasyMock;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -48,6 +50,7 @@ public class ConfigurationTest extends TestCase {
     private static final String CONFIG_OBJECT_TYPE_NAME = "object_name";
     private static final String OPTION_DESCRIPTION = "bool description";
     private static final String OPTION_NAME = "bool";
+    private static final String ALT_OPTION_NAME = "map";
 
     /**
      * Interface for test object stored in a {@link IConfiguration}.
@@ -62,8 +65,15 @@ public class ConfigurationTest extends TestCase {
         @Option(name = OPTION_NAME, description = OPTION_DESCRIPTION)
         private boolean mBool;
 
+        @Option(name = ALT_OPTION_NAME, description = OPTION_DESCRIPTION)
+        private Map<String, Boolean> mBoolMap = new HashMap<String, Boolean>();
+
         public boolean getBool() {
             return mBool;
+        }
+
+        public Map<String, Boolean> getMap() {
+            return mBoolMap;
         }
     }
 
@@ -294,6 +304,23 @@ public class ConfigurationTest extends TestCase {
         mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
         mConfig.injectOptionValue(OPTION_NAME, Boolean.toString(true));
         assertTrue(testConfigObject.getBool());
+    }
+
+    /**
+     * Test {@link Configuration#injectOptionValue(String, String, String)}
+     */
+    public void testInjectMapOptionValue() throws ConfigurationException {
+        final String key = "hello";
+
+        TestConfigObject testConfigObject = new TestConfigObject();
+        mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
+        assertEquals(0, testConfigObject.getMap().size());
+        mConfig.injectOptionValue(ALT_OPTION_NAME, key, Boolean.toString(true));
+
+        Map<String, Boolean> map = testConfigObject.getMap();
+        assertEquals(1, map.size());
+        assertNotNull(map.get(key));
+        assertTrue(map.get(key).booleanValue());
     }
 
     /**

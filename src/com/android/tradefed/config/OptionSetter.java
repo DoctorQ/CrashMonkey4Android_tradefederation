@@ -84,15 +84,32 @@ class OptionSetter {
         if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
             Class rawClass = (Class<?>) parameterizedType.getRawType();
-            if (!Collection.class.isAssignableFrom(rawClass)) {
-                throw new ConfigurationException("cannot handle non-collection parameterized type "
-                        + type);
+            if (Collection.class.isAssignableFrom(rawClass)) {
+                // handle Collection
+                Type actualType = parameterizedType.getActualTypeArguments()[0];
+                if (!(actualType instanceof Class)) {
+                    throw new ConfigurationException(
+                            "cannot handle nested parameterized type " + type);
+                }
+                return getHandler(actualType);
+            } else if (Map.class.isAssignableFrom(rawClass)) {
+                // handle Map
+                Type keyType = parameterizedType.getActualTypeArguments()[0];
+                Type valueType = parameterizedType.getActualTypeArguments()[1];
+                if (!(keyType instanceof Class)) {
+                    throw new ConfigurationException(
+                            "cannot handle nested parameterized type " + keyType);
+                } else if (!(valueType instanceof Class)) {
+                    throw new ConfigurationException(
+                            "cannot handle nested parameterized type " + valueType);
+                }
+
+                return new MapHandler(getHandler(keyType), getHandler(valueType));
+            } else {
+                throw new ConfigurationException(String.format(
+                        "can't handle parameterized type %s; only Collection and Map are supported",
+                        type));
             }
-            Type actualType = parameterizedType.getActualTypeArguments()[0];
-            if (!(actualType instanceof Class)) {
-                throw new ConfigurationException("cannot handle nested parameterized type " + type);
-            }
-            return getHandler(actualType);
         }
         if (type instanceof Class) {
             if (Collection.class.isAssignableFrom((Class) type)) {
@@ -246,6 +263,78 @@ class OptionSetter {
     }
 
     /**
+     * Sets the key and value for a Map option.
+     * @param optionName the name of Option to set
+     * @param keyText the key, if applicable.  Will be ignored for non-Map fields
+     * @param valueText the value
+     * @throws ConfigurationException if Option cannot be found or valueText is wrong type
+     */
+    @SuppressWarnings("unchecked")
+    public void setOptionMapValue(String optionName, String keyText, String valueText)
+            throws ConfigurationException {
+        // FIXME: try to unify code paths with setOptionValue
+        OptionFieldsForName optionFields = fieldsForArg(optionName);
+        for (Map.Entry<Object, Field> fieldEntry : optionFields) {
+
+            Object optionSource = fieldEntry.getKey();
+            Field field = fieldEntry.getValue();
+            Handler handler = getHandler(field.getGenericType());
+            if (handler == null || !(handler instanceof MapHandler)) {
+                throw new ConfigurationException("Not a map!");
+            }
+
+            MapEntry pair = null;
+            try {
+                pair = ((MapHandler) handler).translate(keyText, valueText);
+                if (pair == null) {
+                    throw new IllegalArgumentException();
+                }
+            } catch (IllegalArgumentException e) {
+                ParameterizedType pType = (ParameterizedType) field.getGenericType();
+                Type keyType = pType.getActualTypeArguments()[0];
+                Type valueType = pType.getActualTypeArguments()[1];
+
+                String keyTypeName = ((Class)keyType).getSimpleName().toLowerCase();
+                String valueTypeName = ((Class)valueType).getSimpleName().toLowerCase();
+
+                String message = "";
+                if (e.getMessage().contains("key")) {
+                    message = String.format(
+                            "Couldn't convert '%s' to a %s for the key of mapoption '%s'",
+                            keyText, keyTypeName, optionName);
+                } else if (e.getMessage().contains("value")) {
+                    message = String.format(
+                            "Couldn't convert '%s' to a %s for the value of mapoption '%s'",
+                            valueText, valueTypeName, optionName);
+                } else {
+                    message = String.format("Failed to convert key '%s' to type %s and/or " +
+                            "value '%s' to type %s for mapoption '%s'",
+                            keyText, keyTypeName, valueText, valueTypeName, optionName);
+                }
+                throw new ConfigurationException(message);
+            }
+            try {
+                field.setAccessible(true);
+                if (!Map.class.isAssignableFrom(field.getType())) {
+                    throw new ConfigurationException(String.format(
+                            "internal error: not a map field!"));
+                }
+                Map map = (Map)field.get(optionSource);
+                if (map == null) {
+                    throw new ConfigurationException(String.format(
+                            "internal error: no storage allocated for field '%s' (used for " +
+                            "option '%s') in class '%s'",
+                            field.getName(), optionName, optionSource.getClass().getName()));
+                }
+                map.put(pair.mKey, pair.mValue);
+            } catch (IllegalAccessException e) {
+                throw new ConfigurationException(String.format(
+                        "internal error when setting option '%s'", optionName), e);
+            }
+        }
+    }
+
+    /**
      * Cache the available options and report any problems with the options themselves right away.
      *
      * @return a {@link Map} of {@link Option} field name to {@link OptionField}s
@@ -377,6 +466,15 @@ class OptionSetter {
         return getHandler(field.getGenericType()).isBoolean();
     }
 
+    public boolean isMapOption(String name) throws ConfigurationException {
+        Field field = fieldsForArg(name).getFirstField();
+        return isMapField(field);
+    }
+
+    static boolean isMapField(Field field) throws ConfigurationException {
+        return getHandler(field.getGenericType()).isMap();
+    }
+
     private void addNameToMap(Map<String, OptionFieldsForName> optionMap, Object optionSource,
             String name, Field field) throws ConfigurationException {
         OptionFieldsForName fields = optionMap.get(name);
@@ -410,6 +508,11 @@ class OptionSetter {
     private abstract static class Handler {
         // Only BooleanHandler should ever override this.
         boolean isBoolean() {
+            return false;
+        }
+
+        // Only MapHandler should ever override this.
+        boolean isMap() {
             return false;
         }
 
@@ -513,6 +616,59 @@ class OptionSetter {
         @Override
         Object translate(String valueText) {
             return new File(valueText);
+        }
+    }
+
+    private static class MapEntry {
+        public Object mKey = null;
+        public Object mValue = null;
+
+        /**
+         * Convenience constructor
+         */
+        MapEntry(Object key, Object value) {
+            mKey = key;
+            mValue = value;
+        }
+    }
+
+    /**
+     * A {@see Handler} to handle values for Map fields.  The {@code Object} returned is a
+     * MapEntry
+     */
+    private static class MapHandler extends Handler {
+        private Handler mKeyHandler;
+        private Handler mValueHandler;
+
+        MapHandler(Handler keyHandler, Handler valueHandler) {
+            if (keyHandler == null || valueHandler == null) {
+                throw new NullPointerException();
+            }
+
+            mKeyHandler = keyHandler;
+            mValueHandler = valueHandler;
+        }
+
+        @Override
+        boolean isMap() {
+            return true;
+        }
+
+        @Override
+        Object translate(String valueText) {
+            return null;
+        }
+
+        MapEntry translate(String keyText, String valueText) {
+            Object key = mKeyHandler.translate(keyText);
+            Object value = mValueHandler.translate(valueText);
+            if (key == null) {
+                throw new IllegalArgumentException("Failed to parse key");
+            } else if (value == null) {
+                throw new IllegalArgumentException("Failed to parse value");
+            }
+
+            return new MapEntry(key, value);
         }
     }
 }

@@ -33,10 +33,16 @@ public class ConfigurationDef {
 
     static class OptionDef {
         final String name;
+        final String key;
         final String value;
 
         OptionDef(String optionName, String optionValue) {
+            this(optionName, null, optionValue);
+        }
+
+        OptionDef(String optionName, String optionKey, String optionValue) {
             this.name = optionName;
+            this.key = optionKey;
             this.value = optionValue;
         }
     }
@@ -89,8 +95,12 @@ public class ConfigurationDef {
      * @param optionName the name of the option
      * @param optionValue the option value
      */
-    void addOptionDef(String optionName, String optionValue) {
-        mOptionList.add(new OptionDef(optionName, optionValue));
+    void addOptionDef(String optionName, String optionKey, String optionValue) {
+        if (optionKey == null) {
+            mOptionList.add(new OptionDef(optionName, optionValue));
+        } else {
+            mOptionList.add(new OptionDef(optionName, optionKey, optionValue));
+        }
     }
 
     /**
@@ -130,7 +140,11 @@ public class ConfigurationDef {
             config.setConfigurationObjectList(objClassEntry.getKey(), objectList);
         }
         for (OptionDef optionEntry : mOptionList) {
-            config.injectOptionValue(optionEntry.name, optionEntry.value);
+            if (optionEntry.key == null) {
+                config.injectOptionValue(optionEntry.name, optionEntry.value);
+            } else {
+                config.injectOptionValue(optionEntry.name, optionEntry.key, optionEntry.value);
+            }
         }
 
         return config;

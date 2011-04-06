@@ -73,6 +73,11 @@ class ConfigurationXmlParser {
                 if (optionName == null) {
                     throwException("Missing 'name' attribute for option");
                 }
+
+                String optionKey = attributes.getValue("key");
+                // Key is optional at this stage.  If it's actually required, another stage in the
+                // configuration validation will throw an exception.
+
                 String optionValue = attributes.getValue("value");
                 if (optionValue == null) {
                     throwException("Missing 'value' attribute for option");
@@ -83,7 +88,7 @@ class ConfigurationXmlParser {
                     optionName = String.format("%s%c%s", mCurrentConfigObject,
                             OptionSetter.NAMESPACE_SEPARATOR, optionName);
                 }
-                mConfigDef.addOptionDef(optionName, optionValue);
+                mConfigDef.addOptionDef(optionName, optionKey, optionValue);
             } else if (CONFIG_TAG.equals(localName)) {
                 String description = attributes.getValue("description");
                 if (description != null) {

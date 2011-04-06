@@ -15,7 +15,9 @@
  */
 package com.android.tradefed.config;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -35,6 +37,18 @@ public class ArgsOptionParserTest extends TestCase {
 
         @Option(name=OPTION_NAME, shortName='o', description=OPTION_DESC)
         private String mMyOption = DEFAULT_VALUE;
+    }
+
+    /**
+     * An option source with one {@link Option} specified.
+     */
+    private static class MapOptionSource {
+
+        private static final String OPTION_NAME = "my_option";
+        private static final String OPTION_DESC = "option description";
+
+        @Option(name=OPTION_NAME, shortName='o', description=OPTION_DESC)
+        private Map<Integer, Boolean> mMyOption = new HashMap<Integer, Boolean>();
     }
 
     /**
@@ -97,6 +111,94 @@ public class ArgsOptionParserTest extends TestCase {
        final String expectedValue = "set";
        parser.parse(new String[] {"--my_option", expectedValue});
        assertEquals(expectedValue, object.mMyOption);
+   }
+
+   /**
+    * Test passing an single argument for an object that has one option specified.
+    */
+   public void testParse_oneMapArg() throws ConfigurationException {
+       MapOptionSource object = new MapOptionSource();
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       final int expectedKey = 13;
+       final boolean expectedValue = true;
+       parser.parse(new String[] {"--my_option", Integer.toString(expectedKey),
+               Boolean.toString(expectedValue)});
+       assertNotNull(object.mMyOption);
+       assertEquals(1, object.mMyOption.size());
+       assertEquals(expectedValue, (boolean) object.mMyOption.get(expectedKey));
+   }
+
+   /**
+    * Test passing an single argument for an object that has one option specified.
+    */
+   public void testParseMapArg_mismatchKeyType() throws ConfigurationException {
+       MapOptionSource object = new MapOptionSource();
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       final String expectedKey = "istanbul";
+       final boolean expectedValue = true;
+       try {
+           parser.parse(new String[] {"--my_option", expectedKey, Boolean.toString(expectedValue)});
+           fail("ConfigurationException not thrown");
+       } catch (ConfigurationException e) {
+           // expect an exception that explicitly mentions that the "key" is incorrect
+           assertTrue(String.format("Expected exception message to contain 'key': %s",
+                   e.getMessage()), e.getMessage().contains("key"));
+           assertTrue(String.format("Expected exception message to contain '%s': %s",
+                   expectedKey, e.getMessage()), e.getMessage().contains(expectedKey));
+       }
+   }
+
+   /**
+    * Test passing an single argument for an object that has one option specified.
+    */
+   public void testParseMapArg_mismatchValueType() throws ConfigurationException {
+       MapOptionSource object = new MapOptionSource();
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       final int expectedKey = 13;
+       final String expectedValue = "notconstantinople";
+       try {
+           parser.parse(new String[] {"--my_option", Integer.toString(expectedKey), expectedValue});
+           fail("ConfigurationException not thrown");
+       } catch (ConfigurationException e) {
+           // expect an exception that explicitly mentions that the "value" is incorrect
+           assertTrue(String.format("Expected exception message to contain 'value': '%s'",
+                   e.getMessage()), e.getMessage().contains("value"));
+           assertTrue(String.format("Expected exception message to contain '%s': %s",
+                   expectedValue, e.getMessage()), e.getMessage().contains(expectedValue));
+       }
+   }
+
+   /**
+    * Test passing an single argument for an object that has one option specified.
+    */
+   public void testParseMapArg_missingKey() throws ConfigurationException {
+       MapOptionSource object = new MapOptionSource();
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       try {
+           parser.parse(new String[] {"--my_option"});
+           fail("ConfigurationException not thrown");
+       } catch (ConfigurationException e) {
+           // expect an exception that explicitly mentions that the "key" is incorrect
+           assertTrue(String.format("Expected exception message to contain 'key': '%s'",
+                   e.getMessage()), e.getMessage().contains("key"));
+       }
+   }
+
+   /**
+    * Test passing an single argument for an object that has one option specified.
+    */
+   public void testParseMapArg_missingValue() throws ConfigurationException {
+       MapOptionSource object = new MapOptionSource();
+       ArgsOptionParser parser = new ArgsOptionParser(object);
+       final int expectedKey = 13;
+       try {
+           parser.parse(new String[] {"--my_option", Integer.toString(expectedKey)});
+           fail("ConfigurationException not thrown");
+       } catch (ConfigurationException e) {
+           // expect an exception that explicitly mentions that the "value" is incorrect
+           assertTrue(String.format("Expected exception message to contain 'value': '%s'",
+                   e.getMessage()), e.getMessage().contains("value"));
+       }
    }
 
    /**
