@@ -123,7 +123,7 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
     private void flashPartition(ITestDevice device, File dir, String partition)
             throws DeviceNotAvailableException, TargetSetupError {
         // TODO: move this method into DeviceFlasher
-        String imgFile = dir.getAbsolutePath() + File.pathSeparator + partition + ".img";
+        String imgFile = dir.getAbsolutePath() + File.separator + partition + ".img";
         Log.v(LOG_TAG, String.format("fastboot flash %s %s", partition, imgFile));
         executeLongFastbootCmd(device, "flash", partition, imgFile);
     }
