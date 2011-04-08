@@ -25,6 +25,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
@@ -120,12 +121,24 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
     /**
      * Flash an individual partition
      */
-    private void flashPartition(ITestDevice device, File dir, String partition)
+    protected void flashPartition(ITestDevice device, File dir, String partition)
             throws DeviceNotAvailableException, TargetSetupError {
         // TODO: move this method into DeviceFlasher
         String imgFile = dir.getAbsolutePath() + File.separator + partition + ".img";
         Log.v(LOG_TAG, String.format("fastboot flash %s %s", partition, imgFile));
         executeLongFastbootCmd(device, "flash", partition, imgFile);
+    }
+
+    /**
+     * Extract the updater zip to a directory and return the path of that directory
+     * <p />
+     * Exposed for unit testing
+     */
+    protected File extractSystemZip(IDeviceBuildInfo deviceBuild) throws IOException {
+        File updateDir = FileUtil.createTempDir(LOG_TAG);
+        ZipFile updater = new ZipFile(deviceBuild.getDeviceImageFile().getAbsolutePath());
+        FileUtil.extractZip(updater, updateDir);
+        return updateDir;
     }
 
     /**
@@ -141,9 +154,7 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
             File updateDir = null;
             try {
                 // unzip
-                updateDir = FileUtil.createTempDir(LOG_TAG);
-                ZipFile updater = new ZipFile(deviceBuild.getDeviceImageFile().getAbsolutePath());
-                FileUtil.extractZip(updater, updateDir);
+                updateDir = extractSystemZip(deviceBuild);
 
                 // Expect updateDir to contain boot.img, recovery.img, system.img
                 flashPartition(device, updateDir, "boot");
@@ -164,17 +175,26 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
             device.waitForDeviceOnline(BASEBAND_FLASH_TIMEOUT);
             device.waitForDeviceAvailable();
             // Wait for radio version updater to do its thing
-            RunUtil.getInstance().sleep(5000);
+            getRunUtil().sleep(5000);
             // Reboot again.
             device.reboot();
             // Wait for radio version updater to do its thing again
-            RunUtil.getInstance().sleep(5000);
+            getRunUtil().sleep(5000);
             // Hopefully, that should be it
             device.rebootIntoBootloader();
 
         } else {
             super.flashSystem(device, deviceBuild);
         }
+    }
+
+    /**
+     * Get the {@link RunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    protected IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 }
 
