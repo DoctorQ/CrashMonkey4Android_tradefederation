@@ -263,8 +263,8 @@ public class DeviceSetup implements ITargetPreparer {
             boolean result = device.syncFiles(mLocalDataFile, fullRemotePath);
             if (!result) {
                 // TODO: get exact error code and respond accordingly
-                throw new DeviceNotAvailableException(String.format(
-                        "failed to sync test data from " + "local-data-path %s to %s on device %s",
+                throw new TargetSetupError(String.format(
+                        "failed to sync test data from local-data-path %s to %s on device %s",
                         mLocalDataFile.getAbsolutePath(), fullRemotePath,
                         device.getSerialNumber()));
             }
