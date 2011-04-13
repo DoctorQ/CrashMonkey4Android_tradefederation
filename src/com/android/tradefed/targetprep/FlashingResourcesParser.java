@@ -16,6 +16,7 @@
 
 package com.android.tradefed.targetprep;
 
+import com.android.tradefed.util.MultiMap;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -34,8 +35,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
- * A class that parses out required versions of auxiliary image files needed to flash a
- * device.
+ * A class that parses out required versions of auxiliary image files needed to flash a device.
  * (e.g. bootloader, baseband, etc)
  */
 public class FlashingResourcesParser implements IFlashingResourcesParser {
@@ -45,8 +45,14 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * Some resource files use "require-foo=bar", others use "foo=bar". This expression handles
      * both.
      */
-    private static final Pattern KEY_PATTERN = Pattern.compile(
-            "(?:require\\s)?(.*)=(.*)");
+    private static final Pattern REQUIRE_PATTERN = Pattern.compile("(?:require\\s)?(.*?)=(.*)");
+    /**
+     * Some resource files have special product-specific requirements, for instance:
+     * {@code require-for-product:product1 version-bootloader=xyz} would only require bootloader
+     * {@code xyz} for device {@code product1}.  This pattern matches the require-for-product line
+     */
+    private static final Pattern PRODUCT_REQUIRE_PATTERN =
+            Pattern.compile("require-for-product:(\\S+) +(.*?)=(.*)");
 
     // expected keys
     static final String PRODUCT_KEY = "product";
@@ -55,7 +61,13 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     static final String BASEBAND_VERSION_KEY = "version-baseband";
 
     // key-value pairs of build requirements
-    private Map<String, List<String>> mReqs;
+    private AndroidInfo mReqs;
+
+    /**
+     * A typedef for {@code Map<String, MultiMap<String, String>>}.  Useful parsed format for
+     * storing the data encoded in ANDROID_INFO_FILE_NAME
+     */
+    public static class AndroidInfo extends HashMap<String, MultiMap<String, String>> {}
 
     public FlashingResourcesParser(File deviceImgZipFile) throws TargetSetupError {
         mReqs = getBuildRequirements(deviceImgZipFile);
@@ -93,8 +105,37 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * {@inheritDoc}
      */
     public String getRequiredImageVersion(String imageVersionKey) {
+        // Use null to designate the global product requirements
+        return getRequiredImageVersion(imageVersionKey, null);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getRequiredImageVersion(String imageVersionKey, String productName) {
+        MultiMap<String, String> productReqs = mReqs.get(productName);
+
+        if (productReqs == null && productName != null) {
+            // There aren't any product-specific requirements for productName.  Fall back to global
+            // requirements.
+            return getRequiredImageVersion(imageVersionKey, null);
+        }
+
         // by convention, get the first version listed.
-        return getFirst(mReqs.get(imageVersionKey));
+        String result = getFirst(productReqs.get(imageVersionKey));
+
+        if (result != null) {
+            // If there's a result, return it
+            return result;
+        }
+        if (result == null && productName != null) {
+            // There aren't any product-specific requirements for this particular imageVersionKey
+            // for productName.  Fall back to global requirements.
+            return getRequiredImageVersion(imageVersionKey, null);
+        }
+
+        // Neither a specific nor a global result exists; return null
+        return null;
     }
 
     /**
@@ -102,8 +143,13 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      */
     public Collection<String> getRequiredBoards() {
         Collection<String> all = new ArrayList<String>();
-        Collection<String> board = mReqs.get(BOARD_KEY);
-        Collection<String> product = mReqs.get(PRODUCT_KEY);
+        MultiMap<String, String> boardReqs = mReqs.get(null);
+        if (boardReqs == null) {
+            return null;
+        }
+
+        Collection<String> board = boardReqs.get(BOARD_KEY);
+        Collection<String> product = boardReqs.get(PRODUCT_KEY);
 
         // board overrides product here
         if (board != null) {
@@ -120,7 +166,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     /**
      * Gets the first element in the given {@link List} or <code>null</code>
      */
-    private String getFirst(List<String> values) {
+    private static String getFirst(List<String> values) {
         if (values != null && !values.isEmpty()) {
             return values.get(0);
         }
@@ -138,8 +184,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * @returns a {@link Map} of parsed key value pairs, or <code>null</code> if data could not be
      * parsed
      */
-    static Map<String, List<String>> getBuildRequirements(File deviceImgZipFile)
-            throws TargetSetupError {
+    static AndroidInfo getBuildRequirements(File deviceImgZipFile) throws TargetSetupError {
         ZipFile deviceZip = null;
         BufferedReader infoReader = null;
         try {
@@ -178,6 +223,20 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     }
 
     /**
+     * Returns the current value for the provided key if one exists, or creates and returns a new
+     * value if one does not exist.
+     */
+    private static MultiMap<String, String> getOrCreateEntry(AndroidInfo map, String key) {
+        if (map.containsKey(key)) {
+            return map.get(key);
+        } else {
+            MultiMap<String, String> value = new MultiMap<String, String>();
+            map.put(key, value);
+            return value;
+        }
+    }
+
+    /**
      * Parses the required build attributes from an android-info data source.
      * <p/>
      * Exposed as package-private for unit testing.
@@ -186,17 +245,35 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * @return a Map of parsed attribute name-value pairs
      * @throws IOException
      */
-    static Map<String, List<String>> parseAndroidInfo(BufferedReader infoReader)
+    static AndroidInfo parseAndroidInfo(BufferedReader infoReader)
             throws IOException {
-        Map<String, List<String>> requiredImageMap = new HashMap<String, List<String>>();
+        AndroidInfo requiredImageMap = new AndroidInfo();
+
         boolean eof = false;
         while (!eof) {
             String line = infoReader.readLine();
             if (line != null) {
-                Matcher matcher = KEY_PATTERN.matcher(line);
+                Matcher matcher = PRODUCT_REQUIRE_PATTERN.matcher(line);
                 if (matcher.matches()) {
-                    String values = matcher.group(2);
-                    requiredImageMap.put(matcher.group(1), Arrays.asList(values.split("\\|")));
+                    String product = matcher.group(1);
+                    String key = matcher.group(2);
+                    String values = matcher.group(3);
+                    // Requirements specific to product {@code product}
+                    MultiMap<String, String> reqs = getOrCreateEntry(requiredImageMap, product);
+                    for (String value : values.split("\\|")) {
+                        reqs.put(key, value);
+                    }
+                } else {
+                    matcher = REQUIRE_PATTERN.matcher(line);
+                    if (matcher.matches()) {
+                        String key = matcher.group(1);
+                        String values = matcher.group(2);
+                        // Use a null product identifier to designate requirements for all products
+                        MultiMap<String, String> reqs = getOrCreateEntry(requiredImageMap, null);
+                        for (String value : values.split("\\|")) {
+                            reqs.put(key, value);
+                        }
+                    }
                 }
             } else {
                 eof = true;
