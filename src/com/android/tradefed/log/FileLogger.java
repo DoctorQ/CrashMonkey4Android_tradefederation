@@ -49,6 +49,9 @@ public class FileLogger implements ILeveledLogOutput {
     @Option(name="log-tag-display", description="Always display given tags logs on stdout")
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
+    // temp: track where this log was closed
+    private StackTraceElement[] mCloseStackFrames = null;
+
     /**
      * Sets the log level filtering for stdout.
      *
@@ -197,6 +200,10 @@ public class FileLogger implements ILeveledLogOutput {
             System.err.println(String.format(
                     "logger has already been closed or has not been initialized, Thread %s",
                     Thread.currentThread().getName()));
+            System.err.println("Current stack:");
+            printStackTrace(Thread.currentThread().getStackTrace());
+            System.err.println("\nLog closed at:");
+            printStackTrace(mCloseStackFrames);
         } else {
             try {
                 // create a InputStream from log file
@@ -209,6 +216,16 @@ public class FileLogger implements ILeveledLogOutput {
             }
         }
         return new ByteArrayInputStreamSource(new byte[0]);
+    }
+
+    private void printStackTrace(StackTraceElement[] trace) {
+        if (trace == null) {
+            System.err.println("no stack");
+            return;
+        }
+        for (StackTraceElement element : trace) {
+            System.err.println("\tat " + element);
+        }
     }
 
     /**
@@ -233,7 +250,10 @@ public class FileLogger implements ILeveledLogOutput {
     void doCloseLog() throws IOException {
         try {
             if (mLogWriter != null) {
-                // set mLogWriter to null first before closing, to prevent "write" calls after "close"
+                // TODO: temp: track where this log was closed
+                mCloseStackFrames = Thread.currentThread().getStackTrace();
+                // set mLogWriter to null first before closing, to prevent "write" calls after
+                // "close"
                 BufferedWriter writer = mLogWriter;
                 mLogWriter = null;
 
