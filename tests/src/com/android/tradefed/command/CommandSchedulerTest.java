@@ -29,6 +29,8 @@ import com.android.tradefed.invoker.ITestInvocation;
 
 import org.easymock.EasyMock;
 
+import java.lang.Thread.UncaughtExceptionHandler;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
@@ -210,6 +212,50 @@ public class CommandSchedulerTest extends TestCase {
         mScheduler.shutdown();
         mScheduler.join();
         verifyMocks();
+    }
+
+    /**
+     * Test {@link CommandScheduler#run()} when one config has been added in a loop
+     */
+    public void testRun_oneConfigLoop() throws Exception {
+        String[] args = new String[] {};
+        // track if exception occurs on scheduler thread
+        UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
+        try {
+            ExceptionTracker tracker = new ExceptionTracker();
+            Thread.setDefaultUncaughtExceptionHandler(tracker);
+            mMockManager.setNumDevices(1);
+            // config should only be created three times
+            setCreateConfigExpectations(args, 3);
+            mCommandOptions.setLoopMode(true);
+            mCommandOptions.setMinLoopTime(0);
+            // wait for invocation to be executed twice
+            mMockInvocation.setExpectedCalls(2);
+            replayMocks();
+            mScheduler.addCommand(args);
+            mScheduler.start();
+            mMockInvocation.waitForExpectedCalls();
+            mScheduler.shutdown();
+            mScheduler.join();
+            verifyMocks();
+            assertNull("exception occurred on background thread!", tracker.mThrowable);
+        } finally {
+            Thread.setDefaultUncaughtExceptionHandler(defaultHandler);
+        }
+    }
+
+    class ExceptionTracker implements UncaughtExceptionHandler {
+
+        private Throwable mThrowable = null;
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            e.printStackTrace();
+            mThrowable  = e;
+        }
     }
 
     /**
