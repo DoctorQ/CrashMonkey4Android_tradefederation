@@ -58,6 +58,13 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
 
     /**
      * {@inheritDoc}
+     */
+    protected String getBootPartitionName() {
+        return "bootloader";
+    }
+
+    /**
+     * {@inheritDoc}
      * <p />
      * If the baseband is up-to-date, this flasher behaves identically to the DeviceFlasher
      * superclass.  If the baseband needs to be updated, it does the following:
