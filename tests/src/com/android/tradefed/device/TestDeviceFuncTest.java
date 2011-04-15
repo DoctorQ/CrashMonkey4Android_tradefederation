@@ -149,6 +149,21 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         assertNull(mTestDevice.pullFile(deviceFilePath));
     }
 
+    /**
+     * Test pushing a file onto device that does not exist.
+     * <p/>
+     * Expect {@link TestDevice#pushFile(String)} to return <code>false</code>
+     */
+    public void testPush_noexist() throws IOException, DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testPush_noexist");
+
+        // make sure the root path is valid
+        String externalStorePath =  mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        assertNotNull(externalStorePath);
+        String deviceFilePath = String.format("%s/%s", externalStorePath, "remotepath");
+        assertFalse(mTestDevice.pushFile(new File("idontexist"), deviceFilePath));
+    }
+
     private File createTempTestFile(File dir) throws IOException {
         File tmpFile = null;
         try {
