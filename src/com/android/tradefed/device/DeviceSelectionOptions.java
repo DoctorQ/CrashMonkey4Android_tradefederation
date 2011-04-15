@@ -39,8 +39,13 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     private Collection<String> mExcludeSerials = new ArrayList<String>();
 
     @Option(name="product-type", description=
-        "run this test on device with this product type(s)")
+        "run this test on device with this product type(s); matches ro.product.board, with " +
+            "fallback to ro.product.device")
     private Collection<String> mProductTypes = new ArrayList<String>();
+
+    @Option(name="product-device", description=
+        "run this test on device with this product device type(s); matches ro.product.device")
+    private Collection<String> mProductDeviceTypes = new ArrayList<String>();
 
     @Option(name="property", description=
         "run this test on device with this property value. " +
@@ -79,10 +84,20 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     /**
      * Add a product type to the device selection options.
      *
-     * @param serialNumber
+     * @param productType the string that should match {@code ro.product.board} (or
+     *        {@code ro.product.device} if {@code board} is null) ona device
      */
     public void addProductType(String productType) {
         mProductTypes.add(productType);
+    }
+
+    /**
+     * Add a product device type to the device selection options.
+     *
+     * @param productDeviceType the string that should match {@code ro.product.device} on a device
+     */
+    public void addProductDeviceType(String productDeviceType) {
+        mProductDeviceTypes.add(productDeviceType);
     }
 
     /**
@@ -124,6 +139,14 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     @Override
     public Collection<String> getProductTypes() {
         return copyCollection(mProductTypes);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<String> getProductDeviceTypes() {
+        return copyCollection(mProductDeviceTypes);
     }
 
     /**

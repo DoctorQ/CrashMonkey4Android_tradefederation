@@ -39,11 +39,21 @@ public interface IDeviceSelectionOptions {
     public Collection<String> getExcludeSerials();
 
     /**
-     * Gets a copy of the product type list
+     * Gets a copy of the product type list.  These are intended to match {@code ro.product.board}
+     * if it's defined for the device, but will fall back to {@code ro.product.device} if
+     * {@code board} is undefined.
      *
      * @return a {@link Collection} of product types
+     * @see ITestDevice#getProductType
      */
     public Collection<String> getProductTypes();
+
+    /**
+     * Gets a copy of the product device type list.  These only match {@code ro.product.device}.
+     *
+     * @return a {@link Collection} of product device types
+     */
+    public Collection<String> getProductDeviceTypes();
 
     /**
      * Returns a map of the property list

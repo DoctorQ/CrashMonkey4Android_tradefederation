@@ -34,17 +34,20 @@ public class DeviceSelectionMatcher {
         Collection<String> serials = deviceOptions.getSerials();
         Collection<String> excludeSerials = deviceOptions.getExcludeSerials();
         Collection<String> productTypes = deviceOptions.getProductTypes();
+        Collection<String> productDeviceTypes = deviceOptions.getProductDeviceTypes();
         Map<String, String> properties = deviceOptions.getProperties();
 
-        if (!serials.isEmpty() &&
-                !serials.contains(device.getSerialNumber())) {
+        if (!serials.isEmpty() && !serials.contains(device.getSerialNumber())) {
             return false;
         }
         if (excludeSerials.contains(device.getSerialNumber())) {
             return false;
         }
-        if (!productTypes.isEmpty() &&
-                !productTypes.contains(getDeviceProductType(device))) {
+        if (!productTypes.isEmpty() && !productTypes.contains(getProductType(device))) {
+            return false;
+        }
+        if (!productDeviceTypes.isEmpty() &&
+                !productDeviceTypes.contains(getProductDeviceType(device))) {
             return false;
         }
         for (Map.Entry<String, String> propEntry : properties.entrySet()) {
@@ -63,13 +66,17 @@ public class DeviceSelectionMatcher {
         return true;
     }
 
-    private static String getDeviceProductType(IDevice device) {
+    private static String getProductType(IDevice device) {
         // TODO: merge this into the getProperties match
         String type = device.getProperty("ro.product.board");
         if(type == null || type.isEmpty()) {
             // last-chance fallback to ro.product.device, which may be set if ro.product.board isn't
-            type = device.getProperty("ro.product.device");
+            type = getProductDeviceType(device);
         }
         return type;
+    }
+
+    private static String getProductDeviceType(IDevice device) {
+        return device.getProperty("ro.product.device");
     }
 }

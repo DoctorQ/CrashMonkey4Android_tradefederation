@@ -53,6 +53,17 @@ public class DeviceSelectionMatcherTest extends TestCase {
         assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
     }
 
+    public void testGetProductDeviceType_mismatchWithMatchingBoard() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProductDeviceType(OTHER_DEVICE_TYPE);
+
+        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn(OTHER_DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
+        EasyMock.replay(mMockDevice);
+
+        assertFalse(DeviceSelectionMatcher.matches(mMockDevice, options));
+    }
+
     public void testGetProductType_mismatchWithProperBoard() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(OTHER_DEVICE_TYPE);
@@ -68,6 +79,18 @@ public class DeviceSelectionMatcherTest extends TestCase {
         options.addProductType(DEVICE_TYPE);
 
         EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("");
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
+        EasyMock.replay(mMockDevice);
+
+        assertTrue(DeviceSelectionMatcher.matches(mMockDevice, options));
+    }
+
+    public void testGetProductDeviceType_matchWithWrongBoard() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProductDeviceType(DEVICE_TYPE);
+
+        // The mismatched board shouldn't prevent the Device match
+        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("blahblah");
         EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
         EasyMock.replay(mMockDevice);
 
