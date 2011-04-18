@@ -16,6 +16,8 @@
 package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.ClassPathScanner;
+import com.android.tradefed.util.ClassPathScanner.IClassPathFilter;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
@@ -24,9 +26,13 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 /**
  * Factory for creating {@link IConfiguration}.
@@ -35,16 +41,55 @@ public class ConfigurationFactory implements IConfigurationFactory {
 
     private static final String LOG_TAG = "ConfigurationFactory";
     private static IConfigurationFactory sInstance = null;
-
-    static final String INSTRUMENT_CONFIG = "instrument";
-    static final String HOST_TEST_CONFIG = "host";
-    static final String TEST_DEF_CONFIG = "testdef";
-
-    static final String[] sDefaultConfigs = {INSTRUMENT_CONFIG, HOST_TEST_CONFIG, TEST_DEF_CONFIG};
+    private static final String CONFIG_SUFFIX = ".xml";
+    private static final String CONFIG_PREFIX = "config/";
 
     private Map<String, ConfigurationDef> mConfigDefMap;
 
-    private ConfigurationFactory() {
+    /**
+     * A {@link IClassPathFilter} for configuration XML files.
+     */
+    private class ConfigClasspathFilter implements IClassPathFilter {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean accept(String pathName) {
+            // only accept entries that match the pattern, and that we don't already know about
+            return pathName.startsWith(CONFIG_PREFIX) && pathName.endsWith(CONFIG_SUFFIX) &&
+                    !mConfigDefMap.containsKey(pathName);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String transform(String pathName) {
+            // strip off CONFIG_PREFIX and CONFIG_SUFFIX
+            int pathStartIndex = CONFIG_PREFIX.length();
+            int endPathIndex = pathName.length() - CONFIG_SUFFIX.length();
+            return pathName.substring(pathStartIndex, endPathIndex);
+        }
+    }
+
+    /**
+     * A {@link Comparator} for {@link ConfigurationDef} that sorts by
+     * {@link ConfigurationDef#getName()}.
+     */
+    private static class ConfigDefComparator implements Comparator<ConfigurationDef> {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int compare(ConfigurationDef d1, ConfigurationDef d2) {
+            return d1.getName().compareTo(d2.getName());
+        }
+
+    }
+
+    ConfigurationFactory() {
         mConfigDefMap = new Hashtable<String, ConfigurationDef>();
     }
 
@@ -79,7 +124,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
     private ConfigurationDef loadConfiguration(String name) throws ConfigurationException {
         Log.i(LOG_TAG, String.format("Loading configuration '%s'", name));
         InputStream configStream = getClass().getResourceAsStream(
-                String.format("/config/%s.xml", name));
+                String.format("/%s%s%s", CONFIG_PREFIX, name, CONFIG_SUFFIX));
         if (configStream == null) {
             // now try to load from file
             try {
@@ -138,25 +183,42 @@ public class ConfigurationFactory implements IConfigurationFactory {
         // print general help
         out.println("Use --help <configuration_name> to get list of options for a configuration");
         out.println();
-        // TODO: unfortunately, no easy way to find all available configurations
-        // just print out list of loaded configurations
-        out.println("See the res/config folder for available configurations.");
-        out.println("Some available configurations include:");
-        // load the default configs first
-        loadDefaultConfigs();
-        for (ConfigurationDef def: mConfigDefMap.values()) {
+        out.println("Available configurations include:");
+        try {
+            loadAllConfigs(true);
+        } catch (ConfigurationException e) {
+            // ignore, should never happen
+        }
+        // sort the configs by name before displaying
+        SortedSet<ConfigurationDef> configDefs = new TreeSet<ConfigurationDef>(
+                new ConfigDefComparator());
+        configDefs.addAll(mConfigDefMap.values());
+        for (ConfigurationDef def: configDefs) {
             out.printf("  %s: %s", def.getName(), def.getDescription());
             out.println();
         }
     }
 
-    private void loadDefaultConfigs() {
-        for (String config: sDefaultConfigs) {
+    /**
+     * Loads all configurations found in classpath.
+     *
+     * @param discardExceptions true if any ConfigurationException should be ignored. Exposed for
+     * unit testing
+     * @throws ConfigurationException
+     */
+    void loadAllConfigs(boolean discardExceptions) throws ConfigurationException {
+        ClassPathScanner cpScanner = new ClassPathScanner();
+        Set<String> configNames = cpScanner.getClassPathEntries(new ConfigClasspathFilter());
+        for (String configName : configNames) {
             try {
-                getConfigurationDef(config);
+                ConfigurationDef configDef = getConfigurationDef(configName);
+                mConfigDefMap.put(configName, configDef);
             } catch (ConfigurationException e) {
-                Log.w(LOG_TAG, String.format("Could not load default config with name '%s'",
-                        config));
+                Log.e(LOG_TAG, String.format("Failed to load configuration '%s'. Reason: %s",
+                        configName, e.toString()));
+                if (!discardExceptions) {
+                    throw e;
+                }
             }
         }
     }

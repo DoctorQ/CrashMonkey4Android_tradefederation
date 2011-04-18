@@ -31,7 +31,8 @@ public class TestLoaderTest extends TestCase {
     /**
      * Basic test for {@link TestLoader#loadTests(java.io.File)}.
      * <p/>
-     * Extracts a tests.jar containing one test, and ensure the test is loaded
+     * Extracts a tests.jar containing one test and one inner test, and ensures the (only) the
+     * public test is loaded and run
      */
     @SuppressWarnings("unchecked")
     public void testLoadTests() throws Exception {

@@ -32,7 +32,13 @@ import junit.framework.TestCase;
  */
 public class ConfigurationFactoryTest extends TestCase {
 
-    private IConfigurationFactory mFactory;
+    private ConfigurationFactory mFactory;
+
+    /** the test config name that is built into this jar */
+    private static final String TEST_CONFIG = "test-config";
+    /** the config descrption for {@link TEST_CONFIG} */
+    private static final String TEST_DESCRIPTION =
+        "test that jar plugins to Tradefed can contribute config.xml";
 
     /**
      * {@inheritDoc}
@@ -40,24 +46,21 @@ public class ConfigurationFactoryTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mFactory = ConfigurationFactory.getInstance();
+        mFactory = new ConfigurationFactory();
     }
 
     /**
-     * Simple test method to ensure {@link ConfigurationFactory#getConfiguration(String)} return a
-     * valid configuration for all the default configs
+     * Sanity test to ensure all configs on classpath are loadable
      */
-    public void testGetConfiguration_defaults() throws ConfigurationException {
-        for (String config : ConfigurationFactory.sDefaultConfigs) {
-            assertConfigValid(config);
-        }
+    public void testLoadAllConfigs() throws ConfigurationException {
+        mFactory.loadAllConfigs(false);
     }
 
     /**
      * Test that a config xml defined in this test jar can be read as a built-in
      */
     public void testGetConfiguration_extension() throws ConfigurationException {
-        assertConfigValid("test-config");
+        assertConfigValid(TEST_CONFIG);
     }
 
     /**
@@ -66,8 +69,8 @@ public class ConfigurationFactoryTest extends TestCase {
     public void testGetConfiguration_xmlpath() throws ConfigurationException, IOException {
         // extract the test-config.xml into a tmp file
         InputStream configStream = getClass().getResourceAsStream(
-                "/config/test-config.xml");
-        File tmpFile = FileUtil.createTempFile("test-config", ".xml");
+                String.format("/config/%s.xml", TEST_CONFIG));
+        File tmpFile = FileUtil.createTempFile(TEST_CONFIG, ".xml");
         try {
             FileUtil.writeToFile(configStream, tmpFile);
             assertConfigValid(tmpFile.getAbsolutePath());
@@ -113,12 +116,12 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
-     * Test {@link ConfigurationFactory#createConfigurationFromArgs(String[])} using host
+     * Test {@link ConfigurationFactory#createConfigurationFromArgs(String[])} using TEST_CONFIG
      */
     public void testCreateConfigurationFromArgs() throws ConfigurationException {
         // pick an arbitrary option to test to ensure it gets populated
         IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {"--log-level",
-                LogLevel.VERBOSE.getStringValue(), ConfigurationFactory.HOST_TEST_CONFIG});
+                LogLevel.VERBOSE.getStringValue(), TEST_CONFIG});
         ILeveledLogOutput logger = config.getLogOutput();
         assertEquals(LogLevel.VERBOSE.getStringValue(), logger.getLogLevel());
     }
@@ -131,7 +134,7 @@ public class ConfigurationFactoryTest extends TestCase {
         try {
             mFactory.createConfigurationFromArgs(new String[] {"--log-level",
                     LogLevel.VERBOSE.getStringValue(), "blah",
-                    ConfigurationFactory.HOST_TEST_CONFIG});
+                    TEST_CONFIG});
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
@@ -145,11 +148,10 @@ public class ConfigurationFactoryTest extends TestCase {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
         mFactory.printHelp(mockPrintStream);
-        // verify all the default configs names are present
+        // verify all the config names are present
         final String usageString = outputStream.toString();
-        for (String config : ConfigurationFactory.sDefaultConfigs) {
-            assertTrue(usageString.contains(config));
-        }
+        assertTrue(usageString.contains(TEST_CONFIG));
+        assertTrue(usageString.contains(TEST_DESCRIPTION));
     }
 
     /**
@@ -157,14 +159,14 @@ public class ConfigurationFactoryTest extends TestCase {
      * referenced by args exists
      */
     public void testPrintHelpForArgs_configExists() {
-        String[] args = new String[] {ConfigurationFactory.sDefaultConfigs[0]};
+        String[] args = new String[] {TEST_CONFIG};
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
         mFactory.printHelpForArgs(args, mockPrintStream);
 
-        // verify the default configs name used is present, but the other is not
+        // verify the default configs name used is present
         final String usageString = outputStream.toString();
-        assertTrue(usageString.contains(ConfigurationFactory.sDefaultConfigs[0]));
-        assertFalse(usageString.contains(ConfigurationFactory.sDefaultConfigs[1]));
+        assertTrue(usageString.contains(TEST_CONFIG));
+        // TODO: add stricter verification
     }
 }

@@ -16,6 +16,7 @@
 package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.ClassPathScanner.ExternalClassNameFilter;
 
 import java.io.File;
 import java.io.IOException;
@@ -47,7 +48,8 @@ public class TestLoader {
     public Test loadTests(File testJarFile, Collection<File> dependentJars) {
         ClassPathScanner scanner = new ClassPathScanner();
         try {
-            Set<String> classNames = scanner.getClassNamesFromJar(testJarFile);
+            Set<String> classNames = scanner.getEntriesFromJar(testJarFile,
+                    new ExternalClassNameFilter());
 
             ClassLoader jarClassLoader = buildJarClassLoader(testJarFile, dependentJars);
             return loadTests(classNames, jarClassLoader);
@@ -58,7 +60,6 @@ public class TestLoader {
         }
         return null;
     }
-
 
     private ClassLoader buildJarClassLoader(File jarFile, Collection<File> dependentJars)
             throws MalformedURLException {
@@ -75,12 +76,9 @@ public class TestLoader {
         TestSuite testSuite = new TestSuite();
         for (String className : classNames) {
             try {
-                // ignore inner classes
-                if (!className.contains("$")) {
-                    Class<?> testClass = Class.forName(className, true, classLoader);
-                    if (TestCase.class.isAssignableFrom(testClass)) {
-                        testSuite.addTestSuite(testClass);
-                    }
+                Class<?> testClass = Class.forName(className, true, classLoader);
+                if (TestCase.class.isAssignableFrom(testClass)) {
+                    testSuite.addTestSuite(testClass);
                 }
             } catch (ClassNotFoundException e) {
                 // ignore for now

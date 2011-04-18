@@ -20,6 +20,8 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.config.ConfigurationFactory;
+import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.invoker.ITestInvocation;
@@ -268,6 +270,8 @@ public class Console {
                 "\ti[nvocations]  List all invocation threads" + LINE_SEPARATOR +
                 "\td[evices]      List all detected or known devices" + LINE_SEPARATOR +
                 "\tc[ommands]     List all commands currently waiting to be executed" +
+                LINE_SEPARATOR +
+                "\tconfigs        List all known configurations" +
                 LINE_SEPARATOR, LIST_PATTERN));
 
         commandHelp.put(DUMP_PATTERN, String.format(
@@ -336,6 +340,13 @@ public class Console {
                         }
                     }
                 }, LIST_PATTERN, "c(?:ommands)?");
+        trie.put(new Runnable() {
+            @Override
+            public void run() {
+                getConfigurationFactory().printHelp(System.out);
+            }
+        }, LIST_PATTERN, "configs");
+
 
         // Dump commands
         trie.put(new Runnable() {
@@ -592,6 +603,15 @@ public class Console {
      */
     CommandFileParser createCommandFileParser() {
         return new CommandFileParser();
+    }
+
+    /**
+     * Method for getting a {@link IConfigurationFactory}.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IConfigurationFactory getConfigurationFactory() {
+        return ConfigurationFactory.getInstance();
     }
 
     private void dumpStacks() {
