@@ -505,6 +505,7 @@ public class DeviceManagerTest extends TestCase {
         setCheckAvailableDeviceExpectations();
         EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.OFFLINE);
         mMockTestDevice.stopLogcat();
+        mMockTestDevice.setDeviceState(TestDeviceState.OFFLINE);
         EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
 
         replayMocks();
