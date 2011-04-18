@@ -139,6 +139,16 @@ public abstract class AbstractItem implements IItem {
         return mAttributes.get(attribute);
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        // TODO Added to appease Eclipse. implement this
+        return super.hashCode();
+    }
+
     /**
      * Helper method to return if two objects are equal.
      *
