@@ -176,7 +176,7 @@ public class CommandSchedulerTest extends TestCase {
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(args))).andThrow(
                 new ConfigurationException(""));
-        setPrintHelpExpectations();
+        mMockConfigFactory.printHelpForArgs(EasyMock.aryEq(args), EasyMock.eq(System.out));
         replayMocks();
         mScheduler.addCommand(args);
         verifyMocks();
@@ -415,13 +415,5 @@ public class CommandSchedulerTest extends TestCase {
         EasyMock.expect(mMockConfiguration.getCommandOptions()).andStubReturn(mCommandOptions);
         EasyMock.expect(mMockConfiguration.getDeviceSelectionOptions()).andStubReturn(
                 mDeviceOptions);
-    }
-
-    /**
-     * Set EasyMock expectations for a printHelp call.
-     * @throws ConfigurationException
-     */
-    private void setPrintHelpExpectations() {
-        mMockConfigFactory.printHelp(EasyMock.eq(System.out));
     }
 }
