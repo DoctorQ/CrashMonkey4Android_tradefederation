@@ -102,7 +102,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * TODO: currently the collect tests command may take a long time to even start, so this is set
      * to a overly generous value
      */
-    private int mCollectTestsShellTimeout = 30 * 1000;
+    private int mCollectTestsShellTimeout = 2 * 60 * 1000;
 
     /**
      * {@inheritDoc}
