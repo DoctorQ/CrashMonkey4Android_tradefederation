@@ -50,6 +50,7 @@ public class CdmaDeviceFlasher extends DeviceFlasher {
     /**
      * {@inheritDoc}
      */
+    @Override
     protected String getBootPartitionName() {
         return "bootloader";
     }

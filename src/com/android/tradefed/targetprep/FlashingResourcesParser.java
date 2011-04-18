@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -67,6 +66,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * A typedef for {@code Map<String, MultiMap<String, String>>}.  Useful parsed format for
      * storing the data encoded in ANDROID_INFO_FILE_NAME
      */
+    @SuppressWarnings("serial")
     public static class AndroidInfo extends HashMap<String, MultiMap<String, String>> {}
 
     public FlashingResourcesParser(File deviceImgZipFile) throws TargetSetupError {

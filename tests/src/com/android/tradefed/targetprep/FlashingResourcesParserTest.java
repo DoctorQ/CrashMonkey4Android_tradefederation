@@ -16,10 +16,7 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.tradefed.targetprep.FlashingResourcesParser;
 import com.android.tradefed.targetprep.FlashingResourcesParser.AndroidInfo;
-import com.android.tradefed.targetprep.IFlashingResourcesParser;
-import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.MultiMap;
 
@@ -29,7 +26,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import junit.framework.TestCase;
 
