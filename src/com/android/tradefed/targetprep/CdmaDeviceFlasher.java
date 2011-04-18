@@ -16,25 +16,16 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.util.CommandResult;
-import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 
 /**
