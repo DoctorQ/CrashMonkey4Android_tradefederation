@@ -240,6 +240,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.setEmulatorRequested(true);
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
+        EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
         replayMocks();
         DeviceManager manager = createDeviceManager();
         assertNotNull(manager.allocateDevice(100, options));
@@ -253,6 +254,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.setNullDeviceRequested(true);
         EasyMock.expect(mMockAdbBridge.getDevices()).andReturn(new IDevice[] {});
+        EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
         replayMocks();
         DeviceManager manager = createDeviceManager();
         assertNotNull(manager.allocateDevice(100, options));

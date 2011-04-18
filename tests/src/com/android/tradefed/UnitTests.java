@@ -43,10 +43,12 @@ import com.android.tradefed.result.LogFileSaverTest;
 import com.android.tradefed.result.SnapshotInputStreamSourceTest;
 import com.android.tradefed.result.TestSummaryTest;
 import com.android.tradefed.result.XmlResultReporterTest;
+import com.android.tradefed.targetprep.DefaultTestsZipInstallerTest;
 import com.android.tradefed.targetprep.DeviceFlashPreparerTest;
-import com.android.tradefed.targetprep.DeviceFlasherTest;
 import com.android.tradefed.targetprep.DeviceSetupTest;
+import com.android.tradefed.targetprep.FastbootDeviceFlasherTest;
 import com.android.tradefed.targetprep.FlashingResourcesParserTest;
+import com.android.tradefed.targetprep.SystemUpdaterDeviceFlasherTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
 import com.android.tradefed.testtype.GTestTest;
@@ -123,10 +125,12 @@ public class UnitTests extends TestSuite {
         addTestSuite(XmlResultReporterTest.class);
 
         // targetprep
+        addTestSuite(DefaultTestsZipInstallerTest.class);
         addTestSuite(DeviceFlashPreparerTest.class);
-        addTestSuite(DeviceFlasherTest.class);
         addTestSuite(DeviceSetupTest.class);
+        addTestSuite(FastbootDeviceFlasherTest.class);
         addTestSuite(FlashingResourcesParserTest.class);
+        addTestSuite(SystemUpdaterDeviceFlasherTest.class);
 
         // testtype
         addTestSuite(DeviceTestCaseTest.class);

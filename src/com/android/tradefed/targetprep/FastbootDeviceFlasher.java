@@ -16,51 +16,38 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
-import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 /**
- * A class that flashes an image on physical Android hardware.
+ * A class that relies on fastboot to flash an image on physical Android hardware.
  */
-public class DeviceFlasher implements IDeviceFlasher {
+public class FastbootDeviceFlasher implements IDeviceFlasher  {
 
-    private static final String LOG_TAG = "DeviceFlasher";
+    private static final String LOG_TAG = FastbootDeviceFlasher.class.getSimpleName();
     public static final String BASEBAND_IMAGE_NAME = "radio";
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
 
-    /**
-     * A list of /data subdirectories to NOT wipe when doing UserDataFlashOption.TESTS_ZIP
-     */
-    private Set<String> mDataWipeSkipList = new HashSet<String>();
-
     private final IFlashingResourcesRetriever mResourceRetriever;
+    // TODO: make this list configurable
+    private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller("media");
 
     /**
-     * Creates a {@link DeviceFlasher}.
+     * Creates a {@link FastbootDeviceFlasher}.
      *
      * @param resourceRetriever the {@link IFlashingResourcesRetriever} to use
      */
-    public DeviceFlasher(IFlashingResourcesRetriever resourceRetriever) {
+    public FastbootDeviceFlasher(IFlashingResourcesRetriever resourceRetriever) {
         mResourceRetriever = resourceRetriever;
-        // TODO: make this value configurable
-        mDataWipeSkipList.add("media");
     }
 
     /**
@@ -73,6 +60,14 @@ public class DeviceFlasher implements IDeviceFlasher {
 
     protected UserDataFlashOption getUserDataFlashOption() {
         return mUserDataFlashOption;
+    }
+
+    void setTestsZipInstaller(ITestsZipInstaller testsZipInstaller) {
+        mTestsZipInstaller = testsZipInstaller;
+    }
+
+    ITestsZipInstaller getTestsZipInstaller() {
+        return mTestsZipInstaller;
     }
 
     /**
@@ -349,7 +344,9 @@ public class DeviceFlasher implements IDeviceFlasher {
                 break;
             }
             case TESTS_ZIP: {
-                pushTestsZipOntoData(device, deviceBuild);
+                getTestsZipInstaller().pushTestsZipOntoData(device, deviceBuild);
+                // Reboot into bootloader to continue the flashing process
+                device.rebootIntoBootloader();
                 break;
             }
             default: {
@@ -357,109 +354,6 @@ public class DeviceFlasher implements IDeviceFlasher {
                         device.getSerialNumber()));
             }
         }
-    }
-
-    /**
-     * Pushes the contents of the tests.zip file onto the device's data partition.
-     *
-     * @param device the {@link ITestDevice} to flash
-     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the tests zip to flash
-     *
-     * @throws DeviceNotAvailableException
-     * @throws TargetSetupError
-     */
-    protected void pushTestsZipOntoData(ITestDevice device, IDeviceBuildInfo deviceBuild)
-            throws DeviceNotAvailableException, TargetSetupError {
-        Log.i(LOG_TAG, String.format("Pushing test zips content onto userdata on %s",
-                device.getSerialNumber()));
-
-        // TODO: optimize so this method is run before the rebootIntoBootloader call in flash()
-        device.rebootUntilOnline();
-
-        // TODO: if any of the following commands fail, need to instruct ITestDevice to only recover
-        // until device is online, not until its available
-
-        // Stop the runtime, so it doesn't notice us mucking with the filesystem
-        Log.d(LOG_TAG, "Stopping runtime");
-        device.executeShellCommand("stop");
-
-        Log.d(LOG_TAG, String.format("Cleaning %s", FileListingService.DIRECTORY_DATA));
-        IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
-        if (dataEntry == null) {
-            throw new TargetSetupError(String.format("Could not find %s folder on %s",
-                    FileListingService.DIRECTORY_DATA, device.getSerialNumber()));
-        }
-        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
-            if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                device.executeShellCommand(String.format("rm -r %s",
-                        dataSubDir.getFullEscapedPath()));
-            }
-        }
-
-        // Unpack the tests zip somewhere and install the contents
-        File unzipDir = null;
-        try {
-            unzipDir = FileUtil.createTempDir("tests-zip_");
-            extractZip(deviceBuild, unzipDir);
-
-            Log.d(LOG_TAG, "Syncing test files/apks");
-            File hostDir = new File(unzipDir, "DATA");
-
-            File[] hostDataFiles = getTestsZipDataFiles(hostDir);
-            for (File hostSubDir : hostDataFiles) {
-                device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
-            }
-
-            // after push, everything in /data is owned by root, need to revert to system
-            for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
-                if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                    // change owner to system, no -R support
-                    device.executeShellCommand(String.format("chown system.system %s %s/*",
-                            dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
-                }
-            }
-            // Reboot into bootloader to continue the flashing process
-            device.rebootIntoBootloader();
-        } catch (IOException e) {
-            throw new TargetSetupError(e.getMessage());
-        } finally {
-            // Clean up the unpacked zip directory
-            FileUtil.recursiveDelete(unzipDir);
-        }
-    }
-
-    /**
-     * Retrieves the set of files contained in given tests.zip/DATA directory.
-     * <p/>
-     * Exposed so unit tests can mock.
-     *
-     * @param hostDir the {@link File} directory, representing the local path extracted tests.zip
-     *            contents 'DATA' sub-folder
-     * @return array of {@link File}
-     */
-    File[] getTestsZipDataFiles(File hostDir) throws TargetSetupError {
-        if (!hostDir.isDirectory()) {
-            throw new TargetSetupError("Unrecognized tests.zip content: missing DATA folder");
-        }
-        File[] childFiles = hostDir.listFiles();
-        if (childFiles == null || childFiles.length <= 0) {
-            throw new TargetSetupError(
-                    "Unrecognized tests.zip content: DATA folder has no content");
-        }
-        return childFiles;
-    }
-
-    /**
-     * Extract the tests zip to local disk.
-     * <p/>
-     * Exposed so unit tests can mock
-     */
-    void extractZip(IDeviceBuildInfo deviceBuild, File unzipDir) throws IOException,
-            ZipException, TargetSetupError {
-        if (deviceBuild.getTestsZipFile() == null) {
-            throw new TargetSetupError("Missing tests.zip file");
-        }
-        FileUtil.extractZip(new ZipFile(deviceBuild.getTestsZipFile()), unzipDir);
     }
 
     /**

@@ -543,7 +543,9 @@ public class DeviceManager implements IDeviceManager {
             mIsTerminated = true;
             mAdbBridge.removeDeviceChangeListener(mManagedDeviceListener);
             mAdbBridge.terminate();
-            mFastbootMonitor.terminate();
+            if (mFastbootMonitor != null) {
+                mFastbootMonitor.terminate();
+            }
         }
     }
 
