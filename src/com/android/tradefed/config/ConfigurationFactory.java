@@ -101,18 +101,33 @@ public class ConfigurationFactory implements IConfigurationFactory {
     @Override
     public IConfiguration createConfigurationFromArgs(String[] arrayArgs)
             throws ConfigurationException {
-        if (arrayArgs.length == 0) {
-            throw new ConfigurationException("Configuration to run was not specified");
-        }
         List<String> listArgs = new ArrayList<String>(arrayArgs.length);
-        listArgs.addAll(Arrays.asList(arrayArgs));
-        // last arg is config name
-        final String configName = listArgs.remove(listArgs.size()-1);
-        ConfigurationDef configDef = getConfigurationDef(configName);
-        IConfiguration config = configDef.createConfiguration();
+        IConfiguration config = internalCreateConfigurationFromArgs(arrayArgs, listArgs);
         config.setOptionsFromCommandLineArgs(listArgs);
 
         return config;
+    }
+
+    /**
+     * Creates a {@link Configuration} from the name given in arguments.
+     * <p/>
+     * Note will not populate configuration with values from options
+     *
+     * @param arrayArgs the full list of command line arguments, including the config name
+     * @param listArgs an empty list, that will be populated with the remaining option arguments
+     * @return
+     * @throws ConfigurationException
+     */
+    private IConfiguration internalCreateConfigurationFromArgs(String[] arrayArgs,
+            List<String> optionArgsRef) throws ConfigurationException {
+        if (arrayArgs.length == 0) {
+            throw new ConfigurationException("Configuration to run was not specified");
+        }
+        optionArgsRef.addAll(Arrays.asList(arrayArgs));
+        // last arg is config name
+        final String configName = optionArgsRef.remove(optionArgsRef.size()-1);
+        ConfigurationDef configDef = getConfigurationDef(configName);
+        return configDef.createConfiguration();
     }
 
     /**
@@ -143,6 +158,21 @@ public class ConfigurationFactory implements IConfigurationFactory {
                 Log.w(LOG_TAG, String.format("Could not load default config with name '%s'",
                         config));
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void printHelpForArgs(String[] args, PrintStream out) {
+        try {
+            IConfiguration config = internalCreateConfigurationFromArgs(args, new ArrayList<String>(
+                    args.length));
+            config.printCommandUsage(out);
+        } catch (ConfigurationException e) {
+            // config must not be specified. Print generic help
+            printHelp(out);
         }
     }
 }

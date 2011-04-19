@@ -151,4 +151,20 @@ public class ConfigurationFactoryTest extends TestCase {
             assertTrue(usageString.contains(config));
         }
     }
+
+    /**
+     * Test {@link ConfigurationFactory#printHelpForArgs(String[], PrintStream))} when config
+     * referenced by args exists
+     */
+    public void testPrintHelpForArgs_configExists() {
+        String[] args = new String[] {ConfigurationFactory.sDefaultConfigs[0]};
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream mockPrintStream = new PrintStream(outputStream);
+        mFactory.printHelpForArgs(args, mockPrintStream);
+
+        // verify the default configs name used is present, but the other is not
+        final String usageString = outputStream.toString();
+        assertTrue(usageString.contains(ConfigurationFactory.sDefaultConfigs[0]));
+        assertFalse(usageString.contains(ConfigurationFactory.sDefaultConfigs[1]));
+    }
 }

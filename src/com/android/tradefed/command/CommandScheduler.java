@@ -363,7 +363,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
-            getConfigFactory().printHelp(System.out);
+            getConfigFactory().printHelpForArgs(args, System.out);
         }
     }
 

@@ -44,4 +44,16 @@ public interface IConfigurationFactory {
      */
     public void printHelp(PrintStream out);
 
+    /**
+     * Prints help output for the given command line arguments,
+     * <p/>
+     * If 'args' refers to a known configuation, the help for that configuration will be displayed.
+     * Otherwise, the generic factory help will be displayed.
+     * <p/>
+     *
+     * @param args the command line arguments
+     * @param out the {@link PrintStream} to dump output to
+     */
+    public void printHelpForArgs(String[] args, PrintStream out);
+
 }
