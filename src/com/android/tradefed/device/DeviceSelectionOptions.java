@@ -51,7 +51,7 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         "run this test on emulator")
     private boolean mEmulatorRequested = false;
 
-    @Option(name = "no-device", shortName = 'n', description=
+    @Option(name = "null-device", shortName = 'n', description=
         "do not allocate a device for this test")
     private boolean mNullDeviceRequested = false;
 

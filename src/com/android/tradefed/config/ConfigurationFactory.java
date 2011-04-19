@@ -70,8 +70,8 @@ public class ConfigurationFactory implements IConfigurationFactory {
         public String transform(String pathName) {
             // strip off CONFIG_PREFIX and CONFIG_SUFFIX
             int pathStartIndex = CONFIG_PREFIX.length();
-            int endPathIndex = pathName.length() - CONFIG_SUFFIX.length();
-            return pathName.substring(pathStartIndex, endPathIndex);
+            int pathEndIndex = pathName.length() - CONFIG_SUFFIX.length();
+            return pathName.substring(pathStartIndex, pathEndIndex);
         }
     }
 
@@ -132,8 +132,9 @@ public class ConfigurationFactory implements IConfigurationFactory {
 
     /**
      * Loads an InputStream for given config name
-     * @param name
-     * @return
+     *
+     * @param name the configuration name to load
+     * @return a {@link BufferedInputStream} for reading config contents
      * @throws ConfigurationException if config could not be found
      */
     private BufferedInputStream getConfigStream(String name) throws ConfigurationException {
@@ -149,8 +150,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
             }
         }
         // buffer input for performance - just in case config file is large
-        BufferedInputStream bufStream = new BufferedInputStream(configStream);
-        return bufStream;
+        return new BufferedInputStream(configStream);
     }
 
     /**

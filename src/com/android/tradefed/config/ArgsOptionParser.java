@@ -116,6 +116,9 @@ public class ArgsOptionParser extends OptionSetter {
     static final String SHORT_NAME_PREFIX = "-";
     static final String OPTION_NAME_PREFIX = "--";
 
+    /** the amount to indent an option field's description when displaying help */
+    private static final int OPTION_DESCRIPTION_INDENT = 25;
+
     /**
      * Creates a {@link ArgsOptionParser} for a collection of objects.
      *
@@ -267,19 +270,54 @@ public class ArgsOptionParser extends OptionSetter {
         Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(optionClass);
         String eol = System.getProperty("line.separator");
         for (Field field : optionFields) {
-            String noFlag = "";
-            try {
-                if (OptionSetter.isBooleanField(field)) {
-                    noFlag = "[no-]";
-                }
-            } catch (ConfigurationException e) {
-                // ignore
-            }
             final Option option = field.getAnnotation(Option.class);
-            out.append(String.format("    %s%s%s: %s", OPTION_NAME_PREFIX, noFlag,
-                    option.name(), option.description()));
+            String optionNameHelp = buildOptionNameHelp(field, option);
+            out.append(optionNameHelp);
+            // insert appropriate whitespace between the name help and the description, to ensure
+            // consistent alignment
+            int wsChars = 0;
+            if (optionNameHelp.length() >= OPTION_DESCRIPTION_INDENT) {
+                // name help is too long, break description onto next line
+                out.append(eol);
+                wsChars = OPTION_DESCRIPTION_INDENT;
+            } else {
+                // insert enough whitespace so option.description starts at
+                // OPTION_DESCRIPTION_INDENT
+                wsChars = OPTION_DESCRIPTION_INDENT - optionNameHelp.length();
+            }
+            for (int i=0; i < wsChars; i++) {
+                out.append(' ');
+            }
+            out.append(option.description());
             out.append(eol);
         }
         return out.toString();
+    }
+
+    /**
+     * Builds the 'name' portion of the help text for the given option field
+     *
+     * @param field
+     * @param option
+     * @return the help text that describes the option flags
+     */
+    private static String buildOptionNameHelp(Field field, final Option option) {
+        StringBuilder optionNameBuilder = new StringBuilder();
+        optionNameBuilder.append("    ");
+        if (option.shortName() != Option.NO_SHORT_NAME) {
+            optionNameBuilder.append(SHORT_NAME_PREFIX);
+            optionNameBuilder.append(option.shortName());
+            optionNameBuilder.append(", ");
+        }
+        optionNameBuilder.append(OPTION_NAME_PREFIX);
+        try {
+            if (OptionSetter.isBooleanField(field)) {
+                optionNameBuilder.append("[no-]");
+            }
+        } catch (ConfigurationException e) {
+            // ignore
+        }
+        optionNameBuilder.append(option.name());
+        return optionNameBuilder.toString();
     }
 }
