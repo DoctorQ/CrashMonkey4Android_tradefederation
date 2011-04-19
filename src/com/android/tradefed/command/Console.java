@@ -276,8 +276,9 @@ public class Console {
 
         commandHelp.put(DUMP_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
-                "\ts[tack]  Dump the stack traces of all threads" + LINE_SEPARATOR +
-                "\tl[ogs]   Dump the logs of all invocations to files" + LINE_SEPARATOR,
+                "\ts[tack]            Dump the stack traces of all threads" + LINE_SEPARATOR +
+                "\tl[ogs]             Dump the logs of all invocations to files" + LINE_SEPARATOR +
+                "\tc[onfig] <config>  Dump the content of the specified config" + LINE_SEPARATOR,
                 DUMP_PATTERN));
 
         commandHelp.put(RUN_PATTERN, String.format(
@@ -361,6 +362,16 @@ public class Console {
                         dumpLogs();
                     }
                 }, DUMP_PATTERN, "l(?:ogs?)?");
+        ArgRunnable<CaptureList> dumpConfigRun = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                // Skip 2 tokens to get past dumpPattern and "config"
+                String configArg = args.get(2).get(0);
+                getConfigurationFactory().dumpConfig(configArg, System.out);
+            }
+        };
+        trie.put(dumpConfigRun, DUMP_PATTERN, "c(?:onfig?)?", "(.*)");
+
 
         // Run commands
         ArgRunnable<CaptureList> runRunCommand = new ArgRunnable<CaptureList>() {

@@ -56,4 +56,12 @@ public interface IConfigurationFactory {
      */
     public void printHelpForArgs(String[] args, PrintStream out);
 
+    /**
+     * Dumps the contents of the config to the given {@link PrintStream}
+     *
+     * @param configName the configuration name
+     * @param out the {@link PrintStream} to dump output to
+     */
+    public void dumpConfig(String configName, PrintStream out);
+
 }

@@ -17,11 +17,13 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.ClassPathScanner;
+import com.android.tradefed.util.StreamUtil;
 import com.android.tradefed.util.ClassPathScanner.IClassPathFilter;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
@@ -123,6 +125,18 @@ public class ConfigurationFactory implements IConfigurationFactory {
      */
     private ConfigurationDef loadConfiguration(String name) throws ConfigurationException {
         Log.i(LOG_TAG, String.format("Loading configuration '%s'", name));
+        BufferedInputStream bufStream = getConfigStream(name);
+        ConfigurationXmlParser parser = new ConfigurationXmlParser();
+        return parser.parse(name, bufStream);
+    }
+
+    /**
+     * Loads an InputStream for given config name
+     * @param name
+     * @return
+     * @throws ConfigurationException if config could not be found
+     */
+    private BufferedInputStream getConfigStream(String name) throws ConfigurationException {
         InputStream configStream = getClass().getResourceAsStream(
                 String.format("/%s%s%s", CONFIG_PREFIX, name, CONFIG_SUFFIX));
         if (configStream == null) {
@@ -136,8 +150,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
         }
         // buffer input for performance - just in case config file is large
         BufferedInputStream bufStream = new BufferedInputStream(configStream);
-        ConfigurationXmlParser parser = new ConfigurationXmlParser();
-        return parser.parse(name, bufStream);
+        return bufStream;
     }
 
     /**
@@ -235,6 +248,21 @@ public class ConfigurationFactory implements IConfigurationFactory {
         } catch (ConfigurationException e) {
             // config must not be specified. Print generic help
             printHelp(out);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void dumpConfig(String configName, PrintStream out) {
+        try {
+            InputStream configStream = getConfigStream(configName);
+            StreamUtil.copyStreams(configStream, out);
+        } catch (ConfigurationException e) {
+            Log.e(LOG_TAG, e);
+        } catch (IOException e) {
+            Log.e(LOG_TAG, e);
         }
     }
 }
