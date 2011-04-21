@@ -475,7 +475,13 @@ public class Configuration implements IConfiguration {
                         configObject);
                 // only print help for object if optionHelp is non zero length
                 if (optionHelp.length() > 0) {
-                    out.printf("  %s options:", configObjectsEntry.getKey());
+                    String classAlias = "";
+                    if (configObject.getClass().isAnnotationPresent(OptionClass.class)) {
+                        final OptionClass classAnnotation = configObject.getClass().getAnnotation(
+                                OptionClass.class);
+                        classAlias = String.format("'%s' ", classAnnotation.alias());
+                    }
+                    out.printf("  %s%s options:", classAlias, configObjectsEntry.getKey());
                     out.println();
                     out.print(optionHelp);
                     out.println();

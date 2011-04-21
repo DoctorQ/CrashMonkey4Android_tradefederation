@@ -21,6 +21,7 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.util.FileUtil;
 
@@ -48,6 +49,7 @@ import java.util.TimeZone;
  * <p/>
  * Result files will be stored in path constructed via [--output-file-path]/[build_id]
  */
+@OptionClass(alias = "xml")
 public class XmlResultReporter extends CollectingTestListener {
 
     private static final String LOG_TAG = "XmlResultReporter";
