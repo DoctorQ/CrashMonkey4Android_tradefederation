@@ -37,7 +37,7 @@ public @interface OptionClass {
      * can be used to namespace {@link Option} command line arguments, in cases where a given
      * {@link Option#name()} is not unique amongst configuration objects. To provide a namespace
      * with an {@link Option} command line argument, use this format: <p/>
-     * '--[OptionClass alias]:[Option name]'
+     * '--[OptionClass alias]:[Option name]'.
      * </li>
      * </ul>
      */

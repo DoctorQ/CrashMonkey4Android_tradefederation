@@ -52,6 +52,8 @@ class OptionSetter {
 
     static final String BOOL_FALSE_PREFIX = "no-";
     private static final HashMap<Class<?>, Handler> handlers = new HashMap<Class<?>, Handler>();
+    static final char NAMESPACE_SEPARATOR = ':';
+
     static {
         handlers.put(boolean.class, new BooleanHandler());
         handlers.put(Boolean.class, new BooleanHandler());
@@ -269,13 +271,24 @@ class OptionSetter {
         Collection<Field> optionFields = getOptionFieldsForClass(optionSource.getClass());
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
+            if (option.name().indexOf(NAMESPACE_SEPARATOR) != -1) {
+                throw new ConfigurationException(String.format(
+                        "Option name '%s' in class '%s' is invalid. " +
+                        "Option names cannot contain the namespace separator character '%c'",
+                        option.name(), optionSource.getClass().getName(), NAMESPACE_SEPARATOR));
+            }
             addNameToMap(optionMap, optionSource, option.name(), field);
+            addNamespacedOptionToMap(optionMap, optionSource, option.name(), field);
             if (option.shortName() != Option.NO_SHORT_NAME) {
                 addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()), field);
+                addNamespacedOptionToMap(optionMap, optionSource,
+                        String.valueOf(option.shortName()), field);
             }
             if (isBooleanField(field)) {
                 // add the corresponding "no" option to make boolean false
                 addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
+                addNamespacedOptionToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(),
+                        field);
             }
         }
     }
@@ -330,9 +343,25 @@ class OptionSetter {
         }
         fields.addField(name, optionSource, field);
         if (getHandler(field.getGenericType()) == null) {
-            throw new ConfigurationException(String.format("unsupported @Option field type '%s'",
-                    field.getType()));
+            throw new ConfigurationException(String.format(
+                    "Option name '%s' in class '%s' is invalid. Unsupported @Option field type '%s'",
+                    name, optionSource.getClass().getName(), field.getType()));
         }
+    }
+
+    /**
+     * Adds the namespaced versions of the option to the map
+     */
+    private void addNamespacedOptionToMap(Map<String, OptionFieldsForName> optionMap,
+            Object optionSource, String name, Field field) throws ConfigurationException {
+        if (optionSource.getClass().isAnnotationPresent(OptionClass.class)) {
+            final OptionClass classAnnotation = optionSource.getClass().getAnnotation(
+                    OptionClass.class);
+            addNameToMap(optionMap, optionSource, String.format("%s%c%s", classAnnotation.alias(),
+                    NAMESPACE_SEPARATOR, name), field);
+        }
+        addNameToMap(optionMap, optionSource, String.format("%s%c%s",
+                optionSource.getClass().getName(), NAMESPACE_SEPARATOR, name), field);
     }
 
     private abstract static class Handler {

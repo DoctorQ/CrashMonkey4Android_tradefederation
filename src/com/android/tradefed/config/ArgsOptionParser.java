@@ -29,10 +29,20 @@ import java.util.ListIterator;
  * option (such as "-v"), a long option (such as "--verbose"), an argument to an option (such as
  * "out.txt" in "-f out.txt"), or a non-option positional argument.
  * <p/>
- * Each option argument must map to exactly one {@link Option} field. A long option maps to the
+ * Each option argument must map to one or more {@link Option} fields. A long option maps to the
  * {@link Option#name()}, and a short option maps to {@link Option#shortName()}. Each
- * {@link Option#name()} and {@link Option@shortName()} must be unique with respect to all other
- * {@link Option} fields.
+ * {@link Option#name()} and {@link Option#shortName()} must be unique with respect to all other
+ * {@link Option} fields within the same object.
+ * <p/>
+ * A single option argument can get mapped to multiple {@link Option} fields with the same name
+ * across multiple objects. {@link Option} arguments can be namespaced to uniquely refer to an
+ * {@link Option} field within a single object using that object's full class name or its
+ * {@link OptionClass#alias()} value separated by ':'. ie
+ *
+ * <pre>
+ * --classname:optionname optionvalue or
+ * --optionclassalias:optionname optionvalue.
+ * </pre>
  * <p/>
  * A simple short option is a "-" followed by a short option character. If the option requires an
  * argument (which is true of any non-boolean option), it may be written as a separate parameter,
@@ -47,9 +57,9 @@ import java.util.ListIterator;
  * <p/>
  * A boolean long option '--name' automatically gets a '--no-name' companion. Given an option
  * "--flag", then, "--flag", "--no-flag", "--flag=true" and "--flag=false" are all valid, though
- * neither "--flag true" nor "--flag false" are allowed (since "--flag" by itself is sufficient,
- * the following "true" or "false" is interpreted separately). You can use "yes" and "no" as
- * synonyms for "true" and "false".
+ * neither "--flag true" nor "--flag false" are allowed (since "--flag" by itself is sufficient, the
+ * following "true" or "false" is interpreted separately). You can use "yes" and "no" as synonyms
+ * for "true" and "false".
  * <p/>
  * Each String not starting with a "-" and not a required argument of a previous option is a
  * non-option positional argument, as are all successive Strings. Each String after a "--" is a
@@ -60,6 +70,7 @@ import java.util.ListIterator;
  * <p/>
  * Here's a simple example:
  * <p/>
+ *
  * <pre>
  * // Non-@Option fields will be ignored.
  * class Options {
@@ -101,12 +112,15 @@ import java.util.ListIterator;
  * }
  *
  * </pre>
+ *
  * See also:
  * <ul>
- *   <li>the getopt(1) man page
- *   <li>Python's "optparse" module (http://docs.python.org/library/optparse.html)
- *   <li>the POSIX "Utility Syntax Guidelines" (http://www.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap12.html#tag_12_02)
- *   <li>the GNU "Standards for Command Line Interfaces" (http://www.gnu.org/prep/standards/standards.html#Command_002dLine-Interfaces)
+ * <li>the getopt(1) man page
+ * <li>Python's "optparse" module (http://docs.python.org/library/optparse.html)
+ * <li>the POSIX "Utility Syntax Guidelines"
+ * (http://www.opengroup.org/onlinepubs/000095399/basedefs/xbd_chap12.html#tag_12_02)
+ * <li>the GNU "Standards for Command Line Interfaces"
+ * (http://www.gnu.org/prep/standards/standards.html#Command_002dLine-Interfaces)
  * </ul>
  *
  * @see {@link OptionSetter}
