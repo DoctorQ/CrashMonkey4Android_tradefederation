@@ -94,27 +94,27 @@ public interface IConfiguration {
     public IDeviceSelectionOptions getDeviceSelectionOptions();
 
     /**
-     * Generic interface to get the configuration object with the given name.
+     * Generic interface to get the configuration object with the given type name.
      *
-     * @param name the unique name of the configuration object
+     * @param typeName the unique type of the configuration object
      * @param expectedType the expected object type
      *
      * @return the configuration object or <code>null</code> if the object type with given name
      * does not exist.
      */
-    public Object getConfigurationObject(String name);
+    public Object getConfigurationObject(String typeName);
 
     /**
      * Similar to {@link #getConfigurationObject(String, Class)}, but for configuration
      * object types that support multiple objects.
      *
-     * @param name the unique name of the configuration object
+     * @param typeName the unique type name of the configuration object
      * @param expectedType the expected object type
      *
      * @return the list of configuration objects or <code>null</code> if the object type with
      * given name does not exist.
      */
-    public List<?> getConfigurationObjectList(String name);
+    public List<?> getConfigurationObjectList(String typeName);
 
     /**
      * Inject a option value into the set of configuration objects.

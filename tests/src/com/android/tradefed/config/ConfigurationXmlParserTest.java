@@ -80,7 +80,7 @@ public class ConfigurationXmlParserTest extends TestCase {
      */
     public void testParse_object() throws ConfigurationException {
         final String config =
-            "<object name=\"foo\" class=\"junit.framework.TestCase\" />";
+            "<object type=\"foo\" class=\"junit.framework.TestCase\" />";
         ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         ConfigurationDef configDef = xmlParser.parse("name", getStringAsStream(config));
         assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("foo").get(0));

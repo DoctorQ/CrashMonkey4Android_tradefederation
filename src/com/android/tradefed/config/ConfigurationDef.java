@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.config;
 
 import java.util.ArrayList;
@@ -25,7 +26,7 @@ import java.util.Map;
  */
 public class ConfigurationDef {
 
-    /** a map of names to config object class name(s). */
+    /** a map of object type names to config object class name(s). */
     private final Map<String, List<String>> mObjectClassMap;
     /** a list of option name/value pairs. */
     private final List<OptionDef> mOptionList;
@@ -69,20 +70,22 @@ public class ConfigurationDef {
 
     /**
      * Adds a config object to the definition
-     * @param name the config object name
+     *
+     * @param typeName the config object type name
      * @param className the class name of the config object
      */
-    void addConfigObjectDef(String name, String className) {
-        List<String> classList = mObjectClassMap.get(name);
+    void addConfigObjectDef(String typeName, String className) {
+        List<String> classList = mObjectClassMap.get(typeName);
         if (classList == null) {
             classList = new ArrayList<String>();
-            mObjectClassMap.put(name, classList);
+            mObjectClassMap.put(typeName, classList);
         }
         classList.add(className);
     }
 
     /**
      * Adds option to the definition
+     *
      * @param optionName the name of the option
      * @param optionValue the option value
      */
@@ -91,7 +94,7 @@ public class ConfigurationDef {
     }
 
     /**
-     * Get the object name-class map.
+     * Get the object type name-class map.
      * <p/>
      * Exposed for unit testing
      */
@@ -135,6 +138,7 @@ public class ConfigurationDef {
 
     /**
      * Gets the name of this configuration definition
+     *
      * @return
      */
     public String getName() {
@@ -144,42 +148,46 @@ public class ConfigurationDef {
     /**
      * Creates a config object associated with this definition.
      *
-     * @param objectName the name of the object. Used to generate more descriptive error messages
+     * @param objectTypeName the name of the object. Used to generate more descriptive error
+     *            messages
      * @param className the class name of the object to load
      * @return the config object
      * @throws ConfigurationException if config object could not be created
      */
-    private Object createObject(String objectName, String className) throws ConfigurationException {
+    private Object createObject(String objectTypeName, String className)
+            throws ConfigurationException {
         try {
-            Class<?> objectClass = getClassForObject(objectName, className);
+            Class<?> objectClass = getClassForObject(objectTypeName, className);
             Object configObject = objectClass.newInstance();
             return configObject;
         } catch (InstantiationException e) {
             throw new ConfigurationException(String.format(
-                    "Could not instantiate class %s for config object name %s", className,
-                    objectName), e);
+                    "Could not instantiate class %s for config object type %s", className,
+                    objectTypeName), e);
         } catch (IllegalAccessException e) {
             throw new ConfigurationException(String.format(
-                    "Could not access class %s for config object name %s", className, objectName),
-                    e);
+                    "Could not access class %s for config object type %s", className,
+                    objectTypeName), e);
         }
     }
 
     /**
      * Loads the class for the given the config object associated with this definition.
      *
-     * @param objectName the name of the object. Used to generate more descriptive error messages
+     * @param objectTypeName the name of the config object type. Used to generate more descriptive
+     *            error messages
      * @param className the class name of the object to load
      * @return the config object populated with default option values
      * @throws ConfigurationException if config object could not be created
      */
-    private Class<?> getClassForObject(String objectName, String className)
+    private Class<?> getClassForObject(String objectTypeName, String className)
             throws ConfigurationException {
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException e) {
-            throw new ConfigurationException(String.format(
-                    "Could not find class %s for config object name %s", className, objectName), e);
+            throw new ConfigurationException(
+                    String.format("Could not find class %s for config object type %s", className,
+                            objectTypeName), e);
         }
     }
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
@@ -61,8 +62,8 @@ class ConfigurationXmlParser {
         public void startElement(String uri, String localName, String name, Attributes attributes)
                 throws SAXException {
             if (OBJECT_TAG.equals(localName)) {
-                final String objectName = attributes.getValue("name");
-                addObject(objectName, attributes);
+                final String objectTypeName = attributes.getValue("type");
+                addObject(objectTypeName, attributes);
             } else if (Configuration.isBuiltInObjType(localName)) {
                 // tag is a built in config object
                 addObject(localName, attributes);
@@ -81,18 +82,18 @@ class ConfigurationXmlParser {
                 if (description != null) {
                     mConfigDef.setDescription(description);
                 }
-            }
-            else {
+            } else {
                 Log.w(LOG_TAG, String.format("Unrecognized tag '%s' in configuration", localName));
             }
         }
 
-        void addObject(String objectName, Attributes attributes) throws SAXException {
+        void addObject(String objectTypeName, Attributes attributes) throws SAXException {
             String className = attributes.getValue("class");
             if (className == null) {
-                throwException(String.format("Missing class attribute for object %s", objectName));
+                throwException(String.format("Missing class attribute for object %s",
+                        objectTypeName));
             }
-            mConfigDef.addConfigObjectDef(objectName, className);
+            mConfigDef.addConfigObjectDef(objectTypeName, className);
         }
 
         private void throwException(String reason) throws SAXException {
@@ -113,7 +114,7 @@ class ConfigurationXmlParser {
      * @param xmlInput the configuration xml to parse
      * @throws ConfigurationException if input could not be parsed or had invalid format
      */
-    ConfigurationDef parse(String name, InputStream xmlInput) throws ConfigurationException  {
+    ConfigurationDef parse(String name, InputStream xmlInput) throws ConfigurationException {
         try {
             SAXParserFactory parserFactory = SAXParserFactory.newInstance();
             parserFactory.setNamespaceAware(true);

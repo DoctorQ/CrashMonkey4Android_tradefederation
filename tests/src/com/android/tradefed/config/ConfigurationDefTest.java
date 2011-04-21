@@ -50,7 +50,7 @@ public class ConfigurationDefTest extends TestCase {
         super.setUp();
         mConfigDef = new ConfigurationDef(CONFIG_NAME);
         mConfigDef.setDescription(CONFIG_DESCRIPTION);
-        mConfigDef.addConfigObjectDef(Configuration.BUILD_PROVIDER_NAME,
+        mConfigDef.addConfigObjectDef(Configuration.BUILD_PROVIDER_TYPE_NAME,
                 OptionTest.class.getName());
     }
 

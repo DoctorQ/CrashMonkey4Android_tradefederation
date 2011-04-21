@@ -45,7 +45,7 @@ public class ConfigurationTest extends TestCase {
 
     private static final String CONFIG_NAME = "name";
     private static final String CONFIG_DESCRIPTION = "config description";
-    private static final String CONFIG_OBJECT_NAME = "object_name";
+    private static final String CONFIG_OBJECT_TYPE_NAME = "object_name";
     private static final String OPTION_DESCRIPTION = "bool description";
     private static final String OPTION_NAME = "bool";
 
@@ -84,8 +84,8 @@ public class ConfigurationTest extends TestCase {
      */
     public void testGetConfigurationObject() throws ConfigurationException {
         TestConfigObject testConfigObject = new TestConfigObject();
-        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
-        Object fromConfig = mConfig.getConfigurationObject(CONFIG_OBJECT_NAME);
+        mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
+        Object fromConfig = mConfig.getConfigurationObject(CONFIG_OBJECT_TYPE_NAME);
         assertEquals(testConfigObject, fromConfig);
     }
 
@@ -95,9 +95,9 @@ public class ConfigurationTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testGetConfigurationObjectList() throws ConfigurationException  {
         TestConfigObject testConfigObject = new TestConfigObject();
-        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
+        mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
         List<TestConfig> configList = (List<TestConfig>)mConfig.getConfigurationObjectList(
-                CONFIG_OBJECT_NAME);
+                CONFIG_OBJECT_TYPE_NAME);
         assertEquals(testConfigObject, configList.get(0));
     }
 
@@ -115,7 +115,7 @@ public class ConfigurationTest extends TestCase {
      */
     public void testGetConfigurationObject_typeIsList()  {
         try {
-            mConfig.getConfigurationObject(Configuration.TEST_NAME);
+            mConfig.getConfigurationObject(Configuration.TEST_TYPE_NAME);
             fail("IllegalStateException not thrown");
         } catch (IllegalStateException e) {
             // expected
@@ -130,9 +130,9 @@ public class ConfigurationTest extends TestCase {
         List<TestConfigObject> list = new ArrayList<TestConfigObject>();
         list.add(new TestConfigObject());
         list.add(new TestConfigObject());
-        mConfig.setConfigurationObjectList(CONFIG_OBJECT_NAME, list);
+        mConfig.setConfigurationObjectList(CONFIG_OBJECT_TYPE_NAME, list);
         try {
-            mConfig.getConfigurationObject(CONFIG_OBJECT_NAME);
+            mConfig.getConfigurationObject(CONFIG_OBJECT_TYPE_NAME);
             fail("IllegalStateException not thrown");
         } catch (IllegalStateException e) {
             // expected
@@ -146,7 +146,7 @@ public class ConfigurationTest extends TestCase {
     public void testSetConfigurationObject_wrongtype()  {
         try {
             // arbitrarily, use the "Test" type as expected type
-            mConfig.setConfigurationObject(Configuration.TEST_NAME, new TestConfigObject());
+            mConfig.setConfigurationObject(Configuration.TEST_TYPE_NAME, new TestConfigObject());
             fail("setConfigurationObject did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
@@ -170,7 +170,7 @@ public class ConfigurationTest extends TestCase {
             List<TestConfigObject> myList = new ArrayList<TestConfigObject>(1);
             myList.add(new TestConfigObject());
             // arbitrarily, use the "Test" type as expected type
-            mConfig.setConfigurationObjectList(Configuration.TEST_NAME, myList);
+            mConfig.setConfigurationObjectList(Configuration.TEST_TYPE_NAME, myList);
             fail("setConfigurationObject did not throw ConfigurationException");
         } catch (ConfigurationException e) {
             // expected
@@ -291,7 +291,7 @@ public class ConfigurationTest extends TestCase {
      */
     public void testInjectOptionValue() throws ConfigurationException {
         TestConfigObject testConfigObject = new TestConfigObject();
-        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
+        mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
         mConfig.injectOptionValue(OPTION_NAME, Boolean.toString(true));
         assertTrue(testConfigObject.getBool());
     }
@@ -301,7 +301,7 @@ public class ConfigurationTest extends TestCase {
      */
     public void testPrintCommandUsage() throws ConfigurationException {
         TestConfigObject testConfigObject = new TestConfigObject();
-        mConfig.setConfigurationObject(CONFIG_OBJECT_NAME, testConfigObject);
+        mConfig.setConfigurationObject(CONFIG_OBJECT_TYPE_NAME, testConfigObject);
         // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
@@ -314,7 +314,7 @@ public class ConfigurationTest extends TestCase {
         assertTrue("Usage text does not contain config description", usageString.contains(
                 CONFIG_DESCRIPTION));
         assertTrue("Usage text does not contain object name", usageString.contains(
-                CONFIG_OBJECT_NAME));
+                CONFIG_OBJECT_TYPE_NAME));
         assertTrue("Usage text does not contain option name", usageString.contains(OPTION_NAME));
         assertTrue("Usage text does not contain option description",
                 usageString.contains(OPTION_DESCRIPTION));
