@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.util.Email;
 import com.android.tradefed.util.Email.Message;
 
@@ -29,6 +30,7 @@ import java.util.ListIterator;
 /**
  * A simple result reporter that sends emails for test results.
  */
+@OptionClass(alias = "email")
 public class EmailResultReporter extends CollectingTestListener implements ITestSummaryListener {
     private static final String LOG_TAG = "EmailResultReporter";
     private static final String DEFAULT_SUBJECT_TAG = "Tradefed";

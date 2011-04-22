@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.config.OptionClass;
 
 import java.util.Map;
 
@@ -24,6 +25,7 @@ import junit.textui.ResultPrinter;
 /**
  * A test result reporter that forwards results to the JUnit text result printer.
  */
+@OptionClass(alias = "stdout")
 public class TextResultReporter extends InvocationToJUnitResultForwarder
     implements ITestInvocationListener {
 

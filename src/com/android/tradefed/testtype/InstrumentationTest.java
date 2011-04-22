@@ -23,6 +23,7 @@ import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
@@ -37,6 +38,7 @@ import java.util.Collection;
 /**
  * A Test that runs an instrumentation test package on given device.
  */
+@OptionClass(alias = "instrumentation")
 public class InstrumentationTest implements IDeviceTest, IResumableTest {
 
     private static final String LOG_TAG = "InstrumentationTest";

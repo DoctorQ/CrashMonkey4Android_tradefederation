@@ -16,12 +16,14 @@
 package com.android.tradefed.build;
 
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 
 import java.io.File;
 
 /**
  * A {@link IBuildProvider} that constructs a {@link ISdkBuildInfo} based on a provided local path
  */
+@OptionClass(alias = "local-sdk")
 public class LocalSdkBuildProvider implements IBuildProvider {
 
     @Option(name = "sdk-build-path", description =

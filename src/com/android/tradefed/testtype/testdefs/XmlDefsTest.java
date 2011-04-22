@@ -17,6 +17,7 @@ package com.android.tradefed.testtype.testdefs;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -46,6 +47,7 @@ import java.util.Queue;
  * The test definition files can either be one or more files on local file system, and/or one or
  * more files stored on the device under test.
  */
+@OptionClass(alias = "xml-defs")
 public class XmlDefsTest implements IDeviceTest, IResumableTest,
         IShardableTest {
 

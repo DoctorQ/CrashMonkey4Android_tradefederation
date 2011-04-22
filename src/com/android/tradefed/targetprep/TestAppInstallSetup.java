@@ -19,6 +19,7 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.FileUtil;
@@ -33,6 +34,7 @@ import java.util.zip.ZipFile;
  * A {@link ITargetPreparer} that installs one or more apps from a
  * {@link IDeviceBuildInfo#getTestsZipFile()} file onto device.
  */
+@OptionClass(alias = "tests-zip-app")
 public class TestAppInstallSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "TestAppInstallSetup";

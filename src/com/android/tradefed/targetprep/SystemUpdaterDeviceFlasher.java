@@ -21,11 +21,6 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetprep.DefaultTestsZipInstaller;
-import com.android.tradefed.targetprep.IDeviceFlasher;
-import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
-import com.android.tradefed.targetprep.ITestsZipInstaller;
-import com.android.tradefed.targetprep.TargetSetupError;
 
 /**
  * A {@link IDeviceFlasher} that relies on the system updater to install a
@@ -38,6 +33,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
 
     private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller();
 
+    @SuppressWarnings("unused")
     private UserDataFlashOption mFlashOption = UserDataFlashOption.TESTS_ZIP;
 
     /**

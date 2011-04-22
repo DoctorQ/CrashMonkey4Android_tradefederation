@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.FileUtil;
@@ -34,6 +35,7 @@ import java.util.Collection;
  * <p/>
  * Should be performed *after* a new build is flashed.
  */
+@OptionClass(alias = "device-setup")
 public class DeviceSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "DeviceSetup";

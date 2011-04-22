@@ -17,6 +17,7 @@ package com.android.tradefed.log;
 
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
@@ -33,6 +34,7 @@ import java.util.HashSet;
 /**
  * A {@link ILeveledLogOutput} that directs log messages to a file and to stdout.
  */
+@OptionClass(alias = "file")
 public class FileLogger implements ILeveledLogOutput {
     private static final String TEMP_FILE_PREFIX = "tradefed_log_";
     private static final String TEMP_FILE_SUFFIX = ".txt";

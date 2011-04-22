@@ -21,6 +21,7 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -53,6 +54,7 @@ import junit.framework.AssertionFailedError;
  * {@link IConfiguration} will flash the device back to a baseline build, and prepare the device
  * to receive the OTA to a new build.
  */
+@OptionClass(alias = "ota-stability")
 public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigurationReceiver,
         IShardableTest {
 

@@ -16,6 +16,7 @@
 package com.android.tradefed.testtype;
 
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
@@ -26,6 +27,7 @@ import junit.framework.TestSuite;
 /**
  * A test runner for JUnit host based tests
  */
+@OptionClass(alias = "host")
 public class HostTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="class", description="The JUnit Test to run")

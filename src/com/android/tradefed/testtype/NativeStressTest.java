@@ -20,6 +20,7 @@ import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
@@ -34,6 +35,7 @@ import java.util.Map;
  * It uses {@link NativeStressTestParser} to parse out number of iterations completed and report
  * those results to the {@link ITestInvocationListener}s.
  */
+@OptionClass(alias = "native-stress")
 public class NativeStressTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "NativeStressTest";

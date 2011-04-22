@@ -17,6 +17,7 @@ package com.android.tradefed.log;
 
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 
@@ -25,6 +26,7 @@ import java.io.IOException;
 /**
  * A {@link ILeveledLogOutput} that directs log messages to stdout.
  */
+@OptionClass(alias = "stdout")
 public class StdoutLogger implements ILeveledLogOutput {
 
     @Option(name="log-level", description="minimum log level to display")

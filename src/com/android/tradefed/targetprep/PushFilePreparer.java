@@ -19,6 +19,7 @@ package com.android.tradefed.targetprep;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
@@ -32,6 +33,7 @@ import java.util.LinkedList;
  * <p />
  * Should be performed *after* a new build is flashed, and *after* DeviceSetup is run (if enabled)
  */
+@OptionClass(alias = "push-file")
 public class PushFilePreparer implements ITargetPreparer {
     private static final String LOG_TAG = "PushFilePreparer";
 

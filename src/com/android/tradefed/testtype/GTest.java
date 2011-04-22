@@ -21,6 +21,7 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
@@ -29,6 +30,7 @@ import com.android.tradefed.result.ITestInvocationListener;
 /**
  * A Test that runs a native test package on given device.
  */
+@OptionClass(alias = "gtest")
 public class GTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "GTest";
