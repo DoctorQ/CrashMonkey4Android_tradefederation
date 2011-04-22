@@ -68,6 +68,7 @@ public class OptionSetterTest extends TestCase {
     }
 
     /** Option source with an option with same name as AllTypesOptionSource. */
+    @OptionClass(alias = "shared")
     private static class SharedOptionSource {
         @SuppressWarnings("unused")
         @Option(name = "string", shortName = 's')
@@ -84,6 +85,7 @@ public class OptionSetterTest extends TestCase {
     }
 
     /** option source with all supported types. */
+    @OptionClass(alias = "all")
     private static class AllTypesOptionSource {
         @Option(name = "string_collection")
         private Collection<String> mStringCollection = new ArrayList<String>();
@@ -152,6 +154,15 @@ public class OptionSetterTest extends TestCase {
     }
 
     /**
+     * Option source with invalid option name.
+     */
+    private static class BadOptionNameSource {
+        @SuppressWarnings("unused")
+        @Option(name = "bad:string", shortName = 's')
+        private int mMyOption;
+    }
+
+    /**
      * Test creating an {@link OptionSetter} for a source with invalid option type.
      */
     public void testOptionSetter_noType() {
@@ -200,6 +211,32 @@ public class OptionSetterTest extends TestCase {
     }
 
     /**
+     * Test namespaced options using class names.
+     */
+    public void testOptionSetter_namespacedClassName() throws ConfigurationException {
+        AllTypesOptionSource object1 = new AllTypesOptionSource();
+        SharedOptionSource object2 = new SharedOptionSource();
+        OptionSetter setter = new OptionSetter(object1, object2);
+        setter.setOptionValue(AllTypesOptionSource.class.getName() + ":string", "alltest");
+        setter.setOptionValue(SharedOptionSource.class.getName() + ":string", "sharedtest");
+        assertEquals("alltest", object1.mString);
+        assertEquals("sharedtest", object2.mMyOption);
+    }
+
+    /**
+     * Test namespaced options using OptionClass aliases
+     */
+    public void testOptionSetter_namespacedAlias() throws ConfigurationException {
+        AllTypesOptionSource object1 = new AllTypesOptionSource();
+        SharedOptionSource object2 = new SharedOptionSource();
+        OptionSetter setter = new OptionSetter(object1, object2);
+        setter.setOptionValue("all:string", "alltest");
+        setter.setOptionValue("shared:string", "sharedtest");
+        assertEquals("alltest", object1.mString);
+        assertEquals("sharedtest", object2.mMyOption);
+    }
+
+    /**
      * Test creating an {@link OptionSetter} for a Collection with no type.
      */
     public void testOptionSetter_unparamType() {
@@ -233,6 +270,18 @@ public class OptionSetterTest extends TestCase {
         setter.setOptionValue("child-string", "child");
         assertEquals("parent", source.getParentString());
         assertEquals("child", source.mChildString);
+    }
+
+    /**
+     * Test that options with {@link OptionSetter#NAMESPACE_SEPARATOR} are rejected
+     */
+    public void testOptionSetter_badOptionName() throws ConfigurationException {
+        try {
+            new OptionSetter(new BadOptionNameSource());
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 
     /**

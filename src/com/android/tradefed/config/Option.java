@@ -32,9 +32,12 @@ public @interface Option {
 
     /**
      * The mandatory unique name for this option.
+     * <p/>
      * This will map to a command line argument prefixed with two '-' characters.
      * For example, an {@link Option} with name 'help' would be specified with '--help' on the
      * command line.
+     * <p/>
+     * Names cannot contain a colon eg ':'.
      */
     String name();
 
