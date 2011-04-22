@@ -41,6 +41,27 @@ public class ConfigurationXmlParserTest extends TestCase {
         assertEquals(configName, configDef.getName());
         assertEquals("desc", configDef.getDescription());
         assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(0));
+        assertEquals("junit.framework.TestCase:opName", configDef.getOptionList().get(0).name);
+        assertEquals("val", configDef.getOptionList().get(0).value);
+    }
+
+    /**
+     * Test parsing xml with a global option
+     */
+    public void testParse_globalOption() throws ConfigurationException {
+        final String normalConfig =
+            "<configuration description=\"desc\" >\n" +
+            "  <option name=\"opName\" value=\"val\" />\n" +
+            "  <test class=\"junit.framework.TestCase\">\n" +
+            "  </test>\n" +
+            "</configuration>";
+        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
+        final String configName = "config";
+        ConfigurationDef configDef = xmlParser.parse(configName, getStringAsStream(normalConfig));
+        assertEquals(configName, configDef.getName());
+        assertEquals("desc", configDef.getDescription());
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(0));
+        // the non-namespaced option value should be used
         assertEquals("opName", configDef.getOptionList().get(0).name);
         assertEquals("val", configDef.getOptionList().get(0).value);
     }
