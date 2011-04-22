@@ -64,25 +64,24 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
     private ITestDevice mDevice;
 
     @Option(name = "run-name", description =
-        "The name of the ota stability test run. Used to report metrics")
+        "The name of the ota stability test run. Used to report metrics.")
     private String mRunName = "ota-stability";
 
     @Option(name = "iterations", description =
-        "Number of ota stability 'flash + wait for ota' iterations to run")
+        "Number of ota stability 'flash + wait for ota' iterations to run.")
     private int mIterations = 20;
 
     @Option(name = "wait-recovery-time", description =
-        "Number of minutes to wait for device to begin installing ota. Default 15 min")
+        "Number of minutes to wait for device to begin installing ota.")
     private int mWaitRecoveryTime = 15;
 
     @Option(name = "wait-install-time", description =
-        "Number of minutes to wait for device to be online after beginning ota installation. " +
-        "Default 10 min")
+        "Number of minutes to wait for device to be online after beginning ota installation.")
     private int mWaitInstallTime = 10;
 
     @Option(name = "shards", description = "Optional number of shards to split test into. " +
             "Iterations will be split evenly among shards.")
-    private int mShards = 1;
+    private int mShards = 0;
 
     /**
      * {@inheritDoc}

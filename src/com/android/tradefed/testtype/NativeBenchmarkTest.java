@@ -55,12 +55,12 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     @Option(name = "benchmark-module-name",
             description="The name of the native benchmark test module to run. " +
-            "If not specified all tests in --native-benchmark-device-path will be run")
+            "If not specified all tests in --native-benchmark-device-path will be run.")
     private String mTestModule = null;
 
     @Option(name = "benchmark-run-name",
             description="Optional name to pass to test reporters. If unspecified, will use" +
-            "--benchmark-module-name")
+            "--benchmark-module-name.")
     private String mReportRunName = null;
 
     @Option(name = "iterations",
@@ -74,19 +74,19 @@ public class NativeBenchmarkTest implements IDeviceTest, IRemoteTest {
     private Collection<Integer> mDelays = new ArrayList<Integer>();
 
     @Option(name = "max-run-time", description =
-         "The maximum time to allow for one benchmark run in ms. Default is 5 min.")
+         "The maximum time to allow for one benchmark run in ms.")
     private int mMaxRunTime = 5 * 60 * 1000;
 
     @Option(name = "server-cpu",
-            description="Optionally specify a server cpu. Default 1")
+            description="Optionally specify a server cpu.")
     private int mServerCpu = 1;
 
     @Option(name = "client-cpu",
-            description="Optionally specify a client cpu. Default 1")
+            description="Optionally specify a client cpu.")
     private int mClientCpu = 1;
 
     @Option(name = "max-cpu-freq",
-            description="Flag to force device cpu to run at maximum frequency. Default false")
+            description="Flag to force device cpu to run at maximum frequency.")
     private boolean mMaxCpuFreq = false;
 
 

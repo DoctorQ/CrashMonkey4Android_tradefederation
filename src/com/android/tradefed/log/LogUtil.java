@@ -26,6 +26,12 @@ import java.util.Date;
  * A logging utility class.  Useful for code that needs to override static methods from {@link Log}
  */
 public class LogUtil {
+
+    /** A String description of all the potential {@link LogLevel} values */
+    // TODO: unfortunately, this value can not be calculated dynamically since if it was,
+    // the String could not be used in {@link Option#annotation} expressions
+    static final String LOG_LEVEL_LIST = "verbose, debug, info, warn, error, assert";
+
     /**
      * Make uninstantiable
      */

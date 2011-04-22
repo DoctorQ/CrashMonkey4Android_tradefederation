@@ -194,7 +194,11 @@ public class ConfigurationFactory implements IConfigurationFactory {
     @Override
     public void printHelp(PrintStream out) {
         // print general help
-        out.println("Use --help <configuration_name> to get list of options for a configuration");
+        // TODO: move this statement to Console
+        out.println("Use 'run command --help <configuration_name>' to get list of options for a " +
+                "configuration");
+        out.println("Use 'dump config <configuration_name>' to display the configuration's XML " +
+                "content.");
         out.println();
         out.println("Available configurations include:");
         try {
@@ -240,7 +244,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
      * {@inheritDoc}
      */
     @Override
-    public void printHelpForArgs(String[] args, PrintStream out) {
+    public void printHelpForConfig(String[] args, PrintStream out) {
         try {
             IConfiguration config = internalCreateConfigurationFromArgs(args, new ArrayList<String>(
                     args.length));

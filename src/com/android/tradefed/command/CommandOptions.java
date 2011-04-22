@@ -22,14 +22,14 @@ import com.android.tradefed.config.Option;
  */
 public class CommandOptions implements ICommandOptions {
 
-    @Option(name="help", description="display the help text")
+    @Option(name="help", description="display the help text.")
     private boolean mHelpMode = false;
 
     @Option(name="min-loop-time", description=
-        "the minimum invocation time in ms when in loop mode. Default is 1 minute.")
+        "the minimum invocation time in ms when in loop mode.")
     private long mMinLoopTime = 60 * 1000;
 
-    @Option(name="loop", description="keep running continuously")
+    @Option(name="loop", description="keep running continuously.")
     private boolean mLoopMode = false;
 
     /**

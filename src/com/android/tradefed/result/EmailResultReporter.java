@@ -35,19 +35,18 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     private static final String LOG_TAG = "EmailResultReporter";
     private static final String DEFAULT_SUBJECT_TAG = "Tradefed";
 
-    @Option(name="sender", description="The envelope-sender address to use for the messages")
+    @Option(name="sender", description="The envelope-sender address to use for the messages.")
     private String mSender = null;
 
-    @Option(name="destination", description="One or more destination addresses")
+    @Option(name="destination", description="One or more destination addresses.")
     private Collection<String> mDestinations = new HashSet<String>();
 
     @Option(name = "subject-tag",
-            description = "The tag to be added to the begining of the email subject. "+
-            "Default: "+DEFAULT_SUBJECT_TAG)
+            description = "The tag to be added to the beginning of the email subject.")
     private String mSubjectTag = DEFAULT_SUBJECT_TAG;
 
     @Option(name = "send-only-on-failure",
-            description = "Flag for sending email only on failure")
+            description = "Flag for sending email only on failure.")
     private boolean mSendOnlyOnFailure = false;
 
     private List<TestSummary> mSummaries = null;

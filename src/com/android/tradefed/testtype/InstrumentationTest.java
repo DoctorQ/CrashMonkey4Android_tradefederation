@@ -49,15 +49,15 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     static final String DELAY_MSEC_ARG = "delay_msec";
 
     @Option(name = "package", shortName = 'p',
-            description="The manifest package name of the Android test application to run")
+            description="The manifest package name of the Android test application to run.")
     private String mPackageName = null;
 
     @Option(name = "runner",
-            description="The instrumentation test runner class name to use")
+            description="The instrumentation test runner class name to use.")
     private String mRunnerName = "android.test.InstrumentationTestRunner";
 
     @Option(name = "class", shortName = 'c',
-            description="The test class name to run")
+            description="The test class name to run.")
     private String mTestClassName = null;
 
     @Option(name = "method", shortName = 'm',
@@ -66,25 +66,25 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
 
     @Option(name = "timeout",
             description="Aborts the test run if any test takes longer than the specified number of "
-            + "milliseconds. Default 10 minutes. For no timeout, set to 0")
+            + "milliseconds. For no timeout, set to 0.")
     private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
-            description="Restrict test to a specific test size")
+            description="Restrict test to a specific test size.")
     private String mTestSize = null;
 
     @Option(name = "rerun",
             description = "Rerun unexecuted tests individually on same device if test run " +
-            "fails to complete. Default true")
+            "fails to complete.")
     private boolean mIsRerunMode = true;
 
     @Option(name = "resume",
             description = "Schedule unexecuted tests for resumption on another device " +
-            "if first device becomes unavailable. Default false")
+            "if first device becomes unavailable.")
     private boolean mIsResumeMode = false;
 
     @Option(name = "log-delay",
-            description="Delay in msec between each test when collecting test information")
+            description="Delay in msec between each test when collecting test information.")
     private int mTestDelay = 15;
 
     @Option(name = "install-file",

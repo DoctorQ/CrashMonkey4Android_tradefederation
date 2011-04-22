@@ -38,7 +38,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
 
     // TODO: add a separate configurable timeout per operation
     @Option(name="device-wait-time",
-            description="maximum time in ms to wait for a single device recovery command")
+            description="maximum time in ms to wait for a single device recovery command.")
     protected long mWaitTime = 4 * 60 * 1000;
 
     /**

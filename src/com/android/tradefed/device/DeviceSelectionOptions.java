@@ -31,28 +31,28 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     private static final String LOG_TAG = "DeviceSelectionOptions";
 
     @Option(name="serial", shortName='s', description=
-        "run this test on a specific device with given serial number(s)")
+        "run this test on a specific device with given serial number(s).")
     private Collection<String> mSerials = new ArrayList<String>();
 
     @Option(name="exclude-serial", description=
-        "run this test on any device except those with this serial number(s)")
+        "run this test on any device except those with this serial number(s).")
     private Collection<String> mExcludeSerials = new ArrayList<String>();
 
     @Option(name="product-type", description=
-        "run this test on device with this product type(s)")
+        "run this test on device with this product type(s).")
     private Collection<String> mProductTypes = new ArrayList<String>();
 
     @Option(name="property", description=
         "run this test on device with this property value. " +
-        "Expected format <propertyname>=<propertyvalue>")
+        "Expected format <propertyname>=<propertyvalue>.")
     private Collection<String> mPropertyStrings = new ArrayList<String>();
 
     @Option(name = "emulator", shortName = 'e', description=
-        "run this test on emulator")
+        "run this test on emulator.")
     private boolean mEmulatorRequested = false;
 
     @Option(name = "null-device", shortName = 'n', description=
-        "do not allocate a device for this test")
+        "do not allocate a device for this test.")
     private boolean mNullDeviceRequested = false;
 
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.

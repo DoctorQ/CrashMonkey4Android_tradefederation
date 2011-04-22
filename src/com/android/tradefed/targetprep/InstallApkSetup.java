@@ -36,7 +36,7 @@ public class InstallApkSetup implements ITargetPreparer {
     private static final String LOG_TAG = InstallApkSetup.class.getSimpleName();
 
     @Option(name = "apk-path", description =
-        "the filesystem path of the apk to install. Can be repeated")
+        "the filesystem path of the apk to install. Can be repeated.")
     private Collection<File> mApkPaths = new ArrayList<File>();
 
     /**

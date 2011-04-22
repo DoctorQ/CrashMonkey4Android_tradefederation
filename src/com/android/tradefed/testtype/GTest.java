@@ -55,12 +55,12 @@ public class GTest implements IDeviceTest, IRemoteTest {
     private String mTestNameNegativeFilter = null;
 
     @Option(name = "native-test-timeout", description =
-        "The max time in ms for a gtest to run (default 1 min). " +
-        "Test run will be aborted if any test takes longer")
+        "The max time in ms for a gtest to run. " +
+        "Test run will be aborted if any test takes longer.")
     private int mMaxTestTimeMs = 1 * 60 * 1000;
 
     @Option(name = "send-coverage",
-            description = "Send coverage target info to test listeners. Default true.")
+            description = "Send coverage target info to test listeners.")
     private boolean mSendCoverage = true;
 
     /** coverage target value. Just report all gtests as 'native' for now */

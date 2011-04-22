@@ -40,7 +40,7 @@ public class TestAppInstallSetup implements ITargetPreparer {
     private static final String LOG_TAG = "TestAppInstallSetup";
 
     @Option(name = "test-file-name", description =
-        "the name of a test zip file to install on device. Can be repeated")
+        "the name of a test zip file to install on device. Can be repeated.")
     private Collection<String> mTestFileNames = new ArrayList<String>();
 
     /**

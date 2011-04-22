@@ -142,39 +142,39 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     }
 
     @Option(name="discoverable-iterations",
-            description="Number of iterations to run for the 'discoverable' test")
+            description="Number of iterations to run for the 'discoverable' test.")
     private Integer mDiscoverableIterations = null;
 
     @Option(name="enable-iterations",
-            description="Number of iterations to run for the 'enable' test")
+            description="Number of iterations to run for the 'enable' test.")
     private Integer mEnableIterations = null;
 
     @Option(name="scan-iterations",
-            description="Number of iterations to run for the 'scan' test")
+            description="Number of iterations to run for the 'scan' test.")
     private Integer mScanIterations = null;
 
     @Option(name="enable-pan-iterations",
-            description="Number of iterations to run for the 'enable_pan' test")
+            description="Number of iterations to run for the 'enable_pan' test.")
     private Integer mEnablePanIterations = null;
 
     @Option(name="pair-iterations",
-            description="Number of iterations to run for the 'pair' test")
+            description="Number of iterations to run for the 'pair' test.")
     private Integer mPairIterations = 0;
 
     @Option(name="accept-pair-iterations",
-            description="Number of iterations to run for the 'accept_pair' test")
+            description="Number of iterations to run for the 'accept_pair' test.")
     private Integer mAcceptPairIterations = 0;
 
     @Option(name="connect-headset-iterations",
-            description="Number of iterations to run for the 'connect_headset' test")
+            description="Number of iterations to run for the 'connect_headset' test.")
     private Integer mConnectHeadsetIterations = 0;
 
     @Option(name="connect-a2dp-iterations",
-            description="Number of iterations to run for the 'connect_a2dp' test")
+            description="Number of iterations to run for the 'connect_a2dp' test.")
     private Integer mConnectA2dpIterations = 0;
 
     @Option(name="connect-input-iterations",
-            description="Number of iterations to run for the 'connect_input' test")
+            description="Number of iterations to run for the 'connect_input' test.")
     private Integer mConnectInputIterations = 0;
 
     @Option(name="connect-pan-iterations",
@@ -182,67 +182,67 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     private Integer mConnectPanIterations = 0;
 
     @Option(name="incoming-pan-connection-iterations",
-            description="Number of iterations to run for the 'incoming_pan_connection' test")
+            description="Number of iterations to run for the 'incoming_pan_connection' test.")
     private Integer mIncomingPanConnectionIterations = 0;
 
     @Option(name="start-stop-sco-iterations",
-            description="Number of iterations to run for the 'start_stop_sco' test")
+            description="Number of iterations to run for the 'start_stop_sco' test.")
     private Integer mStartStopScoIterations = 0;
 
     @Option(name="local-address",
-            description="Address for the local Android device")
+            description="Address for the local Android device.")
     private String mLocalAddress = null;
 
     @Option(name="device-serial",
-            description="Serial number for the remote Android device")
+            description="Serial number for the remote Android device.")
     private String mDeviceSerial = null;
 
     @Option(name="device-address",
-            description="Address for the remote Android device")
+            description="Address for the remote Android device.")
     private String mDeviceAddress = null;
 
     @Option(name="device-pair-pin",
-            description="Pair pin for the remote Android device")
+            description="Pair pin for the remote Android device.")
     private String mDevicePairPin = null;
 
     @Option(name="device-pair-passkey",
-            description="Pair passkey for the remote Android device")
+            description="Pair passkey for the remote Android device.")
     private String mDevicePairPasskey = null;
 
     @Option(name="headset-address",
-            description="Address for the headset device")
+            description="Address for the headset device.")
     private String mHeadsetAddress = null;
 
     @Option(name="headset-pair-pin",
-            description="Pair pin for the headset device")
+            description="Pair pin for the headset device.")
     private String mHeadsetPairPin = null;
 
     @Option(name="headset-pair-passkey",
-            description="Pair passkey for the headset device")
+            description="Pair passkey for the headset device.")
     private String mHeadsetPairPasskey = null;
 
     @Option(name="a2dp-address",
-            description="Remote device address for the A2DP device")
+            description="Remote device address for the A2DP device.")
     private String mA2dpAddress = null;
 
     @Option(name="a2dp-pair-pin",
-            description="Pair pin for the A2DP device")
+            description="Pair pin for the A2DP device.")
     private String mA2dpPairPin = null;
 
     @Option(name="a2dp-pair-passkey",
-            description="Pair passkey for the A2DP device")
+            description="Pair passkey for the A2DP device.")
     private String mA2dpPairPasskey = null;
 
     @Option(name="input-address",
-            description="Remote device address for the input device")
+            description="Remote device address for the input device.")
     private String mInputAddress = null;
 
     @Option(name="input-pair-pin",
-            description="Pair pin for the input device")
+            description="Pair pin for the input device.")
     private String mInputPairPin = null;
 
     @Option(name="input-pair-passkey",
-            description="Pair passkey for the input device")
+            description="Pair passkey for the input device.")
     private String mInputPairPasskey = null;
 
     private void setupTests() {

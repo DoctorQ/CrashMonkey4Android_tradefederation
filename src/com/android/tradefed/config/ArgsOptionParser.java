@@ -274,14 +274,15 @@ public class ArgsOptionParser extends OptionSetter {
     }
 
     /**
-     * Output help text for all {@link Option} fields in <param>optionClass</param>
+     * Output help text for all {@link Option} fields in <param>optionObject</param>
      *
-     * @param optionClass the class to print help text for
+     * @param optionObject the object to print help text for
      * @return a String containing user-friendly help text for all Option fields
      */
-    public static String getOptionHelp(final Class<?> optionClass) {
+    public static String getOptionHelp(Object optionObject) {
         StringBuilder out = new StringBuilder();
-        Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(optionClass);
+        Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(
+                optionObject.getClass());
         String eol = System.getProperty("line.separator");
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
@@ -303,6 +304,7 @@ public class ArgsOptionParser extends OptionSetter {
                 out.append(' ');
             }
             out.append(option.description());
+            out.append(getDefaultValueHelp(field, optionObject));
             out.append(eol);
         }
         return out.toString();
@@ -333,5 +335,21 @@ public class ArgsOptionParser extends OptionSetter {
         }
         optionNameBuilder.append(option.name());
         return optionNameBuilder.toString();
+    }
+
+    /**
+     * Returns the help text describing the given field's default value in the optionObject.
+     *
+     * @param field the {@link Field}
+     * @param optionObject the {@link Object} containing the {@link Field}
+     * @return the help text, or an empty {@link String} if <param>field</param> has no value
+     */
+    private static String getDefaultValueHelp(Field field, Object optionObject) {
+        Object defaultValue = OptionSetter.getFieldValueAsString(field, optionObject);
+        if (defaultValue == null) {
+            return "";
+        } else {
+            return String.format(" Default: %s.", defaultValue);
+        }
     }
 }

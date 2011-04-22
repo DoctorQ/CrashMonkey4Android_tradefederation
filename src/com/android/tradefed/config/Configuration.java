@@ -501,7 +501,6 @@ public class Configuration implements IConfiguration {
      */
     private String printOptionsForObject(String objectTypeName, Object configObject)
             throws ConfigurationException {
-        // TODO: add support for displaying the default values for the {@link Option} fields
-        return ArgsOptionParser.getOptionHelp(configObject.getClass());
+        return ArgsOptionParser.getOptionHelp(configObject);
     }
 }

@@ -16,6 +16,8 @@
 
 package com.android.tradefed.config;
 
+import com.android.ddmlib.Log;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -49,6 +51,7 @@ import java.util.Map;
  * @see {@link ArgsOptionParser}
  */
 class OptionSetter {
+    private static final String LOG_TAG = "OptionSetter";
 
     static final String BOOL_FALSE_PREFIX = "no-";
     private static final HashMap<Class<?>, Handler> handlers = new HashMap<Class<?>, Handler>();
@@ -322,6 +325,46 @@ class OptionSetter {
         Class<?> superClass = optionClass.getSuperclass();
         if (superClass != null) {
             buildOptionFieldsForClass(superClass, optionFields);
+        }
+    }
+
+    /**
+     * Return the given {@link Field}'s value as a {@link String}.
+     *
+     * @param field the {@link Field}
+     * @param optionObject the {@link Object} to get field's value from.
+     * @return the field's value as a {@link String}, or <code>null</code> if field is not set or is
+     *         empty (in case of {@link Collection}s
+     */
+    static String getFieldValueAsString(Field field, Object optionObject) {
+        try {
+            field.setAccessible(true);
+            Object fieldValue = field.get(optionObject);
+            if (fieldValue == null) {
+                return null;
+            }
+            if (fieldValue instanceof Collection) {
+                Collection collection = (Collection)fieldValue;
+                if (collection.isEmpty()) {
+                    return null;
+                }
+            } else if (fieldValue instanceof Map) {
+                Map map = (Map)fieldValue;
+                if (map.isEmpty()) {
+                    return null;
+                }
+            }
+            return fieldValue.toString();
+        } catch (IllegalArgumentException e) {
+            Log.w(LOG_TAG, String.format(
+                    "Could not read value for field %s in class %s. Reason: %s", field.getName(),
+                    optionObject.getClass().getName(), e));
+            return null;
+        } catch (IllegalAccessException e) {
+            Log.w(LOG_TAG, String.format(
+                    "Could not read value for field %s in class %s. Reason: %s", field.getName(),
+                    optionObject.getClass().getName(), e));
+            return null;
         }
     }
 

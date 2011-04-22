@@ -162,7 +162,7 @@ public class ConfigurationFactoryTest extends TestCase {
         String[] args = new String[] {TEST_CONFIG};
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
-        mFactory.printHelpForArgs(args, mockPrintStream);
+        mFactory.printHelpForConfig(args, mockPrintStream);
 
         // verify the default configs name used is present
         final String usageString = outputStream.toString();

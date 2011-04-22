@@ -112,13 +112,13 @@ class TestDevice implements IManagedTestDevice {
 
     // TODO: TestDevice is not loaded from configuration yet, so these options are currently fixed
 
-    @Option(name="enable-root", description="enable adb root on boot")
+    @Option(name = "enable-root", description = "enable adb root on boot.")
     private boolean mEnableAdbRoot = true;
 
-    @Option(name="disable-keyguard", description="attempt to disable keyguard once complete")
+    @Option(name = "disable-keyguard", description = "attempt to disable keyguard once complete.")
     private boolean mDisableKeyguard = true;
 
-    @Option(name="disable-keyguard-cmd", description="shell command to disable keyguard")
+    @Option(name = "disable-keyguard-cmd", description = "shell command to disable keyguard.")
     private String mDisableKeyguardCmd = "input keyevent 82";
 
     /**
@@ -127,7 +127,8 @@ class TestDevice implements IManagedTestDevice {
      * The actual size of the log info stored will be up to twice this number, as two logcat files
      * are stored.
      */
-    @Option(name="max-tmp-logcat-file", description="The maximum size of a tmp logcat file, in bytes")
+    @Option(name = "max-tmp-logcat-file", description =
+        "The maximum size of a tmp logcat file, in bytes.")
     private long mMaxLogcatFileSize = 10 * 1024 * 1024;
 
     /**

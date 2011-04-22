@@ -77,8 +77,8 @@ public class XmlResultReporter extends CollectingTestListener {
     private static final String ns = null;
 
     private static final String REPORT_DIR_NAME = "output-file-path";
-    @Option(name=REPORT_DIR_NAME, description="root file system path to directory to store xml " +
-            "test results and associated logs")
+    @Option(name = REPORT_DIR_NAME, description = "root file system path to directory to store xml "
+            + "test results and associated logs.")
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
 
     private ILogFileSaver mLogFileSaver;

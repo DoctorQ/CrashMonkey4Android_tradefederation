@@ -40,7 +40,7 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
     private static final String LOG_TAG = "DeviceTestCase";
     private ITestDevice mDevice;
 
-    @Option(name = "method", description = "run a specific test method")
+    @Option(name = "method", description = "run a specific test method.")
     private String mMethodName = null;
 
     public DeviceTestCase() {

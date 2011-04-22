@@ -42,13 +42,16 @@ public class FileLogger implements ILeveledLogOutput {
     private File mTempLogFile = null;
     private BufferedWriter mLogWriter = null;
 
-    @Option(name="log-level", description="minimum log level to log")
+    @Option(name = "log-level", description = "the minimum log level to log. Must be one of "
+            + LogUtil.LOG_LEVEL_LIST + ".")
     private String mLogLevel = LogLevel.DEBUG.getStringValue();
 
-    @Option(name="log-level-display", description="minimum log level to display on stdout")
+    @Option(name = "log-level-display", description =
+        "the minimum log level to display on stdout. Must be one of " + LogUtil.LOG_LEVEL_LIST +
+        ".")
     private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
 
-    @Option(name="log-tag-display", description="Always display given tags logs on stdout")
+    @Option(name = "log-tag-display", description = "Always display given tags logs on stdout")
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
     // temp: track where this log was closed

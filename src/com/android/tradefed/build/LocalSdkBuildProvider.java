@@ -27,12 +27,12 @@ import java.io.File;
 public class LocalSdkBuildProvider implements IBuildProvider {
 
     @Option(name = "sdk-build-path", description =
-            "the local filesystem path to a sdk build to test")
-    private File mLocalSdkPath;
+            "the local filesystem path to a sdk build to test.")
+    private File mLocalSdkPath = null;
 
     @Option(name = "adt-build-path", description =
-            "the local filesystem path to a adt build to test")
-    private File mLocalAdtPath;
+            "the local filesystem path to a adt build to test.")
+    private File mLocalAdtPath = null;
 
     /**
      * {@inheritDoc}

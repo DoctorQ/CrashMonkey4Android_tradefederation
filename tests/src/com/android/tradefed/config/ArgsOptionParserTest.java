@@ -224,10 +224,11 @@ public class ArgsOptionParserTest extends TestCase {
     * Test that help text is displayed for all fields
     */
    public void testGetOptionHelp() {
-       String help = ArgsOptionParser.getOptionHelp(InheritedOptionSource.class);
+       String help = ArgsOptionParser.getOptionHelp(new InheritedOptionSource());
        assertTrue(help.contains(InheritedOptionSource.OPTION_NAME));
        assertTrue(help.contains(InheritedOptionSource.OPTION_DESC));
        assertTrue(help.contains(OneOptionSource.OPTION_NAME));
        assertTrue(help.contains(OneOptionSource.OPTION_DESC));
+       assertTrue(help.contains(OneOptionSource.DEFAULT_VALUE));
    }
 }

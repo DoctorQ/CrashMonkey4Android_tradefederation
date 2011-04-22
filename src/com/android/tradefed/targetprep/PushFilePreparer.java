@@ -39,7 +39,7 @@ public class PushFilePreparer implements ITargetPreparer {
 
     @Option(name="push", description=
             "A push-spec, formatted as '/path/to/srcfile.txt->/path/to/destfile.txt' or " +
-            "'/path/to/srcfile.txt->/path/to/destdir/' .  May be repeated.")
+            "'/path/to/srcfile.txt->/path/to/destdir/'. May be repeated.")
     private Collection<String> mPushSpecs = new LinkedList<String>();
 
     @Option(name="post-push", description=
@@ -49,8 +49,7 @@ public class PushFilePreparer implements ITargetPreparer {
     private Collection<String> mPostPushCommands = new LinkedList<String>();
 
     @Option(name="abort-on-push-failure", description=
-            "If false, continue if pushes fail.  If true, abort the Invocation on any failure. " +
-            "Default is true.")
+            "If false, continue if pushes fail.  If true, abort the Invocation on any failure.")
     private boolean mAbortOnFailure = true;
 
     /**

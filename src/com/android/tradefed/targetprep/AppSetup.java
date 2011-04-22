@@ -37,7 +37,7 @@ public class AppSetup implements ITargetPreparer {
             "Used for device cleanup of old packages before starting tests.")
     private Collection<String> mAppPackageNames = new ArrayList<String>();
 
-    @Option(name="reboot", description="reboot device during setup")
+    @Option(name="reboot", description="reboot device during setup.")
     private boolean mReboot = true;
 
     /**

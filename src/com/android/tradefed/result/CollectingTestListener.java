@@ -42,7 +42,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     private TestRunResult mCurrentResults =  new TestRunResult();
 
     @Option(name = "aggregate-metrics", description =
-        "attempt to add test metrics values for test runs with the same name" )
+        "attempt to add test metrics values for test runs with the same name." )
     private boolean mIsAggregateMetrics = false;
 
     // cached test constants

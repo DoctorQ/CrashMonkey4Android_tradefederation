@@ -30,10 +30,10 @@ import junit.framework.TestSuite;
 @OptionClass(alias = "host")
 public class HostTest implements IDeviceTest, IRemoteTest {
 
-    @Option(name="class", description="The JUnit Test to run")
+    @Option(name="class", description="The JUnit Test to run.")
     private String mClassName;
 
-    @Option(name="method", description="The JUnit TestCase method to run")
+    @Option(name="method", description="The JUnit TestCase method to run.")
     private String mMethodName;
 
     private ITestDevice mDevice = null;

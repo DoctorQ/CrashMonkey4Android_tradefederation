@@ -40,35 +40,35 @@ public class DeviceSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "DeviceSetup";
 
-    @Option(name="wifi-network", description="the name of wifi network to connect to")
+    @Option(name="wifi-network", description="the name of wifi network to connect to.")
     private String mWifiNetwork = null;
 
-    @Option(name="wifi-psk", description="WPA-PSK passphrase of wifi network to connect to")
+    @Option(name="wifi-psk", description="WPA-PSK passphrase of wifi network to connect to.")
     private String mWifiPsk = null;
 
     @Option(name="min-external-store-space", description="the minimum amount of free space in KB" +
-            "that must be present on device's external storage")
+            " that must be present on device's external storage.")
     // require 500K by default. Values <=0 mean external storage is not required
     private long mMinExternalStoreSpace = 500;
 
     @Option(name = "local-data-path",
             description = "optional local file path of test data to sync to device's external " +
-            "storage. Use --remote-data-path to set remote location")
+            "storage. Use --remote-data-path to set remote location.")
     private File mLocalDataFile = null;
 
     @Option(name = "remote-data-path",
             description = "optional file path on device's external storage to sync test data. " +
-            "Must be used with --local-data-path")
+            "Must be used with --local-data-path.")
     private String mRemoteDataPath = null;
 
-    @Option(name="disable-dialing", description="set disable dialing property on boot")
+    @Option(name="disable-dialing", description="set disable dialing property on boot.")
     private boolean mDisableDialing = true;
 
     @Option(name="set-test-harness", description="set the read-only test harness flag on boot. " +
-            "Requires adb root. Default true.")
+            "Requires adb root.")
     private boolean mSetTestHarness = true;
 
-    @Option(name="audio-silent", description="set ro.audio.silent on boot")
+    @Option(name="audio-silent", description="set ro.audio.silent on boot.")
     private boolean mSetAudioSilent = true;
 
     @Option(name="disable-dalvik-verifier", description="disable the dalvik verifier on device. "

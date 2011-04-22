@@ -35,12 +35,11 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
 
     private static final int BOOT_POLL_TIME_MS = 5 * 1000;
 
-    @Option(name="device-boot-time", description="max time in ms to wait for device to boot. " +
-            "Default 5 minutes.")
+    @Option(name="device-boot-time", description="max time in ms to wait for device to boot.")
     private long mDeviceBootTime = 5 * 60 * 1000;
 
     @Option(name="userdata-flash", description=
-        "specify handling of userdata partition. One of FLASH (default), TESTS_ZIP, WIPE, SKIP")
+        "specify handling of userdata partition. One of FLASH, TESTS_ZIP, WIPE, SKIP.")
     private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
 
     /**

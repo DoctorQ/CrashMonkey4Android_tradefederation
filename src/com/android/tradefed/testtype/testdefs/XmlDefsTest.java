@@ -61,37 +61,37 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
 
     @Option(name = "timeout",
             description = "Fail any test that takes longer than the specified number of "
-            + "milliseconds. Default 10 min.")
+            + "milliseconds.")
     private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
-            description = "Restrict tests to a specific test size")
+            description = "Restrict tests to a specific test size.")
     private String mTestSize = null;
 
     @Option(name = "rerun",
             description = "Rerun unexecuted tests individually on same device if test run " +
-            "fails to complete. Default true")
+            "fails to complete.")
     private boolean mIsRerunMode = true;
 
     @Option(name = "resume",
             description = "Schedule unexecuted tests for resumption on another device " +
-            "if first device becomes unavailable. Default false")
+            "if first device becomes unavailable.")
     private boolean mIsResumeMode = false;
 
     @Option(name = "local-file-path",
-            description = "local file path to test_defs.xml file to run")
+            description = "local file path to test_defs.xml file to run.")
     private Collection<File> mLocalFiles = new ArrayList<File>();
 
     @Option(name = "device-file-path",
-            description = "file path on device to test_defs.xml file to run")
+            description = "file path on device to test_defs.xml file to run.")
     private Collection<String> mRemotePaths = new ArrayList<String>();
 
     @Option(name = "send-coverage",
-            description = "Send coverage target info to test listeners. Default true.")
+            description = "Send coverage target info to test listeners.")
     private boolean mSendCoverage = true;
 
     @Option(name = "num-shards",
-            description = "Shard this test into given number of separately runnable chunks")
+            description = "Shard this test into given number of separately runnable chunks.")
     private int mNumShards = 0;
 
     private List<InstrumentationTest> mTests = null;

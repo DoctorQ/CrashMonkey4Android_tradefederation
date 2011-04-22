@@ -54,7 +54,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
 
     @Option(name = "stress-module-name",
             description="The name of the native test module to run. " +
-            "If not specified all tests in --native-stress-device-path will be run")
+            "If not specified all tests in --native-stress-device-path will be run.")
     private String mTestModule = null;
 
     @Option(name = "iterations",
@@ -62,11 +62,11 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
     private int mNumIterations = -1;
 
     @Option(name = "runs",
-            description="The number of stress test runs to perform. Default 1.")
+            description="The number of stress test runs to perform.")
     private int mNumRuns = 1;
 
     @Option(name = "max-iteration-time", description =
-        "The maximum time to allow for one stress test iteration in ms. Default is 5 min.")
+        "The maximum time to allow for one stress test iteration in ms.")
     private int mMaxIterationTime = 5 * 60 * 1000;
 
     // TODO: consider sharing code with {@link GTest}
