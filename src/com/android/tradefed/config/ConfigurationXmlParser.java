@@ -49,6 +49,7 @@ class ConfigurationXmlParser {
         private static final Object CONFIG_TAG = "configuration";
 
         private ConfigurationDef mConfigDef;
+        private String mCurrentConfigObject;
 
         ConfigHandler(String name) {
             mConfigDef = new ConfigurationDef(name);
@@ -76,6 +77,12 @@ class ConfigurationXmlParser {
                 if (optionValue == null) {
                     throwException("Missing 'value' attribute for option");
                 }
+                if (mCurrentConfigObject != null) {
+                    // option is declared within a config object - namespace it with object class
+                    // name
+                    optionName = String.format("%s%c%s", mCurrentConfigObject,
+                            OptionSetter.NAMESPACE_SEPARATOR, optionName);
+                }
                 mConfigDef.addOptionDef(optionName, optionValue);
             } else if (CONFIG_TAG.equals(localName)) {
                 String description = attributes.getValue("description");
@@ -87,6 +94,13 @@ class ConfigurationXmlParser {
             }
         }
 
+        @Override
+        public void endElement (String uri, String localName, String qName) throws SAXException {
+            if (OBJECT_TAG.equals(localName) || Configuration.isBuiltInObjType(localName)) {
+                mCurrentConfigObject = null;
+            }
+        }
+
         void addObject(String objectTypeName, Attributes attributes) throws SAXException {
             String className = attributes.getValue("class");
             if (className == null) {
@@ -94,6 +108,7 @@ class ConfigurationXmlParser {
                         objectTypeName));
             }
             mConfigDef.addConfigObjectDef(objectTypeName, className);
+            mCurrentConfigObject = className;
         }
 
         private void throwException(String reason) throws SAXException {
