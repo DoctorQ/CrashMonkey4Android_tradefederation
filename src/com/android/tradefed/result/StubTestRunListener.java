@@ -23,7 +23,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 /**
  * Stub implementation of {@link ITestRunListener}
  */
-public class StubTestListener implements ITestRunListener {
+public class StubTestRunListener implements ITestRunListener {
 
     /**
      * {@inheritDoc}

@@ -34,7 +34,7 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.result.StubTestListener;
+import com.android.tradefed.result.StubTestRunListener;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
@@ -366,7 +366,7 @@ class TestDevice implements IManagedTestDevice {
         };
         boolean result = performDeviceAction(String.format("run %s instrumentation tests",
                 runner.getPackageName()), runTestsAction, 0);
-        if (failureListener.mIsRunFailure) {
+        if (failureListener.isRunFailure()) {
             // run failed, might be system crash. Ensure device is up
             if (mMonitor.waitForDeviceAvailable(5*1000) == null) {
                 // device isn't up, recover
@@ -376,12 +376,16 @@ class TestDevice implements IManagedTestDevice {
         return result;
     }
 
-    private static class RunFailureListener extends StubTestListener {
+    private static class RunFailureListener extends StubTestRunListener {
         private boolean mIsRunFailure = false;
 
         @Override
         public void testRunFailed(String message) {
             mIsRunFailure = true;
+        }
+
+        public boolean isRunFailure() {
+            return mIsRunFailure;
         }
     }
 
