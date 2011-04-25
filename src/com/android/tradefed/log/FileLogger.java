@@ -18,6 +18,7 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
@@ -48,7 +49,7 @@ public class FileLogger implements ILeveledLogOutput {
 
     @Option(name = "log-level-display", description =
         "the minimum log level to display on stdout. Must be one of " + LogUtil.LOG_LEVEL_LIST +
-        ".")
+        ".", importance = Importance.ALWAYS)
     private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
 
     @Option(name = "log-tag-display", description = "Always display given tags logs on stdout")

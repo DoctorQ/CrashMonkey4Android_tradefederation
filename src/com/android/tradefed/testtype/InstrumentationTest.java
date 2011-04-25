@@ -24,6 +24,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner.TestSize;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
@@ -49,7 +50,8 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     static final String DELAY_MSEC_ARG = "delay_msec";
 
     @Option(name = "package", shortName = 'p',
-            description="The manifest package name of the Android test application to run.")
+            description="The manifest package name of the Android test application to run.",
+            importance = Importance.IF_UNSET)
     private String mPackageName = null;
 
     @Option(name = "runner",

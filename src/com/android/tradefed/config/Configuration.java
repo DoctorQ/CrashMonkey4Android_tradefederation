@@ -474,15 +474,21 @@ public class Configuration implements IConfiguration {
      * @throws {@link ConfigurationException}
      */
     @Override
-    public void printCommandUsage(PrintStream out) throws ConfigurationException {
+    public void printCommandUsage(boolean importantOnly, PrintStream out)
+            throws ConfigurationException {
         out.println("Usage: [options] <configuration_name OR configuration xml file path>");
         out.println();
         out.println(String.format("'%s' configuration: %s", getName(), getDescription()));
         out.println();
+        if (importantOnly) {
+            out.println("Printing help for only the important options. " +
+                    "To see help for all options, use the --help-all flag");
+            out.println();
+        }
         for (Map.Entry<String, List<Object>> configObjectsEntry : mConfigMap.entrySet()) {
             for (Object configObject : configObjectsEntry.getValue()) {
-                String optionHelp = printOptionsForObject(configObjectsEntry.getKey(),
-                        configObject);
+                String optionHelp = printOptionsForObject(importantOnly,
+                        configObjectsEntry.getKey(), configObject);
                 // only print help for object if optionHelp is non zero length
                 if (optionHelp.length() > 0) {
                     String classAlias = "";
@@ -503,14 +509,15 @@ public class Configuration implements IConfiguration {
     /**
      * Prints out the available config options for given configuration object.
      *
+     * @param importantOnly print only the important options
      * @param objectTypeName the config object type name. Used to generate more descriptive error
      *            messages
      * @param configObject the config object
      * @return a {@link String} of option help text
      * @throws ConfigurationException
      */
-    private String printOptionsForObject(String objectTypeName, Object configObject)
-            throws ConfigurationException {
-        return ArgsOptionParser.getOptionHelp(configObject);
+    private String printOptionsForObject(boolean importantOnly, String objectTypeName,
+            Object configObject) throws ConfigurationException {
+        return ArgsOptionParser.getOptionHelp(importantOnly, configObject);
     }
 }

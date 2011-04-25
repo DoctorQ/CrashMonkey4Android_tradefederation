@@ -45,19 +45,26 @@ public interface IConfigurationFactory {
     public void printHelp(PrintStream out);
 
     /**
-     * Prints help output for the configuration specified in command line arguments,
+     * Prints help output for the {@link IConfiguration} specified in command line arguments,
      * <p/>
-     * If 'args' refers to a known configuation, the help for that configuration will be displayed.
-     * Otherwise, the generic factory help will be displayed.
+     * If 'args' refers to a known configuration, a {@link IConfiguration} object will be created
+     * from XML, and help for that {@link IConfiguration} will be outputted. Note all other 'args'
+     * values will be ignored (ie the help text will describe the current values of {@link Option}s
+     * as loaded from XML, and will not reflect option's values set by the command line args.
+     * <p/>
+     * If 'args' does not reference a known {@link IConfiguration}, the generic
+     * {@link #printHelp(PrintStream)} help will be displayed.
      * <p/>
      *
      * @param args the command line arguments
+     * @param importantOnly if <code>true</code>, print an abbreviated help listing only the
+     * important details
      * @param out the {@link PrintStream} to dump output to
      */
-    public void printHelpForConfig(String[] args, PrintStream out);
+    public void printHelpForConfig(String[] args, boolean importantOnly, PrintStream out);
 
     /**
-     * Dumps the contents of the config to the given {@link PrintStream}
+     * Dumps the contents of the configuration to the given {@link PrintStream}
      *
      * @param configName the configuration name
      * @param out the {@link PrintStream} to dump output to

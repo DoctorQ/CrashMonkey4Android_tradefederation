@@ -18,6 +18,7 @@ package com.android.tradefed.testtype.testdefs;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -65,7 +66,9 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
     private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
 
     @Option(name = "size",
-            description = "Restrict tests to a specific test size.")
+            description = "Restrict tests to a specific test size. " +
+            "One of 'small', 'medium', 'large'",
+            importance = Importance.IF_UNSET)
     private String mTestSize = null;
 
     @Option(name = "rerun",
@@ -83,7 +86,8 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
     private Collection<File> mLocalFiles = new ArrayList<File>();
 
     @Option(name = "device-file-path",
-            description = "file path on device to test_defs.xml file to run.")
+            description = "file path on device to test_defs.xml file to run.",
+            importance = Importance.IF_UNSET)
     private Collection<String> mRemotePaths = new ArrayList<String>();
 
     @Option(name = "send-coverage",

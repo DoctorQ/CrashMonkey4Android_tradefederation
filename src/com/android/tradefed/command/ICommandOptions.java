@@ -22,9 +22,14 @@ package com.android.tradefed.command;
 public interface ICommandOptions {
 
     /**
-     * Returns <code>true</code> if help mode has been requested
+     * Returns <code>true</code> if abbreviated help mode has been requested
      */
     public boolean isHelpMode();
+
+    /**
+     * Returns <code>true</code> if full detailed help mode has been requested
+     */
+    public boolean isFullHelpMode();
 
     /**
      * Return the loop mode for the config.

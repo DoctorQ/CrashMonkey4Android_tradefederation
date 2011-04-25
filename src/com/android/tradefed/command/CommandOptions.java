@@ -16,20 +16,27 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.Option.Importance;
 
 /**
  * Container for execution options for commands.
  */
 public class CommandOptions implements ICommandOptions {
 
-    @Option(name="help", description="display the help text.")
+    @Option(name = "help", description =
+        "display the help text for the most important/critical options.",
+        importance = Importance.ALWAYS)
     private boolean mHelpMode = false;
 
-    @Option(name="min-loop-time", description=
+    @Option(name = "help-all", description = "display the full help text for all options.",
+            importance = Importance.ALWAYS)
+    private boolean mFullHelpMode = false;
+
+    @Option(name = "min-loop-time", description =
         "the minimum invocation time in ms when in loop mode.")
     private long mMinLoopTime = 60 * 1000;
 
-    @Option(name="loop", description="keep running continuously.")
+    @Option(name="loop", description="keep running continuously.", importance = Importance.ALWAYS)
     private boolean mLoopMode = false;
 
     /**
@@ -46,6 +53,13 @@ public class CommandOptions implements ICommandOptions {
      */
     public boolean isHelpMode() {
         return mHelpMode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isFullHelpMode() {
+        return mFullHelpMode;
     }
 
     /**
@@ -79,4 +93,3 @@ public class CommandOptions implements ICommandOptions {
         return mMinLoopTime;
     }
 }
-

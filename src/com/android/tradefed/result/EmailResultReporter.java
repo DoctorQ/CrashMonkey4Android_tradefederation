@@ -18,6 +18,7 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.util.Email;
 import com.android.tradefed.util.Email.Message;
 
@@ -35,10 +36,12 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     private static final String LOG_TAG = "EmailResultReporter";
     private static final String DEFAULT_SUBJECT_TAG = "Tradefed";
 
-    @Option(name="sender", description="The envelope-sender address to use for the messages.")
+    @Option(name="sender", description="The envelope-sender address to use for the messages.",
+            importance = Importance.IF_UNSET)
     private String mSender = null;
 
-    @Option(name="destination", description="One or more destination addresses.")
+    @Option(name="destination", description="One or more destination addresses.",
+            importance = Importance.IF_UNSET)
     private Collection<String> mDestinations = new HashSet<String>();
 
     @Option(name = "subject-tag",

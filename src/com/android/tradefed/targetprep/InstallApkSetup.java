@@ -20,6 +20,7 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
@@ -36,7 +37,8 @@ public class InstallApkSetup implements ITargetPreparer {
     private static final String LOG_TAG = InstallApkSetup.class.getSimpleName();
 
     @Option(name = "apk-path", description =
-        "the filesystem path of the apk to install. Can be repeated.")
+        "the filesystem path of the apk to install. Can be repeated.",
+        importance = Importance.IF_UNSET)
     private Collection<File> mApkPaths = new ArrayList<File>();
 
     /**

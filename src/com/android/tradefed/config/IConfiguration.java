@@ -253,8 +253,10 @@ public interface IConfiguration {
     /**
      * Outputs a command line usage help text for this configuration to given printStream.
      *
+     * @param importantOnly if <code>true</code> only print help for the important options
      * @param out the {@link PrintStream} to use.
      * @throws ConfigurationException
      */
-    public void printCommandUsage(PrintStream out) throws ConfigurationException;
+    public void printCommandUsage(boolean importantOnly, PrintStream out)
+            throws ConfigurationException;
 }

@@ -21,6 +21,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
@@ -58,8 +59,9 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
     private String mTestModule = null;
 
     @Option(name = "iterations",
-            description="The number of stress test iterations per run.")
-    private int mNumIterations = -1;
+            description="The number of stress test iterations per run.",
+            importance = Importance.IF_UNSET)
+    private Integer mNumIterations = null;
 
     @Option(name = "runs",
             description="The number of stress test runs to perform.")
@@ -216,7 +218,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
         if (mDevice == null) {
             throw new IllegalArgumentException("Device has not been set");
         }
-        if (mNumIterations <= 0) {
+        if (mNumIterations == null || mNumIterations <= 0) {
             throw new IllegalArgumentException("number of iterations has not been set");
         }
 

@@ -244,11 +244,11 @@ public class ConfigurationFactory implements IConfigurationFactory {
      * {@inheritDoc}
      */
     @Override
-    public void printHelpForConfig(String[] args, PrintStream out) {
+    public void printHelpForConfig(String[] args, boolean importantOnly, PrintStream out) {
         try {
             IConfiguration config = internalCreateConfigurationFromArgs(args, new ArrayList<String>(
                     args.length));
-            config.printCommandUsage(out);
+            config.printCommandUsage(importantOnly, out);
         } catch (ConfigurationException e) {
             // config must not be specified. Print generic help
             printHelp(out);

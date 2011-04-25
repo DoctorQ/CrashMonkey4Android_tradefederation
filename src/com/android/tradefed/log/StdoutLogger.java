@@ -18,6 +18,7 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 
@@ -30,7 +31,7 @@ import java.io.IOException;
 public class StdoutLogger implements ILeveledLogOutput {
 
     @Option(name="log-level", description="minimum log level to display. Must be one of " +
-            LogUtil.LOG_LEVEL_LIST +".")
+            LogUtil.LOG_LEVEL_LIST +".", importance = Importance.ALWAYS)
     private String mLogLevel = LogLevel.INFO.getStringValue();
 
     /**

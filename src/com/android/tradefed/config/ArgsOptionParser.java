@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.config;
 
+import com.android.ddmlib.Log;
+
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,6 +128,7 @@ import java.util.ListIterator;
  * @see {@link OptionSetter}
  */
 public class ArgsOptionParser extends OptionSetter {
+    private static final String LOG_TAG = "ArgsOptionParser";
 
     static final String SHORT_NAME_PREFIX = "-";
     static final String OPTION_NAME_PREFIX = "--";
@@ -298,40 +301,77 @@ public class ArgsOptionParser extends OptionSetter {
     }
 
     /**
-     * Output help text for all {@link Option} fields in <param>optionObject</param>
+     * Output help text for all {@link Option} fields in <param>optionObject</param>.
+     * <p/>
+     * The help text for each option will be in the following format
+     * <pre>
+     *   [-option_shortname, --option_name]          [option_description] Default:
+     *   [current option field's value in optionObject]
+     * </pre>
+     * The 'Default..." text will be omitted if the option field is null or empty.
      *
+     * @param importantOnly if <code>true</code> only print help for the important options
      * @param optionObject the object to print help text for
      * @return a String containing user-friendly help text for all Option fields
      */
-    public static String getOptionHelp(Object optionObject) {
+    public static String getOptionHelp(boolean importantOnly, Object optionObject) {
         StringBuilder out = new StringBuilder();
         Collection<Field> optionFields = OptionSetter.getOptionFieldsForClass(
                 optionObject.getClass());
         String eol = System.getProperty("line.separator");
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
+            String defaultValue =  OptionSetter.getFieldValueAsString(field, optionObject);
             String optionNameHelp = buildOptionNameHelp(field, option);
-            out.append(optionNameHelp);
-            // insert appropriate whitespace between the name help and the description, to ensure
-            // consistent alignment
-            int wsChars = 0;
-            if (optionNameHelp.length() >= OPTION_DESCRIPTION_INDENT) {
-                // name help is too long, break description onto next line
+            if (shouldOutputHelpForOption(importantOnly, option, defaultValue)) {
+                out.append(optionNameHelp);
+                // insert appropriate whitespace between the name help and the description, to
+                // ensure consistent alignment
+                int wsChars = 0;
+                if (optionNameHelp.length() >= OPTION_DESCRIPTION_INDENT) {
+                    // name help is too long, break description onto next line
+                    out.append(eol);
+                    wsChars = OPTION_DESCRIPTION_INDENT;
+                } else {
+                    // insert enough whitespace so option.description starts at
+                    // OPTION_DESCRIPTION_INDENT
+                    wsChars = OPTION_DESCRIPTION_INDENT - optionNameHelp.length();
+                }
+                for (int i=0; i < wsChars; i++) {
+                    out.append(' ');
+                }
+                out.append(option.description());
+                out.append(getDefaultValueHelp(defaultValue));
                 out.append(eol);
-                wsChars = OPTION_DESCRIPTION_INDENT;
-            } else {
-                // insert enough whitespace so option.description starts at
-                // OPTION_DESCRIPTION_INDENT
-                wsChars = OPTION_DESCRIPTION_INDENT - optionNameHelp.length();
             }
-            for (int i=0; i < wsChars; i++) {
-                out.append(' ');
-            }
-            out.append(option.description());
-            out.append(getDefaultValueHelp(field, optionObject));
-            out.append(eol);
         }
         return out.toString();
+    }
+
+    /**
+     * Determine if help for given option should be displayed.
+     *
+     * @param importantOnly
+     * @param option
+     * @param defaultValue
+     * @return <code>true</code> if help for option should be displayed
+     */
+    private static boolean shouldOutputHelpForOption(boolean importantOnly, Option option,
+            String defaultValue) {
+        if (!importantOnly) {
+            return true;
+        }
+        switch (option.importance()) {
+            case NEVER:
+                return false;
+            case IF_UNSET:
+                return defaultValue == null;
+            case ALWAYS:
+                return true;
+        }
+        Log.e(LOG_TAG, String.format("Unrecognized importance setting '%s'",
+                option.importance().toString()));
+        return false;
     }
 
     /**
@@ -362,14 +402,12 @@ public class ArgsOptionParser extends OptionSetter {
     }
 
     /**
-     * Returns the help text describing the given field's default value in the optionObject.
+     * Returns the help text describing the given default value
      *
-     * @param field the {@link Field}
-     * @param optionObject the {@link Object} containing the {@link Field}
+     * @param defaultValue the default value
      * @return the help text, or an empty {@link String} if <param>field</param> has no value
      */
-    private static String getDefaultValueHelp(Field field, Object optionObject) {
-        Object defaultValue = OptionSetter.getFieldValueAsString(field, optionObject);
+    private static String getDefaultValueHelp(String defaultValue) {
         if (defaultValue == null) {
             return "";
         } else {

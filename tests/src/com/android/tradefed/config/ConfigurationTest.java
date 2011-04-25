@@ -332,7 +332,7 @@ public class ConfigurationTest extends TestCase {
         // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
-        mConfig.printCommandUsage(mockPrintStream);
+        mConfig.printCommandUsage(false, mockPrintStream);
 
         // verifying exact contents would be prone to high-maintenance, so instead, just validate
         // all expected names are present

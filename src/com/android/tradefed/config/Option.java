@@ -30,6 +30,15 @@ public @interface Option {
 
     static final char NO_SHORT_NAME = '0';
 
+    public enum Importance {
+        /** the option should never be treated as important */
+        NEVER,
+        /** the option should be treated as important only if it has no value */
+        IF_UNSET,
+        /** the option should always be treated as important */
+        ALWAYS;
+    }
+
     /**
      * The mandatory unique name for this option.
      * <p/>
@@ -54,4 +63,12 @@ public @interface Option {
      * User friendly description of the option.
      */
     String description() default "";
+
+    /**
+     * The importance of the option.
+     * <p/>
+     * An option deemed 'important' will be displayed in the abbreviated help output. Help for an
+     * unimportant option will only be displayed in the full help text.
+     */
+    Importance importance() default Importance.NEVER;
 }

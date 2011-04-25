@@ -20,6 +20,7 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.FileUtil;
@@ -40,7 +41,8 @@ public class TestAppInstallSetup implements ITargetPreparer {
     private static final String LOG_TAG = "TestAppInstallSetup";
 
     @Option(name = "test-file-name", description =
-        "the name of a test zip file to install on device. Can be repeated.")
+        "the name of a test zip file to install on device. Can be repeated.",
+        importance = Importance.IF_UNSET)
     private Collection<String> mTestFileNames = new ArrayList<String>();
 
     /**

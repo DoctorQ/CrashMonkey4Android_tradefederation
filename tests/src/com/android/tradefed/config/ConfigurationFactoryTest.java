@@ -155,14 +155,14 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
-     * Test {@link ConfigurationFactory#printHelpForArgs(String[], PrintStream))} when config
-     * referenced by args exists
+     * Test {@link ConfigurationFactory#printHelpForConfig(String[], boolean, PrintStream))} when
+     * config referenced by args exists
      */
-    public void testPrintHelpForArgs_configExists() {
+    public void testPrintHelpForConfig_configExists() {
         String[] args = new String[] {TEST_CONFIG};
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
-        mFactory.printHelpForConfig(args, mockPrintStream);
+        mFactory.printHelpForConfig(args, true, mockPrintStream);
 
         // verify the default configs name used is present
         final String usageString = outputStream.toString();

@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.config;
 
+import com.android.tradefed.config.Option.Importance;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,38 @@ public class ArgsOptionParserTest extends TestCase {
         @SuppressWarnings("unused")
         @Option(name=OPTION_NAME, description=OPTION_DESC)
         private String mMySubOption = "";
+    }
+
+    /**
+     * An option source for testing the {@link Option#importance()} settings
+     */
+    private static class ImportantOptionSource {
+
+        private static final String IMPORTANT_OPTION_NAME = "important_option";
+        private static final String IMPORTANT_UNSET_OPTION_NAME = "unset_important_option";
+        private static final String UNIMPORTANT_OPTION_NAME = "unimportant_option";
+
+        @SuppressWarnings("unused")
+        @Option(name = IMPORTANT_OPTION_NAME, description = IMPORTANT_OPTION_NAME,
+                importance = Importance.ALWAYS)
+        private String mImportantOption = "foo";
+
+        @SuppressWarnings("unused")
+        @Option(name = IMPORTANT_UNSET_OPTION_NAME, description = IMPORTANT_UNSET_OPTION_NAME,
+                importance = Importance.IF_UNSET)
+        private String mImportantUnsetOption = null;
+
+        @SuppressWarnings("unused")
+        @Option(name = UNIMPORTANT_OPTION_NAME, description = UNIMPORTANT_OPTION_NAME,
+                importance = Importance.NEVER)
+        private String mUnimportantOption = null;
+
+        ImportantOptionSource(String setOption) {
+            mImportantUnsetOption = setOption;
+        }
+
+        ImportantOptionSource() {
+        }
     }
 
     /**
@@ -326,11 +360,31 @@ public class ArgsOptionParserTest extends TestCase {
     * Test that help text is displayed for all fields
     */
    public void testGetOptionHelp() {
-       String help = ArgsOptionParser.getOptionHelp(new InheritedOptionSource());
+       String help = ArgsOptionParser.getOptionHelp(false, new InheritedOptionSource());
        assertTrue(help.contains(InheritedOptionSource.OPTION_NAME));
        assertTrue(help.contains(InheritedOptionSource.OPTION_DESC));
        assertTrue(help.contains(OneOptionSource.OPTION_NAME));
        assertTrue(help.contains(OneOptionSource.OPTION_DESC));
        assertTrue(help.contains(OneOptionSource.DEFAULT_VALUE));
+   }
+
+   /**
+    * Test displaying important only help text
+    */
+   public void testGetOptionHelp_important() {
+       String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource());
+       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
+       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
+       assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
+   }
+
+   /**
+    * Test that {@link Importance#IF_UNSET} {@link Option}s are hidden from help if set.
+    */
+   public void testGetOptionHelp_importantUnset() {
+       String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource("foo"));
+       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
+       assertFalse(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
+       assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
    }
 }

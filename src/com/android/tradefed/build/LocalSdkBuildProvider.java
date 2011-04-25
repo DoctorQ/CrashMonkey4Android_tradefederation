@@ -17,6 +17,7 @@ package com.android.tradefed.build;
 
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 
 import java.io.File;
 
@@ -27,11 +28,11 @@ import java.io.File;
 public class LocalSdkBuildProvider implements IBuildProvider {
 
     @Option(name = "sdk-build-path", description =
-            "the local filesystem path to a sdk build to test.")
+            "the local filesystem path to a sdk build to test.", importance = Importance.IF_UNSET)
     private File mLocalSdkPath = null;
 
     @Option(name = "adt-build-path", description =
-            "the local filesystem path to a adt build to test.")
+            "the local filesystem path to a adt build to test.", importance = Importance.IF_UNSET)
     private File mLocalAdtPath = null;
 
     /**

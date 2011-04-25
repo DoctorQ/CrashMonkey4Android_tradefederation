@@ -354,7 +354,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         try {
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(args);
             if (config.getCommandOptions().isHelpMode()) {
-                getConfigFactory().printHelpForConfig(args, System.out);
+                getConfigFactory().printHelpForConfig(args, true, System.out);
+            } else if (config.getCommandOptions().isFullHelpMode()) {
+                getConfigFactory().printHelpForConfig(args, false, System.out);
             } else {
                 CommandTracker cmdTracker = new CommandTracker(args, config.getCommandOptions());
                 ExecutableCommand cmdInstance = new  ExecutableCommand(cmdTracker, config);
@@ -363,7 +365,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
-            getConfigFactory().printHelpForConfig(args, System.out);
+            getConfigFactory().printHelpForConfig(args, true, System.out);
         }
     }
 

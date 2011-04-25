@@ -17,6 +17,7 @@ package com.android.tradefed.testtype;
 
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
@@ -30,10 +31,12 @@ import junit.framework.TestSuite;
 @OptionClass(alias = "host")
 public class HostTest implements IDeviceTest, IRemoteTest {
 
-    @Option(name="class", description="The JUnit Test to run.")
+    @Option(name="class", description="The JUnit Test to run.",
+            importance = Importance.IF_UNSET)
     private String mClassName;
 
-    @Option(name="method", description="The JUnit TestCase method to run.")
+    @Option(name="method", description="The JUnit TestCase method to run.",
+            importance = Importance.IF_UNSET)
     private String mMethodName;
 
     private ITestDevice mDevice = null;

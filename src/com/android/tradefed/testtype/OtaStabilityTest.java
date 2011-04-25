@@ -22,6 +22,7 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -80,8 +81,8 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
     private int mWaitInstallTime = 10;
 
     @Option(name = "shards", description = "Optional number of shards to split test into. " +
-            "Iterations will be split evenly among shards.")
-    private int mShards = 0;
+            "Iterations will be split evenly among shards.", importance = Importance.IF_UNSET)
+    private Integer mShards = null;
 
     /**
      * {@inheritDoc}
@@ -164,7 +165,7 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
      */
     @Override
     public Collection<IRemoteTest> split() {
-        if (mShards <= 1) {
+        if (mShards == null || mShards <= 1) {
             return null;
         }
         Collection<IRemoteTest> shards = new ArrayList<IRemoteTest>(mShards);

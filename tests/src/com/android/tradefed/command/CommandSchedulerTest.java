@@ -176,7 +176,8 @@ public class CommandSchedulerTest extends TestCase {
         EasyMock.expect(
                 mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(args))).andThrow(
                 new ConfigurationException(""));
-        mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(System.out));
+        mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(true),
+                EasyMock.eq(System.out));
         replayMocks();
         mScheduler.addCommand(args);
         verifyMocks();
@@ -189,9 +190,9 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mCommandOptions.setHelpMode(true);
         setCreateConfigExpectations(args, 1);
-        mCommandOptions.setHelpMode(true);
         // expect
-        mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(System.out));
+        mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(true),
+                EasyMock.eq(System.out));
         replayMocks();
         mScheduler.addCommand(args);
         verifyMocks();
