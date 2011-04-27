@@ -178,6 +178,17 @@ public class LogUtil {
         }
 
         /**
+         * The shim version of {@link Log#e(Throwable)}.
+         *
+         * @param t the {@link Throwable} to output.
+         * @param args The format string arguments
+         */
+        public static void e(Throwable t) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.e(getClassName(2), t);
+        }
+
+        /**
          * Return the simple classname from the {@code frame}th stack frame in the call path.
          * Note: this method does <emph>not</emph> check array bounds for the stack trace length.
          *

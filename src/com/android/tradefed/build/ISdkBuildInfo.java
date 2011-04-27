@@ -53,4 +53,24 @@ public interface ISdkBuildInfo extends IBuildInfo {
      */
     public void setSdkDir(File sdkDir, boolean deleteParent);
 
+    /**
+     * Helper method to get the absolute file path to the 'android' tool in this sdk build.
+     * <p/>
+     * A valid path must be provided to {@link #setSdkDir(File)} before calling.
+     *
+     * @return the absolute file path to the android tool.
+     * @throws IllegalStateException if sdkDir is not set
+     */
+    public String getAndroidToolPath();
+
+    /**
+     * Gets the list of targets installed in this SDK build.
+     * <p/>
+     * A valid path must be provided to {@link #setSdkDir(File)} before calling.
+     *
+     * @return a list of defined targets or <code>null</code> if targets could not be retrieved
+     * @throws IllegalStateException if sdkDir is not set
+     */
+    public String[] getSdkTargets();
+
 }

@@ -18,6 +18,8 @@ package com.android.tradefed.build;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 
@@ -27,12 +29,16 @@ import java.io.File;
 @OptionClass(alias = "local-sdk")
 public class LocalSdkBuildProvider implements IBuildProvider {
 
-    @Option(name = "sdk-build-path", description =
-            "the local filesystem path to a sdk build to test.", importance = Importance.IF_UNSET)
-    private File mLocalSdkPath = null;
+    private static final String SDK_OPTION_NAME = "sdk-path";
 
-    @Option(name = "adt-build-path", description =
-            "the local filesystem path to a adt build to test.", importance = Importance.IF_UNSET)
+    @Option(name = SDK_OPTION_NAME, description =
+            "the local filesystem path to sdk root directory to test.",
+            importance = Importance.IF_UNSET)
+    private File mLocalSdkPath = getSdkFromBuildEnv();
+
+    @Option(name = "adt-path", description =
+            "the local filesystem path to a adt directory to test.",
+            importance = Importance.IF_UNSET)
     private File mLocalAdtPath = null;
 
     /**
@@ -42,7 +48,14 @@ public class LocalSdkBuildProvider implements IBuildProvider {
     public IBuildInfo getBuild() throws BuildRetrievalError {
         ISdkBuildInfo sdkBuild = new SdkBuildInfo(0, "local-sdk", "sdk");
         if (mLocalSdkPath == null) {
-            throw new IllegalArgumentException("missing --sdk-build-path option");
+            throw new IllegalArgumentException(String.format("missing --%s option",
+                    SDK_OPTION_NAME));
+        }
+        if (!mLocalSdkPath.exists()) {
+            throw new IllegalArgumentException(String.format("SDK path '%s' does not exist. " +
+                    "Please provide a valid sdk via --%s, or ensure you are running " +
+                    "tradefed in a Android build env with a built SDK",
+                    mLocalSdkPath.getAbsolutePath(), SDK_OPTION_NAME));
         }
         // allow a null adt-build-path
         sdkBuild.setSdkDir(mLocalSdkPath);
@@ -64,5 +77,39 @@ public class LocalSdkBuildProvider implements IBuildProvider {
     @Override
     public void cleanUp(IBuildInfo info) {
         // ignore
+    }
+
+    /**
+     * Return the output sdk location if running in an Android source tree build environment,
+     * Otherwise return null.
+     * <p/>
+     * Assumes built SDK will be in following path:
+     * <p/>
+     * <i>
+     * ${ANDROID_BUILD_TOP}/out/host/{os.name}-x86/sdk/android-sdk_eng.{user.name}_{os.name}-x86
+     * </i>
+     * @return
+     */
+    private File getSdkFromBuildEnv() {
+        String buildRoot = System.getenv("ANDROID_BUILD_TOP");
+
+        if (buildRoot != null) {
+            String osName = System.getProperty("os.name");
+            String osPath = null;
+            if (osName.contains("Mac")) {
+                osPath = "darwin-x86";
+            } else if (osName.contains("Linux")) {
+                osPath = "linux-x86";
+            } else {
+                CLog.w(String.format("Cannot determine sdk build path due to unrecognized os '%s'",
+                        osName));
+                return null;
+            }
+            String userName = System.getProperty("user.name");
+            String path = FileUtil.getPath(buildRoot, "out", "host", osPath, "sdk",
+                    String.format("android-sdk_eng.%s_%s", userName, osPath));
+            return new File(path);
+        }
+        return null;
     }
 }

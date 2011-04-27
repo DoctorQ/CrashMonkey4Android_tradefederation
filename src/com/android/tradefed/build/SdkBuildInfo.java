@@ -15,7 +15,12 @@
  */
 package com.android.tradefed.build;
 
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +33,8 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
     private File mAdtDir = null;
     private File mSdkDir = null;
     private boolean mDeleteSdkDirParent;
+
+    private static final int ANDROID_TIMEOUT_MS = 15*1000;
 
     /**
      * Creates a {@link SdkBuildInfo} using default attribute values.
@@ -124,5 +131,41 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
         } catch (IOException e) {
             throw new RuntimeException("Could not clone sdk build", e);
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getAndroidToolPath() {
+        if (getSdkDir() == null) {
+            throw new IllegalStateException("sdk dir is not set");
+        }
+        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools", "android");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String[] getSdkTargets() {
+        CommandResult result = getRunUtil().runTimedCmd(ANDROID_TIMEOUT_MS,
+                getAndroidToolPath(), "list", "targets", "--compact");
+        if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
+            CLog.e(String.format(
+                    "Unable to get list of SDK targets using %s. Result %s, err %s",
+                    getAndroidToolPath(), result.getStatus(), result.getStderr()));
+            return null;
+        }
+        return result.getStdout().split("\n");
+    }
+
+    /**
+     * Gets the {@link IRunUtil} instance to use.
+     * <p/>
+     * Exposed for unit testing
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getInstance();
     }
 }
