@@ -180,9 +180,11 @@ class CommandFileParser {
 
                         mLongMacros.put(name, expansion);
                     } else if (isLineIncludeDirective(lArgs)) {
-                        Log.d(LOG_TAG, String.format("Got an include directive for file %s",
-                                lArgs.get(1)));
-                        scanFile(new File(lArgs.get(1)));
+                        File parent = file.getParentFile();
+                        Log.d(LOG_TAG, String.format(
+                                "Got an include directive for file %s, using '%s' for parent dir",
+                                lArgs.get(1), parent));
+                        scanFile(new File(parent, lArgs.get(1)));
                     } else {
                         mLines.add(lArgs);
                     }

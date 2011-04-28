@@ -35,7 +35,8 @@ public class CommandFileParserTest extends TestCase {
     /** the {@link CommandFileParser} under test, with all dependencies mocked out */
     private CommandFileParser mCommandFile;
     private String mMockFileData = "";
-    private File mMockFile = new File("tmp");
+    private static final File MOCK_FILE_PATH = new File("path/to/");
+    private File mMockFile = new File(MOCK_FILE_PATH, "original.txt");
     private ICommandScheduler mMockScheduler;
 
     @Override
@@ -295,7 +296,7 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs = new String[] {"--foo", "bar"};
 
         CommandFileParser commandFile = new CommandFileParser() {
-            private boolean showInclude = false;
+            private boolean showInclude = true;
             @Override
             BufferedReader createCommandFileReader(File file) {
                 if(showInclude) {
@@ -377,6 +378,81 @@ public class CommandFileParserTest extends TestCase {
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Verify that the path of the file referenced by an INCLUDE directive is considered relative to
+     * the location of the referencing file.
+     */
+    public void testMacroParserInclude_parentDir() throws Exception {
+        // When we pass an unqualified filename, expect it to be taken relative to mMockFile's
+        // parent directory
+        final String includeFileName = "somefile.txt";
+        final File expectedFile = new File(MOCK_FILE_PATH, includeFileName);
+
+        final String mockFileData = String.format("INCLUDE %s\n", includeFileName);
+        final String mockIncludedFileData = "--foo bar\n";
+        String[] expectedArgs = new String[] {"--foo", "bar"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            private boolean showInclude = true;
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if (mMockFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else if (expectedFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockIncludedFileData));
+                } else {
+                    fail(String.format("Received unexpected request for contents of file %s", file));
+                    // shouldn't actually reach here
+                    throw new RuntimeException();
+                }
+            }
+        };
+
+
+        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Verify that if the original file is relative to no directory (aka ./), that the referenced
+     * file is also relative to no directory.
+     */
+    public void testMacroParserInclude_noParentDir() throws Exception {
+        final File mockFile = new File("original.txt");
+        final String includeFileName = "somefile.txt";
+        final File expectedFile = new File(includeFileName);
+
+        final String mockFileData = String.format("INCLUDE %s\n", includeFileName);
+        final String mockIncludedFileData = "--foo bar\n";
+        String[] expectedArgs = new String[] {"--foo", "bar"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            private boolean showInclude = true;
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if (mockFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else if (expectedFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockIncludedFileData));
+                } else {
+                    fail(String.format("Received unexpected request for contents of file %s", file));
+                    // shouldn't actually reach here
+                    throw new RuntimeException();
+                }
+            }
+        };
+
+
+        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mockFile, mMockScheduler);
         EasyMock.verify(mMockScheduler);
     }
 
