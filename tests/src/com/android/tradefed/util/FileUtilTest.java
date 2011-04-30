@@ -15,12 +15,8 @@
  */
 package com.android.tradefed.util;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.util.zip.ZipFile;
 
 import junit.framework.TestCase;
 
@@ -28,145 +24,6 @@ import junit.framework.TestCase;
  * Unit tests for {@link FileUtil}
  */
 public class FileUtilTest extends TestCase {
-
-    /**
-     * Simple test for {@link FileUtil#setGroupReadWritable(File)}.
-     */
-    public void testSetGroupReadWritable() throws IOException {
-        File tmpFile = FileUtil.createTempFile("foo", "txt");
-        try {
-            tmpFile.setReadable(false);
-            tmpFile.setWritable(false);
-            FileUtil.setGroupReadWritable(tmpFile);
-            assertTrue(tmpFile.canRead());
-            assertTrue(tmpFile.canWrite());
-        } finally {
-            tmpFile.delete();
-        }
-    }
-
-    /**
-     * Simple test for {@link FileUtil#createTempDir(String)}.
-     */
-    public void testCreateTempDir() throws IOException {
-        File tmpDir = FileUtil.createTempDir("foo");
-        try {
-            assertTrue(tmpDir.exists());
-            assertTrue(tmpDir.isDirectory());
-        } finally {
-            tmpDir.delete();
-        }
-    }
-
-    /**
-     * Simple test for {@link FileUtil#createTempDir(String, File)}.
-     */
-    public void testCreateTempDir_parentFile() throws IOException {
-        File tmpParentDir = FileUtil.createTempDir("foo");
-       try {
-            File childDir = FileUtil.createTempDir("foochild", tmpParentDir);
-            assertTrue(childDir.exists());
-            assertTrue(childDir.isDirectory());
-            assertEquals(tmpParentDir.getAbsolutePath(), childDir.getParent());
-        } finally {
-            FileUtil.recursiveDelete(tmpParentDir);
-        }
-    }
-
-    /**
-     * Simple test for {@link FileUtil#createTempFile(String, String)}.
-     */
-    public void testCreateTempFile() throws IOException {
-        File tmpFile = FileUtil.createTempFile("foo", ".txt");
-        try {
-            assertTrue(tmpFile.exists());
-            assertTrue(tmpFile.isFile());
-            assertTrue(tmpFile.getName().startsWith("foo"));
-            assertTrue(tmpFile.getName().endsWith(".txt"));
-        } finally {
-            tmpFile.delete();
-        }
-    }
-
-    /**
-     * Simple test for {@link FileUtil#createTempFile(String, String, File)}.
-     */
-    public void testCreateTempFile_parentDir() throws IOException {
-        File tmpParentDir = FileUtil.createTempDir("foo");
-
-        try {
-            File tmpFile = FileUtil.createTempFile("foo", ".txt", tmpParentDir);
-            assertTrue(tmpFile.exists());
-            assertTrue(tmpFile.isFile());
-            assertTrue(tmpFile.getName().startsWith("foo"));
-            assertTrue(tmpFile.getName().endsWith(".txt"));
-            assertEquals(tmpParentDir.getAbsolutePath(), tmpFile.getParent());
-        } finally {
-            FileUtil.recursiveDelete(tmpParentDir);
-        }
-
-    }
-
-    /**
-     * Simple test method for {@link FileUtil#writeToFile(InputStream, File)}.
-     */
-    public void testWriteToFile() throws IOException {
-        final String testContents = "this is the temp file test data";
-        InputStream input = new ByteArrayInputStream(testContents.getBytes());
-        File tmpFile = FileUtil.createTempFile("foo", ".txt");
-        try {
-            FileUtil.writeToFile(input, tmpFile);
-            String readContents = StreamUtil.getStringFromStream(new FileInputStream(tmpFile));
-            assertEquals(testContents, readContents);
-        } finally {
-            tmpFile.delete();
-        }
-    }
-
-    public void testRecursiveDelete() throws IOException {
-        File tmpParentDir = FileUtil.createTempDir("foo");
-        File childDir = FileUtil.createTempDir("foochild", tmpParentDir);
-        File subFile = FileUtil.createTempFile("foo", ".txt", childDir);
-        FileUtil.recursiveDelete(tmpParentDir);
-        assertFalse(subFile.exists());
-        assertFalse(childDir.exists());
-        assertFalse(tmpParentDir.exists());
-    }
-
-    /**
-     * Test creating then extracting a zip file
-     *
-     * @throws IOException
-     */
-    public void testCreateAndExtractZip() throws IOException {
-        File tmpParentDir = FileUtil.createTempDir("foo");
-        File zipFile = null;
-        File extractedDir = FileUtil.createTempDir("extract-foo");
-        try {
-            File childDir = new File(tmpParentDir, "foochild");
-            assertTrue(childDir.mkdir());
-            File subFile = new File(childDir, "foo.txt");
-            FileUtil.writeToFile("contents", subFile);
-            zipFile = FileUtil.createZip(tmpParentDir);
-            FileUtil.extractZip(new ZipFile(zipFile), extractedDir);
-
-            // assert all contents of original zipped dir are extracted
-            File extractedParentDir = new File(extractedDir, tmpParentDir.getName());
-            File extractedChildDir = new File(extractedParentDir, childDir.getName());
-            File extractedSubFile = new File(extractedChildDir, subFile.getName());
-            assertTrue(extractedParentDir.exists());
-            assertTrue(extractedChildDir.exists());
-            assertTrue(extractedSubFile.exists());
-            assertTrue(FileUtil.compareFileContents(subFile, extractedSubFile));
-        } finally {
-            FileUtil.recursiveDelete(tmpParentDir);
-            FileUtil.recursiveDelete(extractedDir);
-            if (zipFile != null) {
-                zipFile.delete();
-            }
-        }
-    }
-
     public void testGetExtension() {
         assertEquals("", FileUtil.getExtension("filewithoutext"));
         assertEquals(".txt", FileUtil.getExtension("file.txt"));
@@ -220,23 +77,5 @@ public class FileUtilTest extends TestCase {
         File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
         assertTrue(tmpFile.getAbsolutePath().contains("userdata"));
         assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
-    }
-
-    public void testRecursiveCopy() throws IOException {
-        File tmpParentDir = FileUtil.createTempDir("foo");
-        File childDir = FileUtil.createTempDir("foochild", tmpParentDir);
-        File subFile = FileUtil.createTempFile("foo", ".txt", childDir);
-        FileUtil.writeToFile("foo", subFile);
-        File destDir = FileUtil.createTempDir("dest");
-        try {
-            FileUtil.recursiveCopy(tmpParentDir, destDir);
-            File subFileCopy = new File(destDir, String.format("%s%s%s", childDir.getName(),
-                    File.separator, subFile.getName()));
-            assertTrue(subFileCopy.exists());
-            assertTrue(FileUtil.compareFileContents(subFile, subFileCopy));
-        } finally {
-            FileUtil.recursiveDelete(tmpParentDir);
-            FileUtil.recursiveDelete(destDir);
-        }
     }
 }

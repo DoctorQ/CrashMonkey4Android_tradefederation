@@ -84,12 +84,7 @@ public class LogFileSaver implements ILogFileSaver {
                         "already exists.", buildReportDir.getAbsolutePath()));
             }
         } else {
-            if (buildReportDir.mkdirs()) {
-                if (!FileUtil.setGroupReadWritable(buildReportDir)) {
-                    Log.w(LOG_TAG, String.format(
-                            "Failed to make  build-specific output dir %s group writable.",
-                            buildReportDir.getAbsolutePath()));
-                }
+            if (FileUtil.mkdirsRWX(buildReportDir)) {
                 return buildReportDir;
             } else {
                 Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +
