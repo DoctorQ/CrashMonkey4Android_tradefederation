@@ -100,10 +100,30 @@ public class StreamUtil {
     /**
      * Closes given output stream.
      *
-     * @param outStream the {@link InputStream}. No action taken if outStream is null.
+     * @param outStream the {@link OutputStream}. No action taken if outStream is null.
      */
     public static void closeStream(OutputStream outStream) {
         if (outStream != null) {
+            try {
+                outStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Attempts to flush the given output stream, and then closes it.
+     *
+     * @param outStream the {@link OutputStream}. No action taken if outStream is null.
+     */
+    public static void flushAndCloseStream(OutputStream outStream) {
+        if (outStream != null) {
+            try {
+                outStream.flush();
+            } catch (IOException e) {
+                // ignore
+            }
             try {
                 outStream.close();
             } catch (IOException e) {

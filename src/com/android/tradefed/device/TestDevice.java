@@ -1152,7 +1152,7 @@ class TestDevice implements IManagedTestDevice {
          * {@inheritDoc}
          */
         public synchronized void addOutput(byte[] data, int offset, int length) {
-            if (mOutStream == null) {
+            if (mIsCancelled || mOutStream == null) {
                 return;
             }
             try {
@@ -1216,14 +1216,11 @@ class TestDevice implements IManagedTestDevice {
             mIsCancelled = true;
             interrupt();
             closeLogStream();
-            if (mTmpFile != null) {
-                mTmpFile.delete();
-                mTmpFile = null;
-            }
-            if (mPreviousTmpFile != null) {
-                mPreviousTmpFile.delete();
-                mPreviousTmpFile = null;
-            }
+
+            FileUtil.deleteFile(mTmpFile);
+            mTmpFile = null;
+            FileUtil.deleteFile(mPreviousTmpFile);
+            mPreviousTmpFile = null;
         }
 
         /**
@@ -1344,33 +1341,6 @@ class TestDevice implements IManagedTestDevice {
             } catch (IOException e) {
                 Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
                         getSerialNumber()));
-            }
-        }
-
-        /**
-         * Override finalize to determine when a LogcatReceiver is being destroyed without having
-         * been cleaned up.  This is temporary as we try to hunt down file leaks.
-         */
-        @Override
-        protected void finalize() throws Throwable {
-            super.finalize();
-            String name = String.format("%s[%s]", LOG_TAG, getSerialNumber());
-            Log.d(LOG_TAG, String.format("%s in finalizer", name));
-            if (!mIsCancelled) {
-                Log.e(LOG_TAG, String.format("%s was not cancelled!", name));
-                cancel();
-            }
-            if (mIsCancelled && (mTmpFile != null || mPreviousTmpFile != null)) {
-                Log.e(LOG_TAG, String.format("%s was cancelled, but tmpfile(%s) or " +
-                        "prevtmpfile(%s) wasn't closed!", mTmpFile, mPreviousTmpFile));
-                if (mTmpFile != null) {
-                    mTmpFile.delete();
-                    mTmpFile = null;
-                }
-                if (mPreviousTmpFile != null) {
-                    mPreviousTmpFile.delete();
-                    mPreviousTmpFile = null;
-                }
             }
         }
     }
