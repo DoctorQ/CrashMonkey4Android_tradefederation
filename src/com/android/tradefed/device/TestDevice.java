@@ -1296,6 +1296,13 @@ class TestDevice implements IManagedTestDevice {
          * @throws FileNotFoundException
          */
         private synchronized void createTmpFile() throws IOException, FileNotFoundException {
+            if (mIsCancelled) {
+                Log.w(LOG_TAG, String.format(
+                        "Attempted to createTmpFile() after cancel() for device %s, ignoring.",
+                        getSerialNumber()));
+                return;
+            }
+
             closeLogStream();
             if (mPreviousTmpFile != null) {
                 mPreviousTmpFile.delete();
