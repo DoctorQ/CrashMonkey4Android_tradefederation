@@ -66,8 +66,52 @@ public class FileUtil {
     }
 
     /**
+     * Method to create a chain of directories, and set them all group execute/read/writable as they
+     * are created, by calling {@link chmodGroupRWX}.  Essentially a combination of
+     * {@link File.mkdirs} and {@link setGroupRWX}.
+     *
+     * @param file the name of the directory to create, possibly with containing directories that
+     *        don't yet exist.
+     * @returns {@code true} if {@code file} exists and is a directory, {@code false} otherwise.
+     */
+    public static boolean mkdirsRWX(File file) {
+        File parent = file.getParentFile();
+
+        if (parent != null && !parent.isDirectory()) {
+            // parent doesn't exist.  recurse upward, which should both mkdir and chmod
+            if (!mkdirsRWX(parent)) {
+                // Couldn't mkdir parent, fail
+                Log.w(LOG_TAG, String.format("Failed to mkdir parent dir %s.", parent));
+                return false;
+            }
+        }
+
+        // by this point the parent exists.  Try to mkdir file
+        if (file.isDirectory() || file.mkdir()) {
+            // file should exist.  Try chmod and complain if that fails, but keep going
+            boolean setPerms = chmodGroupRWX(file);
+            if (!setPerms) {
+                Log.w(LOG_TAG, String.format("Failed to set dir %s to be group accessible.", file));
+            }
+        }
+
+        return file.isDirectory();
+    }
+
+    public static boolean chmod(File file, String perms) {
+        Log.d(LOG_TAG, String.format("Attempting to chmod %s to %s",
+                file.getAbsolutePath(), perms));
+        CommandResult result = RunUtil.getInstance().runTimedCmd(10*1000, "chmod", perms,
+                file.getAbsolutePath());
+        return result.getStatus().equals(CommandStatus.SUCCESS);
+    }
+
+    /**
      * Performs a best effort attempt to make given file group readable and writable.
-     * <p/>
+     * <p />
+     * Note that the execute permission is required to make directories accessible.  See
+     * {@link chmodGroupRWX}.
+     * <p/ >
      * If 'chmod' system command is not supported by underlying OS, will set file to writable by
      * all.
      *
@@ -75,17 +119,35 @@ public class FileUtil {
      * @returns <code>true</code> if file was successfully made group writable, <code>false</code>
      *          otherwise
      */
-    public static boolean setGroupReadWritable(File file) {
-        Log.d(LOG_TAG, String.format("Attempting to make %s group writable",
-                file.getAbsolutePath()));
-        CommandResult result = RunUtil.getInstance().runTimedCmd(10*1000, "chmod", "ug+rw",
-                file.getAbsolutePath());
-        // TODO: make parent directories writable too ?
-        if (result.getStatus().equals(CommandStatus.SUCCESS)) {
+    public static boolean chmodGroupRW(File file) {
+        if (chmod(file, "ug+rw")) {
             return true;
         } else {
+            Log.d(LOG_TAG, String.format("Failed chmod; attempting to set %s globally RW",
+                    file.getAbsolutePath()));
             return file.setWritable(true, false /* false == writable for all */) &&
-                file.setReadable(true, false /* false == readable for all */);
+                    file.setReadable(true, false /* false == readable for all */);
+        }
+    }
+
+    /**
+     * Performs a best effort attempt to make given file group executable, readable, and writable.
+     * <p/ >
+     * If 'chmod' system command is not supported by underlying OS, will attempt to set permissions
+     * for all users.
+     *
+     * @param file the {@link File} to make owner and group writable
+     * @returns <code>true</code> if permissions were set successfully, <code>false</code> otherwise
+     */
+    public static boolean chmodGroupRWX(File file) {
+        if (chmod(file, "ug+rwx")) {
+            return true;
+        } else {
+            Log.d(LOG_TAG, String.format("Failed chmod; attempting to set %s globally RWX",
+                    file.getAbsolutePath()));
+            return file.setExecutable(true, false /* false == executable for all */) &&
+                    file.setWritable(true, false /* false == writable for all */) &&
+                    file.setReadable(true, false /* false == readable for all */);
         }
     }
 
