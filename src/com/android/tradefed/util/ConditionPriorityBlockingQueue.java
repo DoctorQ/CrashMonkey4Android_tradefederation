@@ -297,7 +297,12 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      * Removes all elements from this queue.
      */
     public void clear() {
-        mList.clear();
+        mLock.lock();
+        try {
+            mList.clear();
+        } finally {
+            mLock.unlock();
+        }
     }
 
     /**
@@ -333,6 +338,11 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      *         otherwise.
      */
     public boolean remove(T object) {
-        return mList.remove(object);
+        mLock.lock();
+        try {
+            return mList.remove(object);
+        } finally {
+            mLock.unlock();
+        }
     }
 }
