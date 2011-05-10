@@ -476,8 +476,6 @@ public class Configuration implements IConfiguration {
     @Override
     public void printCommandUsage(boolean importantOnly, PrintStream out)
             throws ConfigurationException {
-        out.println("Usage: [options] <configuration_name OR configuration xml file path>");
-        out.println();
         out.println(String.format("'%s' configuration: %s", getName(), getDescription()));
         out.println();
         if (importantOnly) {
