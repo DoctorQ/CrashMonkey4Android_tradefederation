@@ -107,11 +107,24 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             runner.setTestTimeout(mTestTimeout);
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
-            // use a listener filter, to report the test as failed if the test run fails with no
-            // tests executed
-            TestTrackingListener trackingListener = new TestTrackingListener(listener, testToRun);
-            runner.run(trackingListener);
+            runTest(runner, listener, testToRun);
         }
+    }
+
+    private void runTest(InstrumentationTest runner, ITestInvocationListener listener,
+            TestIdentifier testToRun) throws DeviceNotAvailableException {
+        // use a listener filter, to track if the test failed to run
+        TestTrackingListener trackingListener = new TestTrackingListener(listener, testToRun);
+        for (int i=1; i <= 3; i++) {
+            runner.run(trackingListener);
+            if (trackingListener.didTestRun()) {
+                return;
+            } else {
+                Log.w(LOG_TAG, String.format("Expected test %s did not run on attempt %d of 3",
+                        testToRun, i));
+            }
+        }
+        trackingListener.markTestAsFailed();
     }
 
     private static class TestTrackingListener extends ResultForwarder {
@@ -119,12 +132,20 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
         private String mRunErrorMsg = null;
         private final TestIdentifier mExpectedTest;
         private boolean mDidTestRun = false;
+        private String mRunName;
 
         public TestTrackingListener(ITestInvocationListener listener,
                 TestIdentifier testToRun) {
             super(listener);
             mExpectedTest = testToRun;
         }
+
+        @Override
+        public void testRunStarted(String runName, int testCount) {
+            super.testRunStarted(runName, testCount);
+            mRunName = runName;
+        }
+
 
         @Override
         public void testRunFailed(String errorMessage) {
@@ -144,19 +165,21 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             }
         }
 
+        public boolean didTestRun() {
+            return mDidTestRun;
+        }
+
         @SuppressWarnings("unchecked")
-        @Override
-        public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-            if (mRunErrorMsg != null && !mDidTestRun) {
-                Log.d(LOG_TAG, String.format(
-                        "Test %s was not executed, but run failed. Reporting as a test failure",
-                        mExpectedTest));
-                super.testStarted(mExpectedTest);
-                super.testFailed(TestFailure.ERROR, mExpectedTest, String.format(
-                        "Test run failed: %s", mRunErrorMsg));
-                super.testEnded(mExpectedTest, Collections.EMPTY_MAP);
+        public void markTestAsFailed() {
+            super.testRunStarted(mRunName, 1);
+            super.testStarted(mExpectedTest);
+            super.testFailed(TestFailure.ERROR, mExpectedTest, String.format(
+                    "Test failed to run. Test run failed due to : %s", mRunErrorMsg));
+            if (mRunErrorMsg != null) {
+                super.testRunFailed(mRunErrorMsg);
             }
-            super.testRunEnded(elapsedTime, runMetrics);
+            super.testEnded(mExpectedTest, Collections.EMPTY_MAP);
+            super.testRunEnded(0, Collections.EMPTY_MAP);
         }
     }
 }
