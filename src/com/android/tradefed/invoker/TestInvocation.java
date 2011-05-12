@@ -255,7 +255,7 @@ public class TestInvocation implements ITestInvocation {
         msg.append(" on device ");
         msg.append(device.getSerialNumber());
         Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg.toString());
-        mStatus = String.format("running %s on build %d", info.getTestTag(), info.getBuildId());
+        mStatus = String.format("running %s on build %s", info.getTestTag(), info.getBuildId());
     }
 
     /**
@@ -287,7 +287,7 @@ public class TestInvocation implements ITestInvocation {
             }
             runTests(device, info, config, rescheduler);
         } catch (BuildError e) {
-            CLog.w("Build %d failed on device %s. Reason: %s", info.getBuildId(),
+            CLog.w("Build %s failed on device %s. Reason: %s", info.getBuildId(),
                     device.getSerialNumber(), e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
@@ -372,7 +372,7 @@ public class TestInvocation implements ITestInvocation {
                     resumeConfig.setLogOutput(config.getLogOutput().clone());
                     boolean canReschedule = rescheduler.scheduleConfig(resumeConfig);
                     if (!canReschedule) {
-                        CLog.i("Cannot reschedule resumed config for build %d. Cleaning up build.",
+                        CLog.i("Cannot reschedule resumed config for build %s. Cleaning up build.",
                                 info.getBuildId());
                         resumeConfig.getBuildProvider().cleanUp(clonedBuild);
                     }

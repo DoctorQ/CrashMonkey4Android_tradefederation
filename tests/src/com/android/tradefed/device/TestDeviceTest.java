@@ -35,6 +35,8 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
@@ -43,8 +45,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TestDevice}.
@@ -931,8 +931,9 @@ public class TestDeviceTest extends TestCase {
      * Test {@link TestDevice#reboot()} attempts a recovery upon failure
      */
     public void testRebootRecovers() throws DeviceNotAvailableException {
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockIDevice);
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(null);
-        mMockRecovery.recoverDevice(mMockMonitor);
+        mMockRecovery.recoverDevice(mMockMonitor, false);
         replayMocks();
         mRecoveryTestDevice.reboot();
         verifyMocks();

@@ -47,7 +47,7 @@ public class EmailResultReporterTest extends TestCase {
     public void testInvocationEnded_empty() throws IllegalArgumentException, IOException {
         mMockMailer.send((Message)EasyMock.anyObject());
         EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo(888, "mytest", "mybuild"));
+        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
         mEmailReporter.invocationEnded(0);
         EasyMock.verify(mMockMailer);
@@ -60,7 +60,7 @@ public class EmailResultReporterTest extends TestCase {
     public void testInvocationEnded_onFailure() throws IllegalArgumentException, IOException {
         mEmailReporter.setSendOnlyOnInvocationFailure(true);
         EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo(888, "mytest", "mybuild"));
+        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
         mEmailReporter.invocationEnded(0);
         EasyMock.verify(mMockMailer);
@@ -76,7 +76,7 @@ public class EmailResultReporterTest extends TestCase {
         mMockMailer.send(EasyMock.capture(msgCapture));
         mEmailReporter.setSendOnlyOnInvocationFailure(true);
         EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo(888, "mytest", "mybuild"));
+        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
         mEmailReporter.invocationFailed(new BuildError("boot failed"));
         mEmailReporter.invocationEnded(0);

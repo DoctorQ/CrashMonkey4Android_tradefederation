@@ -130,7 +130,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
      * @param buildId the build id of current build. Used for logging purposes
      * @throws DeviceNotAvailableException, BuildError
      */
-    private void waitForBootComplete(ITestDevice device, int buildId)
+    private void waitForBootComplete(ITestDevice device, String buildId)
             throws DeviceNotAvailableException, BuildError {
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < mDeviceBootTime) {
@@ -141,7 +141,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             }
             getRunUtil().sleep(getDeviceBootPollTimeMs());
         }
-        throw new BuildError(String.format("Device %s running build %d did not boot after %d ms",
+        throw new BuildError(String.format("Device %s running build %s did not boot after %d ms",
                 device.getSerialNumber(), buildId, mDeviceBootTime));
     }
 

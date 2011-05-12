@@ -53,7 +53,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
      */
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
-        Log.i(LOG_TAG, String.format("Flashing device %s with build %d", device.getSerialNumber(),
+        Log.i(LOG_TAG, String.format("Flashing device %s with build %s", device.getSerialNumber(),
                 deviceBuild.getBuildId()));
 
         // TODO could add a check for bootloader versions and install
@@ -74,12 +74,12 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         // FIXME same high level logic as in
         // FastbootDeviceFlasher#checkAndFlashSystem, could be de-duped
         if (device.getBuildId() == deviceBuild.getBuildId()) {
-            Log.i(LOG_TAG, String.format("System is already version %d, skipping install",
+            Log.i(LOG_TAG, String.format("System is already version %s, skipping install",
                     device.getBuildId()));
             // reboot
             return false;
         }
-        Log.i(LOG_TAG, String.format("Flashing system %d", deviceBuild.getBuildId()));
+        Log.i(LOG_TAG, String.format("Flashing system %s", deviceBuild.getBuildId()));
         File otaPackageFile = deviceBuild.getOtaPackageFile();
         if (otaPackageFile == null) {
             throw new TargetSetupError("No OTA package file present for build "

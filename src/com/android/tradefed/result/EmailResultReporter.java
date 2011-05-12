@@ -137,7 +137,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return A {@link String} containing the subject to use for an email report
      */
     protected String generateEmailSubject() {
-        return String.format("%s result for %s on build %d: %s", mSubjectTag,
+        return String.format("%s result for %s on build %s: %s", mSubjectTag,
                 getBuildInfo().getTestTag(), getBuildInfo().getBuildId(), getInvocationStatus());
     }
 

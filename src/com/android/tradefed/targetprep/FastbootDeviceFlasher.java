@@ -79,11 +79,11 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
 
-        CLog.i("Flashing device %s with build %d", device.getSerialNumber(),
+        CLog.i("Flashing device %s with build %s", device.getSerialNumber(),
                 deviceBuild.getBuildId());
 
         // get system build id before booting into fastboot
-        int systemBuildId = device.getBuildId();
+        String systemBuildId = device.getBuildId();
 
         device.rebootIntoBootloader();
 
@@ -390,20 +390,20 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      * Regardless of path chosen, after method execution device should be booting into userspace.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param currentBuildId the current build id running on device
+     * @param systemBuildId the current build id running on device
      * @param deviceBuild the {@link IDeviceBuildInfo} that contains the system image to flash
      * @return <code>true</code> if system was flashed, <code>false</code> if it was skipped
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash bootloader
      */
-    protected boolean checkAndFlashSystem(ITestDevice device, int currentBuildId,
+    protected boolean checkAndFlashSystem(ITestDevice device, String systemBuildId,
             IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
-        if (currentBuildId != deviceBuild.getBuildId()) {
-            CLog.i("Flashing system %d", deviceBuild.getBuildId());
+        if (systemBuildId != null && ! systemBuildId.equals(deviceBuild.getBuildId())) {
+            CLog.i("Flashing system %s", deviceBuild.getBuildId());
             flashSystem(device, deviceBuild);
             return true;
         } else {
-            CLog.i("System is already version %d, skipping flashing", currentBuildId);
+            CLog.i("System is already version %s, skipping flashing", systemBuildId);
             // reboot
             device.rebootUntilOnline();
             return false;

@@ -25,7 +25,7 @@ import java.io.File;
  */
 public class OtaZipfileBuildProviderTest extends TestCase {
     private static final String SOME_BAD_PATH = "/some/inexistent/path.zip";
-    private static final int BUILD_ID = 123456;
+    private static final String BUILD_ID = "123456";
     private static final String MOCK_BUILD_PROP =
         "some.fake.property=some_value\n" +
         "ro.build.version.incremental=" + BUILD_ID + "\n" +

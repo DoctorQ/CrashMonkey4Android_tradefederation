@@ -150,9 +150,9 @@ public interface ITestDevice {
     /**
      * Retrieve the build the device is currently running.
      *
-     * @return the build id or -1 if it could not be retrieved
+     * @return the build id or {@link IBuildInfo#UNKOWN_BUILD_ID} if it could not be retrieved
      */
-    public int getBuildId();
+    public String getBuildId();
 
     /**
      * Executes the given adb shell command, retrying multiple times if command fails.

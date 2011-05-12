@@ -27,9 +27,9 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     private IFolderBuildInfo mFolderBuild;
 
     /**
-     * @see {@link DeviceBuildInfo#DeviceBuildInfo(int, String, String)}
+     * @see {@link DeviceBuildInfo#DeviceBuildInfo(String, String, String)}
      */
-    public DeviceFolderBuildInfo(int buildId, String testTarget, String buildName) {
+    public DeviceFolderBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 

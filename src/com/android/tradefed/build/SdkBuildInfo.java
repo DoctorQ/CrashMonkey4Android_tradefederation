@@ -49,7 +49,7 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
      * @param testTarget the test target name
      * @param buildName the build name
      */
-    public SdkBuildInfo(int buildId, String testTarget, String buildName) {
+    public SdkBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 

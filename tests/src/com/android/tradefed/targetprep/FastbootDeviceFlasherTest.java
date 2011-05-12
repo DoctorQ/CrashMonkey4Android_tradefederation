@@ -55,8 +55,8 @@ public class FastbootDeviceFlasherTest extends TestCase {
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
-        EasyMock.expect(mMockDevice.getBuildId()).andStubReturn(1);
-        mMockBuildInfo = new DeviceBuildInfo(0, TEST_STRING, TEST_STRING);
+        EasyMock.expect(mMockDevice.getBuildId()).andStubReturn("1");
+        mMockBuildInfo = new DeviceBuildInfo("0", TEST_STRING, TEST_STRING);
         mMockBuildInfo.setDeviceImageFile(new File(TEST_STRING));
         mMockBuildInfo.setUserDataImageFile(new File(TEST_STRING));
         mMockRetriever = EasyMock.createNiceMock(IFlashingResourcesRetriever.class);
@@ -141,7 +141,7 @@ public class FastbootDeviceFlasherTest extends TestCase {
         FastbootDeviceFlasher flasher = getFlasherWithParserData(
                 String.format("require version-baseband=%s", newBasebandVersion));
 
-        IDeviceBuildInfo build = new DeviceBuildInfo(1234, "target", "build-name");
+        IDeviceBuildInfo build = new DeviceBuildInfo("1234", "target", "build-name");
         build.setBasebandImage(new File("tmp"), newBasebandVersion);
         flasher.checkAndFlashBaseband(mockDevice, build);
         EasyMock.verify(mockDevice);

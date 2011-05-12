@@ -28,9 +28,9 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     private File mRootDir;
 
     /**
-     * @see {@link BuildInfo#BuildInfo(int, String, String)}
+     * @see {@link BuildInfo#BuildInfo(String, String, String)}
      */
-    public FolderBuildInfo(int buildId, String testTarget, String buildName) {
+    public FolderBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 

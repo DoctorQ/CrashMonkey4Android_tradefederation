@@ -80,7 +80,7 @@ public class LogFileSaver implements ILogFileSaver {
      * @return a {@link File} pointing to the directory to store log files in
      */
     private File createBuildDir(IBuildInfo buildInfo, File rootDir) {
-        File buildReportDir = new File(rootDir, Integer.toString(buildInfo.getBuildId()));
+        File buildReportDir = new File(rootDir, buildInfo.getBuildId());
         // if buildReportDir already exists and is a directory - use it.
         if (buildReportDir.exists()) {
             if (buildReportDir.isDirectory()) {

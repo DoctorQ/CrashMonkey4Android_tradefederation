@@ -23,9 +23,15 @@ import java.util.Map;
 public interface IBuildInfo {
 
     /**
-     * @return the unique identifier of build under test
+     * Default value when build ID is unknown.
      */
-    public int getBuildId();
+    public final static String UNKOWN_BUILD_ID = "-1";
+
+    /**
+     * @return the unique identifier of build under test. Should never be null.
+     *         Defaults to {@link #UNKOWN_BUILD_ID}
+     */
+    public String getBuildId();
 
     /**
      * Return a unique name for the tests being run.

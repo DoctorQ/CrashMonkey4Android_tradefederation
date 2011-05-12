@@ -29,7 +29,7 @@ import java.io.File;
 
 public class SystemUpdaterDeviceFlasherTest extends TestCase {
 
-    private static final int A_BUILD_ID = 1;
+    private static final String A_BUILD_ID = "1";
 
     private static final String TEST_STRING = "foo";
 

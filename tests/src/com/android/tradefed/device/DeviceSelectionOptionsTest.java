@@ -17,9 +17,9 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 
-import org.easymock.EasyMock;
-
 import junit.framework.TestCase;
+
+import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link DeviceSelectionOptions}
@@ -126,6 +126,7 @@ public class DeviceSelectionOptionsTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(OTHER_DEVICE_TYPE);
 
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
         EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("");
         EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
         EasyMock.replay(mMockDevice);
@@ -137,6 +138,7 @@ public class DeviceSelectionOptionsTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(OTHER_DEVICE_TYPE);
 
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
         EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn(DEVICE_TYPE);
         EasyMock.replay(mMockDevice);
 
@@ -147,8 +149,10 @@ public class DeviceSelectionOptionsTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(DEVICE_TYPE);
 
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
         EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE)
+                .times(2);
         EasyMock.replay(mMockDevice);
 
         assertTrue(options.matches(mMockDevice));
@@ -158,7 +162,9 @@ public class DeviceSelectionOptionsTest extends TestCase {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(DEVICE_TYPE);
 
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
         EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
         EasyMock.replay(mMockDevice);
 
         assertTrue(options.matches(mMockDevice));

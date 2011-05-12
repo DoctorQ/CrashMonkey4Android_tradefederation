@@ -34,7 +34,7 @@ public class LocalBuildProvider implements IBuildProvider {
     private static final String DATA_FILE_OPTION_NAME = "user-data-file";
 
     @Option(name = "device-build-id", description = "the id of device build.")
-    private Integer mBuildId = null;
+    private String mBuildId = null;
 
     @Option(name = "test-target", description = "the test target name.")
     private String mTestTarget = null;

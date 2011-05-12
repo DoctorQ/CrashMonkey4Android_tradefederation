@@ -79,7 +79,7 @@ public class XmlResultReporterTest extends TestCase {
             "timestamp=\"ignore\" hostname=\"localhost\"> " +
             "<properties />" +
             "</testsuite>";
-        mResultReporter.invocationStarted(new BuildInfo(1, "test", "test"));
+        mResultReporter.invocationStarted(new BuildInfo("1", "test", "test"));
         mResultReporter.invocationEnded(1);
         assertEquals(expectedOutput, getOutput());
     }

@@ -201,10 +201,10 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
             waitForOta(listener);
             for (actualIterations = 1; actualIterations < mIterations; actualIterations++) {
                 flashDevice();
-                int buildId = waitForOta(listener);
-                Log.i(LOG_TAG, String.format(
-                        "Device %s successfully OTA-ed to build %d. Iteration: %d",
-                        mDevice.getSerialNumber(), buildId, actualIterations));
+                String buildId = waitForOta(listener);
+                Log.i(LOG_TAG,
+                        String.format("Device %s successfully OTA-ed to build %s. Iteration: %d",
+                                mDevice.getSerialNumber(), buildId, actualIterations));
             }
         } catch (AssertionFailedError error) {
             Log.e(LOG_TAG, error);
@@ -258,9 +258,9 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
      * @throws DeviceNotAvailableException
      * @throws AssertionFailedError
      */
-    private int waitForOta(ITestInvocationListener listener)
+    private String waitForOta(ITestInvocationListener listener)
             throws DeviceNotAvailableException, AssertionFailedError {
-        int currentBuildId =  mDevice.getBuildId();
+        String currentBuildId = mDevice.getBuildId();
         Assert.assertEquals(String.format("device %s does not have expected build id on boot.",
                 mDevice.getSerialNumber()), currentBuildId, mDeviceBuild.getBuildId());
         // give some time for device to settle

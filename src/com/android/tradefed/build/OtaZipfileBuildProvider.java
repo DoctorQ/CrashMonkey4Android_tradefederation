@@ -50,7 +50,7 @@ public class OtaZipfileBuildProvider implements IBuildProvider {
                     "Error processing build.prop contents from file: " + getOtaPath(), e);
         }
         String bid = buildProp.getProperty("ro.build.version.incremental");
-        IDeviceBuildInfo buildInfo = new DeviceBuildInfo(Integer.valueOf(bid), "flasher", bid);
+        IDeviceBuildInfo buildInfo = new DeviceBuildInfo(bid, "flasher", bid);
         buildInfo.setDeviceImageFile(new File(getOtaPath()));
         return buildInfo;
 

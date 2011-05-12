@@ -46,7 +46,7 @@ public class LocalSdkBuildProvider implements IBuildProvider {
      */
     @Override
     public IBuildInfo getBuild() throws BuildRetrievalError {
-        ISdkBuildInfo sdkBuild = new SdkBuildInfo(0, "local-sdk", "sdk");
+        ISdkBuildInfo sdkBuild = new SdkBuildInfo("0", "local-sdk", "sdk");
         if (mLocalSdkPath == null) {
             throw new IllegalArgumentException(String.format("missing --%s option",
                     SDK_OPTION_NAME));

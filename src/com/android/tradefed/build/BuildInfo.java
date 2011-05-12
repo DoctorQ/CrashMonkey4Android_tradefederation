@@ -25,7 +25,7 @@ import java.util.Map;
  */
 public class BuildInfo implements IBuildInfo {
 
-    private int mBuildInfo = 0;
+    private String mBuildInfo = "0";
     private String mTestTag = "stub";
     private String mBuildTargetName = "stub";
     private UniqueMultiMap<String, String> mBuildAttributes = new UniqueMultiMap<String, String>();
@@ -45,7 +45,7 @@ public class BuildInfo implements IBuildInfo {
      * @param testTag the test tag name
      * @param buildTargetName the build target name
      */
-    public BuildInfo(int buildId, String testTag, String buildTargetName) {
+    public BuildInfo(String buildId, String testTag, String buildTargetName) {
         mBuildInfo = buildId;
         mTestTag = testTag;
         mBuildTargetName = buildTargetName;
@@ -65,7 +65,7 @@ public class BuildInfo implements IBuildInfo {
      * {@inheritDoc}
      */
     @Override
-    public int getBuildId() {
+    public String getBuildId() {
         return mBuildInfo;
     }
 

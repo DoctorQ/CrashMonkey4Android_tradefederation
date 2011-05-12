@@ -31,7 +31,7 @@ import java.util.Map;
 public class StubBuildProvider implements IBuildProvider {
 
     @Option(name="build-id", description="build id to supply.")
-    private int mBuildId = 0;
+    private String mBuildId = "0";
 
     @Option(name="test-tag", description="test tag name to supply.")
     private String mTestTag = "stub";

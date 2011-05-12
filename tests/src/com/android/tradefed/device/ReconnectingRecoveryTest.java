@@ -55,9 +55,11 @@ public class ReconnectingRecoveryTest extends TestCase {
      */
     public final void testRecoverDevice_successOnFirstTry() throws DeviceNotAvailableException {
         expectInitialDisconnectConnectAttempt();
-        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(mMockDevice).times(2);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(mMockDevice);
         replayMocks();
-        mRecovery.recoverDevice(mMockMonitor);
+        mRecovery.recoverDevice(mMockMonitor, false);
         verifyMocks();
     }
 
@@ -69,13 +71,15 @@ public class ReconnectingRecoveryTest extends TestCase {
     public final void testRecoverDevice_successRetrying() throws DeviceNotAvailableException {
         expectInitialDisconnectConnectAttempt();
         // fail 1st attempt
-        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(null);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(null);
         // then it should retry at least once
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), connectCommand())).andReturn(
                 null);
-        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(mMockDevice).times(2);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(mMockDevice);
         replayMocks();
-        mRecovery.recoverDevice(mMockMonitor);
+        mRecovery.recoverDevice(mMockMonitor, false);
         verifyMocks();
     }
 
@@ -86,12 +90,14 @@ public class ReconnectingRecoveryTest extends TestCase {
      */
     public final void testRecoverDevice_failure() throws DeviceNotAvailableException {
         expectInitialDisconnectConnectAttempt();
-        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andStubReturn(null);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andStubReturn(null);
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), connectCommand()))
                 .andStubReturn(null);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
+        EasyMock.expect(mMockMonitor.waitForDeviceAvailable()).andReturn(null);
         replayMocks();
         try {
-            mRecovery.recoverDevice(mMockMonitor);
+            mRecovery.recoverDevice(mMockMonitor, false);
             fail("DeviceUnresponsiveException not thrown");
         } catch (DeviceUnresponsiveException e) {
             assertTrue(true);

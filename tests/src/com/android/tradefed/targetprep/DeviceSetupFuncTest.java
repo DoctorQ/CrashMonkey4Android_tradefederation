@@ -39,7 +39,7 @@ public class DeviceSetupFuncTest extends DeviceTestCase {
     protected void setUp() throws Exception {
         super.setUp();
 
-        mMockBuildInfo = new DeviceBuildInfo(0, "", "");
+        mMockBuildInfo = new DeviceBuildInfo("0", "", "");
         mDeviceSetup = new DeviceSetup();
     }
 

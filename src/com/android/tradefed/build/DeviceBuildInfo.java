@@ -72,7 +72,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      * @param testTarget the test target name
      * @param buildName the build name
      */
-    public DeviceBuildInfo(int buildId, String testTarget, String buildName) {
+    public DeviceBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
         mImageFileMap = new Hashtable<String, ImageFile>();
     }
@@ -129,7 +129,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setDeviceImageFile(File deviceImageFile) {
-        setImageFile(DEVICE_IMAGE_NAME, deviceImageFile, Integer.toString(getBuildId()));
+        setImageFile(DEVICE_IMAGE_NAME, deviceImageFile, getBuildId());
     }
 
     /**
@@ -145,7 +145,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setUserDataImageFile(File userDataFile) {
-        setImageFile(USERDATA_IMAGE_NAME, userDataFile, Integer.toString(getBuildId()));
+        setImageFile(USERDATA_IMAGE_NAME, userDataFile, getBuildId());
     }
 
     /**
@@ -161,7 +161,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setTestsDir(File testsDir) {
-        setImageFile(TESTDIR_IMAGE_NAME, testsDir, Integer.toString(getBuildId()));
+        setImageFile(TESTDIR_IMAGE_NAME, testsDir, getBuildId());
     }
 
     /**
@@ -225,7 +225,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setOtaPackageFile(File otaFile) {
-        setImageFile(OTA_IMAGE_NAME, otaFile, Integer.toString(getBuildId()));
+        setImageFile(OTA_IMAGE_NAME, otaFile, getBuildId());
     }
 
     /**

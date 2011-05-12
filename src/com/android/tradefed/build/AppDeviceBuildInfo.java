@@ -27,9 +27,9 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
     private IAppBuildInfo mAppBuildInfo;
 
     /**
-     * @see {@link DeviceBuildInfo#DeviceBuildInfo(int, String, String)}
+     * @see {@link DeviceBuildInfo#DeviceBuildInfo(String, String, String)}
      */
-    public AppDeviceBuildInfo(int buildId, String testTarget, String buildName) {
+    public AppDeviceBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 

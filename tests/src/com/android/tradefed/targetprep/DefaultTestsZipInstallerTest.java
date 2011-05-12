@@ -21,13 +21,14 @@ import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.MockFileUtil;
+
+import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
 
 import java.io.File;
-
-import junit.framework.TestCase;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";
@@ -51,8 +52,8 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
-        EasyMock.expect(mMockDevice.getBuildId()).andStubReturn(1);
-        mDeviceBuild = new DeviceBuildInfo(1, TEST_STRING, TEST_STRING);
+        EasyMock.expect(mMockDevice.getBuildId()).andStubReturn("1");
+        mDeviceBuild = new DeviceBuildInfo("1", TEST_STRING, TEST_STRING);
     }
 
     /**
@@ -75,11 +76,17 @@ public class DefaultTestsZipInstallerTest extends TestCase {
 
         // expect second reboot and android stop
         mMockDevice.rebootUntilOnline();
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         EasyMock.expect(mMockDevice.syncFiles((File) EasyMock.anyObject(),
                 EasyMock.contains(FileListingService.DIRECTORY_DATA)))
                 .andReturn(Boolean.TRUE);
+        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("chown system.system")))
+                .andReturn(null);
+
+        mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
 
         EasyMock.replay(mMockDevice);
         mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);

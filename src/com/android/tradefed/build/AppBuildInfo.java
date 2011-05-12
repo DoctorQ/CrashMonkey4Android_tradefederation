@@ -34,7 +34,7 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
      * @param testTarget the test target name
      * @param buildName the build name
      */
-    public AppBuildInfo(int buildId, String testTarget, String buildName) {
+    public AppBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 

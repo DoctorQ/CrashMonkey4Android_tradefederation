@@ -33,7 +33,8 @@ public class ReconnectingRecovery implements IDeviceRecovery {
      * {@inheritDoc}
      */
     @Override
-    public void recoverDevice(IDeviceStateMonitor monitor) throws DeviceNotAvailableException {
+    public void recoverDevice(IDeviceStateMonitor monitor, boolean recoverUntilOnline)
+            throws DeviceNotAvailableException {
         String serial = monitor.getSerialNumber();
 
         // disconnect - many versions of adb client have stale TCP connection
@@ -45,13 +46,22 @@ public class ReconnectingRecovery implements IDeviceRecovery {
         do {
             CLog.i("Trying to reconnect with device " + serial + " / attempt " + attempt);
             getRunUtil().runTimedCmd(ADB_TIMEOUT, "adb", "connect", serial);
-        } while (monitor.waitForDeviceAvailable() == null && ++attempt <= CONNECTION_ATTEMPTS);
+        } while (monitor.waitForDeviceOnline() == null && ++attempt <= CONNECTION_ATTEMPTS);
 
-        if (monitor.waitForDeviceAvailable() == null) {
-            throw new DeviceUnresponsiveException(
-                    "Could not reconnect with device " + serial + " after " + --attempt
-                            + " attempts");
+        String errMsg = "Could not recover device " + serial + " after " + --attempt + " attempts";
+
+        // occasionally device is erroneously reported as online - double check
+        // that we can shell into device
+        if (!monitor.waitForDeviceShell(10 * 1000)) {
+            throw new DeviceUnresponsiveException(errMsg);
         }
+
+        if (!recoverUntilOnline) {
+            if (monitor.waitForDeviceAvailable() == null) {
+                throw new DeviceUnresponsiveException(errMsg);
+            }
+        }
+
         CLog.v("Successfully reconnected with device " + serial);
     }
 
@@ -75,7 +85,7 @@ public class ReconnectingRecovery implements IDeviceRecovery {
     @Override
     public void recoverDeviceRecovery(IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
-        recoverDevice(monitor);
+        recoverDevice(monitor, false);
     }
 
     /**

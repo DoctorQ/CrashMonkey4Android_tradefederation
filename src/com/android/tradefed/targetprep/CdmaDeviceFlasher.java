@@ -75,11 +75,11 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
 
-        Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
+        Log.i(LOG_TAG, String.format("Flashing device %s with build %s",
                 device.getSerialNumber(), deviceBuild.getBuildId()));
 
         // get system build id before booting into fastboot
-        int systemBuildId = device.getBuildId();
+        String systemBuildId = device.getBuildId();
 
         device.rebootIntoBootloader();
 

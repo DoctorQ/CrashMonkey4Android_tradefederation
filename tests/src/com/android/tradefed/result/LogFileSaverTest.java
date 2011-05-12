@@ -59,7 +59,7 @@ public class LogFileSaverTest extends TestCase {
      * Test that a unique directory is created
      */
     public void testGetFileDir() throws IOException {
-        final int buildId = 88888;
+        final String buildId = "88888";
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
         EasyMock.replay(mockBuild);
@@ -67,7 +67,7 @@ public class LogFileSaverTest extends TestCase {
         File generatedDir = saver.getFileDir();
         File buildDir = generatedDir.getParentFile();
         // ensure a directory with name == build number is parent of generated directory
-        assertEquals(Integer.toString(buildId), buildDir.getName());
+        assertEquals(buildId, buildDir.getName());
         // ensure parent directory is rootDir
         assertEquals(0, mRootDir.compareTo(buildDir.getParentFile()));
 

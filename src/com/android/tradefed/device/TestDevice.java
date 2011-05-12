@@ -32,6 +32,7 @@ import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.log.LogUtil.CLog;
@@ -333,16 +334,14 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public int getBuildId() {
-        String stringBuild = getIDevice().getProperty(BUILD_ID_PROP);
-        try {
-            int currentBuildId = Integer.parseInt(stringBuild);
-            return currentBuildId;
-        } catch (NumberFormatException e) {
-            Log.w(LOG_TAG, String.format("Could not get device %s build id. Received %s",
-                    getSerialNumber(), stringBuild));
+    @Override
+    public String getBuildId() {
+        String bid = getIDevice().getProperty(BUILD_ID_PROP);
+        if (bid == null) {
+            Log.w(LOG_TAG, String.format("Could not get device %s build id.", getSerialNumber()));
+            return IBuildInfo.UNKOWN_BUILD_ID;
         }
-        return -1;
+        return bid;
     }
 
     /**
@@ -1567,11 +1566,11 @@ class TestDevice implements IManagedTestDevice {
             // add an initial message to log, to give info to viewer
             if (mPreviousTmpFile == null) {
                 // first log!
-                appendDeviceLogMsg(String.format("Logcat for device %s running system build %d",
+                appendDeviceLogMsg(String.format("Logcat for device %s running system build %s",
                         getSerialNumber(), getBuildId()));
             } else {
                 appendDeviceLogMsg(String.format(
-                        "Continuing logcat capture for device %s running system build %d. " +
+                        "Continuing logcat capture for device %s running system build %s. " +
                         "Previous content may have been truncated.", getSerialNumber(),
                         getBuildId()));
             }

@@ -56,7 +56,7 @@ public class DeviceFlashPreparerTest extends TestCase {
         mMockFlasher = EasyMock.createMock(IDeviceFlasher.class);
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andReturn("foo").anyTimes();
-        mMockBuildInfo = new DeviceBuildInfo(0, "", "");
+        mMockBuildInfo = new DeviceBuildInfo("0", "", "");
         mDeviceFlashPreparer = new DeviceFlashPreparer() {
             @Override
             protected IDeviceFlasher createFlasher(ITestDevice device) {

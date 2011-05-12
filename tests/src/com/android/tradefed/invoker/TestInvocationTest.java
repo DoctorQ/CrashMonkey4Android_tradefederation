@@ -109,7 +109,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
         mMockDevice.setRecovery(mMockRecovery);
 
-        EasyMock.expect(mMockBuildInfo.getBuildId()).andStubReturn(1);
+        EasyMock.expect(mMockBuildInfo.getBuildId()).andStubReturn("1");
         EasyMock.expect(mMockBuildInfo.getBuildAttributes()).andStubReturn(EMPTY_MAP);
         EasyMock.expect(mMockBuildInfo.getTestTag()).andStubReturn("");
         // always expect logger initialization and cleanup calls
