@@ -122,12 +122,6 @@ public class DeviceManager implements IDeviceManager {
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
         mCheckDeviceMap = new Hashtable<String, IDeviceStateMonitor>();
-        // TODO: Temporarily increase default timeout as workaround for syncFiles timeouts
-        DdmPreferences.setTimeOut(30*1000);
-        mAdbBridge = createAdbBridge();
-        // assume "adb" is in PATH
-        // TODO: make this configurable
-        mAdbBridge.init(false /* client support */, "adb");
 
         if (isFastbootAvailable()) {
             mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
@@ -143,15 +137,18 @@ public class DeviceManager implements IDeviceManager {
         }
 
         // don't start adding devices until fastboot support has been established
-        for (IDevice device : mAdbBridge.getDevices()) {
-            if (device.getState() == IDevice.DeviceState.ONLINE) {
-                checkAndAddAvailableDevice(device);
-            }
-        }
+        // TODO: Temporarily increase default timeout as workaround for syncFiles timeouts
+        DdmPreferences.setTimeOut(30*1000);
+        mAdbBridge = createAdbBridge();
+        mManagedDeviceListener = new ManagedDeviceListener();
+        // It's important to add the listener before initializing the ADB bridge to avoid a race
+        // condition when detecting devices.
+        mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
+        // assume "adb" is in PATH
+        // TODO: make this configurable
+        mAdbBridge.init(false /* client support */, "adb");
         addEmulators();
         addNullDevices();
-        mManagedDeviceListener = new ManagedDeviceListener();
-        mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
     }
 
     private void checkInit() {
@@ -635,6 +632,9 @@ public class DeviceManager implements IDeviceManager {
         return unavailableSerials;
     }
 
+    /**
+     * A class to listen for and act on device presence updates from ddmlib
+     */
     private class ManagedDeviceListener implements IDeviceChangeListener {
 
         /**
