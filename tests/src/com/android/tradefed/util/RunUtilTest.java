@@ -28,34 +28,36 @@ import junit.framework.TestCase;
 public class RunUtilTest extends TestCase {
 
     /**
-     * Test success case for {@link RunUtil#runTimed(long, IRunnableResult)}.
+     * Test success case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed() throws Exception {
         IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.TRUE);
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.SUCCESS, RunUtil.getInstance().runTimed(100, mockRunnable));
+        assertEquals(CommandStatus.SUCCESS, RunUtil.getInstance().runTimed(100, mockRunnable,
+                true));
     }
 
     /**
-     * Test failure case for {@link RunUtil#runTimed(long, IRunnableResult)}.
+     * Test failure case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed_failed() throws Exception {
         IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.FALSE);
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.FAILED, RunUtil.getInstance().runTimed(100, mockRunnable));
+        assertEquals(CommandStatus.FAILED, RunUtil.getInstance().runTimed(100, mockRunnable, true));
     }
 
     /**
-     * Test exception case for {@link RunUtil#runTimed(long, IRunnableResult)}.
+     * Test exception case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed_exception() throws Exception {
         IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andThrow(new RuntimeException());
         mockRunnable.cancel();
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.EXCEPTION, RunUtil.getInstance().runTimed(100, mockRunnable));
+        assertEquals(CommandStatus.EXCEPTION, RunUtil.getInstance().runTimed(100, mockRunnable,
+                true));
     }
 
     /**

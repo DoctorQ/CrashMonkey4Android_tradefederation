@@ -44,27 +44,8 @@ public class RunUtil implements IRunUtil {
      */
     public CommandResult runTimedCmd(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new IRunUtil.IRunnableResult() {
-            public boolean run() throws Exception {
-                final String fullCmd = Arrays.toString(command);
-                Log.v(LOG_TAG, String.format("Running %s", fullCmd));
-                Process process = Runtime.getRuntime().exec(command);
-                int rc = process.waitFor();
-                result.setStdout(StreamUtil.getStringFromStream(process.getInputStream()));
-                result.setStderr(StreamUtil.getStringFromStream(process.getErrorStream()));
-
-                if (rc == 0) {
-                    return true;
-                } else {
-                    Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd, rc));
-                }
-                return false;
-            }
-
-            public void cancel() {
-            }
-        };
-        CommandStatus status = runTimed(timeout, osRunnable);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, command);
+        CommandStatus status = runTimed(timeout, osRunnable, true);
         result.setStatus(status);
         return result;
     }
@@ -72,8 +53,21 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
-    public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable) {
-        RunnableNotifier runThread = new RunnableNotifier(runnable);
+    @Override
+    public CommandResult runTimedCmdSilently(final long timeout, final String... command) {
+        final CommandResult result = new CommandResult();
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, command);
+        CommandStatus status = runTimed(timeout, osRunnable, false);
+        result.setStatus(status);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable,
+            boolean logErrors) {
+        RunnableNotifier runThread = new RunnableNotifier(runnable, logErrors);
         runThread.start();
         synchronized (runThread) {
             try {
@@ -99,7 +93,7 @@ public class RunUtil implements IRunUtil {
     public boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
             IRunUtil.IRunnableResult runnable) {
         for (int i = 0; i < attempts; i++) {
-            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
+            if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
@@ -115,7 +109,7 @@ public class RunUtil implements IRunUtil {
             final long maxTime, final IRunUtil.IRunnableResult runnable) {
         final long initialTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (initialTime + maxTime)) {
-            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
+            if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
@@ -134,7 +128,7 @@ public class RunUtil implements IRunUtil {
         long pollInterval = initialPollInterval;
         final long initialTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (initialTime + maxTime)) {
-            if (runTimed(opTimeout, runnable) == CommandStatus.SUCCESS) {
+            if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
             Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
@@ -171,9 +165,11 @@ public class RunUtil implements IRunUtil {
 
         private final IRunUtil.IRunnableResult mRunnable;
         private CommandStatus mStatus = CommandStatus.TIMED_OUT;
+        private boolean mLogErrors = true;
 
-        RunnableNotifier(IRunUtil.IRunnableResult runnable) {
+        RunnableNotifier(IRunUtil.IRunnableResult runnable, boolean logErrors) {
             mRunnable = runnable;
+            mLogErrors = logErrors;
         }
 
         @Override
@@ -186,7 +182,9 @@ public class RunUtil implements IRunUtil {
                 status = CommandStatus.EXCEPTION;
             } catch (Exception e) {
                 // TODO: add more meaningful error message
-                Log.e(LOG_TAG, e);
+                if (mLogErrors) {
+                    Log.e(LOG_TAG, e);
+                }
                 status = CommandStatus.EXCEPTION;
             }
             synchronized (this) {
@@ -205,4 +203,34 @@ public class RunUtil implements IRunUtil {
             return mStatus;
         }
     }
+
+    private static class RunnableResult implements IRunUtil.IRunnableResult {
+        private final String[] mCommand;
+        private final CommandResult mCommandResult;
+        RunnableResult(final CommandResult result, final String... command) {
+            mCommand = command;
+            mCommandResult = result;
+        }
+
+        @Override
+        public boolean run() throws Exception {
+            final String fullCmd = Arrays.toString(mCommand);
+            Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+            Process process = Runtime.getRuntime().exec(mCommand);
+            int rc = process.waitFor();
+            mCommandResult.setStdout(StreamUtil.getStringFromStream(process.getInputStream()));
+            mCommandResult.setStderr(StreamUtil.getStringFromStream(process.getErrorStream()));
+
+            if (rc == 0) {
+                return true;
+            } else {
+                Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd, rc));
+            }
+            return false;
+        }
+
+        @Override
+        public void cancel() {
+        }
+    };
 }

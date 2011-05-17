@@ -48,7 +48,7 @@ public class RunUtilFuncTest extends TestCase {
             }
         };
         assertEquals(CommandStatus.TIMED_OUT, RunUtil.getInstance().runTimed(timeout,
-                mockRunnable));
+                mockRunnable, true));
         assertTrue(mockRunnable.mCanceled);
     }
 
