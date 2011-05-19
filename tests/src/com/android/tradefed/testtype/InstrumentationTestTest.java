@@ -152,7 +152,6 @@ public class InstrumentationTestTest extends TestCase {
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
     }
 
-
     /**
      * Test normal run scenario with a test class and method specified.
      */
@@ -165,6 +164,37 @@ public class InstrumentationTestTest extends TestCase {
         EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
         mInstrumentationTest.setClassName(className);
         mInstrumentationTest.setMethodName(methodName);
+        mInstrumentationTest.run(mMockListener);
+        EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
+    }
+
+    /**
+     * Test normal run scenario with a test package specified.
+     */
+    @SuppressWarnings("unchecked")
+    public void testRun_testPackage() throws Exception {
+        final String testPackageName = "com.foo";
+        // expect this call
+        mMockRemoteRunner.setTestPackageName(testPackageName);
+        setRunTestExpectations();
+        EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
+        mInstrumentationTest.setTestPackageName(testPackageName);
+        mInstrumentationTest.run(mMockListener);
+        EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
+    }
+
+    /**
+     * Verify test package name is not passed to the runner if class name is set
+     */
+    @SuppressWarnings("unchecked")
+    public void testRun_testPackageAndClass() throws Exception {
+        final String testClassName = "FooTest";
+        // expect this call
+        mMockRemoteRunner.setClassName(testClassName);
+        setRunTestExpectations();
+        EasyMock.replay(mMockRemoteRunner, mMockTestDevice);
+        mInstrumentationTest.setTestPackageName("com.foo");
+        mInstrumentationTest.setClassName(testClassName);
         mInstrumentationTest.run(mMockListener);
         EasyMock.verify(mMockRemoteRunner, mMockTestDevice);
     }

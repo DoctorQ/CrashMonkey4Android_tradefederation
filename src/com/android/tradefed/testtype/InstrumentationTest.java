@@ -66,6 +66,11 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             description="The test method name to run.")
     private String mTestMethodName = null;
 
+    @Option(name = "test-package",
+            description="Only run tests within this specific java package. " +
+            "Will be ignored if --class is set.")
+    private String mTestPackageName = null;
+
     @Option(name = "timeout",
             description="Aborts the test run if any test takes longer than the specified number of "
             + "milliseconds. For no timeout, set to 0.")
@@ -169,6 +174,24 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     String getMethodName() {
         return mTestMethodName;
+    }
+
+    /**
+     * Get the test java package to run.
+     */
+    String getTestPackageName() {
+        return mTestPackageName;
+    }
+
+    /**
+     * Sets the test package filter.
+     * <p/>
+     * If non-null, only tests within the given java package will be executed.
+     * <p/>
+     * Will be ignored if a non-null value has been provided to {@link #setClassName(String)}
+     */
+    public void setTestPackageName(String testPackageName) {
+        mTestPackageName = testPackageName;
     }
 
     /**
@@ -303,6 +326,8 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             } else {
                 mRunner.setClassName(mTestClassName);
             }
+        } else if (mTestPackageName != null) {
+            mRunner.setTestPackageName(mTestPackageName);
         }
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
