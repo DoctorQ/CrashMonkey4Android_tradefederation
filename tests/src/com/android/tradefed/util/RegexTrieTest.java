@@ -203,6 +203,19 @@ public class RegexTrieTest extends TestCase {
         assertEquals(list("c"), groups.get(1));
     }
 
+    /**
+     * Verify a bugfix: make sure that no NPE results from calling #retrieve with a wildcard but
+     * without a place to retrieve captures.
+     */
+    public void testWildcard_noCapture() throws NullPointerException {
+        mTrie.put(mStored, "a", null);
+        String[] key = new String[] {"a", "b", "c"};
+
+        mTrie.retrieve(key);
+        mTrie.retrieve(null, key);
+        // test passes if no exceptions were thrown
+    }
+
     public void testMultiChild() {
         mTrie.put(mStored + 1, "a", "b");
         mTrie.put(mStored + 2, "a", "c");

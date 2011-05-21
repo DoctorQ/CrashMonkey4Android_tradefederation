@@ -236,8 +236,10 @@ public class RegexTrie<V> {
 
             if (wildcardMatch) {
                 // Stick the rest of the query string into the captures list and return
-                for (String str : strings) {
-                    captures.add(list(str));
+                if (captures != null) {
+                    for (String str : strings) {
+                        captures.add(list(str));
+                    }
                 }
                 return wildcardValue;
             }
