@@ -135,6 +135,13 @@ public class Console {
         }
     }
 
+    /**
+     * Retrieve the {@link RegexTrie} that defines the console behavior.  Exposed for unit testing.
+     */
+    RegexTrie<Runnable> getCommandTrie() {
+        return mCommandTrie;
+    }
+
     protected Console() {
         this(new CommandScheduler());
     }
@@ -284,6 +291,8 @@ public class Console {
         commandHelp.put(RUN_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
                 "\tcommand [options] <config>        Run the specified command" + LINE_SEPARATOR +
+                "\t[options] <config>                Shortcut for the above: run specified command" +
+                    LINE_SEPARATOR +
                 "\tcmdfile <cmdfile.txt>             Run the specified commandfile" + LINE_SEPARATOR +
                 "\tsingleCommand [options] <config>  Run the specified command, and run 'exit' " +
                         "immediately afterward" + LINE_SEPARATOR,
@@ -377,15 +386,24 @@ public class Console {
         ArgRunnable<CaptureList> runRunCommand = new ArgRunnable<CaptureList>() {
                     @Override
                     public void run(CaptureList args) {
-                        // Skip 2 tokens to get past runPattern and "command"
-                        String[] flatArgs = new String[args.size() - 2];
-                        for (int i = 2; i < args.size(); i++) {
-                            flatArgs[i - 2] = args.get(i).get(0);
+                        // The second argument "singleCommand"/"command" may also be missing, if the
+                        // caller used the shortcut.
+                        int startIdx = 1;
+                        if (args.get(1).isEmpty()) {
+                            // Empty array (that is, not even containing an empty string) means that
+                            // we matched and skipped /(?:singleC|c)ommand/
+                            startIdx = 2;
+                        }
+
+                        String[] flatArgs = new String[args.size() - startIdx];
+                        for (int i = startIdx; i < args.size(); i++) {
+                            flatArgs[i - startIdx] = args.get(i).get(0);
                         }
                         mScheduler.addCommand(flatArgs);
                     }
                 };
         trie.put(runRunCommand, RUN_PATTERN, "(?:singleC|c)ommand", null);
+        trie.put(runRunCommand, RUN_PATTERN, null);
         // Missing required argument: show help
         // FIXME: fix this functionality
         // trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
@@ -488,6 +506,22 @@ public class Console {
     }
 
     /**
+     * Execute a command.
+     * <p />
+     * Exposed for unit testing
+     */
+    @SuppressWarnings("unchecked")
+    void executeCmdRunnable(Runnable command, CaptureList groups) {
+        if (command instanceof ArgRunnable) {
+            // FIXME: verify that command implements ArgRunnable<CaptureList> instead
+            // FIXME: of just ArgRunnable
+            ((ArgRunnable<CaptureList>)command).run(groups);
+        } else {
+            command.run();
+        }
+    }
+
+    /**
      * The main method to launch the console. Will keep running until shutdown command is issued.
      *
      * @param args
@@ -548,14 +582,7 @@ public class Console {
                 // TODO: interfaces
                 Runnable command = mCommandTrie.retrieve(groups, tokens);
                 if (command != null) {
-                    if (command instanceof ArgRunnable) {
-                        // FIXME: verify that command implements ArgRunnable<CaptureList> instead
-                        // FIXME: of just ArgRunnable
-                        ((ArgRunnable<CaptureList>)command).run(groups);
-                    } else {
-                        command.run();
-                    }
-
+                    executeCmdRunnable(command, groups);
                 } else {
                     printLine(String.format(
                             "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));

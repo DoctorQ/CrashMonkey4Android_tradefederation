@@ -15,7 +15,12 @@
  */
 package com.android.tradefed.command;
 
+import com.android.tradefed.command.Console.CaptureList;
+import com.android.tradefed.util.RegexTrie;
+
 import org.easymock.EasyMock;
+
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -33,7 +38,7 @@ public class ConsoleTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mMockScheduler = EasyMock.createMock(ICommandScheduler.class);
+        mMockScheduler = EasyMock.createStrictMock(ICommandScheduler.class);
         mConsole = new Console(mMockScheduler) {
             @Override
             void initLogging() {
@@ -60,4 +65,62 @@ public class ConsoleTest extends TestCase {
         EasyMock.verify(mMockScheduler);
     }
 
+    /**
+     * Make sure that "run command foo config.xml" works properly.
+     */
+    public void testRunCommand() throws Exception {
+        String[] command = new String[] {"run", "command", "--arg", "value", "config.xml"};
+        String[] expected = new String[] {"--arg", "value", "config.xml"};
+        CaptureList captures = new CaptureList();
+        RegexTrie<Runnable> trie = mConsole.getCommandTrie();
+
+        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.replay(mMockScheduler);
+
+        Runnable runnable = trie.retrieve(captures, command);
+        assertNotNull(String.format("Console didn't match input %s", Arrays.toString(command)),
+                runnable);
+        mConsole.executeCmdRunnable(runnable, captures);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Make sure that the "run foo config.xml" shortcut works properly.
+     */
+    public void testRunCommand_shortcut() throws Exception {
+        String[] command = new String[] {"run", "--arg", "value", "config.xml"};
+        String[] expected = new String[] {"--arg", "value", "config.xml"};
+        CaptureList captures = new CaptureList();
+        RegexTrie<Runnable> trie = mConsole.getCommandTrie();
+
+        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.replay(mMockScheduler);
+
+        Runnable runnable = trie.retrieve(captures, command);
+        assertNotNull(String.format("Console didn't match input %s", Arrays.toString(command)),
+                runnable);
+        mConsole.executeCmdRunnable(runnable, captures);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Make sure that the command "run command command foo config.xml" properly considers the second
+     * "command" to be the first token of the command to be executed.
+     */
+    public void testRunCommand_startsWithCommand() throws Exception {
+        String[] command = new String[] {"run", "command", "command", "--arg", "value", "config.xml"};
+        String[] expected = new String[] {"command", "--arg", "value", "config.xml"};
+        CaptureList captures = new CaptureList();
+        RegexTrie<Runnable> trie = mConsole.getCommandTrie();
+
+        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.replay(mMockScheduler);
+
+        Runnable runnable = trie.retrieve(captures, command);
+        assertNotNull(String.format("Console didn't match input %s", Arrays.toString(command)),
+                runnable);
+        mConsole.executeCmdRunnable(runnable, captures);
+        EasyMock.verify(mMockScheduler);
+    }
 }
+
