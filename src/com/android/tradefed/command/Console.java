@@ -204,6 +204,8 @@ public class Console {
         };
         trie.put(genericHelpRunnable, helpPattern);
 
+        StringBuilder allHelpBuilder = new StringBuilder();
+
         // Add help entries for everything listed in the commandHelp map
         for (Map.Entry<String, String> helpPair : commandHelp.entrySet()) {
             final String key = helpPair.getKey();
@@ -215,7 +217,18 @@ public class Console {
                         mTerminal.printf(helpText);
                     }
                 }, helpPattern, key);
+
+            allHelpBuilder.append(helpText);
+            allHelpBuilder.append(LINE_SEPARATOR);
         }
+
+        final String allHelpText = allHelpBuilder.toString();
+        trie.put(new Runnable() {
+                @Override
+                public void run() {
+                    mTerminal.printf(allHelpText);
+                }
+            }, helpPattern, "all");
 
         // Add a generic "not found" help message for everything else
         trie.put(new ArgRunnable<CaptureList>() {
@@ -265,6 +278,8 @@ public class Console {
         // Help commands
         genericHelp.add("Enter 'q' or 'exit' to exit");
         genericHelp.add("Enter 'kill' to attempt to forcibly exit, by shutting down adb");
+        genericHelp.add("");
+        genericHelp.add("Enter 'help all' to see all embedded documentation at once.");
         genericHelp.add("");
         genericHelp.add("Enter 'help list'  for help with 'list' commands");
         genericHelp.add("Enter 'help run'   for help with 'run' commands");
