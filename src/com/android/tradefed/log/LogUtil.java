@@ -61,5 +61,147 @@ public class LogUtil {
         return String.format("%s %c/%s: %s\n", formatter.format(new Date()),
                 logLevel.getPriorityLetter(), tag, message);
     }
+
+    /**
+     * A shim class for {@link Log} that automatically uses the simple classname of the caller as
+     * the log tag
+     */
+    public static class CLog {
+        /**
+         * The shim version of {@link Log#v(String, String)}.
+         *
+         * @param message The {@code String} to log
+         */
+        public static void v(String message) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.v(getClassName(2), message);
+        }
+
+        /**
+         * The shim version of {@link Log#v(String, String)}.  Also calls String.format for
+         * convenience.
+         *
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static <T extends Object> void v(String format, T... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.v(getClassName(2), String.format(format, args));
+        }
+
+        /**
+         * The shim version of {@link Log#d(String, String)}.
+         *
+         * @param message The {@code String} to log
+         */
+        public static void d(String message) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.d(getClassName(2), message);
+        }
+
+        /**
+         * The shim version of {@link Log#d(String, String)}.  Also calls String.format for
+         * convenience.
+         *
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static <T extends Object> void d(String format, T... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.d(getClassName(2), String.format(format, args));
+        }
+
+        /**
+         * The shim version of {@link Log#i(String, String)}.
+         *
+         * @param message The {@code String} to log
+         */
+        public static void i(String message) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.i(getClassName(2), message);
+        }
+
+        /**
+         * The shim version of {@link Log#i(String, String)}.  Also calls String.format for
+         * convenience.
+         *
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static <T extends Object> void i(String format, T... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.i(getClassName(2), String.format(format, args));
+        }
+
+        /**
+         * The shim version of {@link Log#w(String, String)}.
+         *
+         * @param message The {@code String} to log
+         */
+        public static void w(String message) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.w(getClassName(2), message);
+        }
+
+        /**
+         * The shim version of {@link Log#w(String, String)}.  Also calls String.format for
+         * convenience.
+         *
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static <T extends Object> void w(String format, T... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.w(getClassName(2), String.format(format, args));
+        }
+
+        /**
+         * The shim version of {@link Log#e(String, String)}.
+         *
+         * @param message The {@code String} to log
+         */
+        public static void e(String message) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.e(getClassName(2), message);
+        }
+
+        /**
+         * The shim version of {@link Log#e(String, String)}.  Also calls String.format for
+         * convenience.
+         *
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static <T extends Object> void e(String format, T... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.e(getClassName(2), String.format(format, args));
+        }
+
+        /**
+         * Return the simple classname from the {@code frame}th stack frame in the call path.
+         * Note: this method does <emph>not</emph> check array bounds for the stack trace length.
+         *
+         * @param frame The index of the stack trace frame to inspect for the class name
+         * @return The simple class name (or full-qualified if an error occurs getting a ref to the
+         *         class) for the given element of the stack trace.
+         */
+        public static String getClassName(int frame) {
+            StackTraceElement[] frames = (new Throwable()).getStackTrace();
+            String fullName = frames[frame].getClassName();
+            Class klass = null;
+            try {
+                klass = Class.forName(fullName);
+            } catch (ClassNotFoundException e) {
+                // oops; not much we can do.
+                // Intentionally fall through so we hit the null check below
+            }
+
+            if (klass == null) {
+                return fullName;
+            } else {
+                return klass.getSimpleName();
+            }
+        }
+    }
 }
 
