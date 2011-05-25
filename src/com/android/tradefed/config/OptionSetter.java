@@ -50,7 +50,7 @@ import java.util.Map;
  * ported from dalvik.runner.OptionParser
  * @see {@link ArgsOptionParser}
  */
-class OptionSetter {
+public class OptionSetter {
     private static final String LOG_TAG = "OptionSetter";
 
     static final String BOOL_FALSE_PREFIX = "no-";
