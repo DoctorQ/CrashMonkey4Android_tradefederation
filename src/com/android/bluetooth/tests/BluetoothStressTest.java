@@ -17,13 +17,13 @@
 package com.android.bluetooth.tests;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.result.CollectingTestListener;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
@@ -60,8 +60,6 @@ import junit.framework.TestCase;
  * FIXME: more details on what the testcases do
  */
 public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
-    private static final String LOG_TAG = "BluetoothStressTest";
-
     ITestDevice mTestDevice = null;
 
     // Constants for running the tests
@@ -250,7 +248,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             // assume already set up
             return;
         }
-        mTestCases = new ArrayList<TestInfo>(3);
+        // Allocate enough space for all of the TestInfo instances below
+        mTestCases = new ArrayList<TestInfo>(12);
 
         TestInfo t = new TestInfo();
         t.mTestName = "discoverable";
@@ -419,15 +418,15 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
+        BugreportCollector bugListener = new BugreportCollector(listener, mTestDevice);
+        bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
 
         for (TestInfo test : mTestCases) {
             String testName = test.mTestName;
             TestInfo t = test;
-            CollectingTestListener auxListener = new CollectingTestListener();
 
             if (t.mIterCount != null && t.mIterCount <= 0) {
-                Log.e(LOG_TAG, String.format("Cancelled '%s' test case with iter count %s",
-                        testName, t.mIterCount));
+                CLog.e("Cancelled '%s' test case with iter count %s", testName, t.mIterCount);
                 continue;
             }
 
@@ -440,7 +439,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 try {
                     br.readLine();
                 } catch (IOException e) {
-                    Log.e(LOG_TAG, "IOException waiting for confirmation. Continuing.");
+                    CLog.e("Continuing after IOException while waiting for confirmation: %s",
+                            e.getMessage());
                 }
             }
 
@@ -459,7 +459,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 }
             }
             runner.setMethodName(TEST_CLASS_NAME, t.mTestMethod);
-            mTestDevice.runInstrumentationTests(runner, listener, auxListener);
+            bugListener.setDescriptiveName(testName);
+            mTestDevice.runInstrumentationTests(runner, bugListener);
             if (t.mIterKey != null && t.mIterCount != null) {
                 runner.removeInstrumentationArg(t.mIterKey);
             }
@@ -476,17 +477,6 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             // Log the output file
             logOutputFile(t, listener);
             cleanOutputFile();
-
-            // Grab a bugreport if warranted
-            if (auxListener.hasFailedTests()) {
-                Log.e(LOG_TAG, String.format("Grabbing bugreport after test '%s' finished with " +
-                        "%d failures and %d errors.", testName, auxListener.getNumFailedTests(),
-                        auxListener.getNumErrorTests()));
-                InputStreamSource bugreport = mTestDevice.getBugreport();
-                listener.testLog(String.format("bugreport-%s.txt", testName), LogDataType.TEXT,
-                        bugreport);
-                bugreport.cancel();
-            }
         }
     }
 
@@ -510,15 +500,15 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             outputFile = mTestDevice.pullFileFromExternal(OUTPUT_PATH);
 
             if (outputFile != null) {
-                Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
-                        outputFile.length(), outputFile));
+                CLog.d("Sending %d byte file %s into the logosphere!",
+                        outputFile.length(), outputFile);
                 outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
                 listener.testLog(String.format("output-%s.txt", testInfo.mTestName),
                         LogDataType.TEXT, outputSource);
                 parseOutputFile(testInfo, new FileInputStream(outputFile), listener);
             }
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Got an IO Exception: %s", e));
+            CLog.e("Got an IO Exception: %s", e);
         } finally {
             if (outputFile != null) {
                 outputFile.delete();
@@ -540,7 +530,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             dataStream = new BufferedInputStream(dataStream);
             contents = StreamUtil.getStringFromStream(dataStream);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Got IOException: %s", e));
+            CLog.e("Got IOException: %s", e);
             return;
         }
 
@@ -636,8 +626,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     void reportMetrics(ITestInvocationListener listener, TestInfo test,
             Map<String, String> metrics) {
         // Create an empty testRun to report the parsed runMetrics
-        Log.d(LOG_TAG, String.format("About to report metrics to %s: %s", test.getTestMetricsName(),
-                metrics));
+        CLog.d("About to report metrics to %s: %s", test.getTestMetricsName(), metrics);
         listener.testRunStarted(test.getTestMetricsName(), 0);
         listener.testRunEnded(0, metrics);
     }
