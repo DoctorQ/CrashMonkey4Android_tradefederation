@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <configuration description="Runs the tools library tests from a local sdk">
-
+    <option name="null-device" value="true" />
     <build_provider class="com.android.tradefed.build.LocalSdkBuildProvider" />
     <test class="com.android.tradefed.testtype.SdkLibTest" />
     <result_reporter class="com.android.tradefed.result.XmlResultReporter" />
