@@ -189,6 +189,20 @@ public class BugreportCollectorTest extends TestCase {
         verifyMocks();
     }
 
+    public void testDescriptiveName() throws Exception {
+        final String normalName = "AT_START_OF_FIRST_TESTCASE";
+        final String descName = "custom_descriptive_name";
+        mMockListener.testLog(EasyMock.contains(normalName), EasyMock.eq(LogDataType.TEXT),
+                EasyMock.eq(mBugreportISS));
+        mMockListener.testLog(EasyMock.contains(descName), EasyMock.eq(LogDataType.TEXT),
+                EasyMock.eq(mBugreportISS));
+        replayMocks();
+        mCollector.grabBugreport(normalName);
+        mCollector.setDescriptiveName(descName);
+        mCollector.grabBugreport(normalName);
+        verifyMocks();
+    }
+
     /**
      * Injects a single test run with 1 passed test into the {@link CollectingTestListener} under
      * test

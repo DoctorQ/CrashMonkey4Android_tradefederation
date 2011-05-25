@@ -202,6 +202,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     private List<Predicate> mPredicates = new LinkedList<Predicate>();
     private boolean mAsynchronous = false;
     private boolean mCapturedBugreport = false;
+    private String mDescriptiveName = null;
     // FIXME: Add support for minimum wait time between successive bugreports
     // FIXME: get rid of reset() method
 
@@ -243,16 +244,31 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     }
 
     /**
+     * Set the descriptive name to use when recording bugreports.  If {@code null},
+     * {@code BugreportCollector} will fall back to the default behavior of serializing the name of
+     * the event that caused the bugreport to be collected.
+     */
+    public void setDescriptiveName(String name) {
+        mDescriptiveName = name;
+    }
+
+    /**
      * Actually capture a bugreport and pass it to our child listener.
      */
     void grabBugreport(String logDesc) {
-        Log.v(LOG_TAG, String.format("Would grab bugreport for %s.", logDesc));
+        Log.v(LOG_TAG, String.format("About to grab bugreport for %s; custom name is %s.", logDesc,
+                mDescriptiveName));
+        if (mDescriptiveName != null) {
+            logDesc = mDescriptiveName;
+        }
         String logName = String.format("bug-%s.%d.txt", logDesc, System.currentTimeMillis());
+        Log.v(LOG_TAG, String.format("Log name is %s", logName));
         InputStreamSource bugreport = mTestDevice.getBugreport();
-        Log.v(LOG_TAG, String.format("ISS is %s, device is %s, listener is %s, logname is %s",
-                bugreport, mTestDevice, mListener, logName));
-        mListener.testLog(logName, LogDataType.TEXT, bugreport);
-        bugreport.cancel();
+        try {
+            mListener.testLog(logName, LogDataType.TEXT, bugreport);
+        } finally {
+            bugreport.cancel();
+        }
     }
 
     Predicate getPredicate(Predicate predicate) {
