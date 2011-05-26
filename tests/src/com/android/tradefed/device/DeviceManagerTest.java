@@ -106,7 +106,8 @@ public class DeviceManagerTest extends TestCase {
         EasyMock.expect(mMockTestDevice.getIDevice()).andStubReturn(mMockIDevice);
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), (String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject())).andStubReturn(new CommandResult());
-
+        EasyMock.expect(mMockRunUtil.runTimedCmdSilently(EasyMock.anyLong(), (String)EasyMock.
+                anyObject(), (String)EasyMock.anyObject())).andStubReturn(new CommandResult());
     }
 
     private DeviceManager createDeviceManager(IDevice... devices) {
