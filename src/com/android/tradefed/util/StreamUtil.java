@@ -15,8 +15,6 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.ByteArrayList;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -24,6 +22,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.io.Writer;
 
 /**
  * Utility class for managing input streams.
@@ -79,6 +78,22 @@ public class StreamUtil {
         int data = -1;
         while ((data = inStream.read()) != -1) {
             outStream.write(data);
+        }
+    }
+
+    /**
+     * Copies contents of inStream to writer.
+     * <p/>
+     * Recommended to provide a buffered stream for input and output
+     *
+     * @param inStream the {@link InputStream}
+     * @param writer the {@link Writer} destination
+     * @throws IOException
+     */
+    public static void copyStreamToWriter(InputStream inStream, Writer writer) throws IOException {
+        int data = -1;
+        while ((data = inStream.read()) != -1) {
+            writer.write(data);
         }
     }
 

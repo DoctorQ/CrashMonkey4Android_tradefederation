@@ -16,20 +16,21 @@
 package com.android.tradefed.log;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.ILogOutput;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Map;
 
 /**
- * A {@link ILogOutput} singleton logger that multiplexes and manages different loggers,
+ * A {@link ILogRegistry} implementation that multiplexes and manages different loggers,
  * using the appropriate one based on the {@link ThreadGroup} of the thread making the call.
  * <p/>
  * Note that the registry hashes on the ThreadGroup in which a thread belongs. If a thread is
@@ -37,7 +38,7 @@ import java.util.Map;
  * logger, and thus will need to register its own logger with the LogRegistry if it wants to log
  * output.
  */
-public class LogRegistry implements ILogOutput {
+public class LogRegistry implements ILogRegistry {
     private static final String LOG_TAG = "LogRegistry";
     private static LogRegistry mLogRegistry = null;
     private Map<ThreadGroup, ILeveledLogOutput> mLogTable =
@@ -65,7 +66,7 @@ public class LogRegistry implements ILogOutput {
      *
      * @return a {@link LogRegistry} that can be used to register, get, write to, and close logs
      */
-    public static LogRegistry getLogRegistry() {
+    public static ILogRegistry getLogRegistry() {
         if (mLogRegistry == null) {
             mLogRegistry = new LogRegistry();
         }
@@ -74,34 +75,33 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Set the log level display for the global log
-     *
-     * @param logLevel the {@link String} form of the {@link LogLevel} to use
+     * {@inheritDoc}
      */
+    @Override
     public void setGlobalLogDisplayLevel(String logLevel) {
         mGlobalLogger.setLogLevelDisplay(logLevel);
     }
 
     /**
-     * Set the log tags to display for the global log
+     * {@inheritDoc}
      */
+    @Override
     public void setGlobalLogTagDisplay(Collection<String> logTagsDisplay) {
         mGlobalLogger.addLogTagsDisplay(logTagsDisplay);
     }
 
     /**
-    * Returns current log level display for the global log
-    *
-    * @return logLevel the {@link String} form of the {@link LogLevel} to use
-    */
+     * {@inheritDoc}
+     */
+    @Override
     public String getGlobalLogDisplayLevel() {
         return mGlobalLogger.getLogLevelDisplay();
     }
 
     /**
-     * Registers the logger as the instance to use for the current thread.
-     *
+     * {@inheritDoc}
      */
+    @Override
     public void registerLogger(ILeveledLogOutput log) {
         ILeveledLogOutput oldValue = mLogTable.put(getCurrentThreadGroup(), log);
         if (oldValue != null) {
@@ -111,9 +111,9 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Unregisters the current logger in effect for the current thread.
-     *
+     * {@inheritDoc}
      */
+    @Override
     public void unregisterLogger() {
         ThreadGroup currentThreadGroup = getCurrentThreadGroup();
         if (currentThreadGroup != null) {
@@ -121,6 +121,24 @@ public class LogRegistry implements ILogOutput {
         }
         else {
           printLog(LogLevel.ERROR, LOG_TAG, "Unregistering when thread has no logger registered.");
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void dumpToGlobalLog(ILeveledLogOutput log) {
+        InputStreamSource source = log.getLog();
+        try {
+            InputStream stream = source.createInputStream();
+            mGlobalLogger.dumpToLog(stream);
+            StreamUtil.closeStream(stream);
+        } catch (IOException e) {
+            System.err.println("Failed to dump log");
+            e.printStackTrace();
+        } finally {
+            source.cancel();
         }
     }
 
@@ -138,6 +156,7 @@ public class LogRegistry implements ILogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printLog(LogLevel logLevel, String tag, String message) {
         ILeveledLogOutput log = getLogger();
         LogLevel currentLogLevel = LogLevel.getByString(log.getLogLevel());
@@ -149,6 +168,7 @@ public class LogRegistry implements ILogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
         getLogger().printAndPromptLog(logLevel, tag, message);
     }
@@ -168,8 +188,9 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Closes and removes all logs being managed by this LogRegistry.
+     * {@inheritDoc}
      */
+    @Override
     public void closeAndRemoveAllLogs() {
         Collection<ILeveledLogOutput> allLogs = mLogTable.values();
         Iterator<ILeveledLogOutput> iter = allLogs.iterator();
@@ -183,8 +204,9 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Saves global logger contents to a tmp file.
+     * {@inheritDoc}
      */
+    @Override
     public void saveGlobalLog() {
         InputStreamSource globalLog = mGlobalLogger.getLog();
         saveLog("tradefed_global_log_", globalLog);
@@ -208,8 +230,9 @@ public class LogRegistry implements ILogOutput {
     }
 
     /**
-     * Diagnosis method to dump all logs to files.
+     * {@inheritDoc}
      */
+    @Override
     public void dumpLogs() {
         for (Map.Entry<ThreadGroup, ILeveledLogOutput> logEntry : mLogTable.entrySet()) {
             // use thread group name as file name - assume its descriptive
