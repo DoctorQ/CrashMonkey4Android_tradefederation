@@ -16,18 +16,42 @@
 package com.android.tradefed.build;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * No-op empty implementation of a {@link IBuildProvider}.
+ * <p/>
+ * Will provide an empty {@link BuildInfo} with the provided values from options.
  */
+@OptionClass(alias="stub")
 public class StubBuildProvider implements IBuildProvider {
+
+    @Option(name="build-id", description="build id to supply.")
+    private int mBuildId = 0;
+
+    @Option(name="test-target", description="test target name to supply.")
+    private String mTestTarget = "stub";
+
+    @Option(name="build-name", description="build name to supply.")
+    private String mBuildName = "stub";
+
+    @Option(name="build-attribute", description="build attributes to supply.")
+    private Map<String, String> mBuildAttributes = new HashMap<String,String>();
 
     /**
      * {@inheritDoc}
      */
     public IBuildInfo getBuild() throws BuildRetrievalError {
         Log.d("BuildProvider", "skipping build provider step");
-        return new BuildInfo();
+        BuildInfo stubBuild = new BuildInfo(mBuildId, mTestTarget, mBuildName);
+        for (Map.Entry<String, String> attributeEntry : mBuildAttributes.entrySet()) {
+            stubBuild.addBuildAttribute(attributeEntry.getKey(), attributeEntry.getValue());
+        }
+        return stubBuild;
     }
 
     /**
