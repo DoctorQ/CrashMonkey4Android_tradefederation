@@ -97,6 +97,12 @@ public class StubTestDevice implements IManagedTestDevice {
     }
 
     @Override
+    public boolean pushString(String content, String deviceFilePath)
+            throws DeviceNotAvailableException {
+        return false;
+    }
+
+    @Override
     public boolean doesFileExist(String deviceFilePath) throws DeviceNotAvailableException {
         return false;
     }
