@@ -19,13 +19,13 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
+import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
@@ -34,8 +34,8 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.result.StubTestRunListener;
 import com.android.tradefed.result.SnapshotInputStreamSource;
+import com.android.tradefed.result.StubTestRunListener;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -525,6 +525,26 @@ class TestDevice implements IManagedTestDevice {
         };
         return performDeviceAction(String.format("push %s", remoteFilePath), pushAction,
                 MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean pushString(final String contents, final String remoteFilePath)
+            throws DeviceNotAvailableException {
+        File tmpFile = null;
+        try {
+            tmpFile = FileUtil.createTempFile("temp", ".txt");
+            FileUtil.writeToFile(contents, tmpFile);
+            return pushFile(tmpFile, remoteFilePath);
+        } catch (IOException e) {
+            Log.e(LOG_TAG, e);
+            return false;
+        } finally {
+            if (tmpFile != null) {
+                tmpFile.delete();
+            }
+        }
     }
 
     /**

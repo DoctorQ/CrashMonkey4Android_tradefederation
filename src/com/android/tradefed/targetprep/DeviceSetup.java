@@ -23,10 +23,8 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -183,15 +181,10 @@ public class DeviceSetup implements ITargetPreparer {
         }
         if (propertyBuilder.length() > 0) {
             // create a local.prop file, and push it to /data/local.prop
-            File localFile = createTempFile("local.prop", propertyBuilder.toString());
-            try {
-                boolean result = device.pushFile(localFile, "/data/local.prop");
-                if (!result) {
-                    throw new TargetSetupError(String.format("Failed to push file to %s",
-                            device.getSerialNumber()));
-                }
-            } finally {
-                localFile.delete();
+            boolean result = device.pushString(propertyBuilder.toString(), "/data/local.prop");
+            if (!result) {
+                throw new TargetSetupError(String.format("Failed to push file to %s",
+                        device.getSerialNumber()));
             }
             Log.i(LOG_TAG, String.format(
                     "Setup requires system property change. Reboot of %s required",
@@ -270,29 +263,6 @@ public class DeviceSetup implements ITargetPreparer {
                         mLocalDataFile.getAbsolutePath(), fullRemotePath,
                         device.getSerialNumber()));
             }
-        }
-    }
-
-    /**
-     * Creates a local temporary file with the given contents
-     *
-     * @param fileName the file name prefix
-     * @param fileContents the file contents
-     * @return the created {@link File}
-     * @throws TargetSetupError if file could not be created
-     */
-    private File createTempFile(String fileName, String fileContents) throws TargetSetupError {
-        File tmpFile = null;
-        try {
-            tmpFile = FileUtil.createTempFile(fileName, ".txt");
-            FileUtil.writeToFile(fileContents, tmpFile);
-            return tmpFile;
-        } catch (IOException e) {
-            Log.e(LOG_TAG, e);
-            if (tmpFile != null) {
-                tmpFile.delete();
-            }
-            throw new TargetSetupError("Failed to create local temp file", e);
         }
     }
 }
