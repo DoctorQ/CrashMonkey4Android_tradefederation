@@ -290,6 +290,18 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Push file created from a string to device
+     *
+     * @param contents the contents of the file to push
+     * @param deviceFilePath the remote destination absolute file path
+     * @return <code>true</code> if string was pushed successfully. <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean pushString(String contents, String deviceFilePath)
+            throws DeviceNotAvailableException;
+
+    /**
      * Incrementally syncs the contents of a local file directory to device.
      * <p/>
      * Decides which files to push by comparing timestamps of local files with their remote
