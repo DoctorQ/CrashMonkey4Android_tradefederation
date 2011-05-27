@@ -32,6 +32,7 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.result.TestRunResult;
+import com.android.tradefed.util.StringEscapeUtils;
 
 import java.io.File;
 import java.util.Collection;
@@ -145,7 +146,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * Optionally, set the test method to run.
      */
     public void setMethodName(String testMethodName) {
-        mTestMethodName = testMethodName;
+        mTestMethodName = StringEscapeUtils.escapeShell(testMethodName);
     }
 
     /**
