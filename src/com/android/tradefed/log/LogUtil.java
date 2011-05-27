@@ -84,7 +84,7 @@ public class LogUtil {
          * @param format A format string for the message to log
          * @param args The format string arguments
          */
-        public static <T extends Object> void v(String format, T... args) {
+        public static void v(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.v(getClassName(2), String.format(format, args));
         }
@@ -106,7 +106,7 @@ public class LogUtil {
          * @param format A format string for the message to log
          * @param args The format string arguments
          */
-        public static <T extends Object> void d(String format, T... args) {
+        public static void d(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.d(getClassName(2), String.format(format, args));
         }
@@ -128,7 +128,7 @@ public class LogUtil {
          * @param format A format string for the message to log
          * @param args The format string arguments
          */
-        public static <T extends Object> void i(String format, T... args) {
+        public static void i(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.i(getClassName(2), String.format(format, args));
         }
@@ -150,7 +150,7 @@ public class LogUtil {
          * @param format A format string for the message to log
          * @param args The format string arguments
          */
-        public static <T extends Object> void w(String format, T... args) {
+        public static void w(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.w(getClassName(2), String.format(format, args));
         }
@@ -172,7 +172,7 @@ public class LogUtil {
          * @param format A format string for the message to log
          * @param args The format string arguments
          */
-        public static <T extends Object> void e(String format, T... args) {
+        public static void e(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.e(getClassName(2), String.format(format, args));
         }

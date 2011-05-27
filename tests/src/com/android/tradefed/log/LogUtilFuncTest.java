@@ -17,7 +17,6 @@
 package com.android.tradefed.log;
 
 import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import junit.framework.TestCase;

@@ -16,7 +16,6 @@
 package com.android.tradefed.invoker;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.build.BuildRetrievalError;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IBuildProvider;

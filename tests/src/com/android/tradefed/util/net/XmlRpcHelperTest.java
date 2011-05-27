@@ -17,7 +17,6 @@
 package com.android.tradefed.util.net;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.List;
 
 import junit.framework.TestCase;

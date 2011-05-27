@@ -396,7 +396,6 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs = new String[] {"--foo", "bar"};
 
         CommandFileParser commandFile = new CommandFileParser() {
-            private boolean showInclude = true;
             @Override
             BufferedReader createCommandFileReader(File file) {
                 if (mMockFile.equals(file)) {
@@ -433,7 +432,6 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs = new String[] {"--foo", "bar"};
 
         CommandFileParser commandFile = new CommandFileParser() {
-            private boolean showInclude = true;
             @Override
             BufferedReader createCommandFileReader(File file) {
                 if (mockFile.equals(file)) {

@@ -23,15 +23,12 @@ import com.android.tradefed.result.BugreportCollector.Noun;
 import com.android.tradefed.result.BugreportCollector.Predicate;
 import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.result.BugreportCollector.SubPredicate;
-import com.android.tradefed.result.TestResult.TestStatus;
 
 import org.easymock.EasyMock;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import junit.framework.TestCase;
@@ -42,9 +39,7 @@ public class BugreportCollectorTest extends TestCase {
     private ITestInvocationListener mMockListener = null;
     private InputStreamSource mBugreportISS = null;
 
-    private static final String METRIC_VALUE = "value";
     private static final String TEST_KEY = "key";
-    private static final String METRIC_VALUE2 = "value2";
     private static final String RUN_KEY = "key2";
     private static final String BUGREPORT_STRING = "This is a bugreport\nYeah!\n";
 
@@ -156,7 +151,6 @@ public class BugreportCollectorTest extends TestCase {
 
     public void testTestEnded_firstCase() throws Exception {
         Predicate pred = new Predicate(Relation.AFTER, Freq.FIRST, Noun.TESTCASE);
-        String predString = pred.toString();
         mCollector.addPredicate(pred);
         mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
                 EasyMock.eq(mBugreportISS));
@@ -169,7 +163,6 @@ public class BugreportCollectorTest extends TestCase {
 
     public void testTestEnded_firstRun() throws Exception {
         Predicate pred = new Predicate(Relation.AFTER, Freq.FIRST, Noun.TESTRUN);
-        String predString = pred.toString();
         mCollector.addPredicate(pred);
         mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
                 EasyMock.eq(mBugreportISS));
@@ -234,21 +227,6 @@ public class BugreportCollectorTest extends TestCase {
      */
     private void verifyMocks() {
         EasyMock.verify(mMockDevice, mMockListener);
-    }
-
-    /**
-     * Convenience method to build a predicate from subpredicates
-     */
-    private Predicate p(Relation rp, Freq tp, Noun n) throws IllegalArgumentException {
-        return new Predicate(rp, tp, n);
-    }
-
-    /**
-     * Convenience method to build a predicate from subpredicates
-     */
-    private Predicate p(Relation rp, Freq tp, Noun tpN, Filter fp, Noun fpN)
-            throws IllegalArgumentException {
-        return new Predicate(rp, tp, tpN, fp, fpN);
     }
 }
 

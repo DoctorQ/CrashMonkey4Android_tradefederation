@@ -160,8 +160,8 @@ public class DeviceSetupTest extends TestCase {
         EasyMock.replay(mMockDevice, mMockIDevice);
         try {
             mDeviceSetup.setUp(mMockDevice, mMockBuildInfo);
-            fail("DeviceNotAvailableException not thrown");
-        } catch (DeviceNotAvailableException e) {
+            fail("TargetSetupError not thrown");
+        } catch (TargetSetupError e) {
             // expected
         }
     }

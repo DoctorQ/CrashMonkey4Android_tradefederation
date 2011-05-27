@@ -18,18 +18,14 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * A pass-through {@link ITestInvocationListener} that collects bugreports when configurable events
@@ -101,10 +97,6 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
 
         public Predicate(Relation rp, Freq fp, Noun fpN, Filter filterP, Noun filterPN)
                 throws IllegalArgumentException {
-            if (false) {
-                throw new IllegalArgumentException("fixme");
-            }
-
             mSubPredicates.add(rp);
             mSubPredicates.add(fp);
             mSubPredicates.add(fpN);
@@ -178,10 +170,6 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
         public boolean equals(Object other) {
             if (other instanceof Predicate) {
                 Predicate otherP = (Predicate) other;
-                if (otherP == null) {
-                    return false;
-                }
-
                 return fullMatch(otherP);
             } else {
                 return false;
@@ -200,7 +188,9 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     private ITestInvocationListener mListener;
     private ITestDevice mTestDevice;
     private List<Predicate> mPredicates = new LinkedList<Predicate>();
+    @SuppressWarnings("unused")
     private boolean mAsynchronous = false;
+    @SuppressWarnings("unused")
     private boolean mCapturedBugreport = false;
     private String mDescriptiveName = null;
     // FIXME: Add support for minimum wait time between successive bugreports
@@ -375,6 +365,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * Convenience method to build a predicate from subpredicates
      */
+    @SuppressWarnings("unused")
     private static Predicate p(Relation rp, Freq fp, Noun fpN, Filter filterP, Noun filterPN)
             throws IllegalArgumentException {
         return new Predicate(rp, fp, fpN, filterP, filterPN);
@@ -385,6 +376,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         super.testEnded(test, testMetrics);
         check(Relation.AFTER, Noun.TESTCASE);
@@ -394,6 +386,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
         super.testFailed(status, test, trace);
         check(Relation.AFTER, Noun.FAILED_TESTCASE);
@@ -403,6 +396,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
         super.testRunEnded(elapsedTime, runMetrics);
         check(Relation.AFTER, Noun.TESTRUN);
@@ -411,6 +405,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunFailed(String errorMessage) {
         super.testRunFailed(errorMessage);
         check(Relation.AFTER, Noun.FAILED_TESTRUN);
@@ -419,6 +414,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStarted(String runName, int testCount) {
         super.testRunStarted(runName, testCount);
         check(Relation.AT_START_OF, Noun.TESTRUN);
@@ -427,6 +423,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStopped(long elapsedTime) {
         super.testRunStopped(elapsedTime);
         // FIXME: figure out how to expose this
@@ -435,6 +432,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testStarted(TestIdentifier test) {
         super.testStarted(test);
         check(Relation.AT_START_OF, Noun.TESTCASE);
