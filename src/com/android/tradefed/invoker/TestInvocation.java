@@ -27,6 +27,7 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.log.ILogRegistry;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
@@ -114,6 +115,8 @@ public class TestInvocation implements ITestInvocation {
         try {
             mDevice = device;
             mStatus = "fetching build";
+            config.getLogOutput().init();
+            getLogRegistry().registerLogger(config.getLogOutput());
             IBuildInfo info = config.getBuildProvider().getBuild();
             if (info != null) {
                 injectBuild(info, config.getTests());
@@ -123,6 +126,8 @@ public class TestInvocation implements ITestInvocation {
                 } else {
                     device.setRecovery(config.getDeviceRecovery());
                     performInvocation(config, device, info, rescheduler);
+                    // exit here, depend on performInvocation to deregister logger
+                    return;
                 }
             } else {
                 mStatus = "(no build to test)";
@@ -133,6 +138,10 @@ public class TestInvocation implements ITestInvocation {
         } catch (IOException e) {
             Log.e(LOG_TAG, e);
         }
+        // invocation not started, save current log contents to global log
+        getLogRegistry().dumpToGlobalLog(config.getLogOutput());
+        getLogRegistry().unregisterLogger();
+        config.getLogOutput().closeLog();
     }
 
     /**
@@ -305,8 +314,8 @@ public class TestInvocation implements ITestInvocation {
 
     /**
      * Starts the invocation.
-     *
-     * Starts logging, and informs listeners that invocation has been started
+     * <p/>
+     * Starts logging, and informs listeners that invocation has been started.
      *
      * @param config
      * @param device
@@ -315,8 +324,6 @@ public class TestInvocation implements ITestInvocation {
      */
     private void startInvocation(IConfiguration config, ITestDevice device, IBuildInfo info)
             throws IOException {
-        config.getLogOutput().init();
-        getLogRegistry().registerLogger(config.getLogOutput());
         logStartInvocation(info, device);
         for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
             try {
@@ -330,7 +337,7 @@ public class TestInvocation implements ITestInvocation {
 
     /**
      * Attempt to reschedule the failed invocation to resume where it left off.
-     *
+     * <p/>
      * @see {@link IResumableTest}
      *
      * @param config
@@ -405,11 +412,11 @@ public class TestInvocation implements ITestInvocation {
     }
 
     /**
-     * Gets the {@link LogRegistry} to use.
+     * Gets the {@link ILogRegistry} to use.
      * <p/>
      * Exposed for unit testing.
      */
-    LogRegistry getLogRegistry() {
+    ILogRegistry getLogRegistry() {
         return LogRegistry.getLogRegistry();
     }
 

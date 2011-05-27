@@ -23,12 +23,14 @@ import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -271,6 +273,18 @@ public class FileLogger implements ILeveledLogOutput {
                 mTempLogFile.delete();
                 mTempLogFile = null;
             }
+        }
+    }
+
+    /**
+     * Dump the contents of the input stream to this log
+     *
+     * @param createInputStream
+     * @throws IOException
+     */
+    void dumpToLog(InputStream inputStream) throws IOException {
+        if (mLogWriter != null) {
+            StreamUtil.copyStreamToWriter(inputStream, mLogWriter);
         }
     }
 }
