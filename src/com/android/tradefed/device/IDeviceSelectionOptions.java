@@ -16,13 +16,16 @@
 
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
+
 import java.util.Collection;
 import java.util.Map;
 
 /**
  * Interface for device selection criteria.
  */
-public interface IDeviceSelectionOptions {
+public interface IDeviceSelectionOptions extends IMatcher<IDevice> {
 
     /**
      * Gets a copy of the serial numbers
@@ -61,5 +64,4 @@ public interface IDeviceSelectionOptions {
      * @return <code>true</code> if a null device (aka no device required) has been requested
      */
     public boolean nullDeviceRequested();
-
 }

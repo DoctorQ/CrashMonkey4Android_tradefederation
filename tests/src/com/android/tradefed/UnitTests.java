@@ -27,7 +27,6 @@ import com.android.tradefed.config.ConfigurationTest;
 import com.android.tradefed.config.ConfigurationXmlParserTest;
 import com.android.tradefed.config.OptionSetterTest;
 import com.android.tradefed.device.DeviceManagerTest;
-import com.android.tradefed.device.DeviceSelectionMatcherTest;
 import com.android.tradefed.device.DeviceSelectionOptionsTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
 import com.android.tradefed.device.TestDeviceTest;
@@ -101,7 +100,6 @@ public class UnitTests extends TestSuite {
 
         // device
         addTestSuite(DeviceManagerTest.class);
-        addTestSuite(DeviceSelectionMatcherTest.class);
         addTestSuite(DeviceSelectionOptionsTest.class);
         addTestSuite(DeviceStateMonitorTest.class);
         addTestSuite(TestDeviceTest.class);

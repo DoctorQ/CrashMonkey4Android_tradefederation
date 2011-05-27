@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 
@@ -189,5 +190,53 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
      */
     String fetchEnvironmentVariable(String name) {
         return System.getenv(name);
+    }
+
+    /**
+     * @return <code>true</code> if the given {@link IDevice} is a match for the provided options.
+     * <code>false</code> otherwise
+     */
+    @Override
+    public boolean matches(IDevice device) {
+        Collection<String> serials = getSerials();
+        Collection<String> excludeSerials = getExcludeSerials();
+        Collection<String> productTypes = getProductTypes();
+        Map<String, String> properties = getProperties();
+
+        if (!serials.isEmpty() &&
+                !serials.contains(device.getSerialNumber())) {
+            return false;
+        }
+        if (excludeSerials.contains(device.getSerialNumber())) {
+            return false;
+        }
+        if (!productTypes.isEmpty() &&
+                !productTypes.contains(getDeviceProductType(device))) {
+            return false;
+        }
+        for (Map.Entry<String, String> propEntry : properties.entrySet()) {
+            if (!propEntry.getValue().equals(device.getProperty(propEntry.getKey()))) {
+                return false;
+            }
+        }
+        if (emulatorRequested() != device.isEmulator()) {
+            // only match with emulator if explicitly requested
+            return false;
+        }
+        if (nullDeviceRequested() != (device instanceof NullDevice)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private String getDeviceProductType(IDevice device) {
+        // TODO: merge this into the getProperties match
+        String type = device.getProperty("ro.product.board");
+        if(type == null || type.isEmpty()) {
+            // last-chance fallback to ro.product.device, which may be set if ro.product.board isn't
+            type = device.getProperty("ro.product.device");
+        }
+        return type;
     }
 }

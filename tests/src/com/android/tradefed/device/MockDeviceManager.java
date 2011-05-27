@@ -16,7 +16,6 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
-import com.android.tradefed.device.DeviceManager.DeviceMatcher;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 
@@ -33,26 +32,6 @@ import junit.framework.Assert;
  * for a configurable set of devices.
  */
 public class MockDeviceManager implements IDeviceManager {
-
-    private static class TestDeviceMatcher implements IMatcher<ITestDevice> {
-
-        private DeviceMatcher mDeviceMatcher;
-
-        /**
-         * @param deviceSelectionOptions
-         */
-        public TestDeviceMatcher(IDeviceSelectionOptions deviceSelectionOptions) {
-            mDeviceMatcher = new DeviceMatcher(deviceSelectionOptions);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean matches(ITestDevice element) {
-            return mDeviceMatcher.matches(element.getIDevice());
-        }
-    }
 
     ConditionPriorityBlockingQueue<ITestDevice> mDeviceQueue =
         new ConditionPriorityBlockingQueue<ITestDevice>();
@@ -75,6 +54,25 @@ public class MockDeviceManager implements IDeviceManager {
                     mockIDevice);
             EasyMock.replay(mockDevice, mockIDevice);
             mDeviceQueue.add(mockDevice);
+        }
+    }
+
+    private static class TestDeviceMatcher implements IMatcher<ITestDevice> {
+        private IDeviceSelectionOptions mDeviceOptions;
+
+        /**
+         * @param deviceSelectionOptions
+         */
+        public TestDeviceMatcher(IDeviceSelectionOptions deviceSelectionOptions) {
+            mDeviceOptions = deviceSelectionOptions;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean matches(ITestDevice element) {
+            return mDeviceOptions.matches(element.getIDevice());
         }
     }
 

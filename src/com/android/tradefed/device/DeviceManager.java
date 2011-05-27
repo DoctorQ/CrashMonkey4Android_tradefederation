@@ -25,7 +25,6 @@ import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
-import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -73,28 +72,11 @@ public class DeviceManager implements IDeviceManager {
     private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
     private boolean mEnableLogcat = true;
     private boolean mIsTerminated = false;
-    private DeviceMatcher mGlobalDeviceFilter;
+    private IDeviceSelectionOptions mGlobalDeviceFilter;
     /** the maximum number of emulators that can be allocated at one time */
     private int mNumEmulatorSupported = 1;
     /** the maximum number of no device runs that can be allocated at one time */
     private int mNumNullDevicesSupported = 1;
-
-    static class DeviceMatcher implements IMatcher<IDevice> {
-
-        private IDeviceSelectionOptions mOptions;
-
-        DeviceMatcher(IDeviceSelectionOptions options) {
-            mOptions = options;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public boolean matches(IDevice device) {
-            return DeviceSelectionMatcher.matches(device, mOptions);
-        }
-
-    }
 
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
@@ -117,7 +99,7 @@ public class DeviceManager implements IDeviceManager {
             throw new IllegalStateException("already initialized");
         }
         mIsInitialized = true;
-        mGlobalDeviceFilter = new DeviceMatcher(globalDeviceFilter);
+        mGlobalDeviceFilter = globalDeviceFilter;
         // use Hashtable since it is synchronized
         mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
@@ -311,7 +293,7 @@ public class DeviceManager implements IDeviceManager {
      */
     private IDevice takeAvailableDevice() {
         try {
-            return mAvailableDeviceQueue.take(new DeviceMatcher(ANY_DEVICE_OPTIONS));
+            return mAvailableDeviceQueue.take(ANY_DEVICE_OPTIONS);
         } catch (InterruptedException e) {
             Log.w(LOG_TAG, "interrupted while taking device");
             return null;
@@ -355,8 +337,7 @@ public class DeviceManager implements IDeviceManager {
      */
     private IDevice pollAvailableDevice(long timeout, IDeviceSelectionOptions options) {
         try {
-            return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,
-                    new DeviceMatcher(options));
+            return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS, options);
         } catch (InterruptedException e) {
             Log.w(LOG_TAG, "interrupted while polling for device");
             return null;
