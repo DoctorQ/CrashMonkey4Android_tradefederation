@@ -40,7 +40,7 @@ import java.util.Map;
  *   <li>Capture </li>
  * </ul>
  */
-public class BugreportCollector extends CollectingTestListener implements ITestInvocationListener {
+public class BugreportCollector implements ITestInvocationListener {
     /** A predefined predicate which fires after each failed testcase */
     public static final Predicate AFTER_FAILED_TESTCASES =
             p(Relation.AFTER, Freq.EACH, Noun.FAILED_TESTCASE);
@@ -185,6 +185,12 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
 
     // Now that the Predicate framework is done, actually start on the BugreportCollector class
     private static final String LOG_TAG = "BugreportCollector";
+    /**
+     * We keep an internal {@link CollectingTestListener} instead of subclassing to make sure that
+     * we @Override all of the applicable interface methods (instead of having them fall through to
+     * implementations in {@link CollectingTestListener}).
+     */
+    private CollectingTestListener mCollector = new CollectingTestListener();
     private ITestInvocationListener mListener;
     private ITestDevice mTestDevice;
     private List<Predicate> mPredicates = new LinkedList<Predicate>();
@@ -291,7 +297,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
         List<Freq> applicableFreqs = new ArrayList<Freq>(2 /* total # freqs in enum */);
         applicableFreqs.add(Freq.EACH);
 
-        TestRunResult curResult = getCurrentRunResults();
+        TestRunResult curResult = mCollector.getCurrentRunResults();
         switch (relation) {
             case AFTER:
                 switch (noun) {
@@ -308,7 +314,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
                         break;
 
                     case TESTRUN:
-                        if (getRunResults().size() == 1) {
+                        if (mCollector.getRunResults().size() == 1) {
                             applicableFreqs.add(Freq.FIRST);
                         }
                         break;
@@ -330,7 +336,7 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
                         break;
 
                     case TESTRUN:
-                        if (getRunResults().size() == 1) {
+                        if (mCollector.getRunResults().size() == 1) {
                             applicableFreqs.add(Freq.FIRST);
                         }
                         break;
@@ -378,7 +384,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
-        super.testEnded(test, testMetrics);
+        mListener.testEnded(test, testMetrics);
+        mCollector.testEnded(test, testMetrics);
         check(Relation.AFTER, Noun.TESTCASE);
         reset();
     }
@@ -388,7 +395,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-        super.testFailed(status, test, trace);
+        mListener.testFailed(status, test, trace);
+        mCollector.testFailed(status, test, trace);
         check(Relation.AFTER, Noun.FAILED_TESTCASE);
         reset();
     }
@@ -398,7 +406,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-        super.testRunEnded(elapsedTime, runMetrics);
+        mListener.testRunEnded(elapsedTime, runMetrics);
+        mCollector.testRunEnded(elapsedTime, runMetrics);
         check(Relation.AFTER, Noun.TESTRUN);
     }
 
@@ -407,7 +416,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testRunFailed(String errorMessage) {
-        super.testRunFailed(errorMessage);
+        mListener.testRunFailed(errorMessage);
+        mCollector.testRunFailed(errorMessage);
         check(Relation.AFTER, Noun.FAILED_TESTRUN);
     }
 
@@ -416,7 +426,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testRunStarted(String runName, int testCount) {
-        super.testRunStarted(runName, testCount);
+        mListener.testRunStarted(runName, testCount);
+        mCollector.testRunStarted(runName, testCount);
         check(Relation.AT_START_OF, Noun.TESTRUN);
     }
 
@@ -425,7 +436,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testRunStopped(long elapsedTime) {
-        super.testRunStopped(elapsedTime);
+        mListener.testRunStopped(elapsedTime);
+        mCollector.testRunStopped(elapsedTime);
         // FIXME: figure out how to expose this
     }
 
@@ -434,7 +446,8 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void testStarted(TestIdentifier test) {
-        super.testStarted(test);
+        mListener.testStarted(test);
+        mCollector.testStarted(test);
         check(Relation.AT_START_OF, Noun.TESTCASE);
     }
 
@@ -445,18 +458,27 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void invocationStarted(IBuildInfo buildInfo) {
-        super.invocationStarted(buildInfo);
+        mListener.invocationStarted(buildInfo);
+        mCollector.invocationStarted(buildInfo);
         check(Relation.AT_START_OF, Noun.INVOCATION);
     }
 
-    // No need to override testLog(...)
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
+        mListener.testLog(dataName, dataType, dataStream);
+        mCollector.testLog(dataName, dataType, dataStream);
+    }
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void invocationEnded(long elapsedTime) {
-        super.invocationEnded(elapsedTime);
+        mListener.invocationEnded(elapsedTime);
+        mCollector.invocationEnded(elapsedTime);
         check(Relation.AFTER, Noun.INVOCATION);
     }
 
@@ -465,11 +487,17 @@ public class BugreportCollector extends CollectingTestListener implements ITestI
      */
     @Override
     public void invocationFailed(Throwable cause) {
-        super.invocationFailed(cause);
+        mListener.invocationFailed(cause);
+        mCollector.invocationFailed(cause);
         check(Relation.AFTER, Noun.FAILED_INVOCATION);
     }
 
-    // No need to override getSummary()
-
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TestSummary getSummary() {
+        return mListener.getSummary();
+    }
 }
 
