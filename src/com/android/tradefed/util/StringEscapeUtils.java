@@ -34,7 +34,6 @@ public class StringEscapeUtils {
      */
     public static String escapeShell(String str) {
         if (str == null) {
-            Log.d(LOG_TAG, "Tried to shell escape a null String - NOOP");
             return null;
         }
         StringBuilder out = new StringBuilder();
@@ -53,7 +52,6 @@ public class StringEscapeUtils {
                     break;
             }
         }
-        Log.d(LOG_TAG, String.format("Shell escaping string [%s] to [%s]", str, out.toString()));
         return out.toString();
     }
 }
