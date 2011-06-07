@@ -235,6 +235,7 @@ public class BugreportCollectorTest extends TestCase {
         return test;
     }
 
+    @SuppressWarnings("unchecked")
     private void setListenerTestRunExpectations(ITestInvocationListener listener, String runName,
             String testName, String metricValue) {
         // FIXME: verify metrics

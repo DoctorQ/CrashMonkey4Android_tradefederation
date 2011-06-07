@@ -24,16 +24,15 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.BugreportCollector;
+import com.android.tradefed.result.BugreportCollector.Freq;
+import com.android.tradefed.result.BugreportCollector.Noun;
+import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
-import com.android.tradefed.result.BugreportCollector.Freq;
-import com.android.tradefed.result.BugreportCollector.Noun;
-import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.File;
@@ -46,7 +45,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
-import java.util.regex.MatchResult;
 import java.util.regex.Pattern;
 
 import junit.framework.Assert;
@@ -80,7 +78,6 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
      */
     private static final Pattern TOTAL_MEM_DIFF_PATTERN =
             Pattern.compile("(.+?)\\s.*diff.*\\s(\\d+)");
-    private static final String METRICS_RUN_NAME = "VideoEditorMemory";
 
     public Map<String, String> mRunMetrics = new HashMap<String, String>();
     public Map<String, String> mKeyMap = new HashMap<String, String>();

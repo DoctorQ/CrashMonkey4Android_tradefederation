@@ -85,7 +85,7 @@ public class DeviceSetupTest extends TestCase {
         EasyMock.expect(mMockDevice.clearErrorDialogs()).andReturn(Boolean.TRUE);
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("1");
         // expect push of local.prop file to change system properties
-        EasyMock.expect(mMockDevice.pushFile((File)EasyMock.anyObject(),
+        EasyMock.expect(mMockDevice.pushString((String)EasyMock.anyObject(),
                 EasyMock.contains("local.prop"))).andReturn(Boolean.TRUE);
         mMockDevice.reboot();
         // expect a bunch of shell commands - no need to verify which ones
