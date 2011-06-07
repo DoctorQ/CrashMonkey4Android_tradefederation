@@ -948,14 +948,16 @@ class TestDevice implements IManagedTestDevice {
      * Builds the OS command for the given adb command and args
      */
     private String[] buildAdbCommand(String... commandArgs) {
-        return ArrayUtil.buildArray(commandArgs, "adb", "-s", getSerialNumber());
+        return ArrayUtil.buildArray(new String[] {"adb", "-s", getSerialNumber()},
+                commandArgs);
     }
 
     /**
      * Builds the OS command for the given fastboot command and args
      */
     private String[] buildFastbootCommand(String... commandArgs) {
-        return ArrayUtil.buildArray(commandArgs, "fastboot", "-s", getSerialNumber());
+        return ArrayUtil.buildArray(new String[] {"fastboot", "-s", getSerialNumber()},
+                commandArgs);
     }
 
     /**
