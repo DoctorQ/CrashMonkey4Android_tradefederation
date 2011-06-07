@@ -61,7 +61,8 @@ public class CommandFileParserTest extends TestCase {
                 "--foo", "config"
         };
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -81,7 +82,8 @@ public class CommandFileParserTest extends TestCase {
                 "--foo", "this is a config", "--bar", "escap\\\\ed \\\" quotation"
         };
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -127,7 +129,8 @@ public class CommandFileParserTest extends TestCase {
         mMockFileData = "MACRO TeSt = verify\nTeSt()";
         String[] expectedArgs = new String[] {"verify"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -141,7 +144,8 @@ public class CommandFileParserTest extends TestCase {
         mMockFileData = "MACRO test = \"verify varify vorify\"\ntest()";
         String[] expectedArgs = new String[] {"verify varify vorify"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -155,7 +159,8 @@ public class CommandFileParserTest extends TestCase {
         mMockFileData = "MACRO under_score = verify\nunder_score()";
         String[] expectedArgs = new String[] {"verify"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -169,7 +174,8 @@ public class CommandFileParserTest extends TestCase {
         mMockFileData = "MACRO hyphen-nated = verify\nhyphen-nated()";
         String[] expectedArgs = new String[] {"verify"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -217,7 +223,8 @@ public class CommandFileParserTest extends TestCase {
                 "test()";
         String[] expectedArgs = new String[] {"verify"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -238,9 +245,12 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs2 = new String[] {"a", "b", "c"};
         String[] expectedArgs3 = new String[] {"do", "re", "mi"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1));
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2));
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs3));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1))).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2))).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs3))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -261,8 +271,10 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs1 = new String[] {"one", "two", "three"};
         String[] expectedArgs2 = new String[] {"do", "re", "mi"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1));
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1))).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -309,7 +321,8 @@ public class CommandFileParserTest extends TestCase {
         };
 
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);
@@ -343,8 +356,10 @@ public class CommandFileParserTest extends TestCase {
             }
         };
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1));
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1))).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs2))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);
@@ -374,7 +389,8 @@ public class CommandFileParserTest extends TestCase {
             }
         };
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs1))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);
@@ -410,8 +426,8 @@ public class CommandFileParserTest extends TestCase {
             }
         };
 
-
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mMockFile, mMockScheduler);
@@ -446,8 +462,8 @@ public class CommandFileParserTest extends TestCase {
             }
         };
 
-
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         commandFile.parseFile(mockFile, mMockScheduler);
@@ -470,7 +486,8 @@ public class CommandFileParserTest extends TestCase {
         String[] expectedArgs = new String[] {"one", "two"};
         // When the bug manifests, the result is {"one", "alpha()"}
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);
@@ -488,7 +505,8 @@ public class CommandFileParserTest extends TestCase {
                 "alpha()\n";
         String[] expectedArgs = new String[] {"one", "two"};
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
 
         EasyMock.replay(mMockScheduler);
         mCommandFile.parseFile(mMockFile, mMockScheduler);

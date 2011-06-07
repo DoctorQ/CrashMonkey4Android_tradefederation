@@ -399,45 +399,68 @@ public class Console {
 
         // Run commands
         ArgRunnable<CaptureList> runRunCommand = new ArgRunnable<CaptureList>() {
-                    @Override
-                    public void run(CaptureList args) {
-                        // The second argument "singleCommand"/"command" may also be missing, if the
-                        // caller used the shortcut.
-                        int startIdx = 1;
-                        if (args.get(1).isEmpty()) {
-                            // Empty array (that is, not even containing an empty string) means that
-                            // we matched and skipped /(?:singleC|c)ommand/
-                            startIdx = 2;
-                        }
+            @Override
+            public void run(CaptureList args) {
+                // The second argument "command" may also be missing, if the
+                // caller used the shortcut.
+                int startIdx = 1;
+                if (args.get(1).isEmpty()) {
+                    // Empty array (that is, not even containing an empty string) means that
+                    // we matched and skipped /(?:singleC|c)ommand/
+                    startIdx = 2;
+                }
 
-                        String[] flatArgs = new String[args.size() - startIdx];
-                        for (int i = startIdx; i < args.size(); i++) {
-                            flatArgs[i - startIdx] = args.get(i).get(0);
-                        }
-                        mScheduler.addCommand(flatArgs);
-                    }
-                };
-        trie.put(runRunCommand, RUN_PATTERN, "(?:singleC|c)ommand", null);
+                String[] flatArgs = new String[args.size() - startIdx];
+                for (int i = startIdx; i < args.size(); i++) {
+                    flatArgs[i - startIdx] = args.get(i).get(0);
+                }
+                mScheduler.addCommand(flatArgs);
+            }
+        };
+        trie.put(runRunCommand, RUN_PATTERN, "c(?:ommand)?", null);
         trie.put(runRunCommand, RUN_PATTERN, null);
+
+        ArgRunnable<CaptureList> runAndExitCommand = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                // Skip 2 tokens to get past runPattern and "singleCommand"
+                String[] flatArgs = new String[args.size() - 2];
+                for (int i = 2; i < args.size(); i++) {
+                    flatArgs[i - 2] = args.get(i).get(0);
+                }
+                NotifyingCommandListener cmdListener = new NotifyingCommandListener();
+                cmdListener.setExpectedCalls(1);
+                if (mScheduler.addCommand(flatArgs, cmdListener)) {
+                    try {
+                        cmdListener.waitForExpectedCalls();
+                    } catch (InterruptedException e) {
+                        // ignore
+                    }
+                }
+                mShouldExit = true;
+            }
+        };
+        trie.put(runAndExitCommand, RUN_PATTERN, "s(?:ingleCommand)?", null);
+
         // Missing required argument: show help
         // FIXME: fix this functionality
         // trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
 
         ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
-                    @Override
-                    public void run(CaptureList args) {
-                        // Skip 2 tokens to get past runPattern and "cmdfile"
-                        String file = args.get(2).get(0);
-                        printLine(String.format("Attempting to run cmdfile %s", file));
-                        try {
-                            createCommandFileParser().parseFile(new File(file), mScheduler);
-                        } catch (IOException e) {
-                            printLine(String.format("Failed to run %s: %s", file, e));
-                        } catch (ConfigurationException e) {
-                            printLine(String.format("Failed to run %s: %s", file, e));
-                        }
-                    }
-                };
+            @Override
+            public void run(CaptureList args) {
+                // Skip 2 tokens to get past runPattern and "cmdfile"
+                String file = args.get(2).get(0);
+                printLine(String.format("Attempting to run cmdfile %s", file));
+                try {
+                    createCommandFileParser().parseFile(new File(file), mScheduler);
+                } catch (IOException e) {
+                    printLine(String.format("Failed to run %s: %s", file, e));
+                } catch (ConfigurationException e) {
+                    printLine(String.format("Failed to run %s: %s", file, e));
+                }
+            }
+        };
         trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)");
         // Missing required argument: show help
         // FIXME: fix this functionality
@@ -601,19 +624,6 @@ public class Console {
                 } else {
                     printLine(String.format(
                             "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));
-                }
-
-                // Special-case for singleCommand, which should run a command and then immediately
-                // attempt to exit
-                if (tokens.length >= 2 && "singleCommand".equals(tokens[1])) {
-                    try {
-                        // FIXME: This is a horrible hack to wait until there _should_ be devices
-                        // FIXME: available.
-                        Thread.sleep(5000 /*DeviceStateMonitor.CHECK_POLL_TIME*/ + 500);
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
-                    mShouldExit = true;
                 }
 
                 Thread.sleep(100);

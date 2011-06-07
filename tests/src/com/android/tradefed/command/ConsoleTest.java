@@ -74,7 +74,8 @@ public class ConsoleTest extends TestCase {
         CaptureList captures = new CaptureList();
         RegexTrie<Runnable> trie = mConsole.getCommandTrie();
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expected))).andReturn(
+                Boolean.TRUE);
         EasyMock.replay(mMockScheduler);
 
         Runnable runnable = trie.retrieve(captures, command);
@@ -93,7 +94,8 @@ public class ConsoleTest extends TestCase {
         CaptureList captures = new CaptureList();
         RegexTrie<Runnable> trie = mConsole.getCommandTrie();
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expected))).andReturn(
+                Boolean.TRUE);
         EasyMock.replay(mMockScheduler);
 
         Runnable runnable = trie.retrieve(captures, command);
@@ -108,12 +110,14 @@ public class ConsoleTest extends TestCase {
      * "command" to be the first token of the command to be executed.
      */
     public void testRunCommand_startsWithCommand() throws Exception {
-        String[] command = new String[] {"run", "command", "command", "--arg", "value", "config.xml"};
+        String[] command = new String[] {"run", "command", "command", "--arg", "value",
+                "config.xml"};
         String[] expected = new String[] {"command", "--arg", "value", "config.xml"};
         CaptureList captures = new CaptureList();
         RegexTrie<Runnable> trie = mConsole.getCommandTrie();
 
-        mMockScheduler.addCommand(EasyMock.aryEq(expected));
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expected))).andReturn(
+                Boolean.TRUE);
         EasyMock.replay(mMockScheduler);
 
         Runnable runnable = trie.retrieve(captures, command);

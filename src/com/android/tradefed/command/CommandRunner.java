@@ -23,16 +23,13 @@ import com.android.tradefed.log.LogRegistry;
 
 /**
  * An alternate TradeFederation entry point that will run command specified in command
- * line arguments.
- * <p/>
- * Will currently run forever - process needs to be closed manually.
+ * line arguments and then quit.
  * <p/>
  * Intended for use with a debugger and other non-interactive modes of operation.
  * <p/>
  * Expected arguments: [commands options] <config to run>
  */
 public class CommandRunner {
-    private static final String LOG_TAG = "CommandRunner";
     private final ICommandScheduler mScheduler;
 
     CommandRunner() {
@@ -50,9 +47,12 @@ public class CommandRunner {
 
         try {
             mScheduler.start();
-            mScheduler.addCommand(args);
-            Log.logAndDisplay(LogLevel.INFO, LOG_TAG,
-                    "Running indefinitely in non-interactive mode.");
+            NotifyingCommandListener cmdListener = new NotifyingCommandListener();
+            cmdListener.setExpectedCalls(1);
+            if (mScheduler.addCommand(args, cmdListener)) {
+                cmdListener.waitForExpectedCalls();
+            }
+            mScheduler.shutdown();
             mScheduler.join();
         } catch (InterruptedException e) {
             e.printStackTrace();

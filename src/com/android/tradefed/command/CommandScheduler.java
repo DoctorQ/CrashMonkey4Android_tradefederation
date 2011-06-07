@@ -79,13 +79,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private class CommandTracker {
         private final String[] mArgs;
         private final ICommandOptions mCmdOptions;
+        private final ICommandListener mListener;
 
         /** the total amount of time this command was executing. Used to prioritize */
         private long mTotalExecTime = 0;
 
-        CommandTracker(String[] args, ICommandOptions cmdOptions) {
+        CommandTracker(String[] args, ICommandOptions cmdOptions, ICommandListener listener) {
             mArgs = args;
             mCmdOptions = cmdOptions;
+            mListener = listener;
         }
 
         synchronized void incrementExecTime(long execTime) {
@@ -108,6 +110,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
         ICommandOptions getCommandOptions() {
             return mCmdOptions;
+        }
+
+        /**
+         * Callback to inform listener that command has started execution.
+         */
+        synchronized void commandStarted() {
+            if (mListener != null) {
+                mListener.commandStarted();
+            }
         }
     }
 
@@ -135,6 +146,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         CommandTracker getCommandTracker() {
             return mCmdTracker;
+        }
+
+        /**
+         * Callback to inform listener that command has started execution.
+         */
+        void commandStarted() {
+            mCmdTracker.commandStarted();
         }
     }
 
@@ -209,6 +227,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             ITestInvocation instance = createInvocation();
             IConfiguration config = mCmd.getConfiguration();
             try {
+                mCmd.commandStarted();
                 instance.invoke(mDevice, config, new Rescheduler(mCmd.getCommandTracker()));
             } catch (DeviceUnresponsiveException e) {
                 Log.w(LOG_TAG, String.format("Device %s is unresponsive",
@@ -350,7 +369,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     @Override
-    public void addCommand(String[] args) {
+    public boolean addCommand(String[] args) {
+        return addCommand(args, null);
+   }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean addCommand(String[] args, ICommandListener listener) {
         try {
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(args);
             if (config.getCommandOptions().isHelpMode()) {
@@ -358,15 +385,18 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } else if (config.getCommandOptions().isFullHelpMode()) {
                 getConfigFactory().printHelpForConfig(args, false, System.out);
             } else {
-                CommandTracker cmdTracker = new CommandTracker(args, config.getCommandOptions());
+                CommandTracker cmdTracker = new CommandTracker(args, config.getCommandOptions(),
+                        listener);
                 ExecutableCommand cmdInstance = new  ExecutableCommand(cmdTracker, config);
                 mCommandQueue.add(cmdInstance);
                 mAllCommands.add(cmdTracker);
+                return true;
             }
         } catch (ConfigurationException e) {
             System.out.println(String.format("Unrecognized arguments: %s", e.getMessage()));
             getConfigFactory().printHelpForConfig(args, true, System.out);
         }
+        return false;
     }
 
     /**
@@ -416,34 +446,25 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * @param delayTime the time in ms to delay before adding command to queue
      * @return <code>true</code> if command will be added to queue, <code>false</code> otherwise
      */
-    private boolean addExecCommandToQueue(final ExecutableCommand cmd, long delayTime) {
+    private synchronized boolean addExecCommandToQueue(final ExecutableCommand cmd,
+            long delayTime) {
         if (isShutdown()) {
             return false;
         }
-
-        /* FIXME
-         * This is a hack to make TF not crash on exit
-         */
-        try {
-            if (delayTime > 0) {
-                // delay before adding command back to queue
-                Runnable delayCommand = new Runnable() {
-                    @Override
-                    public void run() {
-                        mCommandQueue.add(cmd);
-                    }
-                };
-                mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);
-            } else {
-                // return to queue immediately
-                mCommandQueue.add(cmd);
-            }
-            return true;
-        } catch (java.util.concurrent.RejectedExecutionException e) {
-            // Somehow we're getting to mCommandTimer.schedule above on shutdown
-            Log.e(LOG_TAG, e);
-            return false;
+        if (delayTime > 0) {
+            // delay before adding command back to queue
+            Runnable delayCommand = new Runnable() {
+                @Override
+                public void run() {
+                    mCommandQueue.add(cmd);
+                }
+            };
+            mCommandTimer.schedule(delayCommand, delayTime, TimeUnit.MILLISECONDS);
+        } else {
+            // return to queue immediately
+            mCommandQueue.add(cmd);
         }
+        return true;
     }
 
     /**
@@ -493,7 +514,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     private synchronized boolean isShutdown() {
-        return mCommandTimer.isTerminated();
+        return mCommandTimer.isShutdown();
     }
 
     /**

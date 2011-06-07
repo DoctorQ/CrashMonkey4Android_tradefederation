@@ -38,10 +38,21 @@ public interface ICommandScheduler {
      * run.
      *
      * @param args the config arguments.
+     * @return <code>true</code> if command was added successfully
      *
      * @see {@link IConfigurationFactory#createConfigurationFromArgs(String[])}
      */
-    public void addCommand(String[] args);
+    public boolean addCommand(String[] args);
+
+    /**
+     * An alternate {@link #addCommand(String[])} that accepts a {@link ICommandListener} for
+     * monitoring command execution.
+     *
+     * @param args the config arguments.
+     * @param listener the {@link ICommandListener}
+     * @return <code>true</code> if command was added successfully
+     */
+    public boolean addCommand(String[] args, ICommandListener listener);
 
     /**
      * Attempt to gracefully shutdown the command scheduler.
@@ -104,4 +115,3 @@ public interface ICommandScheduler {
      */
     public Collection<String> listCommands() throws UnsupportedOperationException;
 }
-
