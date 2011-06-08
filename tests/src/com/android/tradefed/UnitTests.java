@@ -17,6 +17,7 @@ package com.android.tradefed;
 
 import com.android.tradefed.build.DeviceBuildInfoTest;
 import com.android.tradefed.build.FileDownloadCacheTest;
+import com.android.tradefed.build.SdkBuildInfoTest;
 import com.android.tradefed.command.CommandFileParserTest;
 import com.android.tradefed.command.CommandSchedulerTest;
 import com.android.tradefed.command.ConsoleTest;
@@ -68,6 +69,7 @@ import com.android.tradefed.util.MultiMapTest;
 import com.android.tradefed.util.QuotationAwareTokenizerTest;
 import com.android.tradefed.util.RegexTrieTest;
 import com.android.tradefed.util.RunUtilTest;
+import com.android.tradefed.util.xml.AndroidManifestWriterTest;
 
 import junit.framework.Test;
 import junit.framework.TestSuite;
@@ -84,6 +86,7 @@ public class UnitTests extends TestSuite {
         // build
         addTestSuite(DeviceBuildInfoTest.class);
         addTestSuite(FileDownloadCacheTest.class);
+        addTestSuite(SdkBuildInfoTest.class);
 
         // command
         addTestSuite(CommandFileParserTest.class);
@@ -155,6 +158,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(QuotationAwareTokenizerTest.class);
         addTestSuite(RegexTrieTest.class);
         addTestSuite(RunUtilTest.class);
+        addTestSuite(AndroidManifestWriterTest.class);
     }
 
     public static Test suite() {

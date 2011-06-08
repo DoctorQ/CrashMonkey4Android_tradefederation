@@ -513,4 +513,37 @@ public class FileUtil {
             file.delete();
         }
     }
+
+    /**
+     * Helper method to build a system-dependent File
+     *
+     * @param parentFile the parent directory to use.
+     * @param pathSegments the relative path segments to use
+     * @return the {@link File} representing given path, with each <var>pathSegment</var>
+     *         separated by {@link File#separatorChar}
+     */
+    public static File getFileForPath(File parentDir, String... pathSegments) {
+        return new File(parentDir, getPath(pathSegments));
+    }
+
+    /**
+     * Helper method to build a system-dependent relative path
+     *
+     * @param pathSegments the relative path segments to use
+     * @return the {@link String} representing given path, with each <var>pathSegment</var>
+     *         separated by {@link File#separatorChar}
+     */
+    public static String getPath(String... pathSegments) {
+        StringBuilder pathBuilder = new StringBuilder();
+        boolean isFirst = true;
+        for (String path : pathSegments) {
+            if (!isFirst) {
+                pathBuilder.append(File.separatorChar);
+            } else {
+                isFirst = false;
+            }
+            pathBuilder.append(path);
+        }
+        return pathBuilder.toString();
+    }
 }
