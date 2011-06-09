@@ -15,13 +15,15 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.brillopad.item.IItem;
 
 import org.easymock.EasyMock;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStream;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -67,9 +69,14 @@ public class BugreportParserFuncTest extends TestCase {
             fail(String.format("Full Parse test requires sample bugreport at %s", BR_FILE));
         }
 
-        BufferedReader reader = new BufferedReader(new FileReader(BR_FILE));
-        ItemList bugreport = new ItemList();
-        parser.parse(reader, bugreport);
+        InputStream bugStream = new FileInputStream(BR_FILE);
+        InputStreamSource bugSource = new SnapshotInputStreamSource(bugStream);
+        ItemList bugreport = null;
+        try {
+            bugreport = parser.parse(bugSource);
+        } finally {
+            bugSource.cancel();
+        }
 
         List<IItem> jc = bugreport.getByType("JAVA CRASH");
         List<IItem> nc = bugreport.getByType("NATIVE CRASH");

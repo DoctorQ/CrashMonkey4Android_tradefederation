@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.brillopad.IBlockParser;
 import com.android.tradefed.util.brillopad.ItemList;
@@ -30,6 +31,8 @@ import com.android.tradefed.util.brillopad.section.syslog.NativeCrashParser;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 
 /**
  * A brillopad parser that understands the Android bugreport format
@@ -42,10 +45,14 @@ public class BugreportParser extends AbstractSectionParser {
     public static final String NATIVE_CRASH = NativeCrashParser.SECTION_NAME;
 
     /**
-     * Parse a bugreport file into a {@link ItemList} object.  This is the entrance method to the
-     * parser.
+     * Parse a bugreport file into an {@link ItemList} object.  This is the main entrance method to
+     * the parser.
+     *
+     * @param input a {@link BufferedReader} from which a bugreport can be read
+     * @return an {@link ItemList} containing the parsed elements of the bugreport
      */
-    public void parse(BufferedReader input, ItemList itemlist) throws IOException {
+    public ItemList parse(BufferedReader input) throws IOException {
+        ItemList itemlist = new ItemList();
         String line;
         while ((line = input.readLine()) != null) {
             parseLine(line, itemlist);
@@ -53,6 +60,20 @@ public class BugreportParser extends AbstractSectionParser {
 
         // signal EOF
         commit(itemlist);
+
+        return itemlist;
+    }
+
+    /**
+     * Parse a bugreport InputStreamSource into an {@link ItemList} object.  This is an entrance
+     * method that makes {@link BugreportParser} convenient to use from Tradefed-based tests.
+     *
+     * @param input an {@link InputStreamSource} from which a bugreport can be read
+     * @return an {@link ItemList} containing the parsed elements of the bugreport
+     */
+    public ItemList parse(InputStreamSource input) throws IOException {
+        InputStream stream = input.createInputStream();
+        return parse(new BufferedReader(new InputStreamReader(stream)));
     }
 
     @Override
