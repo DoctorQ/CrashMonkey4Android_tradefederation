@@ -29,6 +29,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.ILogRegistry;
 import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.InvocationSummaryHelper;
@@ -121,8 +122,8 @@ public class TestInvocation implements ITestInvocation {
             if (info != null) {
                 injectBuild(info, config.getTests());
                 if (shardConfig(config, info, rescheduler)) {
-                    Log.i(LOG_TAG, String.format("Invocation for %s has been sharded, rescheduling",
-                            device.getSerialNumber()));
+                    CLog.i("Invocation for %s has been sharded, rescheduling",
+                            device.getSerialNumber());
                 } else {
                     device.setRecovery(config.getDeviceRecovery());
                     performInvocation(config, device, info, rescheduler);
@@ -131,12 +132,14 @@ public class TestInvocation implements ITestInvocation {
                 }
             } else {
                 mStatus = "(no build to test)";
-                Log.i(LOG_TAG, "No build to test");
+                CLog.d("No build to test");
             }
         } catch (BuildRetrievalError e) {
-            Log.e(LOG_TAG, e);
+            CLog.e("Caught exception while preparing or running invocation");
+            CLog.e(e);
         } catch (IOException e) {
-            Log.e(LOG_TAG, e);
+            CLog.e("Caught exception while preparing or running invocation");
+            CLog.e(e);
         }
         // invocation not started, save current log contents to global log
         getLogRegistry().dumpToGlobalLog(config.getLogOutput());
@@ -185,7 +188,7 @@ public class TestInvocation implements ITestInvocation {
             // report invocation started using original buildinfo
             resultCollector.invocationStarted(info);
             for (IRemoteTest testShard : shardableTests) {
-                Log.i(LOG_TAG, String.format("Rescheduling sharded config..."));
+                CLog.i("Rescheduling sharded config...");
                 IConfiguration shardConfig = config.clone();
                 shardConfig.setTest(testShard);
                 shardConfig.setBuildProvider(new ExistingBuildProvider(info.clone(),
@@ -276,25 +279,23 @@ public class TestInvocation implements ITestInvocation {
             }
             runTests(device, info, config, rescheduler);
         } catch (BuildError e) {
-            Log.w(LOG_TAG, String.format("Build %d failed on device %s", info.getBuildId(),
-                    device.getSerialNumber()));
+            CLog.w("Build %d failed on device %s", info.getBuildId(), device.getSerialNumber());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
-            Log.e(LOG_TAG, e);
+            CLog.e("Caught exception while running invocation", e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (DeviceNotAvailableException e) {
-            Log.e(LOG_TAG, e);
+            CLog.e("Caught exception while running invocation", e);
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
                 reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
                         info);
             } else {
-                Log.i(LOG_TAG, "Rescheduled failed invocation for resume");
+                CLog.i("Rescheduled failed invocation for resume");
             }
             throw e;
         } catch (RuntimeException e) {
-            Log.e(LOG_TAG, "Unexpected runtime exception!");
-            Log.e(LOG_TAG, e);
+            CLog.e("Unexpected runtime exception while running invocation!", e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
@@ -330,7 +331,7 @@ public class TestInvocation implements ITestInvocation {
                 listener.invocationStarted(info);
             } catch (RuntimeException e) {
                 // don't let one listener leave the invocation in a bad state
-                Log.e(LOG_TAG, e);
+                CLog.e("Caught runtime exception from ITestInvocationListener", e);
             }
         }
     }
@@ -361,9 +362,8 @@ public class TestInvocation implements ITestInvocation {
                     resumeConfig.setLogOutput(config.getLogOutput().clone());
                     boolean canReschedule = rescheduler.scheduleConfig(resumeConfig);
                     if (!canReschedule) {
-                        Log.i(LOG_TAG, String.format(
-                                "Cannot reschedule resumed config for %d build. Cleaning up build.",
-                                info.getBuildId()));
+                        CLog.i("Cannot reschedule resumed config for build %d. Cleaning up build.",
+                                info.getBuildId());
                         resumeConfig.getBuildProvider().cleanUp(clonedBuild);
                     }
                     return canReschedule;
