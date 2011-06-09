@@ -247,7 +247,7 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
      * Exposed so unit tests can mock.
      */
     IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**

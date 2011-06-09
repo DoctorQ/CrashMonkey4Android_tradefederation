@@ -34,7 +34,7 @@ public class FileUtilFuncTest extends TestCase {
     private static final String DPERMS_GRWX = "d" + PERMS_GRWX;
 
     private String ls(String path) {
-        CommandResult result = RunUtil.getInstance().runTimedCmd(10*1000, "ls", "-ld", path);
+        CommandResult result = RunUtil.getDefault().runTimedCmd(10*1000, "ls", "-ld", path);
         return result.getStdout();
     }
 

@@ -101,7 +101,7 @@ public class FileUtil {
     public static boolean chmod(File file, String perms) {
         Log.d(LOG_TAG, String.format("Attempting to chmod %s to %s",
                 file.getAbsolutePath(), perms));
-        CommandResult result = RunUtil.getInstance().runTimedCmd(10*1000, "chmod", perms,
+        CommandResult result = RunUtil.getDefault().runTimedCmd(10*1000, "chmod", perms,
                 file.getAbsolutePath());
         return result.getStatus().equals(CommandStatus.SUCCESS);
     }

@@ -17,7 +17,11 @@
 package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.log.LogUtil.CLog;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 
 /**
@@ -27,24 +31,67 @@ public class RunUtil implements IRunUtil {
 
     private static final String LOG_TAG = "RunUtil";
     private static final int POLL_TIME_INCREASE_FACTOR = 4;
-    private static IRunUtil sInstance = null;
+    private static IRunUtil sDefaultInstance = null;
+    private final ProcessBuilder mProcessBuilder;
 
-    private RunUtil() {
+    /**
+     * Create a new {@link RunUtil} object to use.
+     */
+    public RunUtil() {
+        mProcessBuilder = new ProcessBuilder();
     }
 
-    public static IRunUtil getInstance() {
-        if (sInstance == null) {
-            sInstance  = new RunUtil();
+    /**
+     * Get a reference to the default {@link RunUtil} object.
+     * <p/>
+     * This is useful for callers who want to use IRunUtil without customization.
+     * Its recommended that callers who do need a custom IRunUtil instance
+     * (ie need to call either {@link #setEnvVariable(String, String)} or
+     * {@link #setWorkingDir(File)} create their own copy.
+     */
+    public static IRunUtil getDefault() {
+        if (sDefaultInstance == null) {
+            sDefaultInstance  = new RunUtil();
         }
-        return sInstance;
+        return sDefaultInstance;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
+    public void setWorkingDir(File dir) {
+        mProcessBuilder.directory(dir);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEnvVariable(String name, String value) {
+        mProcessBuilder.environment().put(name, value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public CommandResult runTimedCmd(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, command);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null, command);
+        CommandStatus status = runTimed(timeout, osRunnable, true);
+        result.setStatus(status);
+        return result;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CommandResult runTimedCmdWithInput(final long timeout, String input,
+            final String... command) {
+        final CommandResult result = new CommandResult();
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, input, command);
         CommandStatus status = runTimed(timeout, osRunnable, true);
         result.setStatus(status);
         return result;
@@ -56,7 +103,7 @@ public class RunUtil implements IRunUtil {
     @Override
     public CommandResult runTimedCmdSilently(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, command);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null, command);
         CommandStatus status = runTimed(timeout, osRunnable, false);
         result.setStatus(status);
         return result;
@@ -65,17 +112,24 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public Process runCmdInBackground(final String... command) throws IOException  {
+        final String fullCmd = Arrays.toString(command);
+        Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+        return mProcessBuilder.command(command).start();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable,
             boolean logErrors) {
         RunnableNotifier runThread = new RunnableNotifier(runnable, logErrors);
-        runThread.start();
         synchronized (runThread) {
+            runThread.start();
             try {
-                // if runnable finishes super quick, might be done already. Only wait if
-                // current status == NOT DONE which == TIMEOUT
-                if (runThread.getStatus() == CommandStatus.TIMED_OUT) {
-                    runThread.wait(timeout);
-                }
+                runThread.wait(timeout);
             } catch (InterruptedException e) {
                 Log.i(LOG_TAG, "runnable interrupted");
             }
@@ -90,6 +144,7 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean runTimedRetry(long opTimeout, long pollInterval, int attempts,
             IRunUtil.IRunnableResult runnable) {
         for (int i = 0; i < attempts; i++) {
@@ -105,6 +160,7 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean runFixedTimedRetry(final long opTimeout, final long pollInterval,
             final long maxTime, final IRunUtil.IRunnableResult runnable) {
         final long initialTime = System.currentTimeMillis();
@@ -121,6 +177,7 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean runEscalatingTimedRetry(final long opTimeout,
             final long initialPollInterval, final long maxPollInterval, final long maxTime,
             final IRunUtil.IRunnableResult runnable) {
@@ -146,6 +203,7 @@ public class RunUtil implements IRunUtil {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void sleep(long time) {
         if (time <= 0) {
             return;
@@ -181,9 +239,8 @@ public class RunUtil implements IRunUtil {
                 Log.i(LOG_TAG, "runutil interrupted");
                 status = CommandStatus.EXCEPTION;
             } catch (Exception e) {
-                // TODO: add more meaningful error message
                 if (mLogErrors) {
-                    Log.e(LOG_TAG, e);
+                    CLog.e("Exception occurred when exiting runnable: %s", e.toString());
                 }
                 status = CommandStatus.EXCEPTION;
             }
@@ -204,11 +261,14 @@ public class RunUtil implements IRunUtil {
         }
     }
 
-    private static class RunnableResult implements IRunUtil.IRunnableResult {
+    private class RunnableResult implements IRunUtil.IRunnableResult {
         private final String[] mCommand;
         private final CommandResult mCommandResult;
-        RunnableResult(final CommandResult result, final String... command) {
+        private final String mInput;
+
+        RunnableResult(final CommandResult result, final String input, final String... command) {
             mCommand = command;
+            mInput = input;
             mCommandResult = result;
         }
 
@@ -216,7 +276,14 @@ public class RunUtil implements IRunUtil {
         public boolean run() throws Exception {
             final String fullCmd = Arrays.toString(mCommand);
             Log.v(LOG_TAG, String.format("Running %s", fullCmd));
-            Process process = Runtime.getRuntime().exec(mCommand);
+            Process process = mProcessBuilder.command(mCommand).start();
+            if (mInput != null) {
+                BufferedOutputStream processStdin = new BufferedOutputStream(
+                        process.getOutputStream());
+                processStdin.write(mInput.getBytes("UTF-8"));
+                processStdin.flush();
+                processStdin.close();
+            }
             int rc = process.waitFor();
             mCommandResult.setStdout(StreamUtil.getStringFromStream(process.getInputStream()));
             mCommandResult.setStderr(StreamUtil.getStringFromStream(process.getErrorStream()));

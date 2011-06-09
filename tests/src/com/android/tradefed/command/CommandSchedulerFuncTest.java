@@ -134,7 +134,7 @@ public class CommandSchedulerFuncTest extends TestCase {
                 throws DeviceNotAvailableException {
             if (config.equals(mSlowConfig)) {
                 // sleep for 2 * fast config time
-                RunUtil.getInstance().sleep(200);
+                RunUtil.getDefault().sleep(200);
                 synchronized (mSlowCount) {
                     mSlowCount++;
                 }
@@ -144,7 +144,7 @@ public class CommandSchedulerFuncTest extends TestCase {
                     }
                 }
             } else if (config.equals(mFastConfig)) {
-                RunUtil.getInstance().sleep(100);
+                RunUtil.getDefault().sleep(100);
                 synchronized (mFastCount) {
                     mFastCount++;
                 }

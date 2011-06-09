@@ -67,7 +67,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * Exposed for unit testing.
      */
     IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**

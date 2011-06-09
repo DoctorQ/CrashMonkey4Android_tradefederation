@@ -47,7 +47,7 @@ public class RunUtilFuncTest extends TestCase {
                 return true;
             }
         };
-        assertEquals(CommandStatus.TIMED_OUT, RunUtil.getInstance().runTimed(timeout,
+        assertEquals(CommandStatus.TIMED_OUT, RunUtil.getDefault().runTimed(timeout,
                 mockRunnable, true));
         assertTrue(mockRunnable.mCanceled);
     }
@@ -70,7 +70,7 @@ public class RunUtilFuncTest extends TestCase {
             }
         };
         final long startTime = System.currentTimeMillis();
-        assertTrue(RunUtil.getInstance().runTimedRetry(100, pollTime, maxAttempts, mockRunnable));
+        assertTrue(RunUtil.getDefault().runTimedRetry(100, pollTime, maxAttempts, mockRunnable));
         final long actualTime = System.currentTimeMillis() - startTime;
         // assert that time actually taken is at least, and no more than twice expected
         final long expectedPollTime = pollTime * (maxAttempts-1);

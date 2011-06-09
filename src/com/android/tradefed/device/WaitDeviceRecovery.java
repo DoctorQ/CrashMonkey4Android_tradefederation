@@ -47,7 +47,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      * Exposed for unit testing.
      */
     protected IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**

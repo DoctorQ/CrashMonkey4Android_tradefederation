@@ -16,8 +16,11 @@
 
 package com.android.tradefed.util;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
- * Interface for running timed operations.
+ * Interface for running timed operations and system commands.
  */
 public interface IRunUtil {
 
@@ -41,14 +44,24 @@ public interface IRunUtil {
     }
 
     /**
-     * Helper method to execute a system command, and aborting if it takes longer than a specified
-     * time. Similar to {@link runTimedCmd}, but does not log any errors on exception.
+     * Sets the working directory for system commands.
      *
-     * @param timeout maximum time to wait in ms
-     * @param command the specified system command and optionally arguments to exec
-     * @return a {@link CommandResult} containing result from command run
+     * @param dir the working directory
+     *
+     * @see {@link ProcessBuilder#directory(File)}
      */
-    public CommandResult runTimedCmdSilently(final long timeout, final String... command);
+    void setWorkingDir(File dir);
+
+    /**
+     * Sets a environment variable to be used when running system commands.
+     *
+     * @param name the variable name
+     * @param value the variable value
+     *
+     * @see {@link ProcessBuilder#environment()}
+     *
+     */
+    void setEnvVariable(String key, String value);
 
     /**
      * Helper method to execute a system command, and aborting if it takes longer than a specified
@@ -59,6 +72,38 @@ public interface IRunUtil {
      * @return a {@link CommandResult} containing result from command run
      */
     public CommandResult runTimedCmd(final long timeout, final String... command);
+
+    /**
+     * Helper method to execute a system command, and aborting if it takes longer than a specified
+     * time. Similar to {@link runTimedCmd}, but does not log any errors on exception.
+     *
+     * @param timeout maximum time to wait in ms
+     * @param command the specified system command and optionally arguments to exec
+     * @return a {@link CommandResult} containing result from command run
+     */
+    public CommandResult runTimedCmdSilently(final long timeout, final String... command);
+
+    /**
+     * Helper method to execute a system command that requires stdin input, and aborting if it
+     * takes longer than a specified time.
+     *
+     * @param timeout maximum time to wait in ms
+     * @param input the stdin input to pass to process
+     * @param command the specified system command and optionally arguments to exec
+     * @return a {@link CommandResult} containing result from command run
+     */
+    CommandResult runTimedCmdWithInput(long timeout, String input, String... command);
+
+    /**
+     * Helper method to execute a system command asynchronously.
+     * <p/>
+     * Will return immediately after launching command.
+     *
+     * @param command the specified system command and optionally arguments to exec
+     * @return the {@link Process} of the executed command
+     * @throws IOException if command failed to run
+     */
+    public Process runCmdInBackground(String... command) throws IOException;
 
     /**
      * Block and executes an operation, aborting if it takes longer than a specified time.
@@ -119,5 +164,4 @@ public interface IRunUtil {
      * @param time ms to sleep. values less than or equal to 0 will be ignored
      */
     public void sleep(long time);
-
 }
