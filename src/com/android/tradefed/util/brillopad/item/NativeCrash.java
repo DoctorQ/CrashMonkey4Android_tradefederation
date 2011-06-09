@@ -21,7 +21,7 @@ import java.util.Map;
  * Item to hold information associated with native crashes.
  */
 public final class NativeCrash extends AbstractLogcatItem {
-    private static final String[] ALLOWED_ATTRIBUTES = {"stack"};
+    private static final String[] ALLOWED_ATTRIBUTES = {"stack", "fingerprint", "app"};
 
     public NativeCrash() {
         super(ALLOWED_ATTRIBUTES);

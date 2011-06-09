@@ -70,6 +70,14 @@ public abstract class AbstractItem implements IItem {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getType() {
+        return null;
+    }
+
+    /**
      * {@inhertiDoc}
      */
     @Override

@@ -17,13 +17,13 @@ package com.android.tradefed.util.brillopad.item;
 
 /**
  * Interface for all items that are created by any parser.
- *
- * <p>
- * Items may contain one or more items.  For example, a Bugreport item will contain a Logcat item,
- * which itself might contain ANR, JavaCrash, and NativeCrash items.
- * </p>
  */
 public interface IItem {
+
+    /**
+     * Determine what type this IItem represents.  May return {@code null}
+     */
+    public String getType();
 
     /**
      * Merges the item and another into an item with the most complete information.

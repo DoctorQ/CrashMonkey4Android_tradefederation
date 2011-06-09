@@ -15,35 +15,38 @@
  */
 package com.android.tradefed.util.brillopad;
 
-import java.io.BufferedReader;
-import java.io.IOException;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.brillopad.ItemList;
+import com.android.tradefed.util.brillopad.ILineParser;
+
+import java.util.List;
 
 /**
- * Abstract parser to implement common methods of all parsers.
+ * A shim class that implements IBlockParser by calling ILineParser methods
  */
-public abstract class AbstractParser implements IParser {
+public abstract class AbstractBlockParser implements IBlockParser, ILineParser {
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void parse(BufferedReader input) throws IOException {
-        String line;
-        while ((line = input.readLine()) != null) {
-            parse(line);
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void parse(String[] input) throws IOException {
+    public void parseBlock(List<String> input, ItemList itemlist) {
         for (String line : input) {
             if (line == null) {
-                throw new IOException("Encountered a null line");
+                CLog.w("Encountered unexpected null line; skipping...");
+                continue;
             }
-            parse(line);
+            parseLine(line, itemlist);
         }
+
+        // signal EOF
+        commit(itemlist);
     }
+
+    /**
+     * Parses a single {@link String}
+     *
+     * @param line
+     */
+    abstract public void parseLine(String line, ItemList itemlist);
 }
