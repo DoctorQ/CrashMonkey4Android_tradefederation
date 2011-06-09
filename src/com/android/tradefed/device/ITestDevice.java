@@ -461,6 +461,11 @@ public interface ITestDevice {
     public boolean enableAdbRoot() throws DeviceNotAvailableException;
 
     /**
+     * Get the device's state.
+     */
+    public TestDeviceState getDeviceState();
+
+    /**
      * Waits for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait

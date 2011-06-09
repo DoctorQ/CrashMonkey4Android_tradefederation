@@ -137,6 +137,7 @@ class TestDevice implements IManagedTestDevice {
     @Option(name = "max-tmp-logcat-file", description =
         "The maximum size of a tmp logcat file, in bytes.")
     private long mMaxLogcatFileSize = 10 * 1024 * 1024;
+    private Process mEmulatorProcess;
 
     /**
      * Interface for a generic device communication attempt.
@@ -1893,5 +1894,22 @@ class TestDevice implements IManagedTestDevice {
         executeAdbCommand("usb");
         // TODO: analyze result? wait for device offline?
         return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEmulatorProcess(Process p) {
+        mEmulatorProcess = p;
+
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Process getEmulatorProcess() {
+        return mEmulatorProcess;
     }
 }

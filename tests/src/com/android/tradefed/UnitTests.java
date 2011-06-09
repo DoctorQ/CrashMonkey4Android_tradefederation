@@ -48,6 +48,7 @@ import com.android.tradefed.targetprep.DeviceFlashPreparerTest;
 import com.android.tradefed.targetprep.DeviceSetupTest;
 import com.android.tradefed.targetprep.FastbootDeviceFlasherTest;
 import com.android.tradefed.targetprep.FlashingResourcesParserTest;
+import com.android.tradefed.targetprep.SdkAvdPreparerTest;
 import com.android.tradefed.targetprep.SystemUpdaterDeviceFlasherTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
@@ -131,6 +132,7 @@ public class UnitTests extends TestSuite {
         addTestSuite(DeviceSetupTest.class);
         addTestSuite(FastbootDeviceFlasherTest.class);
         addTestSuite(FlashingResourcesParserTest.class);
+        addTestSuite(SdkAvdPreparerTest.class);
         addTestSuite(SystemUpdaterDeviceFlasherTest.class);
 
         // testtype

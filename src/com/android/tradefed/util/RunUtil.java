@@ -23,6 +23,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * A collection of helper methods for executing operations.
@@ -116,6 +117,15 @@ public class RunUtil implements IRunUtil {
     public Process runCmdInBackground(final String... command) throws IOException  {
         final String fullCmd = Arrays.toString(command);
         Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+        return mProcessBuilder.command(command).start();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Process runCmdInBackground(final List<String> command) throws IOException  {
+        Log.v(LOG_TAG, String.format("Running %s", command));
         return mProcessBuilder.command(command).start();
     }
 

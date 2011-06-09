@@ -57,11 +57,6 @@ interface IManagedTestDevice extends ITestDevice {
     public void setDeviceState(TestDeviceState deviceState);
 
     /**
-     * Get the device's state.
-     */
-    public TestDeviceState getDeviceState();
-
-    /**
      * Set the fastboot option for the device. Should be set when device is first
      * allocated.
      *
@@ -75,5 +70,17 @@ interface IManagedTestDevice extends ITestDevice {
      * @throws DeviceNotAvailableException if recovery was not successful
      */
     public void recoverDevice() throws DeviceNotAvailableException;
+
+    /**
+     * Sets the {@link Process}, when this device is an emulator.
+     */
+    public void setEmulatorProcess(Process p);
+
+    /**
+     * Return the {@link Process} corresponding to this emulator.
+     *
+     * @return the {@link Process} or <code>null</code>
+     */
+    public Process getEmulatorProcess();
 
 }
