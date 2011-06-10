@@ -15,9 +15,6 @@
  */
 package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.ItemList;
-
-import java.util.List;
 
 /**
  * This interface defines the behavior for a line-oriented parser.  The parser should parse one

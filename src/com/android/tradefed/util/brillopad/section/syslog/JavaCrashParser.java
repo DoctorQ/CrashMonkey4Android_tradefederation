@@ -15,7 +15,6 @@
  */
 package com.android.tradefed.util.brillopad.section.syslog;
 
-import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
 

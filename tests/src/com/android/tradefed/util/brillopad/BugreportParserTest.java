@@ -30,6 +30,7 @@ import junit.framework.TestCase;
  * Unit tests for {@link BugreportParser}
  */
 public class BugreportParserTest extends TestCase {
+    @SuppressWarnings("unchecked")
     public void testMemInfoParser() {
         List<String> inputBlock = list(
                 "MemTotal:         353332 kB",

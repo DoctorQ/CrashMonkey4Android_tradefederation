@@ -29,6 +29,7 @@ import junit.framework.TestCase;
  * Unit tests for {@link SystemPropParser}
  */
 public class SystemPropParserTest extends TestCase {
+    @SuppressWarnings("unchecked")
     public void testSimpleParse() {
         List<String> inputBlock = list(
                 "[dalvik.vm.dexopt-flags]: [m=y]",
@@ -57,6 +58,7 @@ public class SystemPropParserTest extends TestCase {
      * Make sure that a parse error on one line doesn't prevent the rest of the lines from being
      * parsed
      */
+    @SuppressWarnings("unchecked")
     public void testParseError() {
         List<String> inputBlock = list(
                 "[dalvik.vm.dexopt-flags]: [m=y]",

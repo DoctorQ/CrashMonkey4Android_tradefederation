@@ -19,8 +19,6 @@ import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.brillopad.item.IItem;
 
-import org.easymock.EasyMock;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;

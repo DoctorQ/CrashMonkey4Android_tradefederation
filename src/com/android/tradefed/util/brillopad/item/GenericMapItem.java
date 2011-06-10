@@ -16,11 +16,11 @@
 package com.android.tradefed.util.brillopad.item;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * An IItem that just represents a simple key/value map
  */
+@SuppressWarnings("serial")
 public class GenericMapItem<K, V> extends HashMap<K,V> implements IItem {
     private String mType = null;
 

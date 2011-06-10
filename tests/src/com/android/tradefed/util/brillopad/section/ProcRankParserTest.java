@@ -29,6 +29,7 @@ import junit.framework.TestCase;
  * Unit tests for {@link ProcRankParser}
  */
 public class ProcRankParserTest extends TestCase {
+    @SuppressWarnings("unchecked")
     public void testProcRankParser() {
         List<String> inputBlock = list(
                 "  PID      Vss      Rss      Pss      Uss  cmdline",

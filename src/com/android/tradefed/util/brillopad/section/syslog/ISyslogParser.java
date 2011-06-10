@@ -17,8 +17,6 @@ package com.android.tradefed.util.brillopad.section.syslog;
 
 import com.android.tradefed.util.brillopad.ItemList;
 
-import java.util.List;
-
 /**
  * Attempt to parse a line of the logcat
  */

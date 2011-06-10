@@ -91,13 +91,5 @@ public class AbstractSectionParserTest extends TestCase {
                     1, parsers[i].getCalls());
         }
     }
-
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
-    }
 }
 

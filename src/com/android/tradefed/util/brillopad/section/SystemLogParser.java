@@ -90,7 +90,6 @@ public class SystemLogParser implements IBlockParser {
                 continue;
             }
 
-            Class nextParserClass = null;
             if ("I".equals(level) && "DEBUG".equals(tag)) {
                 // Native crash
                 mNative.parseLine(tid, pid, msg, itemlist);
