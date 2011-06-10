@@ -263,21 +263,21 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="simple-internal-file-size",
             description="The file size of the simple internal benchmark in MB.")
-    private int mSimpleInternalFileSize = 64;
+    private int mSimpleInternalFileSize = 256;
 
     @Option(name="run-simple-external-test", description="Run the simple external benchmark.")
     private Boolean mRunSimpleExternalTest = true;
 
     @Option(name="simple-external-file-size",
             description="The file size of the simple external benchmark in MB.")
-    private int mSimpleExternalFileSize = 64;
+    private int mSimpleExternalFileSize = 256;
 
     @Option(name="run-storage-internal-test", description="Run the storage internal benchmark.")
     private Boolean mRunStorageInternalTest = true;
 
     @Option(name="storage-internal-file-size",
             description="The file size of the storage internal benchmark in MB.")
-    private int mStorageInternalFileSize = 64;
+    private int mStorageInternalFileSize = 256;
 
     @Option(name="storage-internal-job-count",
             description="The number of jobs for the storage internal benchmark.")
@@ -288,7 +288,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="storage-external-file-size",
             description="The file size of the storage external benchmark in MB.")
-    private int mStorageExternalFileSize = 64;
+    private int mStorageExternalFileSize = 256;
 
     @Option(name="storage-external-job-count",
             description="The number of jobs for the storage external benchmark.")
@@ -303,11 +303,11 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="media-server-media-file-size",
             description="The media file size of the media server benchmark in MB.")
-    private int mMediaServerMediaFileSize = 64;
+    private int mMediaServerMediaFileSize = 256;
 
     @Option(name="media-server-worker-file-size",
             description="The worker file size of the media server benchmark in MB.")
-    private int mMediaServerWorkerFileSize = 64;
+    private int mMediaServerWorkerFileSize = 256;
 
     @Option(name="media-server-worker-job-count",
             description="The number of worker jobs for the media server benchmark.")
@@ -326,7 +326,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="media-scanner-worker-file-size",
             description="The worker file size of the media scanner benchmark in MB.")
-    private int mMediaScannerWorkerFileSize = 64;
+    private int mMediaScannerWorkerFileSize = 256;
 
     @Option(name="media-scanner-worker-job-count",
             description="The number of worker jobs for the media server benchmark.")

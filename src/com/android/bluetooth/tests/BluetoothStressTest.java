@@ -63,8 +63,6 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
 
     // Constants for running the tests
-    private static final String TEST_CLASS_NAME = "android.bluetooth.BluetoothStressTest";
-    private static final String TEST_PACKAGE_NAME = "com.android.frameworks.coretests";
     private static final String TEST_RUNNER_NAME = "android.bluetooth.BluetoothTestRunner";
 
     /**
@@ -138,6 +136,14 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     mIterCount, perfMetrics);
         }
     }
+
+    @Option(name="test-class-name",
+            description="The test class name of the Bluetooth stress tests")
+    private String mTestClassName = "android.bluetooth.BluetoothStressTest";
+
+    @Option(name="test-package-name",
+            description="The test package name of the Bluetooth stress tests")
+    private String mTestPackageName = "com.android.bluetooth.tests";
 
     @Option(name="discoverable-iterations",
             description="Number of iterations to run for the 'discoverable' test.")
@@ -415,9 +421,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         Assert.assertNotNull(mTestDevice);
         setupTests();
 
-        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
+        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
-        runner.setClassName(TEST_CLASS_NAME);
+        runner.setClassName(mTestClassName);
         BugreportCollector bugListener = new BugreportCollector(listener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
 
@@ -458,7 +464,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     runner.addInstrumentationArg("device_pair_pin", t.mPairPin);
                 }
             }
-            runner.setMethodName(TEST_CLASS_NAME, t.mTestMethod);
+            runner.setMethodName(mTestClassName, t.mTestMethod);
             bugListener.setDescriptiveName(testName);
             mTestDevice.runInstrumentationTests(runner, bugListener);
             if (t.mIterKey != null && t.mIterCount != null) {
