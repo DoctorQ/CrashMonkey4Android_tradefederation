@@ -278,7 +278,7 @@ public class SdkTestAppTest implements IRemoteTest, IBuildReceiver {
      * Exposed for mocking
      */
     IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**

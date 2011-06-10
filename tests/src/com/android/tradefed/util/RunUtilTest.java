@@ -27,44 +27,53 @@ import junit.framework.TestCase;
  */
 public class RunUtilTest extends TestCase {
 
+    private RunUtil mRunUtil;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mRunUtil = new RunUtil();
+    }
+
     /**
      * Test success case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed() throws Exception {
-        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
+        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(
+                IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.TRUE);
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.SUCCESS, RunUtil.getInstance().runTimed(100, mockRunnable,
-                true));
+        assertEquals(CommandStatus.SUCCESS, mRunUtil.runTimed(100, mockRunnable, true));
     }
 
     /**
      * Test failure case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed_failed() throws Exception {
-        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
+        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(
+                IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andReturn(Boolean.FALSE);
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.FAILED, RunUtil.getInstance().runTimed(100, mockRunnable, true));
+        assertEquals(CommandStatus.FAILED, mRunUtil.runTimed(100, mockRunnable, true));
     }
 
     /**
      * Test exception case for {@link RunUtil#runTimed(long, IRunnableResult, boolean)}.
      */
     public void testRunTimed_exception() throws Exception {
-        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(IRunUtil.IRunnableResult.class);
+        IRunUtil.IRunnableResult mockRunnable = EasyMock.createStrictMock(
+                IRunUtil.IRunnableResult.class);
         EasyMock.expect(mockRunnable.run()).andThrow(new RuntimeException());
         mockRunnable.cancel();
         EasyMock.replay(mockRunnable);
-        assertEquals(CommandStatus.EXCEPTION, RunUtil.getInstance().runTimed(100, mockRunnable,
-                true));
+        assertEquals(CommandStatus.EXCEPTION, mRunUtil.runTimed(100, mockRunnable, true));
     }
 
     /**
      * Test that {@link RunUtil#runTimedCmd(long, String)} fails when given a garbage command.
      */
     public void testRunTimedCmd_failed() {
-        CommandResult result = RunUtil.getInstance().runTimedCmd(1000, "blahggggwarggg");
+        CommandResult result = mRunUtil.runTimedCmd(1000, "blahggggwarggg");
         assertEquals(CommandStatus.EXCEPTION, result.getStatus());
         assertNull(result.getStdout());
         assertNull(result.getStderr());
@@ -74,7 +83,7 @@ public class RunUtilTest extends TestCase {
      * Test that {@link RunUtil#runTimedCmd(long, String)} succeeds when given a simple command.
      */
     public void testRunTimedCmd_dir() {
-        CommandResult result = RunUtil.getInstance().runTimedCmd(1000, "dir");
+        CommandResult result = mRunUtil.runTimedCmd(1000, "dir");
         assertEquals(CommandStatus.SUCCESS, result.getStatus());
         assertTrue(result.getStdout().length() > 0);
         assertEquals(0, result.getStderr().length());
@@ -85,7 +94,7 @@ public class RunUtilTest extends TestCase {
      */
     public void testRunTimedCmd_timeout() {
         // "yes" will never complete
-        CommandResult result = RunUtil.getInstance().runTimedCmd(100, "yes");
+        CommandResult result = mRunUtil.runTimedCmd(100, "yes");
         assertEquals(CommandStatus.TIMED_OUT, result.getStatus());
         assertNull(result.getStdout());
         assertNull(result.getStderr());

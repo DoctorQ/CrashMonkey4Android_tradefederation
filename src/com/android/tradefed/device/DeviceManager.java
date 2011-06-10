@@ -171,7 +171,7 @@ public class DeviceManager implements IDeviceManager {
      * Exposed for unit testing.
      */
     IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**

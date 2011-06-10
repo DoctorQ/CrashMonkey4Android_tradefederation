@@ -58,7 +58,7 @@ public class DeviceStateMonitorTest extends TestCase {
         new Thread() {
             @Override
             public void run() {
-                RunUtil.getInstance().sleep(100);
+                RunUtil.getDefault().sleep(100);
                 mMonitor.setState(TestDeviceState.ONLINE);
             }
         }.start();
@@ -74,7 +74,7 @@ public class DeviceStateMonitorTest extends TestCase {
         new Thread() {
             @Override
             public void run() {
-                RunUtil.getInstance().sleep(500);
+                RunUtil.getDefault().sleep(500);
                 mMonitor.setState(TestDeviceState.ONLINE);
             }
         }.start();

@@ -39,7 +39,7 @@ public class DeviceDiagTest extends TestCase {
         Collection<String> unavailDevices = DeviceManager.getInstance().getUnavailableDevices();
         for (int i=0; i < 5 && unavailDevices.size() > 0; i++) {
             Log.i(LOG_TAG, "Unavailable devices detected, sleeping and polling");
-            RunUtil.getInstance().sleep(1*1000);
+            RunUtil.getDefault().sleep(1*1000);
             unavailDevices = DeviceManager.getInstance().getUnavailableDevices();
         }
         for (String device : unavailDevices) {

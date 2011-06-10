@@ -164,7 +164,7 @@ class TestDevice implements IManagedTestDevice {
      * Exposed for unit testing.
      */
     IRunUtil getRunUtil() {
-        return RunUtil.getInstance();
+        return RunUtil.getDefault();
     }
 
     /**
