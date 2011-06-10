@@ -358,6 +358,15 @@ public interface ITestDevice {
     public InputStreamSource getLogcat();
 
     /**
+     * Grabs a screenshot from the device.
+     *
+     * @return a {@link InputStreamSource} of the screenshot in png format, or <code>null</code> if
+     *         the screenshot was not successful.
+     * @throws DeviceNotAvailableException
+     */
+    public InputStreamSource getScreenshot() throws DeviceNotAvailableException;
+
+    /**
      * Connects to a wifi network.
      * <p/>
      * Turns on wifi and blocks until a successful connection is made to the specified wifi network.
