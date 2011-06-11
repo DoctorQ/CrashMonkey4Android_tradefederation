@@ -21,8 +21,10 @@ package com.android.tradefed.result;
 public enum LogDataType {
 
     TEXT("txt"),
+    XML("xml"),
     PNG("png"),
     ZIP("zip"),
+    GZIP("gz"),
     UNKNOWN("tmp");
 
     private final String mFileExt;

@@ -22,16 +22,18 @@ import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipInputStream;
-
 import junit.framework.TestCase;
 
 /**
@@ -113,7 +115,6 @@ public class LogFileSaverTest extends TestCase {
      */
     public void testSaveAndZipLogData() throws IOException {
         File logFile = null;
-        ZipInputStream zipFileStream = null;
         try {
             // TODO: would be nice to create a mock file output to make this test not use disk I/O
             ILogFileSaver saver = new LogFileSaver(new BuildInfo(), mRootDir);
@@ -129,12 +130,43 @@ public class LogFileSaverTest extends TestCase {
                     new ZipEntry("testSaveLogData.txt")));
             assertTrue(actualLogString.equals(testData));
         } finally {
-            if (zipFileStream != null) {
-                zipFileStream.close();
-            }
-            if (logFile != null) {
-                logFile.delete();
-            }
+            FileUtil.deleteFile(logFile);
+        }
+    }
+
+    /**
+     * Simple normal case test for
+     * {@link LogFileSaver#createCompressedLogFile} and
+     * {@link LogFileSaver#createGZipLogStream(File)}
+     */
+    public void testCreateAndGZipLogData() throws IOException {
+        File logFile = null;
+        OutputStream gzipOutStream = null;
+        InputStream gzipInputStream = null;
+        try {
+            // TODO: would be nice to create a mock file output to make this test not use disk I/O
+            ILogFileSaver saver = new LogFileSaver(new BuildInfo(), mRootDir);
+            logFile = saver.createCompressedLogFile("testSaveAndGZipLogData", LogDataType.TEXT,
+                    LogDataType.GZIP);
+            assertTrue(logFile.getName().endsWith(LogDataType.TEXT.getFileExt() + "." +
+                    LogDataType.GZIP.getFileExt()));
+            assertTrue(logFile.exists());
+
+            // write data
+            gzipOutStream = saver.createGZipLogStream(logFile);
+            final String testData = "Here's some test data, blah";
+            ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
+            StreamUtil.copyStreams(mockInput, gzipOutStream);
+            StreamUtil.closeStream(gzipOutStream);
+            // Verify test data was written to file
+            gzipInputStream = new GZIPInputStream(new BufferedInputStream(
+                    new FileInputStream(logFile)));
+
+            String actualLogString = StreamUtil.getStringFromStream(gzipInputStream);
+            assertTrue(actualLogString.equals(testData));
+        } finally {
+            StreamUtil.closeStream(gzipInputStream);
+            FileUtil.deleteFile(logFile);
         }
     }
 }
