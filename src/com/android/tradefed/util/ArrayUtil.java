@@ -15,6 +15,9 @@
  */
 package com.android.tradefed.util;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Utility methods for arrays
  */
@@ -47,4 +50,21 @@ public class ArrayUtil {
         }
         return newArray;
     }
+
+    /**
+     * Convert a varargs list/array to an {@link List}.  This is useful for building instances of
+     * {@link List} by hand.  Note that this differs from {@link java.util.Arrays#asList} in that
+     * the returned array is mutable.
+     *
+     * @param inputAry an array, or a varargs list
+     * @return a {@link List} instance with the identical contents
+     */
+    public static <T> List<T> list(T... inputAry) {
+        List<T> retList = new ArrayList<T>(inputAry.length);
+        for (T item : inputAry) {
+            retList.add(item);
+        }
+        return retList;
+    }
 }
+

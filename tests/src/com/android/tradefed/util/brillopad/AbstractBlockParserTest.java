@@ -18,6 +18,7 @@ package com.android.tradefed.util.brillopad;
 import com.android.tradefed.util.brillopad.ItemList;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -52,7 +53,7 @@ public class AbstractBlockParserTest extends TestCase {
      * appropriate sequence of parseLine calls, followed by a commit() call
      */
     public void testSimple() {
-        List<String> lines = list("alpha", "beta", "gamma", "delta");
+        List<String> lines = Arrays.asList("alpha", "beta", "gamma", "delta");
         mItemList = new ItemList();
         BlockParser parser = new BlockParser();
         mExpectedLines.addAll(lines);
@@ -60,14 +61,6 @@ public class AbstractBlockParserTest extends TestCase {
 
         parser.parseBlock(lines, mItemList);
         assertEquals(0, mExpectedLines.size());
-    }
-
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
     }
 }
 

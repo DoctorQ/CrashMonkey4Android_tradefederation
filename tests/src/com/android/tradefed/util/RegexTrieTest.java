@@ -18,6 +18,7 @@ package com.android.tradefed.util;
 import com.android.tradefed.util.RegexTrie.CompPattern;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -30,7 +31,7 @@ import junit.framework.TestCase;
 public class RegexTrieTest extends TestCase {
     private RegexTrie<Integer> mTrie = null;
     private static final Integer mStored = 42;
-    private static final List<String> mNullList = list((String)null);
+    private static final List<String> mNullList = Arrays.asList((String)null);
 
     @Override
     public void setUp() throws Exception {
@@ -82,14 +83,6 @@ public class RegexTrieTest extends TestCase {
         assertNull(retrieved);
     }
 
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
-    }
-
     public void testGroups_fullMatch() {
         mTrie.put(mStored, "a|(alpha)", "b|(beta)");
         Integer retrieved;
@@ -105,19 +98,19 @@ public class RegexTrieTest extends TestCase {
         assertEquals(mStored, retrieved);
         assertEquals(2, groups.size());
         assertEquals(mNullList, groups.get(0));
-        assertEquals(list("beta"), groups.get(1));
+        assertEquals(Arrays.asList("beta"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "alpha", "b");
         assertEquals(mStored, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
         assertEquals(mNullList, groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "alpha", "beta");
         assertEquals(mStored, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
-        assertEquals(list("beta"), groups.get(1));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("beta"), groups.get(1));
     }
 
     public void testGroups_partialMatch() {
@@ -128,7 +121,7 @@ public class RegexTrieTest extends TestCase {
         retrieved = mTrie.retrieve(groups, "alpha");
         assertNull(retrieved);
         assertEquals(1, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
 
         retrieved = mTrie.retrieve(groups, "beta");
         assertNull(retrieved);
@@ -137,18 +130,18 @@ public class RegexTrieTest extends TestCase {
         retrieved = mTrie.retrieve(groups, "alpha", "bet");
         assertNull(retrieved);
         assertEquals(1, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
 
         retrieved = mTrie.retrieve(groups, "alpha", "betar");
         assertNull(retrieved);
         assertEquals(1, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
 
         retrieved = mTrie.retrieve(groups, "alpha", "beta", "gamma");
         assertNull(retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list("alpha"), groups.get(0));
-        assertEquals(list("beta"), groups.get(1));
+        assertEquals(Arrays.asList("alpha"), groups.get(0));
+        assertEquals(Arrays.asList("beta"), groups.get(1));
     }
 
     /**
@@ -162,14 +155,14 @@ public class RegexTrieTest extends TestCase {
         retrieved = mTrie.retrieve(groups, "a", "b", "c");
         assertEquals(mStored, retrieved);
         assertEquals(3, groups.size());
-        assertEquals(list(), groups.get(0));
-        assertEquals(list("b"), groups.get(1));
-        assertEquals(list("c"), groups.get(2));
+        assertEquals(Arrays.asList(), groups.get(0));
+        assertEquals(Arrays.asList("b"), groups.get(1));
+        assertEquals(Arrays.asList("c"), groups.get(2));
 
         retrieved = mTrie.retrieve(groups, "a");
         assertNull(retrieved);
         assertEquals(1, groups.size());
-        assertEquals(list(), groups.get(0));
+        assertEquals(Arrays.asList(), groups.get(0));
     }
 
     /**
@@ -187,20 +180,20 @@ public class RegexTrieTest extends TestCase {
         retrieved = mTrie.retrieve(groups, "a", "d");
         assertEquals(mStored, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list(), groups.get(0));
-        assertEquals(list("d"), groups.get(1));
+        assertEquals(Arrays.asList(), groups.get(0));
+        assertEquals(Arrays.asList("d"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "a", "b");
         assertEquals((Integer)(mStored + 1), retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list(), groups.get(0));
-        assertEquals(list("b"), groups.get(1));
+        assertEquals(Arrays.asList(), groups.get(0));
+        assertEquals(Arrays.asList("b"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "a", "c");
         assertEquals((Integer)(mStored + 2), retrieved);
         assertEquals(2, groups.size());
-        assertEquals(list(), groups.get(0));
-        assertEquals(list("c"), groups.get(1));
+        assertEquals(Arrays.asList(), groups.get(0));
+        assertEquals(Arrays.asList("c"), groups.get(1));
     }
 
     /**

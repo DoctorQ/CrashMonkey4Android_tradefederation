@@ -22,7 +22,6 @@ import org.easymock.EasyMock;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -53,8 +52,8 @@ public class PushFilePreparerTest extends TestCase {
     }
 
     public void testLocalNoExist() throws Exception {
-        mPreparer.setPushSpecs(list("/noexist->/data/"));
-        mPreparer.setPostPushCommands(list("ls /"));
+        mPreparer.setPushSpecs(Arrays.asList("/noexist->/data/"));
+        mPreparer.setPostPushCommands(Arrays.asList("ls /"));
         EasyMock.replay(mMockDevice);
         try {
             // Should throw TargetSetupError and _not_ run any post-push command
@@ -66,8 +65,8 @@ public class PushFilePreparerTest extends TestCase {
     }
 
     public void testRemoteNoExist() throws Exception {
-        mPreparer.setPushSpecs(list("/bin/sh->/noexist/"));
-        mPreparer.setPostPushCommands(list("ls /"));
+        mPreparer.setPushSpecs(Arrays.asList("/bin/sh->/noexist/"));
+        mPreparer.setPostPushCommands(Arrays.asList("ls /"));
         // expect a pushFile() call and return false (failed)
         EasyMock.expect(
                 mMockDevice.pushFile((File)EasyMock.anyObject(), EasyMock.eq("/noexist/")))
@@ -83,8 +82,8 @@ public class PushFilePreparerTest extends TestCase {
     }
 
     public void testWarnOnFailure() throws Exception {
-        mPreparer.setPushSpecs(list("/noexist->/data/", "/bin/sh->/noexist/"));
-        mPreparer.setPostPushCommands(list("ls /"));
+        mPreparer.setPushSpecs(Arrays.asList("/noexist->/data/", "/bin/sh->/noexist/"));
+        mPreparer.setPostPushCommands(Arrays.asList("ls /"));
         mPreparer.setAbortOnFailure(false);
 
         // expect a pushFile() call and return false (failed)
@@ -97,10 +96,6 @@ public class PushFilePreparerTest extends TestCase {
 
         // Don't expect any exceptions to be thrown
         mPreparer.setUp(mMockDevice, null);
-    }
-
-    private static List<String> list(String... pieces) {
-        return Arrays.asList(pieces);
     }
 }
 
