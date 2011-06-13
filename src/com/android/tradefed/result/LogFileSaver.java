@@ -18,13 +18,17 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
@@ -34,6 +38,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class LogFileSaver implements ILogFileSaver {
 
+    private static final int BUFFER_SIZE = 64*1024;
     private static final String LOG_TAG = "LogFileSaver";
     private File mRootDir;
 
@@ -120,31 +125,44 @@ public class LogFileSaver implements ILogFileSaver {
                     + LogDataType.ZIP.getFileExt(), mRootDir);
             bufInput = new BufferedInputStream(dataStream);
             outStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(
-                    logFile)));
+                    logFile), BUFFER_SIZE));
             outStream.putNextEntry(new ZipEntry(dataName + "." + dataType.getFileExt()));
-            int inputByte = -1;
-            while ((inputByte = bufInput.read()) != -1) {
-                outStream.write(inputByte);
-            }
+            StreamUtil.copyStreams(bufInput, outStream);
             Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
-
             return logFile;
         } finally {
-            if (bufInput != null) {
-                try {
-                    bufInput.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
-            if (outStream != null) {
-                try {
-                    outStream.closeEntry();
-                    outStream.close();
-                } catch (IOException e) {
-                    // ignore
-                }
-            }
+            StreamUtil.closeStream(bufInput);
+            StreamUtil.closeZipStream(outStream);
+
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File createCompressedLogFile(String dataName, LogDataType origDataType,
+            LogDataType compressedType) throws IOException {
+        // add underscore to end of data name to make generated name more readable
+        return FileUtil.createTempFile(dataName + "_",
+                String.format(".%s.%s", origDataType.getFileExt(), LogDataType.GZIP.getFileExt()),
+                mRootDir);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public OutputStream createGZipLogStream(File logFile) throws IOException {
+        return new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(
+                logFile)), BUFFER_SIZE);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStream createInputStreamFromFile(File logFile) throws IOException {
+        return new BufferedInputStream(new FileInputStream(logFile), BUFFER_SIZE);
     }
 }

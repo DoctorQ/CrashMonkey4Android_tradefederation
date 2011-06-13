@@ -19,6 +19,7 @@ package com.android.tradefed.result;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 /**
  * Saves logs as files.
@@ -55,5 +56,42 @@ public interface ILogFileSaver {
      */
     public File saveAndZipLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException;
+
+    /**
+     * Creates an empty file for storing compressed log data.
+     *
+     * @param dataName a {@link String} descriptive name of the data to be stored. e.g.
+     *            "device_logcat"
+     * @param origDataType the type of {@link LogDataType} to be stored
+     * @param compressedType the {@link LogDataType} representing the compression type. ie one of
+     *            {@link LogDataType#GZIP} or {@link LogDataType#ZIP}
+     * @return a {@link File}
+     * @throws IOException if log file could not be created
+     */
+    public File createCompressedLogFile(String dataName, LogDataType origDataType,
+            LogDataType compressedType) throws IOException;
+
+    /**
+     * Creates a output stream to write GZIP-compressed data to a file
+     *
+     * @param dataFile the {@link File} to write to
+     * @return the {@link OutputStream} to compress and write data to the file. Callers must close
+     *         this stream when complete
+     * @throws IOException if stream could not be generated
+     */
+    public OutputStream createGZipLogStream(File dataFile) throws IOException;
+
+    /**
+     * Helper method to create an input stream to read contents of given log file.
+     * <p/>
+     * TODO: consider moving this method elsewhere. Placed here for now so it easier for current
+     * users of this class to mock.
+     *
+     * @param dataFile the {@link File} to read from
+     * @return a buffered {@link InputStream} to read file data. Callers must close
+     *         this stream when complete
+     * @throws IOException if stream could not be generated
+     */
+    public InputStream createInputStreamFromFile(File logFile) throws IOException;
 
 }

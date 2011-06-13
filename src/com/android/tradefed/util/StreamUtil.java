@@ -23,6 +23,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.io.Writer;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * Utility class for managing input streams.
@@ -75,6 +77,7 @@ public class StreamUtil {
      */
     public static void copyStreams(InputStream inStream, OutputStream outStream)
             throws IOException {
+
         int data = -1;
         while ((data = inStream.read()) != -1) {
             outStream.write(data);
@@ -140,6 +143,38 @@ public class StreamUtil {
                 // ignore
             }
             try {
+                outStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Closes given zip output stream.
+     *
+     * @param outStream the {@link ZipOutputStream}. No action taken if outStream is null.
+     */
+    public static void closeZipStream(ZipOutputStream outStream) {
+        if (outStream != null) {
+            try {
+                outStream.closeEntry();
+                outStream.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    /**
+     * Closes given gzip output stream.
+     *
+     * @param outStream the {@link ZipOutputStream}. No action taken if outStream is null.
+     */
+    public static void closeGZipStream(GZIPOutputStream outStream) {
+        if (outStream != null) {
+            try {
+                outStream.finish();
                 outStream.close();
             } catch (IOException e) {
                 // ignore
