@@ -19,7 +19,9 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.TestAppConstants;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
@@ -390,6 +392,28 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         //CommandResult result = RunUtil.getInstance().runTimedCmd(30*1000, "adb", "kill-server");
         //assertEquals(CommandStatus.SUCCESS, result.getStatus());
         //assertSimpleShellCommand();
+    }
+
+    /**
+     * Basic test for {@link TestDevice#getScreenshot()}.
+     * <p/>
+     * Grab a screenshot, save it to a file, and perform a cursory size check to ensure its valid.
+     */
+    public void testGetScreenshot() throws DeviceNotAvailableException, IOException {
+        CLog.i(LOG_TAG, "testGetScreenshot");
+        InputStreamSource source = getDevice().getScreenshot();
+        assertNotNull(source);
+        File tmpPngFile = FileUtil.createTempFile("screenshot", ".png");
+        try {
+            FileUtil.writeToFile(source.createInputStream(), tmpPngFile);
+            CLog.i("Created file at %s", tmpPngFile.getAbsolutePath());
+            assertTrue("Saved png file is less than 16K - is it invalid?",
+                    tmpPngFile.length() > 16*1024);
+            // TODO: add more stringent checks
+        } finally {
+            FileUtil.deleteFile(tmpPngFile);
+            source.cancel();
+        }
     }
 
     /**

@@ -23,6 +23,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.RawImage;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.SyncException.SyncError;
@@ -32,6 +33,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
@@ -42,8 +44,11 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
+import java.awt.image.BufferedImage;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -63,6 +68,8 @@ import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.imageio.ImageIO;
 
 /**
  * Default implementation of a {@link ITestDevice}
@@ -1365,6 +1372,68 @@ class TestDevice implements IManagedTestDevice {
                         getSerialNumber()));
             }
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStreamSource getScreenshot() throws DeviceNotAvailableException {
+        ScreenshotAction action = new ScreenshotAction();
+        if (performDeviceAction("screenshot", action, MAX_RETRY_ATTEMPTS)) {
+            byte[] pngData = compressRawImageAsPng(action.mRawScreenshot);
+            if (pngData != null) {
+                return new ByteArrayInputStreamSource(pngData);
+            }
+        }
+        return null;
+    }
+
+    private class ScreenshotAction implements DeviceAction {
+
+        RawImage mRawScreenshot;
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                ShellCommandUnresponsiveException, InstallException, SyncException {
+            mRawScreenshot = getIDevice().getScreenshot();
+            return mRawScreenshot != null;
+        }
+    }
+
+    private byte[] compressRawImageAsPng(RawImage rawImage) {
+        BufferedImage image = new BufferedImage(rawImage.width, rawImage.height,
+                BufferedImage.TYPE_INT_ARGB);
+
+        // borrowed conversion logic from platform/sdk/screenshot/.../Screenshot.java
+        int index = 0;
+        int IndexInc = rawImage.bpp >> 3;
+        for (int y = 0 ; y < rawImage.height ; y++) {
+            for (int x = 0 ; x < rawImage.width ; x++) {
+                int value = rawImage.getARGB(index);
+                index += IndexInc;
+                image.setRGB(x, y, value);
+            }
+        }
+        // store compressed image in memory, and let callers write to persistent storage
+        // use initial buffer size of 128K
+        byte[] pngData = null;
+        ByteArrayOutputStream imageOut = new ByteArrayOutputStream(128*1024);
+        try {
+            if (ImageIO.write(image, "png", imageOut)) {
+                pngData = imageOut.toByteArray();
+            } else {
+                CLog.e("Failed to compress screenshot to png");
+            }
+        } catch (IOException e) {
+            CLog.e("Failed to compress screenshot to png");
+            CLog.e(e);
+        }
+        StreamUtil.closeStream(imageOut);
+        return pngData;
     }
 
     /**

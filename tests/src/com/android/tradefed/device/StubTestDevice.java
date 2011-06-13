@@ -450,4 +450,12 @@ public class StubTestDevice implements IManagedTestDevice {
     public void recoverDevice() throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStreamSource getScreenshot() throws DeviceNotAvailableException {
+        return null;
+    }
 }
