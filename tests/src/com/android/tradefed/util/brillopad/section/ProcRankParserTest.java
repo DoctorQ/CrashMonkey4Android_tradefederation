@@ -19,7 +19,7 @@ import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +31,7 @@ import junit.framework.TestCase;
 public class ProcRankParserTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testProcRankParser() {
-        List<String> inputBlock = list(
+        List<String> inputBlock = Arrays.asList(
                 "  PID      Vss      Rss      Pss      Uss  cmdline",
                 "  178   87136K   81684K   52829K   50012K  system_server",
                 " 1313   78128K   77996K   48603K   45812K  com.google.android.apps.maps",
@@ -77,14 +77,6 @@ public class ProcRankParserTest extends TestCase {
         map = output.get("com.android.settings");
         assertNotNull(map);
         assertEquals((Integer)1236, map.get("PID"));
-    }
-
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
     }
 }
 

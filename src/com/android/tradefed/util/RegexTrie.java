@@ -191,14 +191,6 @@ public class RegexTrie<V> {
         return validateAndPut(value, pList);
     }
 
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
-    }
-
     V recursiveRetrieve(List<List<String>> captures, List<String> strings) {
         // Cases:
         // 1) strings is empty -- return our value
@@ -238,7 +230,7 @@ public class RegexTrie<V> {
                 // Stick the rest of the query string into the captures list and return
                 if (captures != null) {
                     for (String str : strings) {
-                        captures.add(list(str));
+                        captures.add(Arrays.asList(str));
                     }
                 }
                 return wildcardValue;

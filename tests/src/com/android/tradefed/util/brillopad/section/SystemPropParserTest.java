@@ -19,7 +19,7 @@ import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -31,7 +31,7 @@ import junit.framework.TestCase;
 public class SystemPropParserTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testSimpleParse() {
-        List<String> inputBlock = list(
+        List<String> inputBlock = Arrays.asList(
                 "[dalvik.vm.dexopt-flags]: [m=y]",
                 "[dalvik.vm.heapgrowthlimit]: [48m]",
                 "[dalvik.vm.heapsize]: [256m]",
@@ -60,7 +60,7 @@ public class SystemPropParserTest extends TestCase {
      */
     @SuppressWarnings("unchecked")
     public void testParseError() {
-        List<String> inputBlock = list(
+        List<String> inputBlock = Arrays.asList(
                 "[dalvik.vm.dexopt-flags]: [m=y]",
                 "[ends with newline]: [yup",
                 "]",
@@ -79,14 +79,6 @@ public class SystemPropParserTest extends TestCase {
         assertEquals(2, map.size());
         assertEquals("m=y", map.get("dalvik.vm.dexopt-flags"));
         assertEquals("256m", map.get("dalvik.vm.heapsize"));
-    }
-
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
     }
 }
 

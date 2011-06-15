@@ -20,7 +20,7 @@ import com.android.tradefed.util.brillopad.item.GenericMapItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 import com.android.tradefed.util.brillopad.section.MemInfoParser;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -32,7 +32,7 @@ import junit.framework.TestCase;
 public class MemInfoParserTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testMemInfoParser() {
-        List<String> inputBlock = list(
+        List<String> inputBlock = Arrays.asList(
                 "MemTotal:         353332 kB",
                 "MemFree:           65420 kB",
                 "Buffers:           20800 kB",
@@ -55,14 +55,6 @@ public class MemInfoParserTest extends TestCase {
         assertEquals((Integer)20800, output.get("Buffers"));
         assertEquals((Integer)86204, output.get("Cached"));
         assertEquals((Integer)0, output.get("SwapCached"));
-    }
-
-    private static List<String> list(String... strings) {
-        List<String> retList = new ArrayList<String>(strings.length);
-        for (String str : strings) {
-            retList.add(str);
-        }
-        return retList;
     }
 }
 
