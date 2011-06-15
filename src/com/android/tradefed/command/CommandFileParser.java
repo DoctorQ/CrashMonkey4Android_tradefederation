@@ -15,8 +15,8 @@
  */
 package com.android.tradefed.command;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 
 import java.io.BufferedReader;
@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ class CommandFileParser {
     private Map<String, List<CommandLine>> mLongMacros = new HashMap<String, List<CommandLine>>();
     private List<CommandLine> mLines = new LinkedList<CommandLine>();
 
-    private List<File> mIncludedFiles = new LinkedList<File>();
+    private Collection<String> mIncludedFiles = new HashSet<String>();
 
     @SuppressWarnings("serial")
     private class CommandLine extends LinkedList<String> {
@@ -125,12 +126,12 @@ class CommandFileParser {
      * Note that this method may call itself recursively to handle the INCLUDE directive.
      */
     private void scanFile(File file) throws IOException, ConfigurationException {
-        if (mIncludedFiles.contains(file)) {
+        if (mIncludedFiles.contains(file.getAbsolutePath())) {
             // Repeated include; ignore
-            Log.v(LOG_TAG, String.format("Skipping repeated include of file %s.", file.toString()));
+            CLog.v("Skipping repeated include of file %s.", file.toString());
             return;
         } else {
-            mIncludedFiles.add(file);
+            mIncludedFiles.add(file.getAbsolutePath());
         }
 
         BufferedReader fileReader = createCommandFileReader(file);
@@ -151,7 +152,11 @@ class CommandFileParser {
                         // Expected format: MACRO <name> = <token> [<token>...]
                         String name = lArgs.get(1);
                         CommandLine expansion = new CommandLine(lArgs.subList(3, lArgs.size()));
-                        mMacros.put(name, expansion);
+                        CommandLine prev = mMacros.put(name, expansion);
+                        if (prev != null) {
+                            CLog.e("Overwrote short macro '%s' while parsing file %s", name, file);
+                            CLog.e("value '%s' replaced previous value '%s'", expansion, prev);
+                        }
                     } else if (isLineLongMacro(lArgs)) {
                         // Expected format: LONG MACRO <name>\n(multiline expansion)\nEND MACRO
                         String name = lArgs.get(2);
@@ -175,15 +180,19 @@ class CommandFileParser {
                             // Advance
                             inputLine = fileReader.readLine();
                         }
-                        Log.d(LOG_TAG, String.format("Parsed %d-line definition for long macro %s",
-                                expansion.size(), name));
+                        CLog.d("Parsed %d-line definition for long macro %s", expansion.size(),
+                                name);
 
-                        mLongMacros.put(name, expansion);
+                        List<CommandLine> prev = mLongMacros.put(name, expansion);
+                        if (prev != null) {
+                            CLog.e("Overwrote long macro %s while parsing file %s", name, file);
+                            CLog.e("%d-line definition replaced previous %d-line definition",
+                                    expansion.size(), prev.size());
+                        }
                     } else if (isLineIncludeDirective(lArgs)) {
                         File parent = file.getParentFile();
-                        Log.d(LOG_TAG, String.format(
-                                "Got an include directive for file %s, using '%s' for parent dir",
-                                lArgs.get(1), parent));
+                        CLog.d("Got an include directive for file %s, using '%s' for parent dir",
+                                lArgs.get(1), parent);
                         scanFile(new File(parent, lArgs.get(1)));
                     } else {
                         mLines.add(lArgs);
@@ -232,7 +241,7 @@ class CommandFileParser {
         // Do a maximum of 10 iterations of expansion
         // FIXME: make this configurable
         for (int iCount = 0; iCount < 10 && inputBitmaskCount > 0; ++iCount) {
-            Log.d(LOG_TAG, "### Expansion iteration " + iCount);
+            CLog.d("### Expansion iteration %d", iCount);
 
             int inputIdx = 0;
             while (inputIdx < mLines.size()) {
@@ -279,7 +288,7 @@ class CommandFileParser {
         }
 
         for (CommandLine commandLine : mLines) {
-            Log.d(LOG_TAG, String.format("Adding line: %s", commandLine.toString()));
+            CLog.d("Adding line: %s", commandLine.toString());
             String[] aryCmdLine = new String[commandLine.size()];
             scheduler.addCommand(commandLine.toArray(aryCmdLine));
         }
@@ -344,7 +353,7 @@ class CommandFileParser {
                 // we hit a macro; expand it
                 String name = matchMacro.group(1);
                 CommandLine macro = mMacros.get(name);
-                Log.d(LOG_TAG, String.format("Gotcha!  Expanding macro '%s' to '%s'", name, macro));
+                CLog.d("Gotcha!  Expanding macro '%s' to '%s'", name, macro);
                 line.remove(idx);
                 line.addAll(idx, macro);
                 idx += macro.size();

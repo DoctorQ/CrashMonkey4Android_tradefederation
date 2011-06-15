@@ -138,6 +138,23 @@ public class CommandFileParserTest extends TestCase {
     }
 
     /**
+     * Ensure that when a macro is overwritten, the most recent value should be used.
+     * <p />
+     * Note that a message should also be logged; no good way to verify that currently
+     */
+    public void testOverwriteMacro() throws IOException, ConfigurationException {
+        mMockFileData = "MACRO test = value 1\nMACRO test = value 2\ntest()";
+        String[] expectedArgs = new String[] {"value", "2"};
+
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
+
+        EasyMock.replay(mMockScheduler);
+        mCommandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
      * Ensure that parsing of quoted tokens continues to work
      */
     public void testSimpleMacro_quotedTokens() throws IOException, ConfigurationException {
@@ -230,6 +247,13 @@ public class CommandFileParserTest extends TestCase {
         mCommandFile.parseFile(mMockFile, mMockScheduler);
         EasyMock.verify(mMockScheduler);
     }
+
+    /**
+     * Ensure that when a long macro is overwritten, the most recent value should be used.
+     * <p />
+     * Note that a message should also be logged; no good way to verify that currently
+     */
+
 
     /**
      * Simple test for LONG MACRO parsing with multi-line expansion
