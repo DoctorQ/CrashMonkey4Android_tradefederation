@@ -601,14 +601,14 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
         m = new PerfMetricInfo();
         m.mJobName = workerJob;
-        m.mPostKey = String.format("%s_workers_read_bandwith", rw);
+        m.mPostKey = String.format("%s_workers_read_bandwidth", rw);
         m.mFieldName = "read-bandwidth-mean";
         m.mType = PerfMetricInfo.ResultType.FLOAT;
         t.mPerfMetrics.add(m);
 
         m = new PerfMetricInfo();
         m.mJobName = workerJob;
-        m.mPostKey = String.format("%s_workers_write_bandwith", rw);
+        m.mPostKey = String.format("%s_workers_write_bandwidth", rw);
         m.mFieldName = "write-bandwidth-mean";
         m.mType = PerfMetricInfo.ResultType.FLOAT;
         t.mPerfMetrics.add(m);
@@ -692,14 +692,14 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
 
         m = new PerfMetricInfo();
         m.mJobName = workerJob;
-        m.mPostKey = "workers_read_bandwith";
+        m.mPostKey = "workers_read_bandwidth";
         m.mFieldName = "read-bandwidth-mean";
         m.mType = PerfMetricInfo.ResultType.FLOAT;
         t.mPerfMetrics.add(m);
 
         m = new PerfMetricInfo();
         m.mJobName = workerJob;
-        m.mPostKey = "workers_write_bandwith";
+        m.mPostKey = "workers_write_bandwidth";
         m.mFieldName = "write-bandwidth-mean";
         m.mType = PerfMetricInfo.ResultType.FLOAT;
         t.mPerfMetrics.add(m);

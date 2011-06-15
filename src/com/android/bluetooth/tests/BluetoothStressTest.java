@@ -77,9 +77,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
      * {@code testName} is the test method to run.
      */
     private static final String INSTRUCTIONS_INSTRUMENT_CMD = (
-            "adb -s %s shell am instrument -w -r -e device_address %s "
-            + "-e %s %d -e class android.bluetooth.BluetoothStressTest#%s "
-            + "com.android.frameworks.coretests/android.bluetooth.BluetoothTestRunner");
+            "adb -s %s shell am instrument -w -r -e device_address %s -e %s %d -e class %s#%s "
+            + "%s/%s");
 
     private static final Pattern ITERATION_PATTERN =
             Pattern.compile("\\S+ iteration (\\d+) of (\\d+)");
@@ -307,7 +306,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t.mInstructions = String.format("Start the testAcceptPair instrumentation on the remote "
                 + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
                 String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
-                        "pair_iterations", mPairIterations, "testAcceptPair"));
+                        "pair_iterations", mPairIterations, mTestClassName, "testAcceptPair",
+                        mTestPackageName, TEST_RUNNER_NAME));
         mTestCases.add(t);
 
         t = new TestInfo();
@@ -323,7 +323,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t.mInstructions = String.format("Start the testPair instrumentation on the remote "
                 + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
                 String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
-                        "pair_iterations", mAcceptPairIterations, "testPair"));
+                        "pair_iterations", mAcceptPairIterations, mTestClassName, "testPair",
+                        mTestPackageName, TEST_RUNNER_NAME));
         mTestCases.add(t);
 
         t = new TestInfo();
@@ -379,8 +380,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 + "the remote Android device with the following command:\n\n%s\n\nHit Enter when "
                 + "done.",
                 String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
-                        "connect_pan_iterations", mConnectPanIterations,
-                        "testIncomingPanConnection"));
+                        "connect_pan_iterations", mConnectPanIterations, mTestClassName,
+                        "testIncomingPanConnection", mTestPackageName, TEST_RUNNER_NAME));
         mTestCases.add(t);
 
         t = new TestInfo();
@@ -398,8 +399,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         t.mInstructions = String.format("Start the testConnectPan instrumentation on the remote "
                 + "Android device with the following command:\n\n%s\n\nHit Enter when done.",
                 String.format(INSTRUCTIONS_INSTRUMENT_CMD, mDeviceSerial, mLocalAddress,
-                        "connect_pan_iterations",  mIncomingPanConnectionIterations,
-                        "testConnectPan"));
+                        "connect_pan_iterations",  mIncomingPanConnectionIterations, mTestClassName,
+                        "testConnectPan", mTestPackageName, TEST_RUNNER_NAME));
         mTestCases.add(t);
 
         t = new TestInfo();
