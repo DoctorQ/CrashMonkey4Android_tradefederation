@@ -76,9 +76,9 @@ public class BugreportParserFuncTest extends TestCase {
             bugSource.cancel();
         }
 
-        List<IItem> jc = bugreport.getByType("JAVA CRASH");
-        List<IItem> nc = bugreport.getByType("NATIVE CRASH");
-        List<IItem> anr = bugreport.getByType("ANR");
+        List<IItem> jc = bugreport.getItemsByType("JAVA CRASH");
+        List<IItem> nc = bugreport.getItemsByType("NATIVE CRASH");
+        List<IItem> anr = bugreport.getItemsByType("ANR");
         System.err.format("Got %d items for JAVA CRASH, %d for NATIVE CRASH, and %d for ANR\n",
                 jc.size(), nc.size(), anr.size());
         for (IItem item : bugreport.getItems()) {

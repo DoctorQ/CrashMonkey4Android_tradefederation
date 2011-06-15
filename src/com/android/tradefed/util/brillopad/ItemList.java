@@ -21,14 +21,20 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 /**
- * A class to represent the contents of an Android bugreport
+ * A generic datastore which simply contains a {@link List} of {@link IItem}s parsed by one or more
+ * of the Brillopad parsers.  It also provides convenient methods to find specific {@link IItem}s.
  */
 public class ItemList {
-
     private List<IItem> mItems = new LinkedList<IItem>();
 
+    /**
+     * Append the specified item to this {@code ItemList}.
+     *
+     * @param IItem the item to append
+     */
     public void addItem(IItem item) {
         if (item == null) {
             throw new NullPointerException();
@@ -36,16 +42,36 @@ public class ItemList {
         mItems.add(item);
     }
 
+    /**
+     * Retrieve all of the {@link IItem}s stored in this {@code ItemList}
+     *
+     * @return the {@link List} of {@link IItem}s stored in the list
+     */
     public List<IItem> getItems() {
         return mItems;
     }
 
-    public List<IItem> getByType(String regex) {
-        return getByType(Pattern.compile(regex));
+    /**
+     * Return all of the {@link IItem}s whose type is matched by the supplied regular expression
+     * This is a convenience shim for {@see #getItemsByType(Pattern)}.
+     *
+     * @see #getFirstItemByType(Pattern)
+     * @param regex a regular expression to try to match against the {@link IItem} Type fields
+     * @return the {@link List} of matching {@link IItem}s
+     * @throws PatternSyntaxException if the regular expression is invalid
+     */
+    public List<IItem> getItemsByType(String regex) throws PatternSyntaxException {
+        return getItemsByType(Pattern.compile(regex));
     }
 
-    public List<IItem> getByType(Pattern filter) {
-        // FIXME: implement this in a way that takes sublinear time
+    /**
+     * Return all of the {@link IItem}s whose type is matched by the supplied {@link Pattern}
+     *
+     * @param filter a {@link Pattern} to try to match against the {@link IItem} Type fields
+     * @return the {@link List} of matching {@link IItem}s
+     * @throws PatternSyntaxException if the regular expression is invalid
+     */
+    public List<IItem> getItemsByType(Pattern filter) throws PatternSyntaxException {
         List<IItem> results = new LinkedList<IItem>();
 
         for (IItem item : mItems) {
@@ -60,6 +86,48 @@ public class ItemList {
         }
 
         return results;
+    }
+
+    /**
+     * Return the first {@link IItem} whose type is matched by the supplied {@link Pattern}.
+     * This is a convenience shim for {@see #getFirstItemByType(Pattern)}.
+     *
+     * @see #getFirstItemByType(Pattern)
+     * @param filter a {@link Pattern} to try to match against the {@link IItem} Type fields
+     * @return the first matching {@link IItem}, or {@code null} if none matched
+     * @throws PatternSyntaxException if the regular expression is invalid
+     */
+    public IItem getFirstItemByType(String regex) throws PatternSyntaxException {
+        return getFirstItemByType(Pattern.compile(regex));
+    }
+
+    /**
+     * Return the first {@link IItem} whose type is matched by the supplied {@link Pattern}.  This
+     * method is intended as an alternative to the {@see #getItemsByType} methods for cases where:
+     * <ul>
+     *   <li>The caller assumes that only at most one {@link IItem} will match</li>
+     *   <li>Or the caller doesn't care which of multiple matching {@link IItem}s it receives</li>
+     * </ul>
+     *
+     * @param filter a {@link Pattern} to try to match against the {@link IItem} Type fields
+     * @return the first matching {@link IItem}, or {@code null} if none matched
+     * @throws PatternSyntaxException if the regular expression is invalid
+     */
+    public IItem getFirstItemByType(Pattern filter) throws PatternSyntaxException {
+        for (IItem item : mItems) {
+            String section = item.getType();
+            if (section == null) {
+                continue;
+            }
+            Matcher m = filter.matcher(section);
+            if (m.matches()) {
+                // winner
+                return item;
+            }
+        }
+
+        // no matches, sad
+        return null;
     }
 
     /**

@@ -19,6 +19,7 @@ import com.android.tradefed.util.brillopad.item.IItem;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.PatternSyntaxException;
 
 import junit.framework.TestCase;
 
@@ -75,17 +76,59 @@ public class ItemListTest extends TestCase {
      */
     public void testSearch() {
         final String namePat = "fake %d";
-        List<IItem> iitems = new ArrayList<IItem>(5);
-        for (Integer i = 0; i < 5; ++i) {
+        final int nameCount = 5;
+        List<IItem> iitems = new ArrayList<IItem>(nameCount);
+        for (Integer i = 0; i < nameCount; ++i) {
+            IItem item = new FakeItem(String.format(namePat, i));
+            iitems.add(item);
+            mList.addItem(item);
+        }
+
+        for (Integer i = 0; i < nameCount; ++i) {
+            List<IItem> searchList = mList.getItemsByType(String.format(".*%d.*", i));
+            assertEquals(1, searchList.size());
+            assertEquals(String.format(namePat, i), searchList.get(0).getType());
+        }
+
+        assertEquals(nameCount, mList.getItemsByType("fake \\d").size());
+    }
+
+    /**
+     * Verify that {@link ItemList#getFirstItemByType} works as expected
+     */
+    public void testSearchFirst() {
+        final String namePat = "fake %d";
+        final int nameCount = 5;
+        List<IItem> iitems = new ArrayList<IItem>(nameCount);
+        for (Integer i = 0; i < nameCount; ++i) {
             IItem item = new FakeItem(String.format("fake %d", i));
             iitems.add(item);
             mList.addItem(item);
         }
 
-        for (Integer i = 0; i < 5; ++i) {
-            List<IItem> searchList = mList.getByType(String.format(".*%d.*", i));
-            assertEquals(1, searchList.size());
-            assertEquals(String.format(namePat, i), searchList.get(0).getType());
+        assertNull(mList.getFirstItemByType("real \\d"));
+        IItem item = mList.getFirstItemByType(".*3.*");
+        assertEquals("fake 3", item.getType());
+        item = mList.getFirstItemByType("fake \\d");
+        assertEquals("fake 0", item.getType());
+    }
+
+    /**
+     * Verify that {@link PatternSyntaxException} is thrown if an invalid regular expression is used
+     */
+    public void testSearchInvalid() {
+        try {
+            mList.getItemsByType("(");
+            fail("PatternSyntaxException not thrown");
+        } catch (PatternSyntaxException e) {
+            // expected
+        }
+
+        try {
+            mList.getFirstItemByType("(");
+            fail("PatternSyntaxException not thrown");
+        } catch (PatternSyntaxException e) {
+            // expected
         }
     }
 }
