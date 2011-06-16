@@ -18,11 +18,13 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
+import com.android.tradefed.util.IRunUtil;
 
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import junit.framework.Assert;
@@ -214,5 +216,22 @@ public class MockDeviceManager implements IDeviceManager {
     @Override
     public boolean disconnectFromTcpDevice(ITestDevice tcpDevice) {
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void launchEmulator(ITestDevice device, long bootTimeout, IRunUtil runUtil,
+            List<String> emulatorArgs) throws DeviceNotAvailableException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void killEmulator(ITestDevice device) throws DeviceNotAvailableException {
+        // ignore
     }
 }

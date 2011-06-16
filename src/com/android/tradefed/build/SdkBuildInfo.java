@@ -168,4 +168,39 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
     IRunUtil getRunUtil() {
         return RunUtil.getDefault();
     }
-}
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getEmulatorToolPath() {
+        if (getSdkDir() == null) {
+            throw new IllegalStateException("sdk dir is not set");
+        }
+        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools", "emulator");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void makeToolsExecutable() {
+        File toolsDir = FileUtil.getFileForPath(getSdkDir(), "tools");
+        makeExecutable(toolsDir.listFiles());
+        File platformToolsDir = FileUtil.getFileForPath(getSdkDir(), "platform-tools");
+        makeExecutable(platformToolsDir.listFiles());
+    }
+
+    /**
+     * Helper method to make a array of files executable
+     *
+     * @param files the files to make executable
+     */
+    private void makeExecutable(File[] files) {
+        if (files != null) {
+            for (File file : files) {
+                file.setExecutable(true, true);
+            }
+        }
+    }
+ }

@@ -25,6 +25,8 @@ import com.android.tradefed.util.IRunUtil;
 
 import org.easymock.EasyMock;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Collection;
 
 import junit.framework.TestCase;
@@ -61,6 +63,59 @@ public class DeviceManagerTest extends TestCase {
     /** a reference to the DeviceManager's IDeviceChangeListener. Used for triggering device
      * connection events */
     private IDeviceChangeListener mDeviceListener;
+
+    static class MockProcess extends Process {
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void destroy() {
+            // ignore
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int exitValue() {
+            return 0;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public InputStream getErrorStream() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public InputStream getInputStream() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public OutputStream getOutputStream() {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int waitFor() throws InterruptedException {
+            return 0;
+        }
+
+    }
+
 
     /**
      * {@inheritDoc}
@@ -244,6 +299,33 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
+     * Test freeing an emulator
+     */
+    public void testFreeDevice_emulator() throws DeviceNotAvailableException {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setEmulatorRequested(true);
+        IManagedTestDevice mockEmulator = EasyMock.createMock(IManagedTestDevice.class);
+        EasyMock.expect(mockEmulator.getSerialNumber()).andStubReturn("emulator-5554");
+        // allocate call
+        EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mockEmulator).times(2);
+        // simulate a emulator launch
+        EasyMock.expect(mockEmulator.getEmulatorProcess()).andReturn(new MockProcess()).times(2);
+        IDevice mockIEmulator = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(mockIEmulator.getSerialNumber()).andStubReturn("emulator-5554");
+        EasyMock.expect(mockEmulator.getIDevice()).andStubReturn(mockIEmulator);
+        EasyMock.expect(mockIEmulator.isEmulator()).andReturn(Boolean.TRUE);
+        EasyMock.expect(mockEmulator.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE);
+        mockEmulator.stopLogcat();
+        replayMocks(mockEmulator, mockIEmulator);
+        DeviceManager manager = createDeviceManager();
+        assertEquals(mockEmulator, manager.allocateDevice(100, options));
+        manager.freeDevice(mockEmulator, FreeDeviceState.AVAILABLE);
+        // ensure device can be allocated again
+        assertEquals(mockEmulator, manager.allocateDevice(100, options));
+    }
+
+    /**
      * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when a null device
      * is requested.
      */
@@ -281,6 +363,7 @@ public class DeviceManagerTest extends TestCase {
         setCheckAvailableDeviceExpectations();
         IManagedTestDevice testDevice = EasyMock.createNiceMock(IManagedTestDevice.class);
         EasyMock.expect(testDevice.getSerialNumber()).andReturn("dontexist");
+        EasyMock.expect(testDevice.getIDevice()).andReturn(EasyMock.createNiceMock(IDevice.class));
 
         replayMocks(testDevice);
         DeviceManager manager = createDeviceManager(mMockIDevice);
@@ -599,6 +682,7 @@ public class DeviceManagerTest extends TestCase {
         IManagedTestDevice mockTcpDevice = setConnectToTcpDeviceExpectations(ipAndPort);
         // assume last call is waitForOnline
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
+        EasyMock.expect(mockTcpDevice.getIDevice()).andStubReturn(mMockIDevice);
         mockTcpDevice.stopLogcat();
         replayMocks(mockTcpDevice);
         DeviceManager manager = createDeviceManager();
@@ -623,6 +707,7 @@ public class DeviceManagerTest extends TestCase {
         mMockRunUtil.sleep(EasyMock.anyLong());
         EasyMock.expectLastCall().times(3);
         mockTcpDevice.stopLogcat();
+        EasyMock.expect(mockTcpDevice.getIDevice()).andStubReturn(mMockIDevice);
         replayMocks(mockTcpDevice);
         DeviceManager manager = createDeviceManager();
         assertNull(manager.connectToTcpDevice(ipAndPort));
@@ -639,6 +724,7 @@ public class DeviceManagerTest extends TestCase {
         IManagedTestDevice mockTcpDevice = setConnectToTcpDeviceExpectations(ipAndPort);
         EasyMock.expect(mockTcpDevice.switchToAdbUsb()).andReturn(Boolean.TRUE);
         mockTcpDevice.stopLogcat();
+        EasyMock.expect(mockTcpDevice.getIDevice()).andStubReturn(mMockIDevice);
         replayMocks(mockTcpDevice);
         DeviceManager manager = createDeviceManager();
         assertNotNull(manager.connectToTcpDevice(ipAndPort));
@@ -679,6 +765,7 @@ public class DeviceManagerTest extends TestCase {
         // expect recover to be attempted on usb device
         mMockTestDevice.recoverDevice();
         mockTcpDevice.stopLogcat();
+        EasyMock.expect(mockTcpDevice.getIDevice()).andStubReturn(mMockIDevice);
         replayMocks(mockTcpDevice);
         DeviceManager manager = createDeviceManager(mMockIDevice);
         assertEquals(mMockTestDevice, manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));

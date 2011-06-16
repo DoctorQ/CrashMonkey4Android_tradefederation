@@ -18,21 +18,26 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.DdmPreferences;
+import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -367,6 +372,9 @@ public class DeviceManager implements IDeviceManager {
     IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceStateMonitor monitor) {
         IManagedTestDevice testDevice = new TestDevice(allocatedDevice, monitor);
         testDevice.setFastbootEnabled(mFastbootEnabled);
+        if (allocatedDevice instanceof StubDevice) {
+            testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+        }
         return testDevice;
     }
 
@@ -386,9 +394,21 @@ public class DeviceManager implements IDeviceManager {
     @Override
     public void freeDevice(ITestDevice device, FreeDeviceState deviceState) {
         checkInit();
-        if (device instanceof IManagedTestDevice) {
-            final IManagedTestDevice managedDevice = (IManagedTestDevice)device;
-            managedDevice.stopLogcat();
+        IManagedTestDevice managedDevice = (IManagedTestDevice)device;
+        managedDevice.stopLogcat();
+        IDevice ideviceToReturn = device.getIDevice();
+        // don't kill emulator if it wasn't launched by launchEmulator (ie emulatorProcess is null).
+        if (ideviceToReturn.isEmulator() && managedDevice.getEmulatorProcess() != null) {
+            try {
+                killEmulator(device);
+                // emulator killed - return a stub device
+                // TODO: this is a bit of a hack. Consider having DeviceManager inject a StubDevice
+                // when deviceDisconnected event is received
+                ideviceToReturn = new StubDevice(ideviceToReturn.getSerialNumber(), true);
+            } catch (DeviceNotAvailableException e) {
+                Log.e(LOG_TAG, e);
+                deviceState = FreeDeviceState.UNAVAILABLE;
+            }
         }
         if (mAllocatedDeviceMap.remove(device.getSerialNumber()) == null) {
             Log.e(LOG_TAG, String.format("freeDevice called with unallocated device %s",
@@ -397,12 +417,98 @@ public class DeviceManager implements IDeviceManager {
             // TODO: add class flag to control if unresponsive device's are returned to pool
             // TODO: also consider tracking unresponsive events received per device - so a
             // device that is continually unresponsive could be removed from available queue
-            addAvailableDevice(device.getIDevice());
+            addAvailableDevice(ideviceToReturn);
         } else if (deviceState == FreeDeviceState.AVAILABLE) {
-            addAvailableDevice(device.getIDevice());
+            addAvailableDevice(ideviceToReturn);
         } else if (deviceState == FreeDeviceState.UNAVAILABLE) {
             Log.logAndDisplay(LogLevel.WARN, LOG_TAG, String.format(
                     "Freed device %s is unavailable. Removing from use.",
+                    device.getSerialNumber()));
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void launchEmulator(ITestDevice device, long bootTimeout, IRunUtil runUtil,
+            List<String> emulatorArgs)
+            throws DeviceNotAvailableException {
+        if (!device.getIDevice().isEmulator()) {
+            throw new IllegalStateException(String.format("Device %s is not an emulator",
+                    device.getSerialNumber()));
+        }
+        if (!device.getDeviceState().equals(TestDeviceState.NOT_AVAILABLE)) {
+            throw new IllegalStateException(String.format(
+                    "Emulator device %s is in state %s. Expected: %s", device.getSerialNumber(),
+                    device.getDeviceState(), TestDeviceState.NOT_AVAILABLE));
+        }
+        Integer port = EmulatorConsole.getEmulatorPort(device.getSerialNumber());
+        if (port == null) {
+            // serial number is not in expected format
+            throw new IllegalArgumentException(String.format(
+                    "Failed to determine emulator port for %s", device.getSerialNumber()));
+        }
+        List<String> fullArgs = new ArrayList<String>(emulatorArgs);
+        fullArgs.add("-port");
+        fullArgs.add(port.toString());
+
+        try {
+            Process p = runUtil.runCmdInBackground(fullArgs);
+            // sleep a small amount to wait for process to start successfully
+            getRunUtil().sleep(500);
+            checkProcessDied(p);
+            IManagedTestDevice managedDevice = (IManagedTestDevice)device;
+            managedDevice.setEmulatorProcess(p);
+        } catch (IOException e) {
+            // TODO: is this the most appropriate exception to throw?
+            throw new DeviceNotAvailableException("Failed to start emulator process", e);
+        }
+
+        device.waitForDeviceAvailable(bootTimeout);
+    }
+
+    /**
+     * Check if emulator process has died
+     *
+     * @param p the {@link Process} to check
+     * @throws DeviceNotAvailableException if process has died
+     */
+    private void checkProcessDied(Process p) throws DeviceNotAvailableException {
+        try {
+            int exitValue = p.exitValue();
+            // should have thrown IllegalThreadStateException
+            CLog.e("Emulator process has died with exit value %d. stdout: '%s', stderr: '%s'",
+                    exitValue, StreamUtil.getStringFromStream(p.getInputStream()),
+                    StreamUtil.getStringFromStream(p.getErrorStream()));
+        } catch (IllegalThreadStateException e) {
+            // expected if process is still alive
+            return;
+        } catch (IOException e) {
+            // fall through
+        }
+        throw new DeviceNotAvailableException("Emulator process has died unexpectedly");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void killEmulator(ITestDevice device) throws DeviceNotAvailableException {
+        EmulatorConsole console = EmulatorConsole.getConsole(device.getIDevice());
+        if (console != null) {
+            console.kill();
+            // lets ensure process is killed too - fall through
+        } else {
+            CLog.w("Could not get emulator console for %s", device.getSerialNumber());
+        }
+        // lets try killing the process
+        Process emulatorProcess = ((IManagedTestDevice)device).getEmulatorProcess();
+        if (emulatorProcess != null) {
+            emulatorProcess.destroy();
+        }
+        if (!device.waitForDeviceNotAvailable(20*1000)) {
+            throw new DeviceNotAvailableException(String.format("Failed to kill emulator %s",
                     device.getSerialNumber()));
         }
     }

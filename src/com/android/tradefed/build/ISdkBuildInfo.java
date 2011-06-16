@@ -64,6 +64,16 @@ public interface ISdkBuildInfo extends IBuildInfo {
     public String getAndroidToolPath();
 
     /**
+     * Helper method to get the absolute file path to the 'emulator' tool in this sdk build.
+     * <p/>
+     * A valid path must be provided to {@link #setSdkDir(File)} before calling.
+     *
+     * @return the absolute file path to the android tool.
+     * @throws IllegalStateException if sdkDir is not set
+     */
+    public String getEmulatorToolPath();
+
+    /**
      * Gets the list of targets installed in this SDK build.
      * <p/>
      * A valid path must be provided to {@link #setSdkDir(File)} before calling.
@@ -73,4 +83,8 @@ public interface ISdkBuildInfo extends IBuildInfo {
      */
     public String[] getSdkTargets();
 
+    /**
+     * Helper method to ensure all sdk tool binaries are executable.
+     */
+    public void makeToolsExecutable();
 }

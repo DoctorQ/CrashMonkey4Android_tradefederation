@@ -18,6 +18,7 @@ package com.android.tradefed.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * Interface for running timed operations and system commands.
@@ -50,7 +51,7 @@ public interface IRunUtil {
      *
      * @see {@link ProcessBuilder#directory(File)}
      */
-    void setWorkingDir(File dir);
+    public void setWorkingDir(File dir);
 
     /**
      * Sets a environment variable to be used when running system commands.
@@ -61,7 +62,7 @@ public interface IRunUtil {
      * @see {@link ProcessBuilder#environment()}
      *
      */
-    void setEnvVariable(String key, String value);
+    public void setEnvVariable(String key, String value);
 
     /**
      * Helper method to execute a system command, and aborting if it takes longer than a specified
@@ -104,6 +105,17 @@ public interface IRunUtil {
      * @throws IOException if command failed to run
      */
     public Process runCmdInBackground(String... command) throws IOException;
+
+    /**
+     * An alternate {@link #runCmdInBackground(String...)} method that accepts the command arguments
+     * in {@link List} form.
+     *
+     * @param command the {@link List} containing specified system command and optionally arguments
+     *            to exec
+     * @return the {@link Process} of the executed command
+     * @throws IOException if command failed to run
+     */
+    public Process runCmdInBackground(List<String> command) throws IOException;
 
     /**
      * Block and executes an operation, aborting if it takes longer than a specified time.

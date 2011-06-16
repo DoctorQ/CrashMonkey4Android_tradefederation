@@ -17,8 +17,10 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.AndroidDebugBridge;
+import com.android.tradefed.util.IRunUtil;
 
 import java.util.Collection;
+import java.util.List;
 
 /**
  * Interface for managing the set of available devices for testing.
@@ -105,6 +107,29 @@ public interface IDeviceManager {
      *            device pool.
      */
     public void freeDevice(ITestDevice device, FreeDeviceState state);
+
+    /**
+     * Helper method to launch emulator.
+     * <p/>
+     * Will launch the emulator on the port specified in the allocated {@link ITestDevice}.
+     * Blocks until emulator launches successfully.
+     *
+     * @param device the placeholder {@link ITestDevice} representing allocated emulator device
+     * @throws DeviceNotAvailableException if emulator fails to boot or come online
+     */
+    void launchEmulator(ITestDevice device, long bootTimeout, IRunUtil runUtil,
+            List<String> emulatorArgs) throws DeviceNotAvailableException;
+
+    /**
+     * Shut down the given emulator.
+     * <p/>
+     * Blocks until emulator disappears from adb. Will have no effect if emulator is already not
+     * available.
+     *
+     * @param device the {@link ITestDevice} representing emulator to shut down
+     * @throws DeviceNotAvailableException if emulator fails to shut down
+     */
+    public void killEmulator(ITestDevice device) throws DeviceNotAvailableException;
 
     /**
      * Connect to a device with adb-over-tcp

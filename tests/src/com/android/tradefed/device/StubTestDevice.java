@@ -458,4 +458,21 @@ public class StubTestDevice implements IManagedTestDevice {
     public InputStreamSource getScreenshot() throws DeviceNotAvailableException {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEmulatorProcess(Process p) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Process getEmulatorProcess() {
+        // ignore
+        return null;
+    }
 }
