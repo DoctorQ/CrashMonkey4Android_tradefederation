@@ -66,7 +66,7 @@ public class TestLoader {
         URL[] urls = new URL[dependentJars.size() + 1];
         urls[0] = jarFile.toURI().toURL();
         Iterator<File> jarIter = dependentJars.iterator();
-        for (int i=1; i < dependentJars.size(); i++) {
+        for (int i=1; i <= dependentJars.size(); i++) {
             urls[i] = jarIter.next().toURI().toURL();
         }
         return new URLClassLoader(urls);

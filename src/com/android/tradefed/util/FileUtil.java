@@ -546,4 +546,27 @@ public class FileUtil {
         }
         return pathBuilder.toString();
     }
+
+    /**
+     * Recursively search given directory for first file with given name
+     *
+     * @param dir the directory to search
+     * @param fileName the name of the file to search for
+     * @return the {@link File} or <code>null</code> if it could not be found
+     */
+    public static File findFile(File dir, String fileName) {
+        if (dir.listFiles() != null) {
+            for (File file : dir.listFiles()) {
+                if (file.getName().equals(fileName)) {
+                    return file;
+                } else if (file.isDirectory()) {
+                    File result = findFile(file, fileName);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+        }
+        return null;
+    }
 }

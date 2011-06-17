@@ -20,6 +20,7 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.TestLoader;
 
 import java.io.File;
@@ -64,7 +65,7 @@ public class SdkLibTest implements IRemoteTest, IBuildReceiver {
                  mSdkBuild.getSdkDir().getAbsolutePath()));
 
          // get the path to all the libraries under test
-         File sdkLibDir = new File(mSdkBuild.getSdkDir(), "tools" + File.separator + "lib");
+         File sdkLibDir = FileUtil.getFileForPath(mSdkBuild.getSdkDir(), "tools", "lib");
          Assert.assertTrue(String.format("could not find tools/lib folder in sdk %s",
                  mSdkBuild.getSdkDir()), sdkLibDir.exists());
 
@@ -74,17 +75,23 @@ public class SdkLibTest implements IRemoteTest, IBuildReceiver {
          Assert.assertTrue(String.format("could not find tests/libtests folder in sdk %s",
                  mSdkBuild.getSdkDir()), sdkLibTestDir.exists());
 
+         Collection<File> libraries = collectJars(sdkLibDir);
+         Collection<File> testLibs = collectJars(sdkLibTestDir);
+         // also add testLibs to the dependentJars, since sdkuilib-tests depends on sdklib-tests
+         libraries.addAll(testLibs);
+
          // also add the x86_64 swt.jar. TODO: include proper swt according to
          // host arch
          File swtJarDir = new File(sdkLibDir, "x86_64");
          Assert.assertTrue(String.format("could not find tools/lib/x86_64 folder in sdk %s",
                  mSdkBuild.getSdkDir()), swtJarDir.exists());
-
-         Collection<File> libraries = collectJars(sdkLibDir);
-         Collection<File> testLibs = collectJars(sdkLibTestDir);
-         // also add testLibs to the dependentJars, since sdkuilib-tests depends on sdklib-tests
-         libraries.addAll(testLibs);
          libraries.addAll(collectJars(swtJarDir));
+
+         File platformsDir = FileUtil.getFileForPath(mSdkBuild.getSdkDir(), "platforms");
+         File layoutlibJar = FileUtil.findFile(platformsDir, "layoutlib.jar");
+         Assert.assertNotNull(String.format("could not find layoutlib.jar in sdk %s",
+                 mSdkBuild.getSdkDir()), layoutlibJar);
+         libraries.add(layoutlibJar);
 
          TestLoader loader = new TestLoader();
 
