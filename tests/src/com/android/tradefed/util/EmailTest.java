@@ -16,14 +16,12 @@
 
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.Email;
-import com.android.tradefed.util.Email.Message;
+import com.android.tradefed.util.IEmail.Message;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.IllegalArgumentException;
 
 import junit.framework.TestCase;
 

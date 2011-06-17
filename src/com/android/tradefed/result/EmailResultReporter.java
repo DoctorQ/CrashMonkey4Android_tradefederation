@@ -17,16 +17,20 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.targetprep.BuildError;
 import com.android.tradefed.util.Email;
-import com.android.tradefed.util.Email.Message;
+import com.android.tradefed.util.IEmail;
+import com.android.tradefed.util.IEmail.Message;
+import com.android.tradefed.util.StreamUtil;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * A simple result reporter that sends emails for test results.
@@ -49,14 +53,55 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
     private String mSubjectTag = DEFAULT_SUBJECT_TAG;
 
     @Option(name = "send-only-on-failure",
-            description = "Flag for sending email only on failure.")
-    private boolean mSendOnlyOnFailure = false;
+            description = "Flag for sending email only on test failure.")
+    private boolean mSendOnlyOnTestFailure = false;
+
+    @Option(name = "send-only-on-inv-failure",
+            description = "Flag for sending email only on invocation failure.")
+    private boolean mSendOnlyOnInvFailure = false;
 
     private List<TestSummary> mSummaries = null;
+    private Throwable mInvocationThrowable = null;
+    private final IEmail mMailer;
+
+    /**
+     * Create a {@link EmailResultReporter}
+     */
+    public EmailResultReporter() {
+        this(new Email());
+    }
+
+    /**
+     * Create a {@link EmailResultReporter} with a custom {@link IEmail} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     *
+     * @param mailer the {@link IEmail} instance to use.
+     */
+    EmailResultReporter(IEmail mailer) {
+        mMailer = mailer;
+    }
+
+    /**
+     * Adds an email destination address.
+     *
+     * @param dest
+     */
+    void addDestination(String dest) {
+        mDestinations.add(dest);
+    }
+
+    /**
+     * Sets the send-only-on-inv-failure flag
+     */
+    void setSendOnlyOnInvocationFailure(boolean send) {
+        mSendOnlyOnInvFailure = send;
+    }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void putSummary(List<TestSummary> summaries) {
         mSummaries = summaries;
     }
@@ -69,11 +114,15 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return {@code true} if a notification email should be sent, {@code false} if not
      */
     protected boolean shouldSendMessage() {
-        if (mSendOnlyOnFailure) {
+        if (mSendOnlyOnTestFailure) {
             if (!hasFailedTests()) {
                 Log.v(LOG_TAG, "Not sending email because there are no failures to report.");
                 return false;
             }
+        } else if (mSendOnlyOnInvFailure && getInvocationStatus().equals(
+                InvocationStatus.SUCCESS)) {
+            Log.v(LOG_TAG, "Not sending email because invocation succeeded.");
+            return false;
         }
         return true;
     }
@@ -85,8 +134,21 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return A {@link String} containing the subject to use for an email report
      */
     protected String generateEmailSubject() {
-        return String.format("%s: %d passed, %d failed, %d error", mSubjectTag, getNumPassedTests(),
-                getNumFailedTests(), getNumErrorTests());
+        return String.format("%s result for %s on build %d: %s", mSubjectTag,
+                getBuildInfo().getTestTarget(), getBuildInfo().getBuildId(), getInvocationStatus());
+    }
+
+    /**
+     * Returns the {@link InvocationStatus}
+     */
+    protected InvocationStatus getInvocationStatus() {
+        if (mInvocationThrowable == null) {
+            return InvocationStatus.SUCCESS;
+        } else if (mInvocationThrowable instanceof BuildError) {
+            return InvocationStatus.BUILD_ERROR;
+        } else {
+            return InvocationStatus.FAILED;
+        }
     }
 
     /**
@@ -97,19 +159,38 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      */
     protected String generateEmailBody() {
         StringBuilder bodyBuilder = new StringBuilder();
-        ListIterator<TestSummary> iter = mSummaries.listIterator();
-        while (iter.hasNext()) {
-            // FIXME: make this actually useful
-            TestSummary summary = iter.next();
-            bodyBuilder.append("Source ");
-            bodyBuilder.append(summary.getSource());
-            bodyBuilder.append(" provided summary \"");
-            bodyBuilder.append(summary.getSummary().getString());
-            bodyBuilder.append("\".\nIts key-value dump was:\n");
-            bodyBuilder.append(summary.getKvEntries().toString());
-            bodyBuilder.append("\n\n");
+
+        if (mInvocationThrowable != null) {
+            bodyBuilder.append("Invocation failed: ");
+            bodyBuilder.append(StreamUtil.getStackTrace(mInvocationThrowable));
+            bodyBuilder.append("\n");
+        }
+        bodyBuilder.append(String.format("Test results:  %d passed, %d failed, %d error\n\n",
+                getNumPassedTests(), getNumFailedTests(), getNumErrorTests()));
+        for (TestRunResult result : getRunResults()) {
+            if (!result.getRunMetrics().isEmpty()) {
+                bodyBuilder.append(String.format("'%s' test run metrics: %s\n", result.getName(),
+                        result.getRunMetrics()));
+            }
+        }
+        bodyBuilder.append("\n");
+
+        if (mSummaries != null) {
+            for (TestSummary summary : mSummaries) {
+                bodyBuilder.append("Invocation summary report: ");
+                bodyBuilder.append(summary.getSummary().getString());
+                if (!summary.getKvEntries().isEmpty()) {
+                    bodyBuilder.append("\".\nSummary key-value dump:\n");
+                    bodyBuilder.append(summary.getKvEntries().toString());
+                }
+            }
         }
         return bodyBuilder.toString();
+    }
+
+    @Override
+    public void invocationFailed(Throwable t) {
+        mInvocationThrowable = t;
     }
 
     /**
@@ -126,10 +207,8 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
             return;
         }
 
-        Email mailer = new Email();
-        mailer.setSender(mSender);
-
         Message msg = new Message();
+        msg.setSender(mSender);
         msg.setSubject(generateEmailSubject());
         msg.setBody(generateEmailBody());
         Iterator<String> toAddress = mDestinations.iterator();
@@ -138,9 +217,13 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
         }
 
         try {
-            mailer.send(msg);
-        } catch (Throwable e) {
-            System.err.println("Caught a throwable: " + e.toString());
+            mMailer.send(msg);
+        } catch (IllegalArgumentException e) {
+            CLog.e("Failed to send email");
+            CLog.e(e);
+        } catch (IOException e) {
+            CLog.e("Failed to send email");
+            CLog.e(e);
         }
     }
 }

@@ -37,6 +37,7 @@ import com.android.tradefed.invoker.TestInvocationTest;
 import com.android.tradefed.log.FileLoggerTest;
 import com.android.tradefed.log.LogRegistryTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
+import com.android.tradefed.result.EmailResultReporterTest;
 import com.android.tradefed.result.InvocationToJUnitResultForwarderTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
@@ -119,6 +120,7 @@ public class UnitTests extends TestSuite {
 
         // result
         addTestSuite(CollectingTestListenerTest.class);
+        addTestSuite(EmailResultReporterTest.class);
         addTestSuite(InvocationToJUnitResultForwarderTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(LogFileSaverTest.class);

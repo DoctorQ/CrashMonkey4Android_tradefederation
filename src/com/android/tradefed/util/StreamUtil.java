@@ -17,10 +17,12 @@ package com.android.tradefed.util;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.io.Writer;
 import java.util.zip.GZIPOutputStream;
@@ -98,6 +100,20 @@ public class StreamUtil {
         while ((data = inStream.read()) != -1) {
             writer.write(data);
         }
+    }
+
+    /**
+     * Gets the stack trace as a {@link String}.
+     *
+     * @param throwable the {@link Throwable} to convert.
+     * @return a {@link String} stack trace
+     */
+    public static String getStackTrace(Throwable throwable) {
+        // dump the print stream results to the ByteArrayOutputStream, so contents can be evaluated
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream bytePrintStream = new PrintStream(outputStream);
+        throwable.printStackTrace(bytePrintStream);
+        return outputStream.toString();
     }
 
     /**
@@ -181,4 +197,5 @@ public class StreamUtil {
             }
         }
     }
+
 }
