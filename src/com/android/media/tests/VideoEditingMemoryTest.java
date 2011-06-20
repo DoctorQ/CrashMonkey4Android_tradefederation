@@ -139,6 +139,7 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
 
         String extStore =
                 mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+
         String out = mTestDevice.executeShellCommand(String.format("ls %s/%s",
                 extStore, "*.dump"));
         String heapOutputFiles[] = out.split("\n");
@@ -146,6 +147,9 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
         for (String heapOutputFile : heapOutputFiles) {
             try {
                 outputFile = mTestDevice.pullFile(heapOutputFile.trim());
+                if (outputFile == null) {
+                    continue;
+                }
                 outputSource = new SnapshotInputStreamSource(
                         new FileInputStream(outputFile));
                 listener.testLog(heapOutputFile, LogDataType.TEXT,
