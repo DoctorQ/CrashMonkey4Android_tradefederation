@@ -295,7 +295,8 @@ public class TestInvocation implements ITestInvocation {
             }
             throw e;
         } catch (RuntimeException e) {
-            CLog.e("Unexpected runtime exception while running invocation!", e);
+            CLog.e("Unexpected runtime exception while running invocation!");
+            CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
