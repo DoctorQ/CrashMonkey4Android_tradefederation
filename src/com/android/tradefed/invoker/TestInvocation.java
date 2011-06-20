@@ -282,10 +282,12 @@ public class TestInvocation implements ITestInvocation {
             CLog.w("Build %d failed on device %s", info.getBuildId(), device.getSerialNumber());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
-            CLog.e("Caught exception while running invocation", e);
+            CLog.e("Caught exception while running invocation");
+            CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (DeviceNotAvailableException e) {
-            CLog.e("Caught exception while running invocation", e);
+            CLog.e("Caught exception while running invocation");
+            CLog.e(e);
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
                 reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
@@ -295,7 +297,8 @@ public class TestInvocation implements ITestInvocation {
             }
             throw e;
         } catch (RuntimeException e) {
-            CLog.e("Unexpected runtime exception while running invocation!", e);
+            CLog.e("Unexpected runtime exception while running invocation!");
+            CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
@@ -331,7 +334,8 @@ public class TestInvocation implements ITestInvocation {
                 listener.invocationStarted(info);
             } catch (RuntimeException e) {
                 // don't let one listener leave the invocation in a bad state
-                CLog.e("Caught runtime exception from ITestInvocationListener", e);
+                CLog.e("Caught runtime exception from ITestInvocationListener");
+                CLog.e(e);
             }
         }
     }
