@@ -913,8 +913,9 @@ class TestDevice implements IManagedTestDevice {
         } else {
             // check for specific error messages in result that indicate bad device communication
             // and recovery mode is needed
-            if (fastbootResult.getStderr().contains("data transfer failure (Protocol error)") ||
-                    fastbootResult.getStderr().contains("status read failed (No such device)")) {
+            if (fastbootResult.getStderr() == null ||
+                fastbootResult.getStderr().contains("data transfer failure (Protocol error)") ||
+                fastbootResult.getStderr().contains("status read failed (No such device)")) {
                 Log.w(LOG_TAG, String.format(
                         "Bad fastboot response from device %s. stderr: %s. Entering recovery",
                         getSerialNumber(), fastbootResult.getStderr()));

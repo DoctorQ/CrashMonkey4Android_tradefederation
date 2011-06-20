@@ -742,12 +742,35 @@ public class TestDeviceTest extends TestCase {
             // expected
         }
     }
+
     /**
      * Test that state changes are ignore while {@link TestDevice#executeFastbootCommand(String...)}
      * is active.
      */
     public void testExecuteFastbootCommand_state() {
-        // TODO: implement this when RunUtil.runTimedCommand can be mocked
+        // TODO: implement this
+    }
+
+    /**
+     * Test recovery mode is entered when fastboot command fails
+     */
+    public void testExecuteFastbootCommand_recovery() throws UnsupportedOperationException,
+           DeviceNotAvailableException {
+        CommandResult result = new CommandResult(CommandStatus.EXCEPTION);
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("fastboot"),
+                EasyMock.eq("-s"),EasyMock.eq("serial"), EasyMock.eq("foo"))).andReturn(result);
+        mMockRecovery.recoverDeviceBootloader((IDeviceStateMonitor)EasyMock.anyObject());
+        CommandResult successResult = new CommandResult(CommandStatus.SUCCESS);
+        successResult.setStderr("");
+        successResult.setStdout("");
+        // now expect a successful retry
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("fastboot"),
+                EasyMock.eq("-s"),EasyMock.eq("serial"), EasyMock.eq("foo"))).andReturn(
+                        successResult);
+        replayMocks();
+        mTestDevice.executeFastbootCommand("foo");
+        verifyMocks();
+
     }
 
     /**
