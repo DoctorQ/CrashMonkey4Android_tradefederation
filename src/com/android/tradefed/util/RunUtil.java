@@ -116,7 +116,7 @@ public class RunUtil implements IRunUtil {
     @Override
     public Process runCmdInBackground(final String... command) throws IOException  {
         final String fullCmd = Arrays.toString(command);
-        Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+        CLog.v("Running %s", fullCmd);
         return mProcessBuilder.command(command).start();
     }
 
@@ -125,7 +125,7 @@ public class RunUtil implements IRunUtil {
      */
     @Override
     public Process runCmdInBackground(final List<String> command) throws IOException  {
-        Log.v(LOG_TAG, String.format("Running %s", command));
+        CLog.v("Running %s", command);
         return mProcessBuilder.command(command).start();
     }
 
@@ -141,7 +141,7 @@ public class RunUtil implements IRunUtil {
             try {
                 runThread.wait(timeout);
             } catch (InterruptedException e) {
-                Log.i(LOG_TAG, "runnable interrupted");
+                CLog.i("runnable interrupted");
             }
             if (runThread.getStatus() == CommandStatus.TIMED_OUT ||
                     runThread.getStatus() == CommandStatus.EXCEPTION) {
@@ -161,7 +161,7 @@ public class RunUtil implements IRunUtil {
             if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
-            Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
+            CLog.d("operation failed, waiting for %d ms", pollInterval);
             sleep(pollInterval);
         }
         return false;
@@ -178,7 +178,7 @@ public class RunUtil implements IRunUtil {
             if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
-            Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
+            CLog.d("operation failed, waiting for %d ms", pollInterval);
             sleep(pollInterval);
         }
         return false;
@@ -198,7 +198,7 @@ public class RunUtil implements IRunUtil {
             if (runTimed(opTimeout, runnable, true) == CommandStatus.SUCCESS) {
                 return true;
             }
-            Log.d(LOG_TAG, String.format("operation failed, waiting for %d ms", pollInterval));
+            CLog.d("operation failed, waiting for %d ms", pollInterval);
             sleep(pollInterval);
             // somewhat arbitrarily, increase the poll time by a factor of 4 for each attempt,
             // up to the previously decided maximum
@@ -222,7 +222,7 @@ public class RunUtil implements IRunUtil {
             Thread.sleep(time);
         } catch (InterruptedException e) {
             // ignore
-            Log.d(LOG_TAG, "sleep interrupted");
+            CLog.d("sleep interrupted");
         }
     }
 
@@ -246,11 +246,12 @@ public class RunUtil implements IRunUtil {
             try {
                 status = mRunnable.run() ? CommandStatus.SUCCESS : CommandStatus.FAILED;
             } catch (InterruptedException e) {
-                Log.i(LOG_TAG, "runutil interrupted");
+                CLog.i("runutil interrupted");
                 status = CommandStatus.EXCEPTION;
             } catch (Exception e) {
                 if (mLogErrors) {
-                    CLog.e("Exception occurred when exiting runnable: %s", e.toString());
+                    CLog.e("Exception occurred when executing runnable");
+                    CLog.e(e);
                 }
                 status = CommandStatus.EXCEPTION;
             }
