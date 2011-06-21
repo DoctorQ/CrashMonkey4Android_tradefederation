@@ -53,6 +53,11 @@ public class BugreportCollectorTest extends TestCase {
         public void cancel() {
             // ignore
         }
+
+        @Override
+        public long size() {
+            return BUGREPORT_STRING.getBytes().length;
+        }
     }
 
     @Override

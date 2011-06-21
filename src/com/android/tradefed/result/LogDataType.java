@@ -20,20 +20,37 @@ package com.android.tradefed.result;
  */
 public enum LogDataType {
 
-    TEXT("txt"),
-    XML("xml"),
-    PNG("png"),
-    ZIP("zip"),
-    GZIP("gz"),
-    UNKNOWN("tmp");
+    TEXT("txt", false, true),
+    XML("xml", false, true),
+    PNG("png", true, false),
+    ZIP("zip", true, false),
+    GZIP("gz", true, false);
 
     private final String mFileExt;
+    private final boolean mIsCompressed;
+    private final boolean mIsText;
 
-    LogDataType(String fileExt) {
+    LogDataType(String fileExt, boolean compressed, boolean text) {
         mFileExt = fileExt;
+        mIsCompressed = compressed;
+        mIsText = text;
     }
 
     public String getFileExt() {
         return mFileExt;
+    }
+
+    /**
+     * @return <code>true</code> if data type is a compressed format.
+     */
+    public boolean isCompressed() {
+        return mIsCompressed;
+    }
+
+    /**
+     * @return <code>true</code> if data type is a textual format.
+     */
+    public boolean isText() {
+        return mIsText;
     }
 }

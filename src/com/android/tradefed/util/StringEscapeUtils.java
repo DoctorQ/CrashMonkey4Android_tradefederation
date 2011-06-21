@@ -16,15 +16,12 @@
 
 package com.android.tradefed.util;
 
-import com.android.ddmlib.Log;
 
 /**
  * Utility class for escaping strings for specific formats.
  * Include methods to escape strings that are being passed to the Android Shell.
  */
 public class StringEscapeUtils {
-
-    private static final String LOG_TAG = "StringEscapeUtils";
 
     /**
      * Escapes a {@link String} for use in an Android shell command.
