@@ -131,12 +131,17 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
         File outputFile = null;
 
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        String out = mTestDevice.executeShellCommand(String.format("ls %s/%s", extStore, "*.dump"));
+
+        String out = mTestDevice.executeShellCommand(String.format("ls %s/%s",
+                extStore, "*.dump"));
         String heapOutputFiles[] = out.split("\n");
 
         for (String heapFile : heapOutputFiles) {
             try {
                 outputFile = mTestDevice.pullFile(heapFile.trim());
+                if (outputFile == null) {
+                    continue;
+                }
                 outputSource = new SnapshotInputStreamSource(
                         new FileInputStream(outputFile));
                 listener.testLog(heapFile, LogDataType.TEXT,
