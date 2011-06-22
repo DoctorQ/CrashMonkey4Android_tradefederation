@@ -1037,9 +1037,34 @@ class TestDevice implements IManagedTestDevice {
     public void recoverDevice() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
         mRecovery.recoverDevice(mMonitor);
+        // don't allow device to enter recovery mode during the postBootSetup, because it may
+        // result in infinite loop
+        // TODO: find a better way to handle this - such as moving postBootSetup to the recovery
+        // class itself
+        IDeviceRecovery origRecovery = getRecovery();
+        setRecovery(new ReentrantRecovery());
+        try {
+            // this might be a runtime reset - still need to run post boot setup steps
+            postBootSetup();
+        } finally {
+            setRecovery(origRecovery);
+        }
         Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
-        // this might be a runtime reset - still need to run post boot setup steps
-        postBootSetup();
+    }
+
+    private static class ReentrantRecovery implements IDeviceRecovery {
+        @Override
+        public void recoverDevice(IDeviceStateMonitor monitor) throws DeviceNotAvailableException {
+            throw new DeviceUnresponsiveException(
+                    "entered recovery recursively during postBootSetup");
+        }
+
+        @Override
+        public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
+                throws DeviceNotAvailableException {
+            throw new DeviceUnresponsiveException(
+                    "entered recovery recursively during postBootSetup");
+        }
     }
 
     /**
@@ -1748,6 +1773,7 @@ class TestDevice implements IManagedTestDevice {
         Log.i(LOG_TAG, String.format("adb root on device %s", getSerialNumber()));
 
         String output = executeAdbCommand("root");
+        CLog.d("adb root on %s returned '%s'", getSerialNumber(), output);
         if (output.contains("adbd is already running as root")) {
             return true;
         } else if (output.contains("restarting adbd as root")) {
