@@ -152,6 +152,35 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test pulling a file from device into a local file that cannot be written to.
+     * <p/>
+     * Expect {@link TestDevice#pullFile(String, File)} to return <code>false</code>
+     */
+    public void testPull_nopermissions() throws IOException, DeviceNotAvailableException {
+        CLog.i("testPull_nopermissions");
+
+        // make sure the root path is valid
+        String externalStorePath =  mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        assertNotNull(externalStorePath);
+        String deviceFilePath = String.format("%s/%s", externalStorePath, "testPull_nopermissions");
+        // first push a file so we have something to retrieve
+        assertTrue(mTestDevice.pushString("test data", deviceFilePath));
+        assertTrue(String.format("%s does not exist", deviceFilePath),
+                mTestDevice.doesFileExist(deviceFilePath));
+        File tmpFile = null;
+        try {
+            tmpFile = FileUtil.createTempFile("testPull_nopermissions", ".txt");
+            tmpFile.setReadOnly();
+            assertFalse(mTestDevice.pullFile(deviceFilePath, tmpFile));
+        } finally {
+            if (tmpFile != null) {
+                tmpFile.setWritable(true);
+                FileUtil.deleteFile(tmpFile);
+            }
+        }
+    }
+
+    /**
      * Test pushing a file onto device that does not exist.
      * <p/>
      * Expect {@link TestDevice#pushFile(String)} to return <code>false</code>
