@@ -45,7 +45,6 @@ import java.util.regex.Pattern;
  * </pre>
  */
 class CommandFileParser {
-    private static final String LOG_TAG = "CommandFileParser";
 
     /**
      * A pattern that matches valid macro usages and captures the name of the macro.

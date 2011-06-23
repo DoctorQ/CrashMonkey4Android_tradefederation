@@ -101,7 +101,7 @@ public class ItemListTest extends TestCase {
         final int nameCount = 5;
         List<IItem> iitems = new ArrayList<IItem>(nameCount);
         for (Integer i = 0; i < nameCount; ++i) {
-            IItem item = new FakeItem(String.format("fake %d", i));
+            IItem item = new FakeItem(String.format(namePat, i));
             iitems.add(item);
             mList.addItem(item);
         }

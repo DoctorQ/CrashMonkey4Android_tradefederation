@@ -48,5 +48,13 @@ public class ByteArrayInputStreamSource implements InputStreamSource {
             mArray = new byte[0];
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long size() {
+        return mArray.length;
+    }
 }
 

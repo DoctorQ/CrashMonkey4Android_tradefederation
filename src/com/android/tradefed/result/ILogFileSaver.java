@@ -46,10 +46,11 @@ public interface ILogFileSaver {
             throws IOException;
 
     /**
-     * Save and compress the log data to a zip file
+     * Save and compress, if necessary, the log data to a zip file
      *
      * @param dataName a {@link String} descriptive name of the data. e.g. "device_logcat"
-     * @param dataType the {@link LogDataType} of the file.
+     * @param dataType the {@link LogDataType} of the file. Log data which is already compressed,
+     *            (ie {@link LogDataType#isCompressed()} is <code>true</code>) will not be zipped.
      * @param dataStream the {@link InputStream} of the data.
      * @return the file of the generated data
      * @throws IOException if log file could not be generated

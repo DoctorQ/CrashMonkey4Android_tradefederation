@@ -17,6 +17,7 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
@@ -115,8 +116,13 @@ public class LogFileSaver implements ILogFileSaver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File saveAndZipLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException {
+        if (dataType.isCompressed()) {
+            CLog.d("Log data for %s is already compressed, skipping compression", dataName);
+            return saveLogData(dataName, dataType, dataStream);
+        }
         BufferedInputStream bufInput = null;
         ZipOutputStream outStream = null;
         try {

@@ -43,5 +43,10 @@ public interface InputStreamSource {
      * invalidates this {@code InputStreamSource}.
      */
     public void cancel();
+
+    /**
+     * Return the size in bytes of the source data.
+     */
+    public long size();
 }
 

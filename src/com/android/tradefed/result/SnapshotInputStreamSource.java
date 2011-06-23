@@ -90,5 +90,13 @@ public class SnapshotInputStreamSource implements InputStreamSource {
             mBackingFile = null;
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long size() {
+        return mBackingFile.length();
+    }
 }
 
