@@ -59,6 +59,10 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
         }
     }
 
+    public DeviceBuildInfo() {
+        mImageFileMap = new Hashtable<String, ImageFile>();
+    }
+
     /**
      * Creates a {@link DeviceBuildInfo}.
      *
