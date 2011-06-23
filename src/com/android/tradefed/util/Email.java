@@ -30,83 +30,9 @@ import java.util.Iterator;
  * likely fail on Windows, and possibly on Mac OS X as well.  It will fail on any machine where
  * The binary pointed at by the {@code mailer} constant doesn't exist.
  */
-public class Email {
+public class Email implements IEmail {
     private static final String LOG_TAG = "Email";
     private static final String mailer = "/usr/bin/mailx";
-
-    private String mSender = null;
-
-    public void setSender(String sender) {
-        mSender = sender;
-    }
-
-    /**
-     * This is a sad excuse for an email message.
-     */
-    public static class Message {
-        private Collection<String> mToAddrs = null;
-        private Collection<String> mCcAddrs = null;
-        private Collection<String> mBccAddrs = null;
-        private String mSubject = null;
-        private String mBody = null;
-
-        public Message() {}
-
-        /**
-         * Convenience constructor: create a simple message
-         *
-         * @param to Single destination address
-         * @param subject Subject
-         * @param body Message body
-         */
-        public Message(String to, String subject, String body) {
-            addTo(to);
-            setSubject(subject);
-            setBody(body);
-        }
-
-        public void addTo(String address) {
-            if (mToAddrs == null) {
-                mToAddrs = new ArrayList<String>();
-            }
-            mToAddrs.add(address);
-        }
-        public void addCc(String address) {
-            if (mCcAddrs == null) {
-                mCcAddrs = new ArrayList<String>();
-            }
-            mCcAddrs.add(address);
-        }
-        public void addBcc(String address) {
-            if (mBccAddrs == null) {
-                mBccAddrs = new ArrayList<String>();
-            }
-            mBccAddrs.add(address);
-        }
-        public void setSubject(String subject) {
-            mSubject = subject;
-        }
-        public void setBody(String body) {
-            mBody = body;
-        }
-
-
-        public Collection<String> getTo() {
-            return mToAddrs;
-        }
-        public Collection<String> getCc() {
-            return mCcAddrs;
-        }
-        public Collection<String> getBcc() {
-            return mBccAddrs;
-        }
-        public String getSubject() {
-            return mSubject;
-        }
-        public String getBody() {
-            return mBody;
-        }
-    }
 
     private static String join(Collection<String> list, String sep) {
         StringBuilder builder = new StringBuilder();
@@ -140,19 +66,9 @@ public class Email {
     }
 
     /**
-     * A method to send a {@link Message}.  Verifies that the to, subject, and body fields of the
-     * {@link Message} are not null, but does no verification beyond the null checks.
-     *
-     * Note that any SMTP-level errors are undetectable at this stage.  Because of the asynchronous
-     * nature of email, they will generally be reported to the envelope-sender of the message.  In
-     * that case, the envelope-sender will typically receive an email from MAILER-DAEMON with the
-     * details of the error.
-     *
-     * @param msg The {@link Message} to try to send
-     * @throws IllegalArgumentException if any of the to, subject, or body fields of {@code msg} is
-     *         null
-     * @throws IOException if sending email failed in a synchronously-detectable way
+     * {@inheritDoc}
      */
+    @Override
     public void send(Message msg) throws IllegalArgumentException, IOException {
         // Sanity checks
         if (msg.getTo() == null || msg.getSubject() == null || msg.getBody() == null) {
@@ -175,15 +91,15 @@ public class Email {
 
         cmd.addAll(msg.getTo());
 
-        if (mSender != null) {
+        if (msg.getSender() != null) {
             // Sender in the headers:
             cmd.add("-a");
-            cmd.add(String.format("From: %s", mSender));
+            cmd.add(String.format("From: %s", msg.getSender()));
             // sendmail options are denoted with a double-hyphen
             cmd.add("--");
             // Envelope Sender
             cmd.add("-f");
-            cmd.add(mSender);
+            cmd.add(msg.getSender());
         }
 
         Log.i(LOG_TAG, String.format("About to send email with command: %s", cmd));

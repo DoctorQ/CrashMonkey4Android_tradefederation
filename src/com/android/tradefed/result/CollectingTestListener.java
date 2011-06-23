@@ -49,6 +49,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     private int mNumPassedTests = 0;
     private int mNumFailedTests = 0;
     private int mNumErrorTests = 0;
+    private IBuildInfo mBuildInfo;
 
     /**
      * Toggle the 'aggregate metrics' option
@@ -63,7 +64,14 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void invocationStarted(IBuildInfo buildInfo) {
-        // ignore
+        mBuildInfo = buildInfo;
+    }
+
+    /**
+     * Return the build info that was reported via {@link #invocationStarted(IBuildInfo)}
+     */
+    public IBuildInfo getBuildInfo() {
+        return mBuildInfo;
     }
 
     /**
