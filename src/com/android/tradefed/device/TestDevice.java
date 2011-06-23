@@ -462,9 +462,8 @@ class TestDevice implements IManagedTestDevice {
                             localFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
                     status = true;
                 } catch (SyncException e) {
-                    Log.w(LOG_TAG, String.format(
-                            "Failed to pull %s from %s. Message %s",
-                            remoteFilePath, getSerialNumber(), e.getMessage()));
+                    CLog.w("Failed to pull %s from %s to %s. Message %s", remoteFilePath,
+                            getSerialNumber(), localFile.getAbsolutePath(), e.getMessage());
                     throw e;
                 } finally {
                     if (syncService != null) {
@@ -474,8 +473,8 @@ class TestDevice implements IManagedTestDevice {
                 return status;
             }
         };
-        return performDeviceAction(String.format("pull %s", remoteFilePath), pullAction,
-                MAX_RETRY_ATTEMPTS);
+        return performDeviceAction(String.format("pull %s to %s", remoteFilePath,
+                localFile.getAbsolutePath()), pullAction, MAX_RETRY_ATTEMPTS);
     }
 
     /**
@@ -519,9 +518,9 @@ class TestDevice implements IManagedTestDevice {
                         remoteFilePath, SyncService.getNullProgressMonitor());
                     status = true;
                 } catch (SyncException e) {
-                    Log.w(LOG_TAG, String.format(
-                            "Failed to push to %s on device %s. Message %s",
-                            remoteFilePath, getSerialNumber(), e.getMessage()));
+                    CLog.w("Failed to push %s to %s on device %s. Message %s",
+                           localFile.getAbsolutePath(), remoteFilePath, getSerialNumber(),
+                           e.getMessage());
                     throw e;
                 } finally {
                     if (syncService != null) {
@@ -531,8 +530,8 @@ class TestDevice implements IManagedTestDevice {
                 return status;
             }
         };
-        return performDeviceAction(String.format("push %s", remoteFilePath), pushAction,
-                MAX_RETRY_ATTEMPTS);
+        return performDeviceAction(String.format("push %s to %s", localFile.getAbsolutePath(),
+                remoteFilePath), pushAction, MAX_RETRY_ATTEMPTS);
     }
 
     /**
@@ -991,17 +990,16 @@ class TestDevice implements IManagedTestDevice {
             try {
                 return action.run();
             } catch (TimeoutException e) {
-                Log.w(LOG_TAG, String.format("'%s' timed out on device %s",
-                        actionDescription, getSerialNumber()));
+                CLog.w("'%s' timed out on device %s", actionDescription, getSerialNumber());
             } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("Exception when attempting %s on device %s",
-                        actionDescription, getSerialNumber()));
+                CLog.w("IOException (%s) when attempting %s on device %s", e.getMessage(),
+                        actionDescription, getSerialNumber());
             } catch (InstallException e) {
-                Log.w(LOG_TAG, String.format("InstallException when attempting %s on device %s",
-                        actionDescription, getSerialNumber()));
+                CLog.w("InstallException (%s) when attempting %s on device %s", e.getMessage(),
+                        actionDescription, getSerialNumber());
             } catch (SyncException e) {
-                Log.w(LOG_TAG, String.format("SyncException when attempting %s on device %s",
-                        actionDescription, getSerialNumber()));
+                CLog.w("SyncException (%s) when attempting %s on device %s", e.getMessage(),
+                        actionDescription, getSerialNumber());
                 // a SyncException is not necessarily a device communication problem
                 // do additional diagnosis
                 if (!e.getErrorCode().equals(SyncError.BUFFER_OVERRUN) &&
@@ -1010,12 +1008,11 @@ class TestDevice implements IManagedTestDevice {
                     return false;
                 }
             } catch (AdbCommandRejectedException e) {
-                Log.w(LOG_TAG, String.format(
-                        "AdbCommandRejectedException when attempting %s on device %s",
-                        actionDescription, getSerialNumber()));
+                CLog.w("AdbCommandRejectedException (%s) when attempting %s on device %s",
+                        e.getMessage(), actionDescription, getSerialNumber());
             } catch (ShellCommandUnresponsiveException e) {
-                Log.w(LOG_TAG, String.format("Device %s stopped responding when attempting %s",
-                        getSerialNumber(), actionDescription));
+                CLog.w("Device %s stopped responding when attempting %s", getSerialNumber(),
+                        actionDescription);
             }
             // TODO: currently treat all exceptions the same. In future consider different recovery
             // mechanisms for time out's vs IOExceptions
