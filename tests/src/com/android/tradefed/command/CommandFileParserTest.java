@@ -24,6 +24,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
 
@@ -536,5 +538,45 @@ public class CommandFileParserTest extends TestCase {
         mCommandFile.parseFile(mMockFile, mMockScheduler);
         EasyMock.verify(mMockScheduler);
     }
+
+    /**
+     * Another test to verify a bugfix.  Long Macro expansion can cause the inputBitmask and its
+     * cached form, inputBitmaskCount, to get out of sync.
+     * <p />
+     * The bug is that the cached value isn't incremented when a long macro is expanded (which means
+     * that it may not account for the extra lines that it needs to process).  This manifests as a
+     * partially-completed long macro expansion.
+     * <p />
+     * In this test, when the bug manifests, the first Command to be added will be
+     * {@code ["one", "hbar()", "z", "x"} instead of the correct {@code ["one", "quux", "z", "x"]}.
+     */
+    public void testLongMacroSync() throws IOException, ConfigurationException {
+        mMockFileData =
+                "MACRO hbar = quux\n" +
+                "LONG MACRO bar\n" +
+                "hbar() z\n" +
+                "END MACRO\n" +
+                "LONG MACRO foo\n" +
+                "bar() x\n" +
+                "END MACRO\n" +
+                "LONG MACRO test\n" +
+                "one foo()\n" +
+                "END MACRO\n" +
+                "test()\n" +
+                "hbar()\n";
+
+        List<String[]> expectedArgs = new ArrayList<String[]>(5);
+        expectedArgs.add(new String[] {"one", "quux", "z", "x"});
+        expectedArgs.add(new String[] {"quux"});
+
+        for (String[] ary : expectedArgs) {
+            EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(ary))).andReturn(Boolean.TRUE);
+        }
+
+        EasyMock.replay(mMockScheduler);
+        mCommandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
 }
 

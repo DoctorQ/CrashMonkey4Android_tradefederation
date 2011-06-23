@@ -72,6 +72,82 @@ class CommandFileParser {
     }
 
     /**
+     * Represents a bitmask.  Useful because it caches the number of bits which are set.
+     */
+    static class Bitmask {
+        private List<Boolean> mBitmask = new LinkedList<Boolean>();
+        private int mNumBitsSet = 0;
+
+        public Bitmask(int nBits) {
+            this(nBits, false);
+        }
+
+        public Bitmask(int nBits, boolean initialValue) {
+            for (int i = 0; i < nBits; ++i) {
+                mBitmask.add(initialValue);
+            }
+            if (initialValue) {
+                mNumBitsSet = nBits;
+            }
+        }
+
+        /**
+         * Return the number of bits which are set (rather than unset)
+         */
+        public int getSetCount() {
+            return mNumBitsSet;
+        }
+
+        public boolean get(int idx) {
+            return mBitmask.get(idx);
+        }
+
+        public boolean set(int idx) {
+            boolean retVal = mBitmask.set(idx, true);
+            if (!retVal) {
+                mNumBitsSet++;
+            }
+            return retVal;
+        }
+
+        public boolean unset(int idx) {
+            boolean retVal = mBitmask.set(idx, false);
+            if (retVal) {
+                mNumBitsSet--;
+            }
+            return retVal;
+        }
+
+        public boolean remove(int idx) {
+            boolean retVal = mBitmask.remove(idx);
+            if (retVal) {
+                mNumBitsSet--;
+            }
+            return retVal;
+        }
+
+        public void add(int idx, boolean val) {
+            mBitmask.add(idx, val);
+            if (val) {
+                mNumBitsSet++;
+            }
+        }
+
+        /**
+         * Insert a bunch of identical values in the specified spot in the mask
+         *
+         * @param idx the index where the first new value should be set.
+         * @param count the number of new values to insert
+         * @param val the parity of the new values
+         */
+        public void addN(int idx, int count, boolean val) {
+            for (int i = 0; i < count; ++i) {
+                add(idx, val);
+            }
+        }
+    }
+
+    /**
      * Checks if a line matches the expected format for a (short) macro:
      * MACRO (name) = (token) [(token)...]
      * This method verifies that:
@@ -230,16 +306,11 @@ class CommandFileParser {
          * {@code inputBitmaskCount} stores the quantity of {@code true} bits in
          * {@code inputBitmask}.  Once {@code inputBitmaskCount == 0}, we are done expanding macros.
          */
-        List<Boolean> inputBitmask = new LinkedList<Boolean>();
-        for (int i=0; i < mLines.size(); ++i) {
-            // true == this element may need to be expanded
-            inputBitmask.add(true);
-        }
-        int inputBitmaskCount = mLines.size();
+        Bitmask inputBitmask = new Bitmask(mLines.size(), true);
 
         // Do a maximum of 10 iterations of expansion
         // FIXME: make this configurable
-        for (int iCount = 0; iCount < 10 && inputBitmaskCount > 0; ++iCount) {
+        for (int iCount = 0; iCount < 10 && inputBitmask.getSetCount() > 0; ++iCount) {
             CLog.d("### Expansion iteration %d", iCount);
 
             int inputIdx = 0;
@@ -247,6 +318,7 @@ class CommandFileParser {
                 if (!inputBitmask.get(inputIdx)) {
                     // Skip this line; we've already determined that it doesn't contain any macro
                     // calls to be expanded.
+                    CLog.d("skipping input line %s", mLines.get(inputIdx));
                     ++inputIdx;
                     continue;
                 }
@@ -262,8 +334,7 @@ class CommandFileParser {
                     } else {
                         // We did not find any macros (long or short) to expand, thus all expansions
                         // are done for this CommandLine.  Update inputBitmask appropriately.
-                        inputBitmask.set(inputIdx, false);
-                        --inputBitmaskCount;
+                        inputBitmask.unset(inputIdx);
                     }
 
                     // Finally, advance.
@@ -272,13 +343,9 @@ class CommandFileParser {
                     // We expanded a long macro.  First, actually insert the expansion in place of
                     // the macro call
                     mLines.remove(inputIdx);
+                    inputBitmask.remove(inputIdx);
                     mLines.addAll(inputIdx, longMacroExpansion);
-
-                    // Now update the bitmask to keep it in sync with mLines.  Since each of the
-                    // added lines may contain a macro call, we set the new values to (true)
-                    for (int i = 0; i < longMacroExpansion.size(); ++i) {
-                        inputBitmask.add(inputIdx, true);
-                    }
+                    inputBitmask.addN(inputIdx, longMacroExpansion.size(), true);
 
                     // And advance past the end of the expanded macro
                     inputIdx += longMacroExpansion.size();
@@ -314,6 +381,8 @@ class CommandFileParser {
                         throw new ConfigurationException(String.format(
                                 "Macro call '%s' does not match any macro definitions.", name));
                     } else {
+                        // At this point, it may just be a short macro
+                        CLog.d("Macro call '%s' doesn't match any long macro definitions.", name);
                         return null;
                     }
                 }
