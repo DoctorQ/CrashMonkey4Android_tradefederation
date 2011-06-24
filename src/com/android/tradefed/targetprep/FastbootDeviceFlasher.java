@@ -16,10 +16,10 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 
@@ -31,8 +31,6 @@ import java.util.regex.Pattern;
  * A class that relies on fastboot to flash an image on physical Android hardware.
  */
 public class FastbootDeviceFlasher implements IDeviceFlasher  {
-
-    private static final String LOG_TAG = FastbootDeviceFlasher.class.getSimpleName();
     public static final String BASEBAND_IMAGE_NAME = "radio";
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
@@ -77,8 +75,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild) throws TargetSetupError,
             DeviceNotAvailableException {
 
-        Log.i(LOG_TAG, String.format("Flashing device %s with build %d",
-                device.getSerialNumber(), deviceBuild.getBuildId()));
+        CLog.i("Flashing device %s with build %d", device.getSerialNumber(),
+                deviceBuild.getBuildId());
 
         // get system build id before booting into fastboot
         int systemBuildId = device.getBuildId();
@@ -92,6 +90,31 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         flashUserData(device, deviceBuild);
         eraseCache(device);
         checkAndFlashSystem(device, systemBuildId, deviceBuild);
+    }
+
+    /**
+     * Flash an individual partition of a device
+     *
+     * @param device the {@link ITestDevice} to flash
+     * @param imgFile a {@link File} pointing to the image to be flashed
+     * @param partition the name of the partition to be flashed
+     */
+    protected void flashPartition(ITestDevice device, File imgFile, String partition)
+            throws DeviceNotAvailableException, TargetSetupError {
+        CLog.d("fastboot flash %s %s", partition, imgFile.getAbsolutePath());
+        executeLongFastbootCmd(device, "flash", partition, imgFile.getAbsolutePath());
+    }
+
+    /**
+     * Erase the specified partition with `fastboot erase <name>`
+     *
+     * @param device the {@link ITestDevice} to operate on
+     * @param partition the name of the partition to be erased
+     */
+    protected void erasePartition(ITestDevice device, String partition)
+            throws DeviceNotAvailableException, TargetSetupError {
+        CLog.d("fastboot erase %s", partition);
+        executeLongFastbootCmd(device, "erase", partition);
     }
 
     /**
@@ -200,13 +223,11 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         String currentBootloaderVersion = getImageVersion(device, "bootloader");
         if (deviceBuild.getBootloaderVersion() != null &&
                 !deviceBuild.getBootloaderVersion().equals(currentBootloaderVersion)) {
-            Log.i(LOG_TAG, String.format("Flashing bootloader %s",
-                    deviceBuild.getBootloaderVersion()));
+            CLog.i("Flashing bootloader %s", deviceBuild.getBootloaderVersion());
             flashBootloader(device, deviceBuild.getBootloaderImageFile());
             return true;
         } else {
-            Log.i(LOG_TAG, String.format("Bootloader is already version %s, skipping flashing",
-                    currentBootloaderVersion));
+            CLog.i("Bootloader is already version %s, skipping flashing", currentBootloaderVersion);
             return false;
         }
     }
@@ -263,11 +284,10 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
             throws DeviceNotAvailableException, TargetSetupError {
         String currentBasebandVersion = getImageVersion(device, "baseband");
         if (checkShouldFlashBaseband(device, deviceBuild)) {
-            Log.i(LOG_TAG, String.format("Flashing baseband %s", deviceBuild.getBasebandVersion()));
+            CLog.i("Flashing baseband %s", deviceBuild.getBasebandVersion());
             flashBaseband(device, deviceBuild.getBasebandImageFile());
         } else {
-            Log.i(LOG_TAG, String.format("Baseband is already version %s, skipping flashing",
-                    currentBasebandVersion));
+            CLog.i("Baseband is already version %s, skipping flashing", currentBasebandVersion);
         }
     }
 
@@ -296,8 +316,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      */
     protected void flashBaseband(ITestDevice device, File basebandImageFile)
             throws DeviceNotAvailableException, TargetSetupError {
-        executeLongFastbootCmd(device, "flash", BASEBAND_IMAGE_NAME,
-                basebandImageFile.getAbsolutePath());
+        flashPartition(device, basebandImageFile, BASEBAND_IMAGE_NAME);
         device.rebootIntoBootloader();
     }
 
@@ -312,10 +331,10 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
             TargetSetupError {
         // only wipe cache if user data is being wiped
         if (!mUserDataFlashOption.equals(UserDataFlashOption.RETAIN)) {
-            Log.i(LOG_TAG, String.format("Erasing cache on %s", device.getSerialNumber()));
-            executeFastbootCmd(device, "erase", "cache");
+            CLog.i("Erasing cache on %s", device.getSerialNumber());
+            erasePartition(device, "cache");
         } else {
-            Log.d(LOG_TAG, String.format("Skipping cache erase on %s", device.getSerialNumber()));
+            CLog.d("Skipping cache erase on %s", device.getSerialNumber());
         }
     }
 
@@ -330,29 +349,25 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     protected void flashUserData(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         switch (mUserDataFlashOption) {
-            case FLASH: {
-                Log.i(LOG_TAG, String.format("Flashing %s with userdata %s",
-                        device.getSerialNumber(),
-                        deviceBuild.getUserDataImageFile().getAbsolutePath()));
-                executeLongFastbootCmd(device, "flash", "userdata",
+            case FLASH:
+                CLog.i("Flashing %s with userdata %s", device.getSerialNumber(),
                         deviceBuild.getUserDataImageFile().getAbsolutePath());
+                flashPartition(device, deviceBuild.getUserDataImageFile(), "userdata");
                 break;
-            }
-            case WIPE: {
-                Log.i(LOG_TAG, String.format("Wiping userdata %s", device.getSerialNumber()));
-                executeLongFastbootCmd(device, "erase", "userdata");
+
+            case WIPE:
+                CLog.i("Wiping userdata %s", device.getSerialNumber());
+                erasePartition(device, "userdata");
                 break;
-            }
-            case TESTS_ZIP: {
+
+            case TESTS_ZIP:
                 getTestsZipInstaller().pushTestsZipOntoData(device, deviceBuild);
                 // Reboot into bootloader to continue the flashing process
                 device.rebootIntoBootloader();
                 break;
-            }
-            default: {
-                Log.d(LOG_TAG, String.format("Skipping userdata flash for %s",
-                        device.getSerialNumber()));
-            }
+
+            default:
+                CLog.d("Skipping userdata flash for %s", device.getSerialNumber());
         }
     }
 
@@ -373,12 +388,11 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     protected boolean checkAndFlashSystem(ITestDevice device, int currentBuildId,
             IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
         if (currentBuildId != deviceBuild.getBuildId()) {
-            Log.i(LOG_TAG, String.format("Flashing system %d", deviceBuild.getBuildId()));
+            CLog.i("Flashing system %d", deviceBuild.getBuildId());
             flashSystem(device, deviceBuild);
             return true;
         } else {
-            Log.i(LOG_TAG, String.format("System is already version %d, skipping flashing",
-                    currentBuildId));
+            CLog.i("System is already version %d, skipping flashing", currentBuildId);
             // reboot
             device.rebootUntilOnline();
             return false;
@@ -395,8 +409,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      */
     protected void flashSystem(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
-        Log.i(LOG_TAG, String.format("Flashing %s with update %s", device.getSerialNumber(),
-                deviceBuild.getDeviceImageFile().getAbsolutePath()));
+        CLog.i("Flashing %s with update %s", device.getSerialNumber(),
+                deviceBuild.getDeviceImageFile().getAbsolutePath());
         // give extra time to the update cmd
         executeLongFastbootCmd(device, "update",
                 deviceBuild.getDeviceImageFile().getAbsolutePath());
@@ -438,6 +452,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      */
     protected String executeFastbootCmd(ITestDevice device, String... cmdArgs)
             throws DeviceNotAvailableException, TargetSetupError {
+        CLog.v("Executing short fastboot command %s", java.util.Arrays.toString(cmdArgs));
         CommandResult result = device.executeFastbootCommand(cmdArgs);
         return handleFastbootResult(device, result, cmdArgs);
     }
