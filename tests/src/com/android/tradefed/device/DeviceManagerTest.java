@@ -339,6 +339,32 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
+     * Test that DeviceManager will add devices on fastboot to available queue on startup, and
+     * that they can be allocated.
+     */
+    public void testAllocateDevice_fastboot() throws DeviceNotAvailableException {
+        EasyMock.reset(mMockRunUtil);
+        // mock 'fastboot help' call
+        EasyMock.expect(mMockRunUtil.runTimedCmdSilently(EasyMock.anyLong(),
+                EasyMock.eq("fastboot"), EasyMock.eq("help"))).andReturn(new CommandResult(
+                        CommandStatus.SUCCESS));
+
+        // mock 'fastboot devices' call to return one device
+        CommandResult fastbootResult = new CommandResult(
+                CommandStatus.SUCCESS);
+        fastbootResult.setStdout("serial        fastboot\n");
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(),
+                EasyMock.eq("fastboot"), EasyMock.eq("devices"))).andReturn(fastbootResult);
+
+        mMockTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
+
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertNotNull(manager.allocateDevice(100));
+    }
+
+    /**
      * Test method for {@link DeviceManager#freeDevice(ITestDevice)}.
      */
     public void testFreeDevice() throws DeviceNotAvailableException {
@@ -627,8 +653,8 @@ public class DeviceManagerTest extends TestCase {
     /**
      * Verify the 'fastboot devices' output parsing
      */
-    public void testGetDeviceOnFastboot() {
-        Collection<String> deviceSerials = DeviceManager.getDevicesOnFastboot(
+    public void testParseDevicesOnFastboot() {
+        Collection<String> deviceSerials = DeviceManager.parseDevicesOnFastboot(
                 "04035EEB0B01F01C        fastboot\n" +
                 "HT99PP800024    fastboot\n" +
                 "????????????    fastboot");
@@ -640,8 +666,8 @@ public class DeviceManagerTest extends TestCase {
     /**
      * Verify the 'fastboot devices' output parsing when empty
      */
-    public void testGetDeviceOnFastboot_empty() {
-        Collection<String> deviceSerials = DeviceManager.getDevicesOnFastboot("");
+    public void testParseDevicesOnFastboot_empty() {
+        Collection<String> deviceSerials = DeviceManager.parseDevicesOnFastboot("");
         assertEquals(0, deviceSerials.size());
     }
 

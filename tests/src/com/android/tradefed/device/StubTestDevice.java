@@ -475,4 +475,12 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBootloaderVersion() throws DeviceNotAvailableException {
+        return null;
+    }
 }

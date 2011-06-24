@@ -229,6 +229,33 @@ class TestDevice implements IManagedTestDevice {
         return internalGetProductType(MAX_RETRY_ATTEMPTS);
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBootloaderVersion() throws UnsupportedOperationException,
+            DeviceNotAvailableException {
+        String bootloader = getIDevice().getProperty("ro.bootloader");
+        if (bootloader == null || bootloader.isEmpty()) {
+            /* DDMS may not have processed all of the properties yet, or the device may be in
+             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
+             * directly.
+             */
+            if (getDeviceState() == TestDeviceState.FASTBOOT) {
+                Log.i(LOG_TAG, String.format(
+                        "Bootloader for device %s is null, re-querying in fastboot",
+                        getSerialNumber()));
+                bootloader = getFastbootBootloader();
+            } else {
+                Log.w(LOG_TAG, String.format(
+                        "Bootloader for device %s is null, re-querying", getSerialNumber()));
+                bootloader = executeShellCommand("getprop ro.bootloader").trim();
+            }
+        }
+        return bootloader;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -296,10 +323,19 @@ class TestDevice implements IManagedTestDevice {
 
     private String getFastbootProduct()
             throws DeviceNotAvailableException, UnsupportedOperationException {
-        // TODO: extract this into a common getFastbootVariable() method
-        CommandResult result = executeFastbootCommand("getvar", "product");
+        return getFastbootVariable("product");
+    }
+
+    private String getFastbootBootloader()
+            throws DeviceNotAvailableException, UnsupportedOperationException {
+        return getFastbootVariable("version-bootloader");
+    }
+
+    private String getFastbootVariable(String variableName)
+            throws DeviceNotAvailableException, UnsupportedOperationException {
+        CommandResult result = executeFastbootCommand("getvar", variableName);
         if (result.getStatus() == CommandStatus.SUCCESS) {
-            Pattern fastbootProductPattern = Pattern.compile("product:\\s(.*)\\s");
+            Pattern fastbootProductPattern = Pattern.compile(variableName + ":\\s(.*)\\s");
             // fastboot is weird, and may dump the output on stderr instead of stdout
             String resultText = result.getStdout();
             if (resultText == null || resultText.length() < 1) {

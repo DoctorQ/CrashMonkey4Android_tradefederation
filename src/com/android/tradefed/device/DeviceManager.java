@@ -116,6 +116,9 @@ public class DeviceManager implements IDeviceManager {
             startFastbootMonitor();
             // don't set fastboot enabled bit until mFastbootListeners has been initialized
             mFastbootEnabled = true;
+            // TODO: consider only adding fastboot devices if explicit option is set, because
+            // device property selection options won't work properly with a device in fastboot
+            addFastbootDevices();
         } else {
             Log.w(LOG_TAG, "Fastboot is not available.");
             mFastbootListeners = null;
@@ -254,6 +257,21 @@ public class DeviceManager implements IDeviceManager {
         }
     }
 
+    private void addFastbootDevices() {
+        Set<String> serials = getDevicesOnFastboot();
+        if (serials != null) {
+            for (String serial: serials) {
+                mAvailableDeviceQueue.add(new FastbootDevice(serial));
+            }
+        }
+    }
+
+    private static class FastbootDevice extends StubDevice {
+        FastbootDevice(String serial) {
+            super(serial, false);
+        }
+    }
+
     /**
      * Creates a {@link IDeviceStateMonitor} to use.
      * <p/>
@@ -372,7 +390,9 @@ public class DeviceManager implements IDeviceManager {
     IManagedTestDevice createTestDevice(IDevice allocatedDevice, IDeviceStateMonitor monitor) {
         IManagedTestDevice testDevice = new TestDevice(allocatedDevice, monitor);
         testDevice.setFastbootEnabled(mFastbootEnabled);
-        if (allocatedDevice instanceof StubDevice) {
+        if (allocatedDevice instanceof FastbootDevice) {
+            testDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        } else if (allocatedDevice instanceof StubDevice) {
             testDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
         }
         return testDevice;
@@ -833,13 +853,8 @@ public class DeviceManager implements IDeviceManager {
                 // only poll fastboot devices if there are listeners, as polling it
                 // indiscriminately can cause fastboot commands to hang
                 if (!mFastbootListeners.isEmpty()) {
-                    CommandResult fastbootResult = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT,
-                            "fastboot", "devices");
-                    if (fastbootResult.getStatus() == CommandStatus.SUCCESS) {
-                        Log.v(LOG_TAG, String.format("fastboot devices returned %s",
-                                fastbootResult.getStdout()));
-                        Set<String> serials = DeviceManager.getDevicesOnFastboot(
-                                fastbootResult.getStdout());
+                    Set<String> serials = getDevicesOnFastboot();
+                    if (serials != null) {
                         for (String serial: serials) {
                             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(serial);
                             if (testDevice != null &&
@@ -857,13 +872,13 @@ public class DeviceManager implements IDeviceManager {
                                 }
                             }
                         }
-                    }
-                    // create a copy of listeners for notification to prevent deadlocks
-                    Collection<IFastbootListener> listenersCopy = new ArrayList<IFastbootListener>(
-                            mFastbootListeners.size());
-                    listenersCopy.addAll(mFastbootListeners);
-                    for (IFastbootListener listener : listenersCopy) {
-                        listener.stateUpdated();
+                        // create a copy of listeners for notification to prevent deadlocks
+                        Collection<IFastbootListener> listenersCopy = new ArrayList<IFastbootListener>(
+                                mFastbootListeners.size());
+                        listenersCopy.addAll(mFastbootListeners);
+                        for (IFastbootListener listener : listenersCopy) {
+                            listener.stateUpdated();
+                        }
                     }
                 }
                 getRunUtil().sleep(FASTBOOT_POLL_WAIT_TIME);
@@ -871,7 +886,21 @@ public class DeviceManager implements IDeviceManager {
         }
     }
 
-    static Set<String> getDevicesOnFastboot(String fastbootOutput) {
+    private Set<String> getDevicesOnFastboot() {
+        CommandResult fastbootResult = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT,
+                "fastboot", "devices");
+        if (fastbootResult.getStatus().equals(CommandStatus.SUCCESS)) {
+            Log.v(LOG_TAG, String.format("fastboot devices returned %s",
+                    fastbootResult.getStdout()));
+            return parseDevicesOnFastboot(fastbootResult.getStdout());
+        } else {
+            CLog.w("'fastboot devices' failed. Result: %s, stderr: %s", fastbootResult.getStatus(),
+                    fastbootResult.getStderr());
+        }
+        return null;
+    }
+
+    static Set<String> parseDevicesOnFastboot(String fastbootOutput) {
         Set<String> serials = new HashSet<String>();
         Pattern fastbootPattern = Pattern.compile("([\\w\\d]+)\\s+fastboot\\s*");
         Matcher fastbootMatcher = fastbootPattern.matcher(fastbootOutput);

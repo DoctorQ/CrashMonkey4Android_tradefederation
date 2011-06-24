@@ -71,6 +71,18 @@ public interface ITestDevice {
     public String getProductType() throws DeviceNotAvailableException;
 
     /**
+     * Convenience method to get the bootloader version of this device.
+     * <p/>
+     * Will attempt to retrieve bootloader version from the device's current state. (ie if device
+     * is in fastboot mode, it will attempt to retrieve version from fastboot)
+     *
+     * @return the {@link String} bootloader version or <code>null</code> if it cannot be dounf
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String getBootloaderVersion() throws DeviceNotAvailableException;
+
+    /**
      * Retrieve the build the device is currently running.
      *
      * @return the build id or -1 if it could not be retrieved
