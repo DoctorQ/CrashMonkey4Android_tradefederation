@@ -27,10 +27,13 @@ import com.android.tradefed.util.IEmail.Message;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A simple result reporter that sends emails for test results.
@@ -159,6 +162,21 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      */
     protected String generateEmailBody() {
         StringBuilder bodyBuilder = new StringBuilder();
+
+        for (Map.Entry<String, String> buildAttr : getBuildInfo().getBuildAttributes().entrySet()) {
+            bodyBuilder.append(buildAttr.getKey());
+            bodyBuilder.append(": ");
+            bodyBuilder.append(buildAttr.getValue());
+            bodyBuilder.append("\n");
+        }
+        bodyBuilder.append("host: ");
+        try {
+            bodyBuilder.append(InetAddress.getLocalHost().getHostName());
+        } catch (UnknownHostException e) {
+            bodyBuilder.append("unknown");
+            CLog.e(e);
+        }
+        bodyBuilder.append("\n\n");
 
         if (mInvocationThrowable != null) {
             bodyBuilder.append("Invocation failed: ");
