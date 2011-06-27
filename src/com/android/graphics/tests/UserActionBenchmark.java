@@ -14,19 +14,13 @@
  * limitations under the License.
  */
 
-package com.android.graphic.tests;
+package com.android.graphics.tests;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
-import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.result.BugreportCollector;
-import com.android.tradefed.result.BugreportCollector.Freq;
-import com.android.tradefed.result.BugreportCollector.Noun;
-import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
@@ -42,7 +36,6 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -90,7 +83,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
             String.format("%s/%s/%s", extStore, mScriptPath, mTestDevice.getProductType());
         for (String testCase : mTestCases) {
             // Start the scripted monkey command
-            String result = mTestDevice.executeShellCommand(String.format(
+            mTestDevice.executeShellCommand(String.format(
                 "monkey -f /%s/%s.txt --throttle %d %d", scriptFullPath,
                 testCase, mThrottle, mIteration));
             logOutputFiles(listener);
