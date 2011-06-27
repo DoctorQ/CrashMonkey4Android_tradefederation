@@ -84,7 +84,7 @@ public class SdkAvdPreparerTest extends TestCase {
         mMockRunUtil.setEnvVariable(EasyMock.eq("ANDROID_SDK_HOME"),
                 (String)EasyMock.anyObject());
         setGetTargetsResponse("target");
-        setCreateAvdResponse();
+        setCreateAvdResponse("target");
         EasyMock.expect(mMockDevice.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         mMockDeviceManager.launchEmulator(EasyMock.eq(mMockDevice), EasyMock.anyLong(),
                 EasyMock.eq(mMockRunUtil), (List<String>)EasyMock.anyObject());
@@ -104,7 +104,7 @@ public class SdkAvdPreparerTest extends TestCase {
         mMockRunUtil.setEnvVariable(EasyMock.eq("ANDROID_SDK_HOME"),
                 (String)EasyMock.anyObject());
         setGetTargetsResponse("target");
-        setCreateAvdResponse();
+        setCreateAvdResponse("target");
         EasyMock.expect(mMockDevice.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         mMockDeviceManager.launchEmulator(EasyMock.eq(mMockDevice), EasyMock.anyLong(),
                 EasyMock.eq(mMockRunUtil), (List<String>)EasyMock.anyObject());
@@ -129,13 +129,36 @@ public class SdkAvdPreparerTest extends TestCase {
         mMockRunUtil.setEnvVariable(EasyMock.eq("ANDROID_SDK_HOME"),
                 (String)EasyMock.anyObject());
         setGetTargetsResponse("target");
-        setCreateAvdResponse();
+        setCreateAvdResponse("target");
         EasyMock.expect(mMockDevice.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         mMockDeviceManager.launchEmulator(EasyMock.eq(mMockDevice), EasyMock.anyLong(),
                 EasyMock.eq(mMockRunUtil), (List<String>)EasyMock.anyObject());
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         mMockDeviceManager.killEmulator(EasyMock.eq(mMockDevice));
 
+        replayMocks();
+        try {
+            mPreparer.setUp(mMockDevice, mMockBuildInfo);
+            fail("BuildError not thrown");
+        } catch (BuildError e) {
+            // expected
+        }
+        verifyMocks();
+    }
+
+    /**
+     * Test {@link SdkAvdPreparer#setUp(ISdkBuildInfo)} when avd creation fails
+     */
+    @SuppressWarnings("unchecked")
+    public void testSetUp_failedCreateAvd() throws Exception {
+        mMockRunUtil.setEnvVariable(EasyMock.eq("ANDROID_SDK_HOME"),
+                (String)EasyMock.anyObject());
+        setGetTargetsResponse("target");
+        // simulate a bad error message
+        CommandResult result = new CommandResult(CommandStatus.SUCCESS);
+        result.setStdout("");
+        result.setStderr("Error: avd cannot be created due to a mysterious error");
+        setCreateAvdResponse(result);
         replayMocks();
         try {
             mPreparer.setUp(mMockDevice, mMockBuildInfo);
@@ -158,13 +181,21 @@ public class SdkAvdPreparerTest extends TestCase {
                 (String)EasyMock.anyObject())).andReturn(result);
     }
 
+    /**
+     * Configure the mock objects to deliver success response for the 'android create avd ...'
+     * call.
+     */
+    private void setCreateAvdResponse(String avdName) {
+        CommandResult result = new CommandResult(CommandStatus.SUCCESS);
+        result.setStdout(String.format("Created AVD '%s'", avdName));
+        setCreateAvdResponse(result);
+    }
 
     /**
-     * Configure the mock objects to deliver given response for the 'android list targets --compact'
-     * call
+     * Configure the mock objects to deliver specific response for the 'android create avd ...'
+     * call.
      */
-    private void setCreateAvdResponse() {
-        CommandResult result = new CommandResult(CommandStatus.SUCCESS);
+    private void setCreateAvdResponse(CommandResult result) {
         // expect 9 string arguments after "android". Ugh, mocking var args is fun
         EasyMock.expect(mMockRunUtil.runTimedCmdWithInput(EasyMock.anyLong(),
                 (String)EasyMock.anyObject(), EasyMock.eq(ANDROID_TOOL),

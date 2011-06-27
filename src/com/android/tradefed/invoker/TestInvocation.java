@@ -279,7 +279,8 @@ public class TestInvocation implements ITestInvocation {
             }
             runTests(device, info, config, rescheduler);
         } catch (BuildError e) {
-            CLog.w("Build %d failed on device %s", info.getBuildId(), device.getSerialNumber());
+            CLog.w("Build %d failed on device %s. Reason: %s", info.getBuildId(),
+                    device.getSerialNumber(), e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");

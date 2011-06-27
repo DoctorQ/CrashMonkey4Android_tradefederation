@@ -162,16 +162,24 @@ public class SdkAvdPreparer implements ITargetPreparer {
      * @throws TargetSetupError if failed to create the AVD
      */
     private String createAvdForTarget(ISdkBuildInfo sdkBuild, String target)
-            throws TargetSetupError {
+            throws BuildError {
         // answer 'no' when prompted for creating a custom hardware profile
         final String cmdInput = "no\r\n";
+        final String successPattern = String.format("Created AVD '%s'", target);
+        CLog.d("Creating avd for target %s with name %s", target, target);
         CommandResult result = mRunUtil.runTimedCmdWithInput(ANDROID_TIMEOUT_MS, cmdInput,
                 sdkBuild.getAndroidToolPath(), "create", "avd", "--target", target, "--name",
                 target, "--sdcard", "10M", "--force");
-        if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
-            throw new TargetSetupError(String.format(
-                    "Unable to create avd for target '%s'. Result '%s', err '%s'", target,
-                    result.getStatus(), result.getStderr()));
+        if (!result.getStatus().equals(CommandStatus.SUCCESS) || result.getStdout() == null ||
+                !result.getStdout().contains(successPattern)) {
+            // stdout usually doesn't contain useful data, so don't want to add it to the
+            // exception message. However, log it here as a debug log so the info is captured
+            // in log
+            CLog.d("AVD creation failed. stdout: %s", result.getStdout());
+            // treat as BuildError
+            throw new BuildError(String.format(
+                    "Unable to create avd for target '%s'. stderr: '%s'", target,
+                    result.getStderr()));
         }
         return target;
     }
