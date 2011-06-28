@@ -120,12 +120,10 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
     /**
      * Flash an individual partition
      */
-    protected void flashPartition(ITestDevice device, File dir, String partition)
+    private void flashNamedPartition(ITestDevice device, File dir, String partition)
             throws DeviceNotAvailableException, TargetSetupError {
-        // TODO: move this method into DeviceFlasher
-        String imgFile = dir.getAbsolutePath() + File.separator + partition + ".img";
-        Log.v(LOG_TAG, String.format("fastboot flash %s %s", partition, imgFile));
-        executeLongFastbootCmd(device, "flash", partition, imgFile);
+        File imgFile = new File(dir, partition + ".img");
+        flashPartition(device, imgFile, partition);
     }
 
     /**
@@ -156,9 +154,9 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
                 updateDir = extractSystemZip(deviceBuild);
 
                 // Expect updateDir to contain boot.img, recovery.img, system.img
-                flashPartition(device, updateDir, "boot");
-                flashPartition(device, updateDir, "recovery");
-                flashPartition(device, updateDir, "system");
+                flashNamedPartition(device, updateDir, "boot");
+                flashNamedPartition(device, updateDir, "recovery");
+                flashNamedPartition(device, updateDir, "system");
             } catch (IOException e) {
                 throw new TargetSetupError(String.format("Got IOException: %s", e.getMessage()));
             } finally {
