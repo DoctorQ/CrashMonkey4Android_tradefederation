@@ -48,6 +48,18 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
     }
 
     /**
+     * Overrides parent to explicitly print out test metrics.
+     */
+    @Override
+    public void testEnded(TestIdentifier testId, Map<String, String> metrics) {
+        super.testEnded(testId, metrics);
+        if (!metrics.isEmpty()) {
+            ResultPrinter printer = (ResultPrinter)getJUnitListener();
+            printer.getWriter().format("\n%s metrics: %s\n", testId, metrics);
+        }
+    }
+
+    /**
      * Overrides parent to explicitly print out metrics.
      */
     @Override
