@@ -33,7 +33,7 @@ import junit.framework.Assert;
  * switches on different network interfaces.
  */
 public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
-    ITestDevice mTestDevice = null;
+    private ITestDevice mTestDevice = null;
 
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME =
