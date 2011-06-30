@@ -135,13 +135,21 @@ public class TestInvocation implements ITestInvocation {
                 CLog.d("No build to test");
             }
         } catch (BuildRetrievalError e) {
-            CLog.e("Caught exception while preparing or running invocation");
             CLog.e(e);
+            // report an empty invocation, so this error is sent to listeners
+            startInvocation(config, device, e.getBuildInfo());
+            // don't want to use #reportFailure, since that will call buildNotTested
+            for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
+                listener.invocationFailed(e);
+            }
+            reportLogs(device, config.getTestInvocationListeners(), config.getLogOutput());
+            InvocationSummaryHelper.reportInvocationEnded(
+                    config.getTestInvocationListeners(), 0);
+            return;
         } catch (IOException e) {
-            CLog.e("Caught exception while preparing or running invocation");
             CLog.e(e);
         }
-        // invocation not started, save current log contents to global log
+        // save current log contents to global log
         getLogRegistry().dumpToGlobalLog(config.getLogOutput());
         getLogRegistry().unregisterLogger();
         config.getLogOutput().closeLog();
@@ -287,8 +295,7 @@ public class TestInvocation implements ITestInvocation {
             CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (DeviceNotAvailableException e) {
-            CLog.e("Caught exception while running invocation");
-            CLog.e(e);
+            // rely on caller to log thrown exceptions
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
                 reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
@@ -298,8 +305,7 @@ public class TestInvocation implements ITestInvocation {
             }
             throw e;
         } catch (RuntimeException e) {
-            CLog.e("Unexpected runtime exception while running invocation!");
-            CLog.e(e);
+            // rely on caller to log thrown exceptions
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
@@ -327,8 +333,7 @@ public class TestInvocation implements ITestInvocation {
      * @param info
      * @throws IOException if logger fails to initialize
      */
-    private void startInvocation(IConfiguration config, ITestDevice device, IBuildInfo info)
-            throws IOException {
+    private void startInvocation(IConfiguration config, ITestDevice device, IBuildInfo info) {
         logStartInvocation(info, device);
         for (ITestInvocationListener listener : config.getTestInvocationListeners()) {
             try {

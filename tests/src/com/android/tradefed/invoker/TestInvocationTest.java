@@ -173,17 +173,20 @@ public class TestInvocationTest extends TestCase {
     /**
      * Test the invoke scenario where build retrieve fails.
      * <p/>
-     * An invocation will not be started in this scenario.
+     * An invocation will be started in this scenario.
      */
     public void testInvoke_buildFailed() throws BuildRetrievalError, ConfigurationException,
             DeviceNotAvailableException  {
-        BuildRetrievalError exception = new BuildRetrievalError("error");
+        BuildRetrievalError exception = new BuildRetrievalError("error", null, mMockBuildInfo);
         EasyMock.expect(mMockBuildProvider.getBuild()).andThrow(exception);
+        setupMockFailureListeners(exception);
+        EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStreamSource(
+                new byte[0]));
+        EasyMock.expect(mMockDevice.getLogcat())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0])).times(2);
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         mStubConfiguration.setTest(test);
-        mMockLogRegistry.dumpToGlobalLog(mMockLogger);
         replayMocks(test);
-        // TODO: add verification for sending an error/logging error ?
         mTestInvocation.invoke(mMockDevice, mStubConfiguration, new StubRescheduler());
         verifyMocks(test);
     }
