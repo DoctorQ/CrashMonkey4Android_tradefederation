@@ -761,7 +761,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
         }
 
         for (TestFileInfo file : test.mTestFiles) {
-            CLog.i("Creating file: %s, size: %dkB", file.mFileName, file.mSize);
+            CLog.v("Creating file: %s, size: %dkB", file.mFileName, file.mSize);
             String cmd = String.format("dd if=/dev/urandom of=%s bs=1024 count=%d", file.mFileName,
                     file.mSize);
             int timeout = file.mSize * 2 * 1000; // Timeout is 2 seconds per kB.
