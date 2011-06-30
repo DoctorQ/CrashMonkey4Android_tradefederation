@@ -16,6 +16,8 @@
 package com.android.tradefed.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -65,6 +67,23 @@ public class ArrayUtil {
             retList.add(item);
         }
         return retList;
+    }
+
+    public static String join(String sep, List<String> pieces) {
+        StringBuilder sb = new StringBuilder();
+        Iterator iter = pieces.iterator();
+        if (iter.hasNext()) {
+            sb.append(iter.next());
+        }
+        while (iter.hasNext()) {
+            sb.append(sep);
+            sb.append(iter.next());
+        }
+        return sb.toString();
+    }
+
+    public static String join(String sep, String... pieces) {
+        return join(sep, Arrays.asList(pieces));
     }
 }
 
