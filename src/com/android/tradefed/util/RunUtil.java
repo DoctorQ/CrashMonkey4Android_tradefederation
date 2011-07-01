@@ -276,6 +276,7 @@ public class RunUtil implements IRunUtil {
         private final String[] mCommand;
         private final CommandResult mCommandResult;
         private final String mInput;
+        private Process mProcess = null;
 
         RunnableResult(final CommandResult result, final String input, final String... command) {
             mCommand = command;
@@ -287,17 +288,17 @@ public class RunUtil implements IRunUtil {
         public boolean run() throws Exception {
             final String fullCmd = Arrays.toString(mCommand);
             Log.v(LOG_TAG, String.format("Running %s", fullCmd));
-            Process process = mProcessBuilder.command(mCommand).start();
+            mProcess = mProcessBuilder.command(mCommand).start();
             if (mInput != null) {
                 BufferedOutputStream processStdin = new BufferedOutputStream(
-                        process.getOutputStream());
+                        mProcess.getOutputStream());
                 processStdin.write(mInput.getBytes("UTF-8"));
                 processStdin.flush();
                 processStdin.close();
             }
-            int rc = process.waitFor();
-            mCommandResult.setStdout(StreamUtil.getStringFromStream(process.getInputStream()));
-            mCommandResult.setStderr(StreamUtil.getStringFromStream(process.getErrorStream()));
+            int rc = mProcess.waitFor();
+            mCommandResult.setStdout(StreamUtil.getStringFromStream(mProcess.getInputStream()));
+            mCommandResult.setStderr(StreamUtil.getStringFromStream(mProcess.getErrorStream()));
 
             if (rc == 0) {
                 return true;
@@ -309,6 +310,10 @@ public class RunUtil implements IRunUtil {
 
         @Override
         public void cancel() {
+            if (mProcess != null) {
+                mProcess.destroy();
+                mProcess = null;
+            }
         }
     };
 }
