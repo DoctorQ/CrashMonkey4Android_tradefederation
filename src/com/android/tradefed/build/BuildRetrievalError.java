@@ -21,9 +21,10 @@ package com.android.tradefed.build;
 public class BuildRetrievalError extends Exception {
 
     private static final long serialVersionUID = -1636070073516175229L;
+    private IBuildInfo mBuildInfo = new BuildInfo();
 
     /**
-     * Constructs a new (@link ProvideBuildError} with a meaningful error message.
+     * Constructs a new (@link BuildRetrievalError} with a meaningful error message.
      *
      * @param reason a error message describing the cause of the error
      */
@@ -32,7 +33,7 @@ public class BuildRetrievalError extends Exception {
     }
 
     /**
-     * Constructs a new (@link ProvideBuildError} with a meaningful error message, and a
+     * Constructs a new (@link BuildRetrievalError} with a meaningful error message, and a
      * cause.
      *
      * @param reason a detailed error message.
@@ -40,5 +41,39 @@ public class BuildRetrievalError extends Exception {
      */
     public BuildRetrievalError(String reason, Throwable cause) {
         super(reason, cause);
+    }
+
+    /**
+     * Constructs a new (@link BuildRetrievalError} with a meaningful error message, a
+     * cause, and build details.
+     *
+     * @param reason a detailed error message.
+     * @param cause a {@link Throwable} capturing the original cause of the ProvideBuildError
+     * @param build details about the build that was attempted to be retrieved
+     */
+    public BuildRetrievalError(String reason, Throwable cause, IBuildInfo build) {
+        super(reason, cause);
+        mBuildInfo = build;
+    }
+
+    /**
+     * Return details about the build that was attempted to be retrieved.
+     * <p/>
+     * The returned {@link IBuildInfo} will never be null but may not have complete data such as a
+     * build_id, etc
+     *
+     * @return the {@link IBuildInfo}
+     */
+    public IBuildInfo getBuildInfo() {
+        return mBuildInfo;
+    }
+
+    /**
+     * Set the build info.
+     *
+     * @param build
+     */
+    public void setBuildInfo(IBuildInfo build) {
+        mBuildInfo = build;
     }
 }
