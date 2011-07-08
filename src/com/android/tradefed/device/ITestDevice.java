@@ -35,6 +35,18 @@ import java.util.Collection;
  */
 public interface ITestDevice {
 
+    public enum RecoveryMode {
+        /** don't attempt to recover device. */
+        NONE,
+        /** recover device to online state only */
+        ONLINE,
+        /**
+         * Recover device into fully testable state - framework is up, and external storage is
+         * mounted.
+         */
+        AVAILABLE
+    }
+
     /**
      * Set the {@link IDeviceRecovery} to use for this device. Should be set when device is first
      * allocated.
@@ -42,6 +54,17 @@ public interface ITestDevice {
      * @param recovery the {@link IDeviceRecovery}
      */
     public void setRecovery(IDeviceRecovery recovery);
+
+    /**
+     * Set the current recovery mode to use for the device.
+     * <p/>
+     * Used to control what recovery method to use when a device communication problem is
+     * encountered. Its recommended to only use this method sparingly when needed (for example,
+     * when framework is down, etc
+     *
+     * @param mode whether 'recover till online only' mode should be on or not.
+     */
+    public void setRecoveryMode(RecoveryMode mode);
 
     /**
      * Returns a reference to the associated ddmlib {@link IDevice}.

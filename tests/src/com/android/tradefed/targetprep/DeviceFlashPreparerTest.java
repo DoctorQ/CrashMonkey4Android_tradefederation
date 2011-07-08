@@ -21,6 +21,7 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.targetprep.BuildError;
 import com.android.tradefed.targetprep.DeviceFlashPreparer;
 import com.android.tradefed.targetprep.DeviceSetup;
@@ -95,6 +96,7 @@ public class DeviceFlashPreparerTest extends TestCase {
      * Set EasyMock expectations for a normal setup call
      */
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         mMockDevice.clearLogcat();
@@ -102,6 +104,8 @@ public class DeviceFlashPreparerTest extends TestCase {
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).andReturn(
                 "1");
         mMockDevice.waitForDeviceAvailable();
+        mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
+        mMockDevice.postBootSetup();
     }
 
     /**
@@ -121,12 +125,14 @@ public class DeviceFlashPreparerTest extends TestCase {
      * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when build does not boot
      */
     public void testSetup_buildError() throws Exception {
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         mMockDevice.clearLogcat();
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
                 andReturn("").anyTimes();
+        mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
         EasyMock.replay(mMockFlasher, mMockDevice);
         try {
             mDeviceFlashPreparer.setUp(mMockDevice, mMockBuildInfo);

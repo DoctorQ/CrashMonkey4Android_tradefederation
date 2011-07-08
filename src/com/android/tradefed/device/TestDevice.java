@@ -18,7 +18,6 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
-import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -26,9 +25,10 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
-import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
+import com.android.ddmlib.FileListingService.FileEntry;
+import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.config.Option;
@@ -138,6 +138,8 @@ class TestDevice implements IManagedTestDevice {
         "The maximum size of a tmp logcat file, in bytes.")
     private long mMaxLogcatFileSize = 10 * 1024 * 1024;
     private Process mEmulatorProcess;
+
+    private RecoveryMode mRecoveryMode = RecoveryMode.AVAILABLE;
 
     /**
      * Interface for a generic device communication attempt.
@@ -1077,16 +1079,13 @@ class TestDevice implements IManagedTestDevice {
             try {
                 return action.run();
             } catch (TimeoutException e) {
-                CLog.w("'%s' timed out on device %s", actionDescription, getSerialNumber());
+                logDeviceActionException(actionDescription, e);
             } catch (IOException e) {
-                CLog.w("IOException (%s) when attempting %s on device %s", e.getMessage(),
-                        actionDescription, getSerialNumber());
+                logDeviceActionException(actionDescription, e);
             } catch (InstallException e) {
-                CLog.w("InstallException (%s) when attempting %s on device %s", e.getMessage(),
-                        actionDescription, getSerialNumber());
+                logDeviceActionException(actionDescription, e);
             } catch (SyncException e) {
-                CLog.w("SyncException (%s) when attempting %s on device %s", e.getMessage(),
-                        actionDescription, getSerialNumber());
+                logDeviceActionException(actionDescription, e);
                 // a SyncException is not necessarily a device communication problem
                 // do additional diagnosis
                 if (!e.getErrorCode().equals(SyncError.BUFFER_OVERRUN) &&
@@ -1095,8 +1094,7 @@ class TestDevice implements IManagedTestDevice {
                     return false;
                 }
             } catch (AdbCommandRejectedException e) {
-                CLog.w("AdbCommandRejectedException (%s) when attempting %s on device %s",
-                        e.getMessage(), actionDescription, getSerialNumber());
+                logDeviceActionException(actionDescription, e);
             } catch (ShellCommandUnresponsiveException e) {
                 CLog.w("Device %s stopped responding when attempting %s", getSerialNumber(),
                         actionDescription);
@@ -1114,41 +1112,62 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Log an entry for given exception
+     *
+     * @param actionDescription the action's description
+     * @param e the exception
+     */
+    private void logDeviceActionException(String actionDescription, Exception e) {
+        CLog.w("%s (%s) when attempting %s on device %s", e.getClass().getSimpleName(),
+                getExceptionMessage(e), actionDescription, getSerialNumber());
+    }
+
+    /**
+     * Make a best effort attempt to retrieve a meaningful short descriptive message for given
+     * {@link Exception}
+     *
+     * @param e the {@link Exception}
+     * @return a short message
+     */
+    private String getExceptionMessage(Exception e) {
+        StringBuilder msgBuilder = new StringBuilder();
+        if (e.getMessage() != null) {
+            msgBuilder.append(e.getMessage());
+        }
+        if (e.getCause() != null) {
+            msgBuilder.append(" cause: ");
+            msgBuilder.append(e.getCause().getClass().getSimpleName());
+            if (e.getCause().getMessage() != null) {
+                msgBuilder.append(" (");
+                msgBuilder.append(e.getCause().getMessage());
+                msgBuilder.append(")");
+            }
+        }
+        return msgBuilder.toString();
+    }
+
+    /**
      * Attempts to recover device communication.
      *
      * @throws DeviceNotAvailableException if device is not longer available
      */
     public void recoverDevice() throws DeviceNotAvailableException {
-        Log.i(LOG_TAG, String.format("Attempting recovery on %s", getSerialNumber()));
-        mRecovery.recoverDevice(mMonitor);
-        // don't allow device to enter recovery mode during the postBootSetup, because it may
-        // result in infinite loop
-        // TODO: find a better way to handle this - such as moving postBootSetup to the recovery
-        // class itself
-        IDeviceRecovery origRecovery = getRecovery();
-        setRecovery(new ReentrantRecovery());
-        try {
+        if (mRecoveryMode.equals(RecoveryMode.NONE)) {
+            CLog.i("Skipping recovery on %s", getSerialNumber());
+            return;
+        }
+        CLog.i("Attempting recovery on %s", getSerialNumber());
+        mRecovery.recoverDevice(mMonitor, mRecoveryMode.equals(RecoveryMode.ONLINE));
+        if (mRecoveryMode.equals(RecoveryMode.AVAILABLE)) {
+            // turn off recovery mode to prevent reentrant recovery
+            // TODO: look for a better way to handle this, such as doing postBootUp steps in
+            // recovery itself
+            mRecoveryMode = RecoveryMode.NONE;
             // this might be a runtime reset - still need to run post boot setup steps
             postBootSetup();
-        } finally {
-            setRecovery(origRecovery);
+            mRecoveryMode = RecoveryMode.AVAILABLE;
         }
-        Log.i(LOG_TAG, String.format("Recovery successful for %s", getSerialNumber()));
-    }
-
-    private static class ReentrantRecovery implements IDeviceRecovery {
-        @Override
-        public void recoverDevice(IDeviceStateMonitor monitor) throws DeviceNotAvailableException {
-            throw new DeviceUnresponsiveException(
-                    "entered recovery recursively during postBootSetup");
-        }
-
-        @Override
-        public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
-                throws DeviceNotAvailableException {
-            throw new DeviceUnresponsiveException(
-                    "entered recovery recursively during postBootSetup");
-        }
+        CLog.i("Recovery successful for %s", getSerialNumber());
     }
 
     /**
@@ -1753,7 +1772,9 @@ class TestDevice implements IManagedTestDevice {
             throw new UnsupportedOperationException(
                     "Fastboot is not available and cannot reboot into bootloader");
         }
-        if (TestDeviceState.FASTBOOT == mMonitor.getDeviceState()) {
+        CLog.i("Rebooting device %s in state %s into bootloader", getSerialNumber(),
+                getDeviceState());
+        if (TestDeviceState.FASTBOOT.equals(getDeviceState())) {
             Log.i(LOG_TAG, String.format("device %s already in fastboot. Rebooting anyway",
                     getSerialNumber()));
             executeFastbootCommand("reboot-bootloader");
@@ -1985,6 +2006,14 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public void setRecoveryMode(RecoveryMode mode) {
+        mRecoveryMode = mode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public void setFastbootEnabled(boolean fastbootEnabled) {
         mFastbootEnabled = fastbootEnabled;
     }
@@ -1999,8 +2028,7 @@ class TestDevice implements IManagedTestDevice {
             if (getDeviceState().equals(TestDeviceState.FASTBOOT) && !mFastbootLock.tryAcquire()) {
                 return;
             }
-            Log.d(LOG_TAG, String.format("Device %s state is now %s", getSerialNumber(),
-                        deviceState));
+            CLog.d("Device %s state is now %s", getSerialNumber(), deviceState);
             mState = deviceState;
             mFastbootLock.release();
             mMonitor.setState(deviceState);

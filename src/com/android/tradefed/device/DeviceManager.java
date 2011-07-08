@@ -672,7 +672,8 @@ public class DeviceManager implements IDeviceManager {
          * {@inheritDoc}
          */
         @Override
-        public void recoverDevice(IDeviceStateMonitor monitor) throws DeviceNotAvailableException {
+        public void recoverDevice(IDeviceStateMonitor monitor, boolean recoverUntilOnline)
+                throws DeviceNotAvailableException {
             throw new DeviceNotAvailableException("aborted test session");
         }
 

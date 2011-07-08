@@ -22,11 +22,16 @@ public interface IDeviceRecovery {
 
     /**
      * Attempt to recover the given device that can no longer be communicated with.
+     * <p/>
+     * Method should block and only return when device is in requested state.
      *
      * @param monitor the {@link IDeviceStateMonitor} to use.
+     * @param recoverUntilOnline if true, method should return as soon as device is online on adb.
+     *            If false, method should block until device is fully available for testing (ie
+     *            {@link IDeviceStateMonitor#waitForDeviceAvailable()} succeeds.
      * @throws DeviceNotAvailableException if device could not be recovered
      */
-    public void recoverDevice(IDeviceStateMonitor monitor)
+    public void recoverDevice(IDeviceStateMonitor monitor, boolean recoverUntilOnline)
             throws DeviceNotAvailableException;
 
     /**

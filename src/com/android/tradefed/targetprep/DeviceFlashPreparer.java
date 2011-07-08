@@ -21,7 +21,9 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -88,7 +90,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             throw new IllegalArgumentException("Provided buildInfo is not a IDeviceBuildInfo");
         }
         IDeviceBuildInfo deviceBuild = (IDeviceBuildInfo)buildInfo;
-
+        device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
         flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
         flasher.flash(device, deviceBuild);
@@ -96,7 +98,15 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         // only want logcat captured for current build, delete any accumulated log data
         device.clearLogcat();
         waitForBootComplete(device, buildInfo.getBuildId());
-        device.waitForDeviceAvailable();
+        device.setRecoveryMode(RecoveryMode.AVAILABLE);
+        try {
+            device.waitForDeviceAvailable();
+        } catch (DeviceUnresponsiveException e) {
+            // assume this is a build problem
+            throw new BuildError(String.format("Device %s did not become available after flashing",
+                    device.getSerialNumber()));
+        }
+        device.postBootSetup();
     }
 
     /**
