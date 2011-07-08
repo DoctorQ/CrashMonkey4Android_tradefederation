@@ -16,18 +16,13 @@
 
 package com.android.framework.tests;
 
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.InstallException;
 import com.android.ddmlib.Log;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.TimeoutException;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.testtype.DeviceTestCase;
-import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
-
-import junit.framework.Test;
 
 /**
  * Set of tests that verify host side stress scenarios (large apps, multiple upgrades, etc.)
@@ -45,10 +40,6 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
     private static final String MISC_APPS_DIRECTORY_NAME = "miscApps";
     private static final String VERSIONED_APPS_DIRECTORY_NAME = "versionedApps";
     private static final String MANY_APPS_DIRECTORY_NAME = "manyApps";
-
-    // Note: An external environment variable "ANDROID_TEST_APP_REPOSITORY" must be set
-    // which points to the root location of the app respository.
-    private static String AppRepositoryPath = null;
 
     // Large apps (>1mb) - filenames and their corresponding package names:
     private static enum APK {
@@ -78,13 +69,19 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
        {"External93mb.apk", "com.appsonsd.mytests.External93mb"}};
 
     // Various test files and their corresponding package names
+    @SuppressWarnings("unused")
     private static final String AUTO_LOC_APK = "Auto241kb.apk";
+    @SuppressWarnings("unused")
     private static final String AUTO_LOC_PKG = "com.appsonsd.mytests.Auto241kb";
+    @SuppressWarnings("unused")
     private static final String INTERNAL_LOC_APK = "Internal781kb.apk";
+    @SuppressWarnings("unused")
     private static final String INTERNAL_LOC_PKG = "com.appsonsd.mytests.Internal781kb";
     private static final String EXTERNAL_LOC_APK = "External931kb.apk";
     private static final String EXTERNAL_LOC_PKG = "com.appsonsd.mytests.External931kb";
+    @SuppressWarnings("unused")
     private static final String NO_LOC_APK = "Internal751kb_EclairSDK.apk";
+    @SuppressWarnings("unused")
     private static final String NO_LOC_PKG = "com.appsonsd.mytests.Internal751kb_EclairSDK";
     // Versioned test apps
     private static final String VERSIONED_APPS_FILENAME_PREFIX = "External455kb_v";
@@ -98,13 +95,19 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
     private static final String MANY_APPS_PKG_PREFIX = "com.appsonsd.mytests.External49kb_";
     private static final String MANY_APPS_APK_PREFIX = "External49kb_";
 
-    public static Test suite() {
-        return new DeviceTestSuite(PackageManagerStressHostTests.class);
-    }
+    @Option(name = "test-app-path", description = "host file system path to test apps",
+            importance = Importance.IF_UNSET)
+    private File mTestAppPath = null;
 
-    // TODO: temporary addition to fix compilation. Will implement later
-    private String getTestAppPath() {
-        return null;
+    @Option(name = "app-repository-path", description =
+            "path to the app repository containing large apks", importance = Importance.IF_UNSET)
+    private File mAppRepositoryPath = null;
+
+    /**
+     * Get the host file to the package manager device-based test apps dir
+     */
+    private File getTestAppPath() {
+        return mTestAppPath;
     }
 
     @Override
@@ -112,33 +115,28 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         super.setUp();
 
         // setup the PackageManager host tests utilities class, and get various paths we'll need...
-        mPMHostUtils = new PackageManagerHostTestUtils(getDevice().getIDevice());
-        AppRepositoryPath = System.getenv("ANDROID_TEST_APP_REPOSITORY");
-        assertNotNull(AppRepositoryPath);
-
-        // Make sure path ends with a separator
-        if (!AppRepositoryPath.endsWith(File.separator)) {
-            AppRepositoryPath += File.separator;
-        }
+        mPMHostUtils = new PackageManagerHostTestUtils(getDevice());
+        // ensure apk path has been set before test is run
+        assertNotNull("Missing --test-app-path option", getTestAppPath());
+        assertNotNull("Missing --app-repository-path option", mAppRepositoryPath);
     }
 
     /**
-     * Get the absolute file system location of repository test app with given filename
+     * Get the {@link File} of repository test app with given filename
      * @param fileName the file name of the test app apk
-     * @return {@link String} of absolute file path
+     * @return {@link File}
      */
-    private String getRepositoryTestAppFilePath(String fileDirectory, String fileName) {
-        return String.format("%s%s%s%s", AppRepositoryPath, fileDirectory,
-                File.separator, fileName);
+    private File getRepositoryTestAppFilePath(String fileDirectory, String fileName) {
+        return FileUtil.getFileForPath(mAppRepositoryPath, fileDirectory, fileName);
     }
 
     /**
-     * Get the absolute file system location of test app with given filename
+     * Get the {@link File} for test app with given filename
      * @param fileName the file name of the test app apk
-     * @return {@link String} of absolute file path
+     * @return {@link File}
      */
-    public String getTestAppFilePath(String fileName) {
-        return String.format("%s%s%s", getTestAppPath(), File.separator, fileName);
+    public File getTestAppFilePath(String fileName) {
+        return FileUtil.getFileForPath(getTestAppPath(), fileName);
     }
 
     /**
@@ -146,9 +144,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * <p/>
      * Assumes adb is running as root in device under test.
      */
-    public void testUpdateAppManyTimesOnSD() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testUpdateAppManyTimesOnSD() throws Exception {
         Log.i(LOG_TAG, "Test updating an app on SD numerous times");
 
         // cleanup test app just in case it already exists
@@ -183,9 +179,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * <p/>
      * Assumes adb is running as root in device under test.
      */
-    public void testUninstallReinstallAppOnSDManyTimes() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testUninstallReinstallAppOnSDManyTimes() throws Exception {
         Log.i(LOG_TAG, "Test updating an app on the SD card stays on the SD card");
 
         // cleanup test app just in case it was already exists
@@ -208,6 +202,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
                 // now uninstall the app
                 Log.i(LOG_TAG, "Uninstalling app");
                 mPMHostUtils.uninstallApp(EXTERNAL_LOC_PKG);
+                // TODO: is this needed
                 mPMHostUtils.waitForPackageManager();
                 assertFalse(mPMHostUtils.doesPackageExist(EXTERNAL_LOC_PKG));
             }
@@ -219,9 +214,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * <p/>
      * Assumes adb is running as root in device under test.
      */
-    public void testInstallManyLargeAppsOnSD() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallManyLargeAppsOnSD() throws Exception {
         Log.i(LOG_TAG, "Test installing 20 large apps onto the sd card");
 
         try {
@@ -265,9 +258,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * <p/>
      * Assumes adb is running as root in device under test.
      */
-    public void testInstallManyAppsOnSD() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallManyAppsOnSD() throws Exception {
         Log.i(LOG_TAG, "Test installing 500 small apps onto SD");
 
         try {

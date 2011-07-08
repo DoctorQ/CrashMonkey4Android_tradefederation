@@ -17,13 +17,13 @@
 package com.android.framework.tests;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.testtype.DeviceTestCase;
-import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.util.Hashtable;
-
-import junit.framework.Test;
 
 /**
  * Host-based tests of the DownloadManager API. (Uses a device-based app to actually invoke the
@@ -42,32 +42,33 @@ public class DownloadManagerHostTests extends DeviceTestCase {
 
     // Extra parameters to pass to the TestRunner
     private static final String EXTERNAL_DOWNLOAD_URI_KEY = "external_download_uri";
-    // Note: External environment variable ANDROID_TEST_EXTERNAL_URI must be set to point to the
-    // external URI under which the files downloaded by the tests can be found. Note that the Uri
-    // must be accessible by the device during a test run. Correspondingly,
-    // ANDROID_TEST_EXTERNAL_LARGE_URI should point to the external URI of the folder containing
-    // large files.
-    private static String externalDownloadUriValue = null;
 
     Hashtable<String, String> mExtraParams = null;
 
-    // TODO: temporary addition to fix compilation. Will implement later
-    private String getTestAppPath() {
-        return null;
-    }
+    @Option(name = "test-app-path", description = "host file system path to test apps",
+            importance = Importance.IF_UNSET)
+    private File mTestAppPath = null;
 
-    public static Test suite() {
-        return new DeviceTestSuite(DownloadManagerHostTests.class);
+    @Option(name = "external-download-uri", description =
+        "external URI under which the files downloaded by the tests can be found. Uri " +
+        "must be accessible by the device during a test run.",
+        importance = Importance.IF_UNSET)
+    private String mExternalDownloadUriValue = null;
+
+    /**
+     * Get the host file dir to the download manager device-based test apps
+     */
+    private File getTestAppPath() {
+        return mTestAppPath;
     }
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         // ensure apk path has been set before test is run
-        assertNotNull(getTestAppPath());
-        mPMUtils = new PackageManagerHostTestUtils(getDevice().getIDevice());
-        externalDownloadUriValue = System.getenv("ANDROID_TEST_EXTERNAL_URI");
-        assertNotNull(externalDownloadUriValue);
+        assertNotNull("Missing test-app-path option", getTestAppPath());
+        mPMUtils = new PackageManagerHostTestUtils(getDevice());
+        assertNotNull("Missing external-download-uri option", mExternalDownloadUriValue);
         mExtraParams = getExtraParams();
     }
 
@@ -76,7 +77,7 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      */
     protected Hashtable<String, String> getExtraParams() {
         Hashtable<String, String> extraParams = new Hashtable<String, String>();
-        extraParams.put(EXTERNAL_DOWNLOAD_URI_KEY, externalDownloadUriValue);
+        extraParams.put(EXTERNAL_DOWNLOAD_URI_KEY, mExternalDownloadUriValue);
         return extraParams;
     }
 
@@ -85,8 +86,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testLargeDownloadOverWiFi() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "runLargeDownloadOverWiFi", DOWNLOAD_TEST_RUNNER_NAME,
@@ -102,19 +103,19 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadManagerSingleReboot() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "initiateDownload", DOWNLOAD_TEST_RUNNER_NAME,
                 mExtraParams);
 
         assertTrue("Failed to initiate download properly!", testPassed);
-        mPMUtils.rebootDevice();
+        getDevice().reboot();
         testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "verifyFileDownloadSucceeded", DOWNLOAD_TEST_RUNNER_NAME,
                 mExtraParams);
-        assertTrue("Failed to verify initiated download completed properyly!", testPassed);
+        assertTrue("Failed to verify initiated download completed properly!", testPassed);
     }
 
     /**
@@ -124,8 +125,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadManagerMultipleReboots() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "initiateDownload", DOWNLOAD_TEST_RUNNER_NAME,
@@ -136,13 +137,13 @@ public class DownloadManagerHostTests extends DeviceTestCase {
 
         // Do 3 random reboots - after 13, 9, and 19 seconds
         Log.i(LOG_TAG, "First reboot...");
-        mPMUtils.rebootDevice();
+        getDevice().reboot();
         Thread.sleep(13000);
         Log.i(LOG_TAG, "Second reboot...");
-        mPMUtils.rebootDevice();
+        getDevice().reboot();
         Thread.sleep(9000);
         Log.i(LOG_TAG, "Third reboot...");
-        mPMUtils.rebootDevice();
+        getDevice().reboot();
         Thread.sleep(19000);
         testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "verifyFileDownloadSucceeded", DOWNLOAD_TEST_RUNNER_NAME,
@@ -157,8 +158,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadMultipleWiFiEnableDisable() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "runDownloadMultipleWiFiEnableDisable",
@@ -172,8 +173,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadMultipleSwitching() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "runDownloadMultipleSwitching",
@@ -187,8 +188,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadMultipleAirplaneModeEnableDisable() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "runDownloadMultipleAirplaneModeEnableDisable",
@@ -202,8 +203,8 @@ public class DownloadManagerHostTests extends DeviceTestCase {
      * @throws Exception if the test failed at any point
      */
     public void testDownloadMultipleSimultaneously() throws Exception {
-        mPMUtils.installAppAndVerifyExistsOnDevice(String.format("%s%s%s", getTestAppPath(),
-                File.separator, FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
+        mPMUtils.installAppAndVerifyExistsOnDevice(FileUtil.getFileForPath(getTestAppPath(),
+                FILE_DOWNLOAD_APK), FILE_DOWNLOAD_PKG, true);
 
         boolean testPassed = mPMUtils.runDeviceTestsDidAllTestsPass(FILE_DOWNLOAD_PKG,
                 FILE_DOWNLOAD_CLASS, "runDownloadMultipleSimultaneously",

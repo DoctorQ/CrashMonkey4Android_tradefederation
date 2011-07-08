@@ -16,28 +16,15 @@
 
 package com.android.framework.tests;
 
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.InstallException;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.MultiLineReceiver;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.SyncException;
-import com.android.ddmlib.TimeoutException;
-import com.android.ddmlib.SyncService.ISyncProgressMonitor;
-import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.CollectingTestListener;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.lang.Runtime;
-import java.lang.Process;
-import java.util.Hashtable;
+import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -49,9 +36,7 @@ import junit.framework.Assert;
  * Set of tests that verify host side install cases
  */
 public class PackageManagerHostTestUtils extends Assert {
-
-    private static final String LOG_TAG = "PackageManagerHostTests";
-    private IDevice mDevice = null;
+    private ITestDevice mDevice = null;
 
     // TODO: get this value from Android Environment instead of hardcoding
     private static final String APP_PRIVATE_PATH = "/data/app-private/";
@@ -59,9 +44,6 @@ public class PackageManagerHostTestUtils extends Assert {
     private static final String SDCARD_APP_PATH = "/mnt/secure/asec/";
 
     private static final int MAX_WAIT_FOR_DEVICE_TIME = 120 * 1000;
-    private static final int WAIT_FOR_DEVICE_POLL_TIME = 10 * 1000;
-    private static final int MAX_WAIT_FOR_APP_LAUNCH_TIME = 60 * 1000;
-    private static final int WAIT_FOR_APP_LAUNCH_POLL_TIME = 5 * 1000;
 
     // Install preference on the device-side
     public static enum InstallLocPreference {
@@ -78,17 +60,11 @@ public class PackageManagerHostTestUtils extends Assert {
 
     /**
      * Constructor takes the device to use
-     * @param the device to use when performing operations
+     * @param device the {@link ITestDevice} to use when performing operations
      */
-    public PackageManagerHostTestUtils(IDevice device)
-    {
+    public PackageManagerHostTestUtils(ITestDevice device) {
           mDevice = device;
     }
-
-    /**
-     * Disable default constructor
-     */
-    private PackageManagerHostTestUtils() {}
 
     /**
      * Returns the path on the device of forward-locked apps.
@@ -127,18 +103,15 @@ public class PackageManagerHostTestUtils extends Assert {
      * @param methodName (optional) The method in the class of which to test
      * @param runnerName (optional) The name of the TestRunner of the test on the device to be run
      * @param params (optional) Any additional parameters to pass into the Test Runner
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+
      * @return the {@link CollectingTestRunListener}
+     * @throws DeviceNotAvailableException
      */
-    private CollectingTestRunListener doRunTests(String pkgName, String className,
-            String methodName, String runnerName, Map<String, String> params) throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        RemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(pkgName, runnerName,
-                mDevice);
+    private CollectingTestListener doRunTests(String pkgName, String className,
+            String methodName, String runnerName, Map<String, String> params)
+            throws DeviceNotAvailableException  {
+        IRemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(pkgName, runnerName,
+                mDevice.getIDevice());
 
         if (className != null && methodName != null) {
             testRunner.setMethodName(className, methodName);
@@ -151,12 +124,8 @@ public class PackageManagerHostTestUtils extends Assert {
             }
         }
 
-        CollectingTestRunListener listener = new CollectingTestRunListener();
-        try {
-            testRunner.run(listener);
-        } catch (IOException ioe) {
-            Log.w(LOG_TAG, "encountered IOException " + ioe);
-        }
+        CollectingTestListener listener = new CollectingTestListener();
+        mDevice.runInstrumentationTests(testRunner, listener);
         return listener;
     }
 
@@ -169,113 +138,59 @@ public class PackageManagerHostTestUtils extends Assert {
      * @param runnerName The name of the TestRunner of the test on the device to be run
      * @param params Any additional parameters to pass into the Test Runner
      * @return true if test passed, false otherwise.
+     * @throws DeviceNotAvailableException
      */
     public boolean runDeviceTestsDidAllTestsPass(String pkgName, String className,
-            String methodName, String runnerName, Map<String, String> params) throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        CollectingTestRunListener listener = doRunTests(pkgName, className, methodName,
+            String methodName, String runnerName, Map<String, String> params)
+            throws DeviceNotAvailableException  {
+        CollectingTestListener listener = doRunTests(pkgName, className, methodName,
                 runnerName, params);
-        return listener.didAllTestsPass();
+        return !listener.hasFailedTests();
     }
 
     /**
      * Runs the specified packages tests, and returns whether all tests passed or not.
      *
      * @param pkgName Android application package for tests
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @return true if every test passed, false otherwise.
-     */
-    public boolean runDeviceTestsDidAllTestsPass(String pkgName) throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        CollectingTestRunListener listener = doRunTests(pkgName, null, null, null, null);
-        return listener.didAllTestsPass();
-    }
 
-    /**
-     * Helper method to push a file to device
-     * @param apkAppPrivatePath
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
+     * @return true if every test passed, false otherwise.
+     * @throws DeviceNotAvailableException
      */
-    public void pushFile(final String localFilePath, final String destFilePath)
-            throws IOException, SyncException, TimeoutException, AdbCommandRejectedException {
-        mDevice.getSyncService().pushFile(localFilePath,
-                destFilePath, new NullSyncProgressMonitor());
+    public boolean runDeviceTestsDidAllTestsPass(String pkgName)
+            throws DeviceNotAvailableException   {
+        CollectingTestListener listener = doRunTests(pkgName, null, null, null, null);
+        return !listener.hasFailedTests();
     }
 
     /**
      * Helper method to install a file
-     * @param localFilePath the absolute file system path to file on local host to install
+     * @param localFile the {@link File} to install
      * @param reinstall set to <code>true</code> if re-install of app should be performed
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed
+     * @throws DeviceNotAvailableException
      */
-    public void installFile(final String localFilePath, final boolean replace) throws IOException,
-            InstallException {
-        String result = mDevice.installPackage(localFilePath, replace);
+    public void installFile(final File localFile, final boolean replace)
+            throws DeviceNotAvailableException {
+        String result = mDevice.installPackage(localFile, replace);
         assertEquals(null, result);
     }
 
     /**
-     * Helper method to install a file that should not be install-able
-     * @param localFilePath the absolute file system path to file on local host to install
-     * @param reinstall set to <code>true</code> if re-install of app should be performed
-     * @return the string output of the failed install attempt
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed
+     * Helper method to install a file to device as forward locked.
+     *
+     * @param apkFile the {@link File} to install
+     * @param replace set to <code>true</code> if re-install of app should be performed
+     * @throws Exception if failed to install file
      */
-    public String installFileFail(final String localFilePath, final boolean replace)
-            throws IOException, InstallException {
-        String result = mDevice.installPackage(localFilePath, replace);
-        assertNotNull(result);
-        return result;
-    }
-
-    /**
-     * Helper method to install a file to device as forward locked
-     * @param localFilePath the absolute file system path to file on local host to install
-     * @param reinstall set to <code>true</code> if re-install of app should be performed
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
-     */
-    public String installFileForwardLocked(final String localFilePath, final boolean replace)
-            throws IOException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException, InstallException {
-        String remoteFilePath = mDevice.syncPackageToDevice(localFilePath);
+    public String installFileForwardLocked(final File apkFile, final boolean replace)
+            throws Exception {
+        // TODO: replace these IDevice calls with a single ITestDevice call
+        String remoteFilePath = mDevice.getIDevice().syncPackageToDevice(apkFile.getAbsolutePath());
         InstallReceiver receiver = new InstallReceiver();
         String cmd = String.format(replace ? "pm install -r -l \"%1$s\"" :
                 "pm install -l \"%1$s\"", remoteFilePath);
         mDevice.executeShellCommand(cmd, receiver);
-        mDevice.removeRemotePackage(remoteFilePath);
+        mDevice.getIDevice().removeRemotePackage(remoteFilePath);
         return receiver.getErrorMessage();
-    }
-
-    /**
-     * Helper method to determine if file on device exists.
-     *
-     * @param destPath the absolute path of file on device to check
-     * @return <code>true</code> if file exists, <code>false</code> otherwise.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     */
-    public boolean doesRemoteFileExist(String destPath) throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        String lsGrep = executeShellCommand(String.format("ls %s", destPath));
-        return !lsGrep.contains("No such file or directory");
     }
 
     /**
@@ -284,16 +199,11 @@ public class PackageManagerHostTestUtils extends Assert {
      * @param destPath the absolute path of the file
      * @return <code>true</code> if file exists containing given string,
      *         <code>false</code> otherwise.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
     public boolean doesRemoteFileExistContainingString(String destPath, String searchString)
-            throws IOException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
-        String lsResult = executeShellCommand(String.format("ls %s", destPath));
+            throws DeviceNotAvailableException {
+        String lsResult = mDevice.executeShellCommand(String.format("ls %s", destPath));
         return lsResult.contains(searchString);
     }
 
@@ -302,15 +212,11 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param packageName the Android manifest package to check.
      * @return <code>true</code> if package exists, <code>false</code> otherwise
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+
+     * @throws DeviceNotAvailableException
      */
-    public boolean doesPackageExist(String packageName) throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        String pkgGrep = executeShellCommand(String.format("pm path %s", packageName));
+    public boolean doesPackageExist(String packageName) throws DeviceNotAvailableException {
+        String pkgGrep = mDevice.executeShellCommand(String.format("pm path %s", packageName));
         return pkgGrep.contains("package:");
     }
 
@@ -319,14 +225,9 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param packageName package name to check for
      * @return <code>true</code> if file exists, <code>false</code> otherwise.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public boolean doesAppExistOnDevice(String packageName) throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public boolean doesAppExistOnDevice(String packageName) throws DeviceNotAvailableException {
         return doesRemoteFileExistContainingString(DEVICE_APP_PATH, packageName);
     }
 
@@ -335,14 +236,9 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param packageName package name to check for
      * @return <code>true</code> if file exists, <code>false</code> otherwise.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public boolean doesAppExistOnSDCard(String packageName) throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public boolean doesAppExistOnSDCard(String packageName) throws DeviceNotAvailableException {
         return doesRemoteFileExistContainingString(SDCARD_APP_PATH, packageName);
     }
 
@@ -351,279 +247,21 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param packageName package name to check for
      * @return <code>true</code> if file exists, <code>false</code> otherwise.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public boolean doesAppExistAsForwardLocked(String packageName) throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public boolean doesAppExistAsForwardLocked(String packageName)
+            throws DeviceNotAvailableException {
         return doesRemoteFileExistContainingString(APP_PRIVATE_PATH, packageName);
     }
 
     /**
      * Waits for device's package manager to respond.
      *
-     * @throws InterruptedException
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public void waitForPackageManager() throws InterruptedException, IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        Log.i(LOG_TAG, "waiting for device");
-        int currentWaitTime = 0;
-        // poll the package manager until it returns something for android
-        while (!doesPackageExist("android")) {
-            Thread.sleep(WAIT_FOR_DEVICE_POLL_TIME);
-            currentWaitTime += WAIT_FOR_DEVICE_POLL_TIME;
-            if (currentWaitTime > MAX_WAIT_FOR_DEVICE_TIME) {
-                Log.e(LOG_TAG, "time out waiting for device");
-                throw new InterruptedException();
-            }
-        }
-    }
-
-    /**
-     * Helper to determine if the device is currently online and visible via ADB.
-     *
-     * @return true iff the device is currently available to ADB and online, false otherwise.
-     */
-    private boolean deviceIsOnline() {
-        AndroidDebugBridge bridge = AndroidDebugBridge.getBridge();
-        IDevice[] devices = bridge.getDevices();
-
-        for (IDevice device : devices) {
-            // only online if the device appears in the devices list, and its state is online
-            if ((mDevice != null) &&
-                    mDevice.getSerialNumber().equals(device.getSerialNumber()) &&
-                    device.isOnline()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Waits for device to be online (visible to ADB) before returning, or times out if we've
-     * waited too long. Note that this only means the device is visible via ADB, not that
-     * PackageManager is fully up and running yet.
-     *
-     * @throws InterruptedException
-     * @throws IOException
-     */
-    public void waitForDeviceToComeOnline() throws InterruptedException, IOException {
-        Log.i(LOG_TAG, "waiting for device to be online");
-        int currentWaitTime = 0;
-
-        // poll ADB until we see the device is online
-        while (!deviceIsOnline()) {
-            Thread.sleep(WAIT_FOR_DEVICE_POLL_TIME);
-            currentWaitTime += WAIT_FOR_DEVICE_POLL_TIME;
-            if (currentWaitTime > MAX_WAIT_FOR_DEVICE_TIME) {
-                Log.e(LOG_TAG, "time out waiting for device");
-                throw new InterruptedException();
-            }
-        }
-        // Note: if we try to access the device too quickly after it is "officially" online,
-        // there are sometimes strange issues where it's actually not quite ready yet,
-        // so we pause for a bit once more before actually returning.
-        Thread.sleep(WAIT_FOR_DEVICE_POLL_TIME);
-    }
-
-    /**
-     * Queries package manager and waits until a package is launched (or times out)
-     *
-     * @param packageName The name of the package to wait to load
-     * @throws InterruptedException
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     */
-    public void waitForApp(String packageName) throws InterruptedException, IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        Log.i(LOG_TAG, "waiting for app to launch");
-        int currentWaitTime = 0;
-        // poll the package manager until it returns something for the package we're looking for
-        while (!doesPackageExist(packageName)) {
-            Thread.sleep(WAIT_FOR_APP_LAUNCH_POLL_TIME);
-            currentWaitTime += WAIT_FOR_APP_LAUNCH_POLL_TIME;
-            if (currentWaitTime > MAX_WAIT_FOR_APP_LAUNCH_TIME) {
-                Log.e(LOG_TAG, "time out waiting for app to launch: " + packageName);
-                throw new InterruptedException();
-            }
-        }
-    }
-
-    /**
-     * Helper method which executes a adb shell command and returns output as a {@link String}
-     * @return the output of the command
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     */
-    public String executeShellCommand(String command) throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        Log.i(LOG_TAG, String.format("adb shell %s", command));
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-        mDevice.executeShellCommand(command, receiver);
-        String output = receiver.getOutput();
-        Log.i(LOG_TAG, String.format("Result: %s", output));
-        return output;
-    }
-
-    /**
-     * Helper method ensures we are in root mode on the host side. It returns only after
-     * PackageManager is actually up and running.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     */
-    public void runAdbRoot() throws IOException, InterruptedException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        Log.i(LOG_TAG, "adb root");
-        Runtime runtime = Runtime.getRuntime();
-        Process process = runtime.exec("adb root"); // adb should be in the path
-        BufferedReader output = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-        String nextLine = null;
-        while (null != (nextLine = output.readLine())) {
-            Log.i(LOG_TAG, nextLine);
-        }
-        process.waitFor();
-        waitForDeviceToComeOnline();
-        waitForPackageManager(); // now wait for package manager to actually load
-    }
-
-    /**
-     * Helper method which reboots the device and returns once the device is online again
-     * and package manager is up and running (note this function is synchronous to callers).
-     * @throws InterruptedException
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     */
-    public void rebootDevice() throws IOException, InterruptedException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        String command = "reboot"; // no need for -s since mDevice is already tied to a device
-        Log.i(LOG_TAG, command);
-        CollectingOutputReceiver receiver = new CollectingOutputReceiver();
-        mDevice.executeShellCommand(command, receiver);
-        String output = receiver.getOutput();
-        Log.i(LOG_TAG, String.format("Result: %s", output));
-        waitForDeviceToComeOnline(); // wait for device to come online
-        runAdbRoot();
-    }
-
-    /**
-     * A {@link IShellOutputReceiver} which collects the whole shell output into one {@link String}
-     */
-    private class CollectingOutputReceiver extends MultiLineReceiver {
-
-        private StringBuffer mOutputBuffer = new StringBuffer();
-
-        public String getOutput() {
-            return mOutputBuffer.toString();
-        }
-
-        @Override
-        public void processNewLines(String[] lines) {
-            for (String line: lines) {
-                mOutputBuffer.append(line);
-                mOutputBuffer.append("\n");
-            }
-        }
-
-        public boolean isCancelled() {
-            return false;
-        }
-    }
-
-    private class NullSyncProgressMonitor implements ISyncProgressMonitor {
-        public void advance(int work) {
-            // ignore
-        }
-
-        public boolean isCanceled() {
-            // ignore
-            return false;
-        }
-
-        public void start(int totalWork) {
-            // ignore
-
-        }
-
-        public void startSubTask(String name) {
-            // ignore
-        }
-
-        public void stop() {
-            // ignore
-        }
-    }
-
-    // For collecting results from running device tests
-    public static class CollectingTestRunListener implements ITestRunListener {
-
-        private boolean mAllTestsPassed = true;
-        private String mTestRunErrorMessage = null;
-
-        public void testEnded(TestIdentifier test, Map<String, String> metrics) {
-            // ignore
-        }
-
-        public void testFailed(TestFailure status, TestIdentifier test,
-                String trace) {
-            Log.w(LOG_TAG, String.format("%s#%s failed: %s", test.getClassName(),
-                    test.getTestName(), trace));
-            mAllTestsPassed = false;
-        }
-
-        public void testRunEnded(long elapsedTime, Map<String, String> resultBundle) {
-            // ignore
-        }
-
-        public void testRunFailed(String errorMessage) {
-            Log.w(LOG_TAG, String.format("test run failed: %s", errorMessage));
-            mAllTestsPassed = false;
-            mTestRunErrorMessage = errorMessage;
-        }
-
-        public void testRunStarted(String runName, int testCount) {
-            // ignore
-        }
-
-        public void testRunStopped(long elapsedTime) {
-            // ignore
-        }
-
-        public void testStarted(TestIdentifier test) {
-            // ignore
-        }
-
-        boolean didAllTestsPass() {
-            return mAllTestsPassed;
-        }
-
-        /**
-         * Get the test run failure error message.
-         * @return the test run failure error message or <code>null</code> if test run completed.
-         */
-        String getTestRunErrorMessage() {
-            return mTestRunErrorMessage;
-        }
+    public void waitForPackageManager() throws DeviceNotAvailableException {
+       CLog.i("waiting for device");
+       mDevice.waitForDeviceAvailable(MAX_WAIT_FOR_DEVICE_TIME);
     }
 
     /**
@@ -674,17 +312,11 @@ public class PackageManagerHostTestUtils extends Assert {
      * @param the path of the apk to install
      * @param the name of the package
      * @param <code>true</code> if the app should be overwritten, <code>false</code> otherwise
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
+
+     * @throws DeviceNotAvailableException
      */
-    public void installAppAndVerifyExistsOnSDCard(String apkPath, String pkgName, boolean overwrite)
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void installAppAndVerifyExistsOnSDCard(File apkPath, String pkgName, boolean overwrite)
+            throws DeviceNotAvailableException {
         // Start with a clean slate if we're not overwriting
         if (!overwrite) {
             // cleanup test app just in case it already exists
@@ -696,6 +328,7 @@ public class PackageManagerHostTestUtils extends Assert {
         installFile(apkPath, overwrite);
         assertTrue(doesAppExistOnSDCard(pkgName));
         assertFalse(doesAppExistOnDevice(pkgName));
+        // TODO: is this necessary?
         waitForPackageManager();
 
         // grep for package to make sure it is installed
@@ -708,20 +341,13 @@ public class PackageManagerHostTestUtils extends Assert {
      * <p/>
      * Assumes adb is running as root in device under test.
      *
-     * @param the path of the apk to install
+     * @param apkFile the {@link File} of the apk to install
      * @param the name of the package
      * @param <code>true</code> if the app should be overwritten, <code>false</code> otherwise
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
+     * @throws DeviceNotAvailableException
      */
-    public void installAppAndVerifyExistsOnDevice(String apkPath, String pkgName, boolean overwrite)
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void installAppAndVerifyExistsOnDevice(File apkFile, String pkgName, boolean overwrite)
+            throws  DeviceNotAvailableException {
         // Start with a clean slate if we're not overwriting
         if (!overwrite) {
             // cleanup test app just in case it already exists
@@ -730,9 +356,10 @@ public class PackageManagerHostTestUtils extends Assert {
             assertFalse(doesPackageExist(pkgName));
         }
 
-        installFile(apkPath, overwrite);
+        installFile(apkFile, overwrite);
         assertFalse(doesAppExistOnSDCard(pkgName));
         assertTrue(doesAppExistOnDevice(pkgName));
+        // TODO: is this necessary?
         waitForPackageManager();
 
         // grep for package to make sure it is installed
@@ -745,21 +372,14 @@ public class PackageManagerHostTestUtils extends Assert {
      * <p/>
      * Assumes adb is running as root in device under test.
      *
-     * @param the path of the apk to install
-     * @param the name of the package
-     * @param <code>true</code> if the app should be overwritten, <code>false</code> otherwise
-     * @throws InterruptedException if the thread was interrupted
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
+     * @param apkFile the {@link File} of the apk to install
+     * @param pkgName the name of the package
+     * @param overwrite <code>true</code> if the app should be overwritten,
+     * <code>false</code> otherwise
+     * @throws Exception if failed to install app
      */
-    public void installFwdLockedAppAndVerifyExists(String apkPath,
-            String pkgName, boolean overwrite) throws IOException, InterruptedException,
-            InstallException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void installFwdLockedAppAndVerifyExists(File apkFile,
+            String pkgName, boolean overwrite) throws Exception {
         // Start with a clean slate if we're not overwriting
         if (!overwrite) {
             // cleanup test app just in case it already exists
@@ -768,7 +388,7 @@ public class PackageManagerHostTestUtils extends Assert {
             assertFalse(doesPackageExist(pkgName));
         }
 
-        String result = installFileForwardLocked(apkPath, overwrite);
+        String result = installFileForwardLocked(apkFile, overwrite);
         assertEquals(null, result);
         assertTrue(doesAppExistAsForwardLocked(pkgName));
         assertFalse(doesAppExistOnSDCard(pkgName));
@@ -784,55 +404,12 @@ public class PackageManagerHostTestUtils extends Assert {
      * Assumes adb is running as root in device under test.
      *
      * @param pkgName package name to uninstall
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the uninstall failed.
+     * @throws DeviceNotAvailableException
      */
-    public void uninstallApp(String pkgName) throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void uninstallApp(String pkgName) throws DeviceNotAvailableException {
         mDevice.uninstallPackage(pkgName);
         // make sure its not installed anymore
         assertFalse(doesPackageExist(pkgName));
-    }
-
-    /**
-     * Helper method for clearing any installed non-system apps.
-     * Useful ensuring no non-system apps are installed, and for cleaning up stale files that
-     * may be lingering on the system for whatever reason.
-     * <p/>
-     * Assumes adb is running as root in device under test.
-     *
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the uninstall failed.
-     */
-    public void wipeNonSystemApps() throws IOException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException, InstallException {
-      String allInstalledPackages = executeShellCommand("pm list packages -f");
-      BufferedReader outputReader = new BufferedReader(new StringReader(allInstalledPackages));
-
-      // First use Package Manager to uninstall all non-system apps
-      String currentLine = null;
-      while ((currentLine = outputReader.readLine()) != null) {
-          // Skip over any system apps...
-          if (currentLine.contains("/system/")) {
-              continue;
-          }
-          String packageName = currentLine.substring(currentLine.indexOf('=') + 1);
-          mDevice.uninstallPackage(packageName);
-      }
-      // Make sure there are no stale app files under these directories
-      executeShellCommand(String.format("rm %s*", SDCARD_APP_PATH, "*"));
-      executeShellCommand(String.format("rm %s*", DEVICE_APP_PATH, "*"));
-      executeShellCommand(String.format("rm %s*", APP_PRIVATE_PATH, "*"));
     }
 
     /**
@@ -840,14 +417,10 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public void setDevicePreferredInstallLocation(InstallLocPreference pref) throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void setDevicePreferredInstallLocation(InstallLocPreference pref)
+            throws DeviceNotAvailableException {
         String command = "pm setInstallLocation %d";
         int locValue = 0;
         switch (pref) {
@@ -861,7 +434,7 @@ public class PackageManagerHostTestUtils extends Assert {
                 locValue = 0;
                 break;
         }
-        executeShellCommand(String.format(command, locValue));
+        mDevice.executeShellCommand(String.format(command, locValue));
     }
 
     /**
@@ -869,15 +442,11 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
+     * @throws DeviceNotAvailableException
      */
-    public InstallLocPreference getDevicePreferredInstallLocation() throws IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        String result = executeShellCommand("pm getInstallLocation");
+    public InstallLocPreference getDevicePreferredInstallLocation()
+            throws DeviceNotAvailableException {
+        String result = mDevice.executeShellCommand("pm getInstallLocation");
         if (result.indexOf('0') != -1) {
             return InstallLocPreference.AUTO;
         }
