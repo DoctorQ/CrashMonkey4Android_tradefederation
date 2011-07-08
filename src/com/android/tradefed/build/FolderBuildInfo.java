@@ -35,6 +35,13 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     }
 
     /**
+     * @see {@link BuildInfo#BuildInfo(BuildInfo)}
+     */
+    FolderBuildInfo(BuildInfo buildToCopy) {
+        super(buildToCopy);
+    }
+
+    /**
      * {@inheritDoc}
      */
     public File getRootDir() {
