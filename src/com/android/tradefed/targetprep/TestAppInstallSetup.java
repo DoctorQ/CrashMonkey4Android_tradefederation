@@ -19,17 +19,15 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.zip.ZipFile;
 
 /**
  * A {@link ITargetPreparer} that installs one or more apps from a
@@ -68,36 +66,20 @@ public class TestAppInstallSetup implements ITargetPreparer {
             Log.i(LOG_TAG, "No test apps to install, skipping");
             return;
         }
-        File testsZip = ((IDeviceBuildInfo)buildInfo).getTestsZipFile();
-        if (testsZip == null || !testsZip.exists()) {
+        File testsDir = ((IDeviceBuildInfo)buildInfo).getTestsDir();
+        if (testsDir == null || !testsDir.exists()) {
             throw new TargetSetupError(
-                    "Provided buildInfo does not contain a valid tests.zip");
+                    "Provided buildInfo does not contain a valid tests directory");
         }
-        File tmpDir = null;
 
-        try {
-            tmpDir = FileUtil.createTempDir("testszip");
-            FileUtil.extractZip(new ZipFile(testsZip), tmpDir);
-            File appDir = new File(new File(tmpDir, "DATA"), "app");
-            if (!appDir.exists()) {
+        for (String testAppName : mTestFileNames) {
+            File testAppFile = FileUtil.getFileForPath(testsDir, "DATA", "app", testAppName);
+            if (!testAppFile.exists()) {
                 throw new TargetSetupError(
-                        "Could not find DATA/app directory in extracted tests.zip");
+                    String.format("Could not find test app %s directory in extracted tests.zip",
+                            testAppFile));
             }
-            for (String testAppName : mTestFileNames) {
-                File testAppFile = new File(appDir, testAppName);
-                if (!testAppFile.exists()) {
-                    throw new TargetSetupError(
-                        String.format("Could not find test app %s directory in extracted tests.zip",
-                                testAppFile));
-                }
-                device.installPackage(testAppFile, true);
-            }
-        } catch (IOException e) {
-            throw new TargetSetupError("failed to install test zip apps", e);
-        } finally {
-            if (tmpDir != null) {
-                FileUtil.recursiveDelete(tmpDir);
-            }
+            device.installPackage(testAppFile, true);
         }
     }
 }

@@ -36,6 +36,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getBasebandImageFile() {
         return mDeviceBuild.getBasebandImageFile();
     }
@@ -43,6 +44,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getBasebandVersion() {
         return mDeviceBuild.getBasebandVersion();
     }
@@ -50,6 +52,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getBootloaderImageFile() {
         return mDeviceBuild.getBootloaderImageFile();
     }
@@ -57,6 +60,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getBootloaderVersion() {
         return mDeviceBuild.getBootloaderVersion();
     }
@@ -64,6 +68,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getDeviceImageFile() {
         return mDeviceBuild.getDeviceImageFile();
     }
@@ -71,6 +76,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getImageFile(String imageName) {
         return mDeviceBuild.getImageFile(imageName);
     }
@@ -78,6 +84,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getImageVersion(String imageName) {
         return mDeviceBuild.getImageVersion(imageName);
     }
@@ -85,13 +92,15 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
-    public File getTestsZipFile() {
-        return mDeviceBuild.getTestsZipFile();
+    @Override
+    public File getTestsDir() {
+        return mDeviceBuild.getTestsDir();
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getUserDataImageFile() {
         return mDeviceBuild.getUserDataImageFile();
     }
@@ -99,6 +108,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setBasebandImage(File basebandFile, String version) {
         mDeviceBuild.setBasebandImage(basebandFile, version);
     }
@@ -106,6 +116,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
         mDeviceBuild.setBootloaderImageFile(bootloaderImgFile, version);
     }
@@ -113,6 +124,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDeviceImageFile(File deviceImageFile) {
         mDeviceBuild.setDeviceImageFile(deviceImageFile);
     }
@@ -120,6 +132,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setImageFile(String imageName, File file, String version) {
         mDeviceBuild.setImageFile(imageName, file, version);
     }
@@ -127,13 +140,15 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
-    public void setTestsZipFile(File testsZipFile) {
-        mDeviceBuild.setTestsZipFile(testsZipFile);
+    @Override
+    public void setTestsDir(File testsDir) {
+        mDeviceBuild.setTestsDir(testsDir);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUserDataImageFile(File userDataFile) {
         mDeviceBuild.setUserDataImageFile(userDataFile);
     }
@@ -141,6 +156,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getRootDir() {
         return mFolderBuild.getRootDir();
     }
@@ -148,6 +164,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setRootDir(File rootDir) {
         mFolderBuild.setRootDir(rootDir);
     }
@@ -175,6 +192,9 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
         mFolderBuild.cleanUp();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IBuildInfo clone() {
         DeviceFolderBuildInfo copy = new DeviceFolderBuildInfo(getBuildId(), getTestTarget(),

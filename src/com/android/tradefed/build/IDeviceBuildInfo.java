@@ -71,16 +71,16 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public void setUserDataImageFile(File userDataFile);
 
     /**
-     * Get the local tests zip file.
+     * Get the local path to the extracted tests.zip file contents.
      */
-    public File getTestsZipFile();
+    public File getTestsDir();
 
     /**
-     * Set the tests zip file to use.
+     * Set local path to the extracted tests.zip file contents.
      *
      * @param testsZipFile
      */
-    public void setTestsZipFile(File testsZipFile);
+    public void setTestsDir(File testsZipFile);
 
     /**
      * Get the local baseband image file.

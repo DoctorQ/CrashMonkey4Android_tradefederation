@@ -22,15 +22,11 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.zip.ZipException;
-import java.util.zip.ZipFile;
 
 
 /**
@@ -85,33 +81,21 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             }
         }
 
-        // Unpack the tests zip somewhere and install the contents
-        File unzipDir = null;
-        try {
-            unzipDir = FileUtil.createTempDir("tests-zip_");
-            extractZip(deviceBuild, unzipDir);
+        Log.d(LOG_TAG, "Syncing test files/apks");
+        File hostDir = new File(deviceBuild.getTestsDir(), "DATA");
 
-            Log.d(LOG_TAG, "Syncing test files/apks");
-            File hostDir = new File(unzipDir, "DATA");
+        File[] hostDataFiles = getTestsZipDataFiles(hostDir);
+        for (File hostSubDir : hostDataFiles) {
+            device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
+        }
 
-            File[] hostDataFiles = getTestsZipDataFiles(hostDir);
-            for (File hostSubDir : hostDataFiles) {
-                device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
+        // after push, everything in /data is owned by root, need to revert to system
+        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
+            if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
+                // change owner to system, no -R support
+                device.executeShellCommand(String.format("chown system.system %s %s/*",
+                        dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
             }
-
-            // after push, everything in /data is owned by root, need to revert to system
-            for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
-                if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                    // change owner to system, no -R support
-                    device.executeShellCommand(String.format("chown system.system %s %s/*",
-                            dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
-                }
-            }
-        } catch (IOException e) {
-            throw new TargetSetupError(e.getMessage());
-        } finally {
-            // Clean up the unpacked zip directory
-            FileUtil.recursiveDelete(unzipDir);
         }
     }
 
@@ -134,18 +118,5 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
                     "Unrecognized tests.zip content: DATA folder has no content");
         }
         return childFiles;
-    }
-
-    /**
-     * Extract the tests zip to local disk.
-     * <p/>
-     * Exposed so unit tests can mock
-     */
-    void extractZip(IDeviceBuildInfo deviceBuild, File unzipDir) throws IOException,
-            ZipException, TargetSetupError {
-        if (deviceBuild.getTestsZipFile() == null) {
-            throw new TargetSetupError("Missing tests.zip file");
-        }
-        FileUtil.extractZip(new ZipFile(deviceBuild.getTestsZipFile()), unzipDir);
     }
 }

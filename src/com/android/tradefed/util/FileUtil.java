@@ -287,7 +287,7 @@ public class FileUtil {
     }
 
     /**
-     * Recursively delete given directory and all its contents
+     * Recursively delete given file and all its contents
      */
     public static void recursiveDelete(File rootDir) {
         if (rootDir.isDirectory()) {

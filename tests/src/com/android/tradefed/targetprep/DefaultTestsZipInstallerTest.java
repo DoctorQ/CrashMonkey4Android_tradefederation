@@ -17,16 +17,17 @@
 package com.android.tradefed.targetprep;
 
 import com.android.ddmlib.FileListingService;
+import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.MockFileUtil;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 
 import java.io.File;
+
+import junit.framework.TestCase;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";
@@ -34,17 +35,13 @@ public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String TEST_STRING = "foo";
 
     private ITestDevice mMockDevice;
-
+    private IDeviceBuildInfo mDeviceBuild;
     private DefaultTestsZipInstaller mZipInstaller;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mZipInstaller = new DefaultTestsZipInstaller(SKIP_THIS) {
-            @Override
-            void extractZip(IDeviceBuildInfo deviceBuild, File unzipDir) {
-            }
-
             @Override
             File[] getTestsZipDataFiles(File hostDir) {
                 return new File[] { new File("foo") };
@@ -55,6 +52,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getBuildId()).andStubReturn(1);
+        mDeviceBuild = new DeviceBuildInfo(1, TEST_STRING, TEST_STRING);
     }
 
     /**
@@ -83,7 +81,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
                 EasyMock.contains("chown system.system data/app data/app/*"))).andReturn("");
 
         EasyMock.replay(mMockDevice);
-        mZipInstaller.pushTestsZipOntoData(mMockDevice, null /* deviceBuild */);
+        mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);
         EasyMock.verify(mMockDevice);
     }
 }

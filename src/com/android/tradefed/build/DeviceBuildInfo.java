@@ -34,7 +34,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
 
     private static final String DEVICE_IMAGE_NAME = "device";
     private static final String USERDATA_IMAGE_NAME = "userdata";
-    private static final String TESTZIP_IMAGE_NAME = "testszip";
+    private static final String TESTDIR_IMAGE_NAME = "testsdir";
     private static final String BASEBAND_IMAGE_NAME = "baseband";
     private static final String BOOTLOADER_IMAGE_NAME = "bootloader";
 
@@ -74,6 +74,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getImageFile(String imageName) {
         ImageFile imgFileRecord = mImageFileMap.get(imageName);
         if (imgFileRecord != null) {
@@ -85,6 +86,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getImageVersion(String imageName) {
         ImageFile imgFileRecord = mImageFileMap.get(imageName);
         if (imgFileRecord != null) {
@@ -96,6 +98,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setImageFile(String imageName, File file, String version) {
         if (mImageFileMap.containsKey(imageName)) {
             Log.e(LOG_TAG, String.format(
@@ -110,6 +113,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getDeviceImageFile() {
         return getImageFile(DEVICE_IMAGE_NAME);
     }
@@ -117,6 +121,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDeviceImageFile(File deviceImageFile) {
         setImageFile(DEVICE_IMAGE_NAME, deviceImageFile, Integer.toString(getBuildId()));
     }
@@ -124,6 +129,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getUserDataImageFile() {
         return getImageFile(USERDATA_IMAGE_NAME);
     }
@@ -131,6 +137,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUserDataImageFile(File userDataFile) {
         setImageFile(USERDATA_IMAGE_NAME, userDataFile, Integer.toString(getBuildId()));
     }
@@ -138,20 +145,23 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
-    public File getTestsZipFile() {
-        return getImageFile(TESTZIP_IMAGE_NAME);
+    @Override
+    public File getTestsDir() {
+        return getImageFile(TESTDIR_IMAGE_NAME);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void setTestsZipFile(File testsZipFile) {
-        setImageFile(TESTZIP_IMAGE_NAME, testsZipFile, Integer.toString(getBuildId()));
+    @Override
+    public void setTestsDir(File testsDir) {
+        setImageFile(TESTDIR_IMAGE_NAME, testsDir, Integer.toString(getBuildId()));
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getBasebandImageFile() {
         return getImageFile(BASEBAND_IMAGE_NAME);
     }
@@ -159,6 +169,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getBasebandVersion() {
         return getImageVersion(BASEBAND_IMAGE_NAME);
     }
@@ -166,6 +177,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setBasebandImage(File basebandFile, String version) {
         setImageFile(BASEBAND_IMAGE_NAME, basebandFile, version);
     }
@@ -173,6 +185,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getBootloaderImageFile() {
         return getImageFile(BOOTLOADER_IMAGE_NAME);
     }
@@ -180,6 +193,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getBootloaderVersion() {
         return getImageVersion(BOOTLOADER_IMAGE_NAME);
     }
@@ -187,6 +201,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
         setImageFile(BOOTLOADER_IMAGE_NAME, bootloaderImgFile, version);
     }
@@ -197,11 +212,14 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     @Override
     public void cleanUp() {
         for (ImageFile fileRecord : mImageFileMap.values()) {
-            fileRecord.getImageFile().delete();
+            FileUtil.recursiveDelete(fileRecord.getImageFile());
         }
         mImageFileMap.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IBuildInfo clone()  {
         try {
@@ -210,11 +228,17 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             copy.addAllBuildAttributes(getAttributesMultiMap());
             for (Map.Entry<String, ImageFile> fileEntry : mImageFileMap.entrySet()) {
                 File origImageFile = fileEntry.getValue().getImageFile();
-                File fileCopy = FileUtil.createTempFile(fileEntry.getKey(),
-                        FileUtil.getExtension(origImageFile.getName()));
-                FileUtil.copyFile(origImageFile, fileCopy);
+                File fileCopy;
+                if (origImageFile.isDirectory()) {
+                    fileCopy = FileUtil.createTempDir(fileEntry.getKey());
+                    FileUtil.recursiveCopy(origImageFile, fileCopy);
+                } else {
+                    fileCopy = FileUtil.createTempFile(fileEntry.getKey(),
+                            FileUtil.getExtension(origImageFile.getName()));
+                    FileUtil.copyFile(origImageFile, fileCopy);
+                }
                 copy.mImageFileMap.put(fileEntry.getKey(), new ImageFile(fileCopy,
-                        fileEntry.getValue().getVersion()));
+                             fileEntry.getValue().getVersion()));
             }
             return copy;
         } catch (IOException e) {
