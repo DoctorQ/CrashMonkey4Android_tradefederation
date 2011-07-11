@@ -206,8 +206,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
                 throw new TestResultNotAvailableException();
             }
             // Save a copy of the output file
-            CLog.d(String.format("Sending %d byte file %s into the logosphere!",
-                    resFile.length(), resFile));
+            CLog.d("Sending %d byte file %s into the logosphere!",
+                    resFile.length(), resFile);
             outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
             listener.testLog(String.format("result-%s.txt", test.mTestName), LogDataType.TEXT,
                     outputSource);
@@ -242,8 +242,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
                 List<List<String>> capture = new ArrayList<List<String>>(1);
                 String key = test.mPatternMap.retrieve(capture, line);
                 if (key != null) {
-                    CLog.d(String.format("In output file of test case %s: retrieve key: %s, " +
-                            "catpure: %s", test.mTestName, key, capture.toString()));
+                    CLog.d("In output file of test case %s: retrieve key: %s, " +
+                            "catpure: %s", test.mTestName, key, capture.toString());
                     //Save results in the metrics
                     if (key == "scan_quality") {
                         // For scanning test, calculate the scan quality

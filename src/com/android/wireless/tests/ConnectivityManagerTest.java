@@ -18,6 +18,7 @@ package com.android.wireless.tests;
 
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.BugreportCollector;
@@ -41,6 +42,10 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
     private static final String TEST_RUNNER_NAME =
         ".ConnectivityManagerTestRunner";
 
+    @Option(name="ssid",
+            description="The ssid used for wi-fi connection.")
+    private String mSsid = null;
+
     @Override
     public void setDevice(ITestDevice testDevice) {
         mTestDevice = testDevice;
@@ -55,6 +60,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener standardListener)
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+        Assert.assertNotNull(mSsid);
 
         // Add bugreport listener for bugreport after each test case fails
         BugreportCollector bugListener = new
@@ -64,6 +70,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
+        runner.addInstrumentationArg("ssid", mSsid);
         mTestDevice.runInstrumentationTests(runner, bugListener);
     }
 }
