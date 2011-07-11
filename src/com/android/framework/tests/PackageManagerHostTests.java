@@ -22,14 +22,14 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
 import com.android.ddmlib.TimeoutException;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.testtype.DeviceTestCase;
-import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
-
-import junit.framework.Test;
 
 /**
  * Set of tests that verify host side install cases
@@ -38,10 +38,6 @@ public class PackageManagerHostTests extends DeviceTestCase {
 
     private static final String LOG_TAG = "PackageManagerHostTests";
     private PackageManagerHostTestUtils mPMHostUtils = null;
-
-    private String appPrivatePath = null;
-    private String deviceAppPath = null;
-    private String sdcardAppPath = null;
 
     // Various test files and their corresponding package names...
 
@@ -60,8 +56,11 @@ public class PackageManagerHostTests extends DeviceTestCase {
     private static final String EXTERNAL_LOC_APK = "ExternalLocTestApp.apk";
     private static final String EXTERNAL_LOC_PKG = "com.android.framework.externalloctestapp";
     // Apk with install location set to auto (2 versions, for update testing)
+    @SuppressWarnings("unused")
     private static final String AUTO_LOC_VERSION_V1_APK = "AutoLocVersionedTestApp_v1.apk";
+    @SuppressWarnings("unused")
     private static final String AUTO_LOC_VERSION_V2_APK = "AutoLocVersionedTestApp_v2.apk";
+    @SuppressWarnings("unused")
     private static final String AUTO_LOC_VERSION_PKG =
             "com.android.framework.autolocversionedtestapp";
     // Apk with install location set to preferExternal (2 versions, for update testing)
@@ -92,7 +91,9 @@ public class PackageManagerHostTests extends DeviceTestCase {
     private static final String UPDATE_EXT_TO_INT_LOC_PKG
             = "com.android.framework.updateexttointloctestapp";
     // Apk set to preferExternal, with Access Fine Location permissions set in its manifest
+    @SuppressWarnings("unused")
     private static final String FL_PERMS_APK = "ExternalLocPermsFLTestApp.apk";
+    @SuppressWarnings("unused")
     private static final String FL_PERMS_PKG = "com.android.framework.externallocpermsfltestapp";
     // Apk set to preferExternal, with all permissions set in manifest
     private static final String ALL_PERMS_APK = "ExternalLocAllPermsTestApp.apk";
@@ -102,7 +103,9 @@ public class PackageManagerHostTests extends DeviceTestCase {
     private static final String VERSATILE_LOC_PKG = "com.android.framework.versatiletestapp";
     private static final String VERSATILE_LOC_INTERNAL_APK = "VersatileTestApp_Internal.apk";
     private static final String VERSATILE_LOC_EXTERNAL_APK = "VersatileTestApp_External.apk";
+    @SuppressWarnings("unused")
     private static final String VERSATILE_LOC_AUTO_APK = "VersatileTestApp_Auto.apk";
+    @SuppressWarnings("unused")
     private static final String VERSATILE_LOC_NONE_APK = "VersatileTestApp_None.apk";
     // Apks with shared UserID
     private static final String SHARED_PERMS_APK = "ExternalSharedPermsTestApp.apk";
@@ -115,14 +118,21 @@ public class PackageManagerHostTests extends DeviceTestCase {
     private static final String SHARED_PERMS_BT_PKG
             = "com.android.framework.externalsharedpermsbttestapp";
     // Apk with shared UserID, but signed with a different cert (the media cert)
+    @SuppressWarnings("unused")
     private static final String SHARED_PERMS_DIFF_KEY_APK = "ExternalSharedPermsDiffKeyTestApp.apk";
+    @SuppressWarnings("unused")
     private static final String SHARED_PERMS_DIFF_KEY_PKG
             = "com.android.framework.externalsharedpermsdiffkeytestapp";
 
+    @Option(name = "test-app-path", description = "host file system path to test apps",
+            importance = Importance.IF_UNSET)
+    private File mTestAppPath = null;
 
-    // TODO: temporary addition to fix compilation. Will implement later
-    private String getTestAppPath() {
-        return null;
+    /**
+     * Get the host file system path to the package manager device-based test apps
+     */
+    private File getTestAppPath() {
+        return mTestAppPath;
     }
 
     @Override
@@ -132,10 +142,7 @@ public class PackageManagerHostTests extends DeviceTestCase {
         assertNotNull(getTestAppPath());
 
         // setup the PackageManager host tests utilities class, and get various paths we'll need...
-        mPMHostUtils = new PackageManagerHostTestUtils(getDevice().getIDevice());
-        appPrivatePath = mPMHostUtils.getAppPrivatePath();
-        deviceAppPath = mPMHostUtils.getDeviceAppPath();
-        sdcardAppPath = mPMHostUtils.getSDCardAppPath();
+        mPMHostUtils = new PackageManagerHostTestUtils(getDevice());
 
         // Ensure the default is set to let the system decide where to install apps
         // (It's ok for individual tests to override and change this during their test, but should
@@ -149,12 +156,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * @param fileName the file name of the test app apk
      * @return {@link String} of absolute file path
      */
-    public String getTestAppFilePath(String fileName) {
-        return String.format("%s%s%s", getTestAppPath(), File.separator, fileName);
-    }
-
-    public static Test suite() {
-        return new DeviceTestSuite(PackageManagerHostTests.class);
+    public File getTestAppFilePath(String fileName) {
+        return FileUtil.getFileForPath(getTestAppPath(), fileName);
     }
 
     /**
@@ -162,66 +165,52 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * the app, and otherwise cause the system to blow up.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      * @throws DeviceNotAvailableException
      */
     public void testPushAppPrivate() throws IOException, InterruptedException, InstallException,
             TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
             SyncException, DeviceNotAvailableException {
         Log.i(LOG_TAG, "testing pushing an apk to /data/app-private");
-        final String apkAppPrivatePath =  appPrivatePath + SIMPLE_APK;
+        final String apkAppPrivatePath =  PackageManagerHostTestUtils.getAppPrivatePath()
+                + SIMPLE_APK;
 
         // cleanup test app just in case it was accidently installed
         getDevice().uninstallPackage(SIMPLE_PKG);
-        mPMHostUtils.executeShellCommand("stop");
-        mPMHostUtils.pushFile(getTestAppFilePath(SIMPLE_APK), apkAppPrivatePath);
+        getDevice().executeShellCommand("stop");
+        getDevice().pushFile(getTestAppFilePath(SIMPLE_APK), apkAppPrivatePath);
 
         // sanity check to make sure file is there
-        assertTrue(mPMHostUtils.doesRemoteFileExist(apkAppPrivatePath));
-        mPMHostUtils.executeShellCommand("start");
+        assertTrue(getDevice().doesFileExist(apkAppPrivatePath));
+        getDevice().executeShellCommand("start");
 
         mPMHostUtils.waitForPackageManager();
 
         // grep for package to make sure its not installed
         assertFalse(mPMHostUtils.doesPackageExist(SIMPLE_PKG));
         // ensure it has been deleted from app-private
-        assertFalse(mPMHostUtils.doesRemoteFileExist(apkAppPrivatePath));
+        assertFalse(getDevice().doesFileExist(apkAppPrivatePath));
     }
 
     /**
      * Helper to do a standard install of an apk and verify it installed to the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
+     *
      * @param apkName the file name of the test app apk
      * @param pkgName the package name of the test app apk
      * @param expectedLocation the file name of the test app apk
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
+     * @throws DeviceNotAvailableException
      */
     private void doStandardInstall(String apkName, String pkgName,
             PackageManagerHostTestUtils.InstallLocation expectedLocation)
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+            throws DeviceNotAvailableException {
 
         if (expectedLocation == PackageManagerHostTestUtils.InstallLocation.DEVICE) {
-            mPMHostUtils.installAppAndVerifyExistsOnDevice(
-                    getTestAppFilePath(apkName), pkgName, false);
-        }
-        else {
-            mPMHostUtils.installAppAndVerifyExistsOnSDCard(
-                    getTestAppFilePath(apkName), pkgName, false);
+            mPMHostUtils.installAppAndVerifyExistsOnDevice(getTestAppFilePath(apkName), pkgName,
+                    false);
+        } else {
+            mPMHostUtils.installAppAndVerifyExistsOnSDCard(getTestAppFilePath(apkName), pkgName,
+                    false);
         }
     }
 
@@ -232,18 +221,13 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      * @param preference the device's preferred location of where to install apps
      * @param expectedLocation the expected location of where the apk was installed
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
+     * @throws DeviceNotAvailableException
+
      */
     public void installAppAutoLoc(PackageManagerHostTestUtils.InstallLocPreference preference,
             PackageManagerHostTestUtils.InstallLocation expectedLocation)
             throws IOException, InterruptedException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException, InstallException {
+            ShellCommandUnresponsiveException, InstallException, DeviceNotAvailableException {
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
                 PackageManagerHostTestUtils.InstallLocPreference.AUTO;
@@ -266,16 +250,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is auto.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppAutoLocPrefIsAuto() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAppAutoLocPrefIsAuto() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=auto, prefer=auto gets installed on device");
         installAppAutoLoc(PackageManagerHostTestUtils.InstallLocPreference.AUTO,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -286,17 +262,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is internal.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppAutoLocPrefIsInternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppAutoLocPrefIsInternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=auto, prefer=internal gets installed on device");
         installAppAutoLoc(PackageManagerHostTestUtils.InstallLocPreference.INTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -307,17 +274,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the SD card when device's preference is external.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppAutoLocPrefIsExternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppAutoLocPrefIsExternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=auto, prefer=external gets installed on device");
         installAppAutoLoc(PackageManagerHostTestUtils.InstallLocPreference.EXTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -330,18 +288,10 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      * @param preference the device's preferred location of where to install apps
      * @param expectedLocation the expected location of where the apk was installed
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the (un)install failed.
      */
     public void installAppInternalLoc(PackageManagerHostTestUtils.InstallLocPreference preference,
             PackageManagerHostTestUtils.InstallLocation expectedLocation)
-            throws IOException, InterruptedException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException, InstallException {
+            throws Exception {
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
             PackageManagerHostTestUtils.InstallLocPreference.AUTO;
@@ -364,17 +314,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is auto.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppInternalLocPrefIsAuto() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppInternalLocPrefIsAuto() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=internal, prefer=auto gets installed on device");
         installAppInternalLoc(PackageManagerHostTestUtils.InstallLocPreference.AUTO,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -385,17 +326,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is internal.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppInternalLocPrefIsInternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppInternalLocPrefIsInternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=internal, prefer=internal is installed on device");
         installAppInternalLoc(PackageManagerHostTestUtils.InstallLocPreference.INTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -406,17 +338,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is external.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppInternalLocPrefIsExternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppInternalLocPrefIsExternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=internal, prefer=external is installed on device");
         installAppInternalLoc(PackageManagerHostTestUtils.InstallLocPreference.EXTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.DEVICE);
@@ -429,18 +352,10 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      * @param preference the device's preferred location of where to install apps
      * @param expectedLocation the expected location of where the apk was installed
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
     public void installAppExternalLoc(PackageManagerHostTestUtils.InstallLocPreference preference,
             PackageManagerHostTestUtils.InstallLocation expectedLocation)
-            throws IOException, InterruptedException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException, InstallException {
+            throws Exception {
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
             PackageManagerHostTestUtils.InstallLocPreference.AUTO;
@@ -464,17 +379,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is auto.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppExternalLocPrefIsAuto() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppExternalLocPrefIsAuto() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=external, pref=auto gets installed on SD Card");
         installAppExternalLoc(PackageManagerHostTestUtils.InstallLocPreference.AUTO,
                 PackageManagerHostTestUtils.InstallLocation.SDCARD);
@@ -485,17 +391,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is internal.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppExternalLocPrefIsInternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppExternalLocPrefIsInternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=external, pref=internal gets installed on SD Card");
         installAppExternalLoc(PackageManagerHostTestUtils.InstallLocPreference.INTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.SDCARD);
@@ -506,17 +403,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * will install the app to the device when device's preference is external.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppExternalLocPrefIsExternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallAppExternalLocPrefIsExternal() throws Exception {
         Log.i(LOG_TAG, "Test installLocation=external, pref=external gets installed on SD Card");
         installAppExternalLoc(PackageManagerHostTestUtils.InstallLocPreference.EXTERNAL,
                 PackageManagerHostTestUtils.InstallLocation.SDCARD);
@@ -528,17 +416,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * system decide.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppNoLocPrefIsAuto() throws IOException, InterruptedException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            InstallException {
+    public void testInstallAppNoLocPrefIsAuto() throws Exception {
         Log.i(LOG_TAG, "Test an app with no installLocation gets installed on device");
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
@@ -564,17 +443,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * external.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppNoLocPrefIsExternal() throws IOException, InterruptedException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            InstallException {
+    public void testInstallAppNoLocPrefIsExternal() throws Exception {
         Log.i(LOG_TAG, "Test an app with no installLocation gets installed on SD card");
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
@@ -600,17 +470,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * internal.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAppNoLocPrefIsInternal() throws IOException, InterruptedException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException,
-            InstallException {
+    public void testInstallAppNoLocPrefIsInternal() throws Exception {
         Log.i(LOG_TAG, "Test an app with no installLocation gets installed on device");
 
         PackageManagerHostTestUtils.InstallLocPreference savedPref =
@@ -635,18 +496,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * forward-locked will get installed to the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallFwdLockedAppInternal() throws IOException, InterruptedException,
-            InstallException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallFwdLockedAppInternal() throws Exception {
         Log.i(LOG_TAG, "Test an app with installLoc set to Internal gets installed to app-private");
 
         try {
@@ -664,18 +515,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * forward-locked will get installed to the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallFwdLockedAppExternal() throws IOException, InterruptedException,
-            InstallException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallFwdLockedAppExternal() throws Exception {
         Log.i(LOG_TAG, "Test an app with installLoc set to Internal gets installed to app-private");
 
         try {
@@ -693,18 +534,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * forward-locked will get installed to the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallFwdLockedAppAuto() throws IOException, InterruptedException,
-            InstallException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallFwdLockedAppAuto() throws Exception {
         Log.i(LOG_TAG, "Test an app with installLoc set to Auto gets installed to app-private");
 
         try {
@@ -722,18 +553,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * forward-locked installed will get installed to the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallFwdLockedAppNone() throws IOException, InterruptedException,
-            InstallException, SyncException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testInstallFwdLockedAppNone() throws Exception {
         Log.i(LOG_TAG, "Test an app with no installLoc set gets installed to app-private");
 
         try {
@@ -751,21 +572,12 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * uninstall it, and reinstall it onto the SD card.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
     // TODO: This currently relies on the app's manifest to switch from device to
     // SD card install locations. We might want to make Device's installPackage()
     // accept a installLocation flag so we can install a package to the
     // destination of our choosing.
-    public void testReinstallInternalToExternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testReinstallInternalToExternal() throws Exception {
         Log.i(LOG_TAG, "Test installing an app first to the device, then to the SD Card");
 
         try {
@@ -786,21 +598,12 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * uninstall it, and reinstall it onto the device.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
     // TODO: This currently relies on the app's manifest to switch from device to
     // SD card install locations. We might want to make Device's installPackage()
     // accept a installLocation flag so we can install a package to the
     // destination of our choosing.
-    public void testReinstallExternalToInternal() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testReinstallExternalToInternal() throws Exception {
         Log.i(LOG_TAG, "Test installing an app first to the SD Care, then to the device");
 
         try {
@@ -823,16 +626,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * the update onto the SD card as well when location is set to external for both versions
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testUpdateBothExternal() throws IOException, InterruptedException, InstallException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testUpdateBothExternal() throws Exception {
         Log.i(LOG_TAG, "Test updating an app on the SD card stays on the SD card");
 
         try {
@@ -855,16 +650,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * updated apps' manifest file.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testUpdateToSDCard() throws IOException, InterruptedException, InstallException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testUpdateToSDCard() throws Exception {
         Log.i(LOG_TAG, "Test updating an app on the SD card stays on the SD card");
 
         try {
@@ -886,17 +673,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * the update onto the device if the manifest has changed to installLocation=internalOnly
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testUpdateSDCardToDevice() throws IOException, InterruptedException,
-            InstallException, TimeoutException, AdbCommandRejectedException,
-            ShellCommandUnresponsiveException {
+    public void testUpdateSDCardToDevice() throws Exception {
         Log.i(LOG_TAG, "Test updating an app on the SD card to the Device through manifest change");
 
         try {
@@ -918,18 +696,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * the update onto the device's forward-locked location
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndUpdateExternalLocForwardLockedApp()
-            throws IOException, InterruptedException, InstallException, SyncException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndUpdateExternalLocForwardLockedApp() throws Exception {
         Log.i(LOG_TAG, "Test updating a forward-locked app marked preferExternal");
 
         try {
@@ -951,18 +719,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * the update onto the device's forward-locked location
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndUpdateNoLocForwardLockedApp()
-            throws IOException, InterruptedException, InstallException, SyncException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndUpdateNoLocForwardLockedApp() throws Exception {
         Log.i(LOG_TAG, "Test updating a forward-locked app with no installLocation pref set");
 
         try {
@@ -984,18 +742,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * and then launched without crashing.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws SyncException if the sync failed for another reason.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchAllPermsAppOnSD()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchAllPermsAppOnSD() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with all perms set, installed on SD card");
 
         try {
@@ -1016,17 +764,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * run without permissions errors.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchFLPermsAppOnSD()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchFLPermsAppOnSD() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with location perms set, installed on SD card");
 
         try {
@@ -1047,17 +786,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * run without permissions errors.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchBTPermsAppOnSD()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchBTPermsAppOnSD() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with bluetooth perms set, installed on SD card");
 
         try {
@@ -1078,17 +808,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * SecurityException when launched if its other shared apps are not installed.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchSharedPermsAppOnSD_NoPerms()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchSharedPermsAppOnSD_NoPerms() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with no explicit perms set, installed on SD card");
 
         try {
@@ -1114,17 +835,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * shared apps are installed.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchSharedPermsAppOnSD_GrantedPerms()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchSharedPermsAppOnSD_GrantedPerms() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with no explicit perms set, installed on SD card");
 
         try {
@@ -1153,17 +865,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * run without permissions errors even after a reboot
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchFLPermsAppOnSD_Reboot()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchFLPermsAppOnSD_Reboot() throws Exception {
         Log.i(LOG_TAG, "Test launching an app with location perms set, installed on SD card");
 
         try {
@@ -1173,7 +876,7 @@ public class PackageManagerHostTests extends DeviceTestCase {
             boolean testsPassed = mPMHostUtils.runDeviceTestsDidAllTestsPass(SHARED_PERMS_FL_PKG);
             assert(testsPassed);
 
-            mPMHostUtils.rebootDevice();
+            getDevice().reboot();
 
             testsPassed = mPMHostUtils.runDeviceTestsDidAllTestsPass(SHARED_PERMS_FL_PKG);
             assert(testsPassed);
@@ -1189,17 +892,8 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * shared apps are installed, even after a reboot.
      * <p/>
      * Assumes adb is running as root in device under test.
-     * @throws InterruptedException if the thread was interrupted
-     * @throws TimeoutException in case of a timeout on the connection.
-     * @throws AdbCommandRejectedException if adb rejects the command
-     * @throws ShellCommandUnresponsiveException if the device did not output anything for
-     * a period longer than the max time to output.
-     * @throws IOException if connection to device was lost.
-     * @throws InstallException if the install failed.
      */
-    public void testInstallAndLaunchSharedPermsAppOnSD_Reboot()
-            throws IOException, InterruptedException, InstallException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testInstallAndLaunchSharedPermsAppOnSD_Reboot() throws Exception {
         Log.i(LOG_TAG, "Test launching an app on SD, with no explicit perms set after reboot");
 
         try {
@@ -1216,7 +910,7 @@ public class PackageManagerHostTests extends DeviceTestCase {
             assert(testsPassed);
 
             // reboot
-            mPMHostUtils.rebootDevice();
+            getDevice().reboot();
 
             // Verify we can still launch the app
             testsPassed = mPMHostUtils.runDeviceTestsDidAllTestsPass(SHARED_PERMS_PKG);
