@@ -41,6 +41,7 @@ public class SimpleStatsTest extends TestCase {
         assertNull(mStats.median());
         assertNull(mStats.min());
         assertNull(mStats.max());
+        assertNull(mStats.stdev());
     }
 
     /**
@@ -60,6 +61,7 @@ public class SimpleStatsTest extends TestCase {
         assertEquals(10, mStats.max(), 0.1);
         assertEquals(5.5, mStats.mean(), 0.1);
         assertEquals(5.5, mStats.median(), 0.1);
+        assertEquals(2.872281, mStats.stdev(), 0.000001);
     }
 
     /**
@@ -79,6 +81,7 @@ public class SimpleStatsTest extends TestCase {
         assertEquals(10, mStats.max(), 0.1);
         assertEquals(5.0, mStats.mean(), 0.1);
         assertEquals(5.0, mStats.median(), 0.1);
+        assertEquals(3.162278, mStats.stdev(), 0.000001);
     }
 
     /**
@@ -98,6 +101,7 @@ public class SimpleStatsTest extends TestCase {
         // sum = 55, count = 15
         assertEquals(55.0 / 15.0, mStats.mean(), 0.1);
         assertEquals(4, mStats.median(), 0.1);
+        assertEquals(1.247219, mStats.stdev(), 0.000001);
     }
 }
 

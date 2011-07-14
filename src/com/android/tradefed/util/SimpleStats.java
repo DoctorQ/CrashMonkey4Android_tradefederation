@@ -128,5 +128,27 @@ public class SimpleStats {
         Collections.sort(mData);
         return mData.get(size() - 1);
     }
+
+    /**
+     * Return the standard deviation of the dataset, or {@code null} if the dataset is empty.
+     * <p />
+     * Note that this method calculates the population standard deviation, not the sample standard
+     * deviation.  That is, it assumes that the dataset is entirely contained in the
+     * {@link SimpleStats} instance.
+     */
+    public Double stdev() {
+        if (isEmpty()) {
+            return null;
+        }
+
+        Double avg = mean();
+        Double ssd = 0.0;  // sum of squared differences
+        for (Double meas : mData) {
+            Double diff = meas - avg;
+            ssd += diff * diff;
+        }
+
+        return Math.sqrt(ssd / size());
+    }
 }
 
