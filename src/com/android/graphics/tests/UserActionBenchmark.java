@@ -61,7 +61,8 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
     private final String mOutputPath = "avgFrameRateOut.txt";
 
     private static String[] mTestCases =
-        {"contacts", "gmail", "launcher", "liveWallpaper", "home", "launchAllApps"};
+        {"contacts", "gmail", "launcher", "liveWallpaper", "home",
+         "launchAllApps", "browserzoom", "browserscroll", "browserfling"};
 
     private static final Pattern AVERAGE_FPS =
         Pattern.compile("(.*):(\\d+.\\d+)");
