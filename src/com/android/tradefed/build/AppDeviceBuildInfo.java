@@ -164,6 +164,22 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
      * {@inheritDoc}
      */
     @Override
+    public File getOtaPackageFile() {
+        return mDeviceBuild.getOtaPackageFile();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOtaPackageFile(File otaFile) {
+        mDeviceBuild.setOtaPackageFile(otaFile);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void cleanUp() {
         mDeviceBuild.cleanUp();
         mAppBuildInfo.cleanUp();

@@ -119,6 +119,16 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public void setBootloaderImageFile(File bootloaderImgFile, String version);
 
     /**
+     * Get the device OTA package zip file
+     */
+    public File getOtaPackageFile();
+
+    /**
+     * Set the device OTA package zip file
+     */
+    public void setOtaPackageFile(File otaFile);
+
+    /**
      * Removes all temporary files
      */
     public void cleanUp();

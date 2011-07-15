@@ -22,6 +22,8 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
+import java.io.File;
+
 /**
  * A {@link IDeviceFlasher} that relies on the system updater to install a
  * system image bundled in a OTA update package. In particular, this
@@ -76,7 +78,12 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
             return false;
         }
         Log.i(LOG_TAG, String.format("Flashing system %d", deviceBuild.getBuildId()));
-        if (!device.pushFile(deviceBuild.getDeviceImageFile(), "/cache/fishtank-ota.zip")) {
+        File otaPackageFile = deviceBuild.getOtaPackageFile();
+        if (otaPackageFile == null) {
+            throw new TargetSetupError("No OTA package file present for build "
+                    + deviceBuild.getBuildId());
+        }
+        if (!device.pushFile(otaPackageFile, "/cache/fishtank-ota.zip")) {
             throw new TargetSetupError("Could not push OTA file to the target.");
         }
         String commands =

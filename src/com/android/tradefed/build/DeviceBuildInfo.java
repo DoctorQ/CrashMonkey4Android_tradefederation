@@ -28,6 +28,7 @@ import java.util.Map;
  * A {@link IBuildInfo} that represents a complete Android device build and (optionally) its tests.
  */
 public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
+
     private static final String LOG_TAG = "DeviceBuildInfo";
 
     private Map<String, ImageFile> mImageFileMap;
@@ -37,6 +38,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     private static final String TESTDIR_IMAGE_NAME = "testsdir";
     private static final String BASEBAND_IMAGE_NAME = "baseband";
     private static final String BOOTLOADER_IMAGE_NAME = "bootloader";
+    private static final String OTA_IMAGE_NAME = "ota";
 
     /**
      * Data structure containing the image file and related metadata
@@ -208,6 +210,22 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     @Override
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
         setImageFile(BOOTLOADER_IMAGE_NAME, bootloaderImgFile, version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getOtaPackageFile() {
+        return getImageFile(OTA_IMAGE_NAME);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOtaPackageFile(File otaFile) {
+        setImageFile(OTA_IMAGE_NAME, otaFile, Integer.toString(getBuildId()));
     }
 
     /**

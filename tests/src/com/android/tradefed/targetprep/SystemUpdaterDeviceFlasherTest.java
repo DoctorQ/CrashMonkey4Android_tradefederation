@@ -56,10 +56,10 @@ public class SystemUpdaterDeviceFlasherTest extends TestCase {
     }
 
     public void testFlash() throws DeviceNotAvailableException, TargetSetupError {
-        expectDifferentBuild(true);
+        yieldDifferentBuilds(true);
         File fakeImage = new File("fakeImageFile");
         mControl.checkOrder(true);
-        EasyMock.expect(mMockDeviceBuild.getDeviceImageFile()).andReturn(fakeImage);
+        EasyMock.expect(mMockDeviceBuild.getOtaPackageFile()).andReturn(fakeImage);
         EasyMock.expect(mMockDevice.pushFile(fakeImage, "/cache/fishtank-ota.zip")).andReturn(true);
         String commandsRegex = "echo +--update_package +> +/cache/recovery/command +&& *"
                 + "echo +/cache/fishtank-ota.zip +>> +/cache/recovery/command";
@@ -74,14 +74,30 @@ public class SystemUpdaterDeviceFlasherTest extends TestCase {
         mControl.verify();
     }
 
+    public void testFlash_noOta() throws DeviceNotAvailableException, TargetSetupError {
+        yieldDifferentBuilds(true);
+        EasyMock.expect(mMockDeviceBuild.getOtaPackageFile()).andReturn(null);
+
+        mControl.replay();
+        try {
+            mFlasher.flash(mMockDevice, mMockDeviceBuild);
+            fail("didn't throw expected exception when OTA is missing: "
+                    + TargetSetupError.class.getSimpleName());
+        } catch (TargetSetupError e) {
+            assertTrue(true);
+        } finally {
+            mControl.verify();
+        }
+    }
+
     public void testFlashSameBuild() throws DeviceNotAvailableException, TargetSetupError {
-        expectDifferentBuild(false);
+        yieldDifferentBuilds(false);
         mControl.replay();
         mFlasher.flash(mMockDevice, mMockDeviceBuild);
         mControl.verify();
     }
 
-    private void expectDifferentBuild(boolean different) {
+    private void yieldDifferentBuilds(boolean different) {
         EasyMock.expect(mMockDevice.getBuildId()).andReturn(A_BUILD_ID).anyTimes();
         EasyMock.expect(mMockDeviceBuild.getBuildId()).andReturn(
                 (different ? A_BUILD_ID + 1 : A_BUILD_ID)).anyTimes();
