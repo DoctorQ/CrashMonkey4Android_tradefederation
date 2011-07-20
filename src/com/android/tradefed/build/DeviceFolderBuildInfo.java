@@ -34,6 +34,12 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     }
 
     /**
+     * @see {@link DeviceBuildInfo#DeviceBuildInfo()}
+     */
+    public DeviceFolderBuildInfo() {
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
