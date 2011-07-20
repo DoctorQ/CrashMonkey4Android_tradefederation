@@ -289,7 +289,7 @@ class TestDevice implements IManagedTestDevice {
                 Log.i(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying in fastboot",
                         getSerialNumber()));
-                productType = getFastbootProduct();
+                productType = getFastbootProductType();
             } else {
                 Log.w(LOG_TAG, String.format(
                         "Product type for device %s is null, re-querying", getSerialNumber()));
@@ -321,7 +321,8 @@ class TestDevice implements IManagedTestDevice {
         return productType;
     }
 
-    private String getFastbootProduct()
+    @Override
+    public String getFastbootProductType()
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return getFastbootVariable("product");
     }
