@@ -231,16 +231,17 @@ public class FileDownloadCache {
 
     private File copyFile(String remotePath, File cachedFile) throws BuildRetrievalError {
         // attempt to create a local copy of cached file with sane name
-        File copyFile = null;
+        File hardlinkFile = null;
         try {
-            copyFile = FileUtil.createTempFileForRemote(remotePath, null);
-            FileUtil.copyFile(cachedFile, copyFile);
-            return copyFile;
+            hardlinkFile = FileUtil.createTempFileForRemote(remotePath, null);
+            hardlinkFile.delete();
+            FileUtil.hardlinkFile(cachedFile, hardlinkFile);
+            return hardlinkFile;
         } catch (IOException e) {
-            if (copyFile != null) {
-                copyFile.delete();
+            if (hardlinkFile != null) {
+                hardlinkFile.delete();
             }
-            // cached file might be corrupt incomplete, delete it
+            // cached file might be corrupt or incomplete, delete it
             cachedFile.delete();
             throw new BuildRetrievalError(String.format("Failed to copy cached file %s",
                     cachedFile), e);

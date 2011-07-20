@@ -232,16 +232,18 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             copy.addAllBuildAttributes(getAttributesMultiMap());
             for (Map.Entry<String, ImageFile> fileEntry : mImageFileMap.entrySet()) {
                 File origImageFile = fileEntry.getValue().getImageFile();
-                File fileCopy;
+                File hardlinkFile;
                 if (origImageFile.isDirectory()) {
-                    fileCopy = FileUtil.createTempDir(fileEntry.getKey());
-                    FileUtil.recursiveCopy(origImageFile, fileCopy);
+                    hardlinkFile = FileUtil.createTempDir(fileEntry.getKey());
+                    FileUtil.recursiveHardlink(origImageFile, hardlinkFile);
                 } else {
-                    fileCopy = FileUtil.createTempFile(fileEntry.getKey(),
+                    // Only using createTempFile to create a unique dest filename
+                    hardlinkFile = FileUtil.createTempFile(fileEntry.getKey(),
                             FileUtil.getExtension(origImageFile.getName()));
-                    FileUtil.copyFile(origImageFile, fileCopy);
+                    hardlinkFile.delete();
+                    FileUtil.hardlinkFile(origImageFile, hardlinkFile);
                 }
-                copy.mImageFileMap.put(fileEntry.getKey(), new ImageFile(fileCopy,
+                copy.mImageFileMap.put(fileEntry.getKey(), new ImageFile(hardlinkFile,
                              fileEntry.getValue().getVersion()));
             }
             return copy;

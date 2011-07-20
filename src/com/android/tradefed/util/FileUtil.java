@@ -212,6 +212,50 @@ public class FileUtil {
     }
 
     /**
+     * A helper method that hardlinks a file to another file
+     *
+     * @param origFile the original file
+     * @param destFile the destination file
+     * @throws IOException if failed to hardlink file
+     */
+    public static void hardlinkFile(File origFile, File destFile) throws IOException {
+        // `ln src dest` will create a hardlink (note: not `ln -s src dest`, which creates symlink)
+        // note that this will fail across filesystem boundaries
+        // FIXME: should probably just fall back to normal copy if this fails
+        CommandResult result = RunUtil.getDefault().runTimedCmd(10*1000, "ln",
+                origFile.getAbsolutePath(), destFile.getAbsolutePath());
+        if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
+            throw new IOException(String.format(
+                    "Failed to hardlink %s to %s.  Across filesystem boundary?",
+                    origFile.getAbsolutePath(), destFile.getAbsolutePath()));
+        }
+    }
+
+    /**
+     * Recursively hardlink folder contents.
+     * <p/>
+     * Only supports copying of files and directories - symlinks are not copied.
+     *
+     * @param sourceDir the folder that contains the files to copy
+     * @param destDir the destination folder
+     * @throws IOException
+     */
+    public static void recursiveHardlink(File sourceDir, File destDir) throws IOException {
+        for (File childFile : sourceDir.listFiles()) {
+            File destChild = new File(destDir, childFile.getName());
+            if (childFile.isDirectory()) {
+                if (!destChild.mkdir()) {
+                    throw new IOException(String.format("Could not create directory %s",
+                            destChild.getAbsolutePath()));
+                }
+                recursiveHardlink(childFile, destChild);
+            } else if (childFile.isFile()) {
+                hardlinkFile(childFile, destChild);
+            }
+        }
+    }
+
+    /**
      * A helper method that copies a file's contents to a local file
      *
      * @param origFile the original file to be copied
