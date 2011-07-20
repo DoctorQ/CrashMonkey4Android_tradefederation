@@ -21,6 +21,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.device.IDeviceManager.IFastbootListener;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -119,6 +120,38 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     public boolean waitForDeviceInRecovery(long waitTime) {
         return waitForDeviceState(TestDeviceState.RECOVERY, waitTime);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean waitForDeviceShell(final long waitTime) {
+        CLog.i(LOG_TAG, "Waiting %d ms for device %s shell to be responsive", waitTime,
+                getSerialNumber());
+        long startTime = System.currentTimeMillis();
+        while (System.currentTimeMillis() - startTime < waitTime) {
+            final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            final String cmd = "ls";
+            try {
+                getIDevice().executeShellCommand(cmd, receiver, MAX_OP_TIME);
+                String output = receiver.getOutput();
+                if (output.contains("system")) {
+                    return true;
+                }
+            } catch (IOException e) {
+                CLog.i("%s failed: %s", cmd, e.getMessage());
+            } catch (TimeoutException e) {
+                CLog.i("%s failed: timeout", cmd);
+            } catch (AdbCommandRejectedException e) {
+                CLog.i("%s failed: %s", cmd, e.getMessage());
+            } catch (ShellCommandUnresponsiveException e) {
+                CLog.i("%s failed: %s", cmd, e.getMessage());
+            }
+            getRunUtil().sleep(CHECK_POLL_TIME);
+        }
+        CLog.w("Device %s shell is unresponsive", getSerialNumber());
+        return false;
     }
 
     /**

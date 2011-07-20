@@ -49,6 +49,14 @@ public interface IDeviceStateMonitor {
     public IDevice waitForDeviceOnline();
 
     /**
+     * Waits for device to be responsive to a basic adb shell command.
+     *
+     * @param waitTime the time in ms to wait
+     * @return <code>true</code> if device becomes responsive before <var>waitTime</var> elapses.
+     */
+    public boolean waitForDeviceShell(final long waitTime);
+
+    /**
      * Waits for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait
