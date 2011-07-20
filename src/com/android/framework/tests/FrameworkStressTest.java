@@ -26,6 +26,7 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.brillopad.BugreportParser;
@@ -37,9 +38,9 @@ import com.android.tradefed.util.brillopad.section.syslog.JavaCrashParser;
 import com.android.tradefed.util.brillopad.section.syslog.NativeCrashParser;
 
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
 import junit.framework.Assert;
 
 /**
@@ -110,21 +111,25 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
         }
         // Fetch the last iteration count from the InstrumentationTestResult. We only expect to have
         // one test, and we take the result from the first test result.
-        Map<String, String> test_metrics = collectingListener.getCurrentRunResults().
-            getTestResults().entrySet().iterator().next().getValue().getMetrics();
-        if (test_metrics != null) {
-            CLog.d(test_metrics.toString());
-            // We want to report all test metrics as well.
-            for (String metric : test_metrics.keySet()) {
-                if (metric.equalsIgnoreCase(CURRENT_ITERATION_LABEL)) {
-                    String test_iterations = test_metrics.get(metric);
-                    numIterations = Integer.parseInt(test_iterations);
-                } else {
-                    stressTestMetrics.put(metric, test_metrics.get(metric));
+        Collection<TestResult> testResults =
+            collectingListener.getCurrentRunResults().getTestResults().values();
+        if (testResults != null && testResults.iterator().hasNext()) {
+            Map<String, String> testMetrics = testResults.iterator().next().getMetrics();
+            if (testMetrics != null) {
+                CLog.d(testMetrics.toString());
+                // We want to report all test metrics as well.
+                for (String metric : testMetrics.keySet()) {
+                    if (metric.equalsIgnoreCase(CURRENT_ITERATION_LABEL)) {
+                        String test_iterations = testMetrics.get(metric);
+                        numIterations = Integer.parseInt(test_iterations);
+                    } else {
+                        stressTestMetrics.put(metric, testMetrics.get(metric));
+                    }
                 }
             }
         }
-        // Calculate the number of succesful iterations.
+
+        // Calculate the number of successful iterations.
         numSuccessfulIterations = numIterations - numAnrs - numJavaCrashes - numNativeCrashes;
 
         // Report other metrics from bugreport.
