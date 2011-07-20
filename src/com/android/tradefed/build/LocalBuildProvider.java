@@ -30,7 +30,7 @@ import java.io.File;
 public class LocalBuildProvider implements IBuildProvider {
 
     private static final String IMAGE_FILE_OPTION_NAME = "device-image-file";
-    private static final String TEST_FILE_OPTION_NAME = "test-zip-file";
+    private static final String TEST_DIR_OPTION_NAME = "test-dir";
     private static final String DATA_FILE_OPTION_NAME = "user-data-file";
 
     @Option(name = "device-build-id", description = "the id of device build.")
@@ -46,8 +46,8 @@ public class LocalBuildProvider implements IBuildProvider {
             importance = Importance.IF_UNSET)
     private File mDeviceImageFile = null;
 
-    @Option(name = TEST_FILE_OPTION_NAME, description = "the test zip file to use.")
-    private File mTestsZipFile = null;
+    @Option(name = TEST_DIR_OPTION_NAME, description = "the dir containing the unziped test files.")
+    private File mTestsDir = null;
 
     @Option(name = DATA_FILE_OPTION_NAME, description = "the user data file to use.")
     private File mUserDataFile = null;
@@ -69,18 +69,18 @@ public class LocalBuildProvider implements IBuildProvider {
         DeviceBuildInfo buildInfo = null;
 
         if (mBuildId != null && mTestTarget != null && mBuildName != null) {
-           buildInfo = new DeviceBuildInfo(mBuildId, mTestTarget, mBuildName);
+            buildInfo = new DeviceBuildInfo(mBuildId, mTestTarget, mBuildName);
         } else {
             buildInfo = new DeviceBuildInfo();
         }
 
         try {
             buildInfo.setDeviceImageFile(mDeviceImageFile);
-            if (mTestsZipFile != null) {
-                buildInfo.setTestsZipFile(mTestsZipFile);
+            if (mTestsDir != null) {
+                buildInfo.setTestsDir(mTestsDir);
             } else {
-                CLog.d("Null Test Zip File, if you want to pass a test zip file, use --%s",
-                        TEST_FILE_OPTION_NAME);
+                CLog.d("Null Test Dir, if you want to pass a test dir, use --%s",
+                        TEST_DIR_OPTION_NAME);
             }
             if (mUserDataFile != null) {
                 buildInfo.setUserDataImageFile(mUserDataFile);
