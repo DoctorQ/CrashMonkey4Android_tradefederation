@@ -35,6 +35,7 @@ import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
 
 import java.io.File;
 import java.io.IOException;
@@ -166,6 +167,60 @@ public class TestDeviceTest extends TestCase {
         mNoFastbootTestDevice.setCommandTimeout(100);
         mNoFastbootTestDevice.setLogStartDelay(-1);
 
+    }
+
+    /**
+     * Test {@link TestDevice#enableAdbRoot()} when adb is already root
+     */
+    public void testEnableAdbRoot_alreadyRoot() throws Exception {
+        injectShellResponse("id", "uid=0(root) gid=0(root)");
+        EasyMock.replay(mMockIDevice);
+        assertTrue(mTestDevice.enableAdbRoot());
+    }
+
+    /**
+     * Test {@link TestDevice#enableAdbRoot()} when adb is not root
+     */
+    public void testEnableAdbRoot_notRoot() throws Exception {
+        injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        CommandResult adbResult = new CommandResult();
+        adbResult.setStatus(CommandStatus.SUCCESS);
+        adbResult.setStdout("restarting adbd as root");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
+                        EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("root"))).andReturn(
+                adbResult);
+        EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
+                mMockIDevice);
+        EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
+        assertTrue(mTestDevice.enableAdbRoot());
+    }
+
+    /**
+     * Test that {@link TestDevice#enableAdbRoot()} reattempts adb root on unexpected output
+     */
+    public void testEnableAdbRoot_rootRetry() throws Exception {
+        injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        CommandResult adbBadResult = new CommandResult(CommandStatus.SUCCESS);
+        adbBadResult.setStdout("");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
+                        EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("root"))).andReturn(
+                adbBadResult);
+        CommandResult adbResult = new CommandResult(CommandStatus.SUCCESS);
+        adbResult.setStdout("restarting adbd as root");
+        EasyMock.expect(
+                mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
+                        EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("root"))).andReturn(
+                adbResult);
+        EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
+                mMockIDevice);
+        EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
+        assertTrue(mTestDevice.enableAdbRoot());
     }
 
     /**
@@ -807,6 +862,31 @@ public class TestDeviceTest extends TestCase {
         replayMocks();
         assertEquals("ip:5555", mTestDevice.switchToAdbTcp());
         verifyMocks();
+    }
+
+    /**
+     * Helper method to build a response to a executeShellCommand call
+     *
+     * @param expectedCommand the shell command to expect
+     * @param response the response to simulate
+     */
+    @SuppressWarnings("unchecked")
+    private void injectShellResponse(final String expectedCommand, final String response)
+            throws Exception {
+        IAnswer shellAnswer = new IAnswer() {
+            @Override
+            public Object answer() throws Throwable {
+                IShellOutputReceiver receiver =
+                    (IShellOutputReceiver)EasyMock.getCurrentArguments()[1];
+                byte[] inputData = response.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+                return null;
+            }
+        };
+        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCommand),
+                (IShellOutputReceiver)EasyMock.anyObject(),
+                EasyMock.anyInt());
+        EasyMock.expectLastCall().andAnswer(shellAnswer);
     }
 
     /**
