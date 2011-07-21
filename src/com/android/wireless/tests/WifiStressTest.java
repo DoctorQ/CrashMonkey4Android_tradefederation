@@ -212,7 +212,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             listener.testLog(String.format("result-%s.txt", test.mTestName), LogDataType.TEXT,
                     outputSource);
 
-            // Parse the results file and report results to dash board
+            // Parse the results file and post results to test listener
             parseOutputFile(test, resFile, listener);
         } catch (IOException e) {
             CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
