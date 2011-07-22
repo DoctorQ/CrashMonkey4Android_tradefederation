@@ -28,6 +28,7 @@ import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
@@ -474,12 +475,12 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
                         mPackageName, mDevice.getSerialNumber()));
                 communicationFailure = true;
             } else if (runResults.isRunFailure()) {
-                // not a communication failure, but run still failed. Still retry in case its a
-                // transient error
-                Log.w(LOG_TAG, String.format(
-                        "Run failure %s when collecting tests to run for %s on device %s.",
+                // not a communication failure, but run still failed.
+                // TODO: should retry be attempted
+                CLog.w("Run failure %s when collecting tests to run for %s on device %s.",
                         runResults.getRunFailureMessage(), mPackageName,
-                        mDevice.getSerialNumber()));
+                        mDevice.getSerialNumber());
+                return null;
             } else {
                 // success!
                 return runResults.getTests();
