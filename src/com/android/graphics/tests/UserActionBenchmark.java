@@ -18,6 +18,7 @@ package com.android.graphics.tests;
 
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.NullOutputReceiver;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
@@ -60,6 +61,9 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
 
     private final String mOutputPath = "avgFrameRateOut.txt";
 
+    /** The time in ms to wait the scripted monkey finish */
+    private int mCmdTimeout = 10 * 60 * 1000;
+
     private static String[] mTestCases =
         {"contacts", "gmail", "launcher", "liveWallpaper", "home",
          "launchAllApps", "browserzoom", "browserscroll", "browserfling"};
@@ -86,7 +90,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
             // Start the scripted monkey command
             mTestDevice.executeShellCommand(String.format(
                 "monkey -f /%s/%s.txt --throttle %d %d", scriptFullPath,
-                testCase, mThrottle, mIteration));
+                testCase, mThrottle, mIteration), new NullOutputReceiver(), mCmdTimeout, 2);
             logOutputFiles(listener);
             cleanResultFile();
         }
