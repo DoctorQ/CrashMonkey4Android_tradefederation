@@ -287,7 +287,7 @@ public class RunUtil implements IRunUtil {
         @Override
         public boolean run() throws Exception {
             final String fullCmd = Arrays.toString(mCommand);
-            Log.v(LOG_TAG, String.format("Running %s", fullCmd));
+            Log.d(LOG_TAG, String.format("Running %s", fullCmd));
             mProcess = mProcessBuilder.command(mCommand).start();
             if (mInput != null) {
                 BufferedOutputStream processStdin = new BufferedOutputStream(
@@ -297,8 +297,14 @@ public class RunUtil implements IRunUtil {
                 processStdin.close();
             }
             int rc = mProcess.waitFor();
-            mCommandResult.setStdout(StreamUtil.getStringFromStream(mProcess.getInputStream()));
-            mCommandResult.setStderr(StreamUtil.getStringFromStream(mProcess.getErrorStream()));
+            synchronized (this) {
+                if (mProcess != null) {
+                    mCommandResult.setStdout(StreamUtil.getStringFromStream(
+                            mProcess.getInputStream()));
+                    mCommandResult.setStderr(StreamUtil.getStringFromStream(
+                            mProcess.getErrorStream()));
+                }
+            }
 
             if (rc == 0) {
                 return true;
@@ -311,8 +317,10 @@ public class RunUtil implements IRunUtil {
         @Override
         public void cancel() {
             if (mProcess != null) {
-                mProcess.destroy();
-                mProcess = null;
+                synchronized (this) {
+                    mProcess.destroy();
+                    mProcess = null;
+                }
             }
         }
     };
