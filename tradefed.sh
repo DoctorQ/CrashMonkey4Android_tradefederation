@@ -41,6 +41,14 @@ if [ "${JAVA_VERSION}" == "" ]; then
     exit
 fi
 
+# check debug flag and set up remote debugging
+if [ -n "${TF_DEBUG}" ]; then
+  if [ -z "${TF_DEBUG_PORT}" ]; then
+    TF_DEBUG_PORT=10088
+  fi
+  RDBG_FLAG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${TF_DEBUG_PORT}
+fi
+
 # check if in Android build env
 if [ ! -z ${ANDROID_BUILD_TOP} ]; then
     HOST=`uname`
@@ -65,4 +73,5 @@ else
     tf_path=$TF_ROOT_PATH/\*
 fi;
 
-java -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"
+java $RDBG_FLAG \
+  -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"

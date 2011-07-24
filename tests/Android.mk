@@ -21,6 +21,8 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_JAVA_RESOURCE_DIRS := res
 
+LOCAL_JAVACFLAGS := -g
+
 LOCAL_MODULE := tradefed-tests
 LOCAL_MODULE_TAGS := optional
 LOCAL_STATIC_JAVA_LIBRARIES := easymock

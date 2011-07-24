@@ -21,6 +21,8 @@ LOCAL_SRC_FILES := $(call all-java-files-under, src)
 
 LOCAL_JAVA_RESOURCE_DIRS := res
 
+LOCAL_JAVACFLAGS := -g
+
 LOCAL_MODULE := tradefed
 
 LOCAL_MODULE_TAGS := optional
