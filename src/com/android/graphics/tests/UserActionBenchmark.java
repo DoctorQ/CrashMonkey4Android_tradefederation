@@ -62,7 +62,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
     private final String mOutputPath = "avgFrameRateOut.txt";
 
     /** The time in ms to wait the scripted monkey finish */
-    private int mCmdTimeout = 10 * 60 * 1000;
+    private int mCmdTimeout = 60 * 60 * 1000;
 
     private static String[] mTestCases =
         {"contacts", "gmail", "launcher", "liveWallpaper", "home",
