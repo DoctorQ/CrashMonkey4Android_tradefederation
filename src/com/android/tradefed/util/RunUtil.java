@@ -136,17 +136,15 @@ public class RunUtil implements IRunUtil {
     public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable,
             boolean logErrors) {
         RunnableNotifier runThread = new RunnableNotifier(runnable, logErrors);
-        synchronized (runThread) {
-            runThread.start();
-            try {
-                runThread.wait(timeout);
-            } catch (InterruptedException e) {
-                CLog.i("runnable interrupted");
-            }
-            if (runThread.getStatus() == CommandStatus.TIMED_OUT ||
-                    runThread.getStatus() == CommandStatus.EXCEPTION) {
-                runThread.interrupt();
-            }
+        runThread.start();
+        try {
+            runThread.join(timeout);
+        } catch (InterruptedException e) {
+            CLog.i("runnable interrupted");
+        }
+        if (runThread.getStatus() == CommandStatus.TIMED_OUT
+                || runThread.getStatus() == CommandStatus.EXCEPTION) {
+            runThread.interrupt();
         }
         return runThread.getStatus();
     }
@@ -257,7 +255,6 @@ public class RunUtil implements IRunUtil {
             }
             synchronized (this) {
                 mStatus = status;
-                notify();
             }
         }
 
