@@ -157,8 +157,28 @@ public class FastbootDeviceFlasherTest extends TestCase {
 
         ITestsZipInstaller mockZipInstaller = EasyMock.createMock(ITestsZipInstaller.class);
         mFlasher.setTestsZipInstaller(mockZipInstaller);
-        //expect
+        // expect
         mockZipInstaller.pushTestsZipOntoData(EasyMock.eq(mMockDevice), EasyMock.eq(mMockBuildInfo));
+        // expect
+        mMockDevice.rebootIntoBootloader();
+
+        EasyMock.replay(mMockDevice, mockZipInstaller);
+        mFlasher.flashUserData(mMockDevice, mMockBuildInfo);
+        EasyMock.verify(mMockDevice, mockZipInstaller);
+    }
+
+    /**
+     * Test doing a user data with with rm
+     *
+     * @throws TargetSetupError
+     */
+    public void testFlashUserData_wipeRm() throws DeviceNotAvailableException, TargetSetupError {
+        mFlasher.setUserDataFlashOption(UserDataFlashOption.WIPE_RM);
+
+        ITestsZipInstaller mockZipInstaller = EasyMock.createMock(ITestsZipInstaller.class);
+        mFlasher.setTestsZipInstaller(mockZipInstaller);
+        // expect
+        mockZipInstaller.deleteData(EasyMock.eq(mMockDevice));
         // expect
         mMockDevice.rebootIntoBootloader();
 

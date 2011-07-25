@@ -22,10 +22,13 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.zip.ZipFile;
 
 /**
  * A class that relies on fastboot to flash an image on physical Android hardware.
@@ -362,6 +365,12 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
 
             case TESTS_ZIP:
                 getTestsZipInstaller().pushTestsZipOntoData(device, deviceBuild);
+                // Reboot into bootloader to continue the flashing process
+                device.rebootIntoBootloader();
+                break;
+
+            case WIPE_RM:
+                getTestsZipInstaller().deleteData(device);
                 // Reboot into bootloader to continue the flashing process
                 device.rebootIntoBootloader();
                 break;

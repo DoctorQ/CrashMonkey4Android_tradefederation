@@ -39,4 +39,22 @@ public interface ITestsZipInstaller {
     public void pushTestsZipOntoData(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError;
 
+    /**
+     * Sets the list of paths under {@code /data} to avoid clearing.
+     * <p />
+     * Note that the granularity of the skip list is direct children of {@code /data}.
+     *
+     * @see #deleteData
+     */
+    public void setDataWipeSkipList(String... skipList);
+
+    /**
+     * Removes all of the files/directories from {@code /data} on the specified device, with the
+     * exception of those excluded by the skip list.
+     *
+     * @param device The {@link ITestDevice} to act on
+     * @see #setDataWipeSkipList
+     */
+    public void deleteData(ITestDevice device) throws DeviceNotAvailableException, TargetSetupError;
+
 }
