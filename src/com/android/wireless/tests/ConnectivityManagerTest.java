@@ -61,6 +61,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mSsid);
+        Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
 
         // Add bugreport listener for bugreport after each test case fails
         BugreportCollector bugListener = new

@@ -141,7 +141,7 @@ public class RadioHelper {
 
         int retries = 3;
         for (int i = 0; i < retries; i++ ) {
-            device.executeAdbCommand("radiooptions 8 *22899");
+            device.executeShellCommand("radiooptions 8 *22899");
             try {
                 Thread.sleep(5*60*1000); // wait for 5 minutes
             } catch (Exception e) {

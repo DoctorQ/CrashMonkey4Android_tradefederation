@@ -163,6 +163,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener standardListener)
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+        Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
+
         setupTests();
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -202,9 +204,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
 
         try {
             resFile = mTestDevice.pullFileFromExternal(mOutputFile);
-            if (resFile == null) {
-                throw new TestResultNotAvailableException();
-            }
+            Assert.assertNotNull("no output file, test failed.", resFile);
             // Save a copy of the output file
             CLog.d("Sending %d byte file %s into the logosphere!",
                     resFile.length(), resFile);
@@ -215,11 +215,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             // Parse the results file and post results to test listener
             parseOutputFile(test, resFile, listener);
         } catch (IOException e) {
-            CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
-        } catch (TestResultNotAvailableException e) {
-            CLog.e("No test result is available, test failed?");
-        }
-        finally {
+            CLog.e("IOException while reading output file: %s", mOutputFile);
+        } finally {
             if (resFile != null) {
                 resFile.delete();
             }
