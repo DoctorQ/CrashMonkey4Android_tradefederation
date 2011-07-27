@@ -93,6 +93,8 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();
+        // only want logcat captured for current build, delete any accumulated log data
+        device.clearLogcat();
         waitForBootComplete(device, buildInfo.getBuildId());
         device.waitForDeviceAvailable();
     }

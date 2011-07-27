@@ -97,6 +97,7 @@ public class DeviceFlashPreparerTest extends TestCase {
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
+        mMockDevice.clearLogcat();
         // expect shell command to test if boot is complete
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).andReturn(
                 "1");
@@ -122,6 +123,7 @@ public class DeviceFlashPreparerTest extends TestCase {
     public void testSetup_buildError() throws Exception {
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
+        mMockDevice.clearLogcat();
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
                 andReturn("").anyTimes();

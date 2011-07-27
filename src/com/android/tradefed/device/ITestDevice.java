@@ -381,6 +381,14 @@ public interface ITestDevice {
     public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException;
 
     /**
+     * Deletes any accumulated logcat data.
+     * <p/>
+     * This is useful for cases when you want to ensure {@link ITestDevice#getLogcat()} only returns
+     * log data produced after a certain point (such as after flashing a new device build, etc).
+     */
+    public void clearLogcat();
+
+    /**
      * Grabs a snapshot stream of the logcat data.
      */
     public InputStreamSource getLogcat();

@@ -1177,6 +1177,16 @@ class TestDevice implements IManagedTestDevice {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public void clearLogcat() {
+        if (mLogcatReceiver != null) {
+            mLogcatReceiver.clear();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
      * <p/>
      * Works in two modes:
      * <li>If the logcat is currently being captured in the background (i.e. the manager of this
@@ -1230,10 +1240,8 @@ class TestDevice implements IManagedTestDevice {
      */
     public void stopLogcat() {
         if (mLogcatReceiver != null) {
-            synchronized(mLogcatReceiver) {
-                mLogcatReceiver.cancel();
-                mLogcatReceiver = null;
-            }
+            mLogcatReceiver.cancel();
+            mLogcatReceiver = null;
         } else {
             Log.w(LOG_TAG, String.format("Attempting to stop logcat when not capturing for %s",
                     getSerialNumber()));
@@ -1291,6 +1299,7 @@ class TestDevice implements IManagedTestDevice {
         /**
          * {@inheritDoc}
          */
+        @Override
         public synchronized void addOutput(byte[] data, int offset, int length) {
             if (mIsCancelled || mOutStream == null) {
                 return;
@@ -1340,6 +1349,7 @@ class TestDevice implements IManagedTestDevice {
         /**
          * {@inheritDoc}
          */
+        @Override
         public synchronized void flush() {
             if (mOutStream == null) {
                 return;
@@ -1352,15 +1362,38 @@ class TestDevice implements IManagedTestDevice {
             }
         }
 
-        public synchronized void cancel() {
-            mIsCancelled = true;
-            interrupt();
+        /**
+         * Delete currently accumulated logcat data, and then re-create a new log file.
+         */
+        public synchronized void clear() {
+            delete();
+
+            try {
+                createTmpFile();
+            }  catch (IOException e) {
+                CLog.w("failed to create logcat file for %s.",
+                        getSerialNumber());
+            }
+        }
+
+        /**
+         * Delete all accumulated logcat data.
+         */
+        private void delete() {
+            flush();
             closeLogStream();
 
             FileUtil.deleteFile(mTmpFile);
             mTmpFile = null;
             FileUtil.deleteFile(mPreviousTmpFile);
             mPreviousTmpFile = null;
+            mTmpBytesStored = 0;
+        }
+
+        public synchronized void cancel() {
+            mIsCancelled = true;
+            interrupt();
+            delete();
         }
 
         /**
