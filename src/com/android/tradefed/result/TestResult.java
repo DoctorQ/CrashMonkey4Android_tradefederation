@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.google.common.base.Objects;
 
 import java.util.Map;
 
@@ -42,7 +43,7 @@ public class TestResult {
     private long mStartTime = 0;
     private long mEndTime = 0;
 
-    TestResult() {
+    public TestResult() {
         mStatus = TestStatus.INCOMPLETE;
         mStartTime = System.currentTimeMillis();
     }
@@ -112,4 +113,33 @@ public class TestResult {
     void setEndTime(long currentTimeMillis) {
         mEndTime = currentTimeMillis;
     }
+    
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mMetrics, mStackTrace, mStatus);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TestResult other = (TestResult) obj;
+        return Objects.equal(mMetrics, other.mMetrics) &&
+                Objects.equal(mStackTrace, other.mStackTrace) &&
+                Objects.equal(mStatus, other.mStatus);
+    }
+
 }

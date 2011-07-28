@@ -17,6 +17,7 @@ package com.android.tradefed.build;
 
 import com.android.tradefed.util.MultiMap;
 import com.android.tradefed.util.UniqueMultiMap;
+import com.google.common.base.Objects;
 
 import java.util.Map;
 
@@ -28,7 +29,8 @@ public class BuildInfo implements IBuildInfo {
     private String mBuildInfo = "0";
     private String mTestTag = "stub";
     private String mBuildTargetName = "stub";
-    private UniqueMultiMap<String, String> mBuildAttributes = new UniqueMultiMap<String, String>();
+    private final UniqueMultiMap<String, String> mBuildAttributes =
+            new UniqueMultiMap<String, String>();
     private String mBuildFlavor = null;
     private String mBuildBranch = null;
 
@@ -96,6 +98,7 @@ public class BuildInfo implements IBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addBuildAttribute(String attributeName, String attributeValue) {
         mBuildAttributes.put(attributeName, attributeValue);
     }
@@ -161,5 +164,37 @@ public class BuildInfo implements IBuildInfo {
     @Override
     public void setBuildBranch(String branch) {
         mBuildBranch = branch;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(mBuildAttributes, mBuildBranch, mBuildFlavor, mBuildInfo,
+                mBuildTargetName, mTestTag);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        BuildInfo other = (BuildInfo) obj;
+        return Objects.equal(mBuildAttributes, other.mBuildAttributes) &&
+                Objects.equal(mBuildBranch, other.mBuildBranch) &&
+                Objects.equal(mBuildFlavor, other.mBuildFlavor) &&
+                Objects.equal(mBuildInfo, other.mBuildInfo) &&
+                Objects.equal(mBuildTargetName, other.mBuildTargetName) &&
+                Objects.equal(mTestTag, other.mTestTag);
     }
 }

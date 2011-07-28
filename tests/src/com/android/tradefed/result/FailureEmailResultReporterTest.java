@@ -30,15 +30,15 @@ import junit.framework.TestCase;
 /**
  * Unit tests for {@link EmailResultReporter}.
  */
-public class EmailResultReporterTest extends TestCase {
+public class FailureEmailResultReporterTest extends TestCase {
     private IEmail mMockMailer;
-    private EmailResultReporter mEmailReporter;
+    private FailureEmailResultReporter mEmailReporter;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mMockMailer = EasyMock.createMock(IEmail.class);
-        mEmailReporter = new EmailResultReporter(mMockMailer);
+        mEmailReporter = new FailureEmailResultReporter(mMockMailer);
     }
 
     /**

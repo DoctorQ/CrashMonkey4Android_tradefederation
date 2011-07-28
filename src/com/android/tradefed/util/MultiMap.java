@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.util;
 
+import com.google.common.base.Objects;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -26,7 +28,7 @@ import java.util.Set;
  */
 public class MultiMap<K, V> {
 
-    private Map<K, List<V>> mInternalMap;
+    private final Map<K, List<V>> mInternalMap;
 
     public MultiMap() {
         mInternalMap = new HashMap<K, List<V>>();
@@ -185,5 +187,31 @@ public class MultiMap<K, V> {
             uniqueMap.put(proposedKey, value);
             return proposedKey;
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int hashCode() {
+        return mInternalMap.hashCode();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        MultiMap<?, ?> other = (MultiMap<?, ?>) obj;
+        return Objects.equal(mInternalMap, other.mInternalMap);
     }
 }

@@ -36,10 +36,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A simple result reporter that sends emails for test results.
+ * A simple result reporter base class that sends emails for test results.<br>
+ * Subclasses should determine whether an email needs to be sent, and can
+ * override other behavior.
  */
 @OptionClass(alias = "email")
-public class EmailResultReporter extends CollectingTestListener implements ITestSummaryListener {
+public class EmailResultReporter extends CollectingTestListener implements
+        ITestSummaryListener {
     private static final String LOG_TAG = "EmailResultReporter";
     private static final String DEFAULT_SUBJECT_TAG = "Tradefed";
 
@@ -55,17 +58,9 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
             description = "The tag to be added to the beginning of the email subject.")
     private String mSubjectTag = DEFAULT_SUBJECT_TAG;
 
-    @Option(name = "send-only-on-failure",
-            description = "Flag for sending email only on test failure.")
-    private boolean mSendOnlyOnTestFailure = false;
-
-    @Option(name = "send-only-on-inv-failure",
-            description = "Flag for sending email only on invocation failure.")
-    private boolean mSendOnlyOnInvFailure = false;
-
     private List<TestSummary> mSummaries = null;
     private Throwable mInvocationThrowable = null;
-    private final IEmail mMailer;
+    private IEmail mMailer;
 
     /**
      * Create a {@link EmailResultReporter}
@@ -81,7 +76,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      *
      * @param mailer the {@link IEmail} instance to use.
      */
-    EmailResultReporter(IEmail mailer) {
+    protected EmailResultReporter(IEmail mailer) {
         mMailer = mailer;
     }
 
@@ -90,16 +85,10 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      *
      * @param dest
      */
-    void addDestination(String dest) {
+    public void addDestination(String dest) {
         mDestinations.add(dest);
     }
 
-    /**
-     * Sets the send-only-on-inv-failure flag
-     */
-    void setSendOnlyOnInvocationFailure(boolean send) {
-        mSendOnlyOnInvFailure = send;
-    }
 
     /**
      * {@inheritDoc}
@@ -117,24 +106,15 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      * @return {@code true} if a notification email should be sent, {@code false} if not
      */
     protected boolean shouldSendMessage() {
-        if (mSendOnlyOnTestFailure) {
-            if (!hasFailedTests()) {
-                Log.v(LOG_TAG, "Not sending email because there are no failures to report.");
-                return false;
-            }
-        } else if (mSendOnlyOnInvFailure && getInvocationStatus().equals(
-                InvocationStatus.SUCCESS)) {
-            Log.v(LOG_TAG, "Not sending email because invocation succeeded.");
-            return false;
-        }
         return true;
     }
 
     /**
-     * A method to generate the subject for email reports.  Will not be called if
-     * {@link shouldSendMessage()} returns {@code false}.
+     * A method to generate the subject for email reports. Will not be called if
+     * {@link #shouldSendMessage()} returns {@code false}.
      *
-     * @return A {@link String} containing the subject to use for an email report
+     * @return A {@link String} containing the subject to use for an email
+     *         report
      */
     protected String generateEmailSubject() {
         return String.format("%s result for %s on build %s: %s", mSubjectTag,

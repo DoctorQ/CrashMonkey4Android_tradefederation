@@ -18,20 +18,20 @@ package com.android.media.tests;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.result.EmailResultReporter;
+import com.android.tradefed.result.FailureEmailResultReporter;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;
 
-import java.io.Reader;
-import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.List;
 
 /**
  * Media reporter that send the test summary through email.
  */
-public class MediaResultReporter extends EmailResultReporter {
+public class MediaResultReporter extends FailureEmailResultReporter {
 
     private static final String LOG_TAG = "MediaResultReporter";
 
@@ -39,7 +39,7 @@ public class MediaResultReporter extends EmailResultReporter {
     private String mSummaryUrl = "";
 
     @Option(name = "log-name", description = "Name of the report that attach to email")
-    private String mLogName = null;
+    private final String mLogName = null;
 
     public MediaResultReporter() {
         mEmailBodyBuilder = new StringBuilder();
@@ -80,8 +80,9 @@ public class MediaResultReporter extends EmailResultReporter {
                 Reader r = new InputStreamReader(dataStream.createInputStream());
                 while (true) {
                     int n = r.read(buf);
-                    if (n < 0)
-                      break;
+                    if (n < 0) {
+                        break;
+                    }
                     mEmailBodyBuilder.append(buf, 0, n);
                   }
                 mEmailBodyBuilder.append('\n');
@@ -90,4 +91,4 @@ public class MediaResultReporter extends EmailResultReporter {
             Log.w(LOG_TAG, String.format("Exception while parsing %s: %s", dataName, e));
         }
     }
- }
+}

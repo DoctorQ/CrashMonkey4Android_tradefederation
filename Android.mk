@@ -26,7 +26,7 @@ LOCAL_JAVACFLAGS := -g
 LOCAL_MODULE := tradefed
 
 LOCAL_MODULE_TAGS := optional
-LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0
+LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0 guavalib
 LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt
 
 include $(BUILD_HOST_JAVA_LIBRARY)
