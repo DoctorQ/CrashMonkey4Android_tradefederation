@@ -94,8 +94,8 @@ class TestDevice implements IManagedTestDevice {
 
     /** The password for encrypting and decrypting the device. */
     private static final String ENCRYPTION_PASSWORD = "android";
-    /** Encrypting with inplace can take up to 90 minutes. */
-    private static final int ENCRYPTION_INPLACE_TIMEOUT = 90 * 60 * 1000;
+    /** Encrypting with inplace can take up to 2 hours. */
+    private static final int ENCRYPTION_INPLACE_TIMEOUT = 2 * 60 * 60 * 1000;
     /** Encrypting with wipe can take up to 5 minutes. */
     private static final int ENCRYPTION_WIPE_TIMEOUT = 5 * 60 * 1000;
     /** Beginning of the string returned by vdc for "vdc enablecrypto". */
