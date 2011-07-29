@@ -203,9 +203,9 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      */
     @Override
     public IBuildInfo clone() {
-        DeviceFolderBuildInfo copy = new DeviceFolderBuildInfo(getBuildId(), getTestTarget(),
-                getBuildName());
-        copy.addAllBuildAttributes(getAttributesMultiMap());
+        DeviceFolderBuildInfo copy = new DeviceFolderBuildInfo(getBuildId(), getTestTag(),
+                getBuildTargetName());
+        copy.addAllBuildAttributes(this);
         IDeviceBuildInfo deviceBuildClone = (IDeviceBuildInfo)mDeviceBuild.clone();
         copy.setDeviceBuild(deviceBuildClone);
         IFolderBuildInfo folderBuildClone = (IFolderBuildInfo)mFolderBuild.clone();
