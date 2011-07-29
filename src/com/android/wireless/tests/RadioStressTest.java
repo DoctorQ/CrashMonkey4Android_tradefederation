@@ -122,7 +122,6 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
 
     private boolean verifyVoiceConnection(ITestInvocationListener listener)
         throws DeviceNotAvailableException {
-        boolean res = false;
         CLog.d("Verify voice connection");
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TelephonyTest.TEST_PACKAGE_NAME,

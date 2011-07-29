@@ -15,19 +15,17 @@
  */
 package com.android.wireless.tests;
 
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.BufferedReader;
 import java.io.File;
