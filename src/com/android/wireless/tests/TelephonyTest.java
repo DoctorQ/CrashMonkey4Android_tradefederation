@@ -52,9 +52,9 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
     private int[] callStatus = new int[5];
 
     // Define instrumentation test package and runner.
-    public static final String TEST_PACKAGE_NAME = "com.android.phonetests";
-    public static final String TEST_RUNNER_NAME = ".PhoneInstrumentationStressTestRunner";
-    public static final String TEST_CLASS_NAME =
+    private static final String TEST_PACKAGE_NAME = "com.android.phonetests";
+    private static final String TEST_RUNNER_NAME = ".PhoneInstrumentationStressTestRunner";
+    private static final String TEST_CLASS_NAME =
         "com.android.phonetests.stress.telephony.TelephonyStress";
     public static final String TEST_METHOD = "testRadioOnOutgoingCalls";
 
@@ -132,15 +132,13 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
         int calls = 0;
         resFile = mTestDevice.pullFile(mOutputFile);
         try {
-            if (resFile == null) {
-                throw new TestResultNotAvailableException("No output file");
-            }
+            Assert.assertNotNull("no output file", resFile);
             BufferedReader br= new BufferedReader(new FileReader(resFile));
             String line = br.readLine();
 
             // The output file should only include one line
             if (line == null) {
-                throw new TestResultNotAvailableException("No test results");
+                return 0;
             }
 
             // Get number of calls and failure reason;
@@ -150,8 +148,6 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
             callStatus[reason]++;
         } catch (IOException e) {
             CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
-        } catch (TestResultNotAvailableException e) {
-            CLog.e("No test result is available, test failed?, msg: " + e.getMessage());
         }
 
         if (resFile != null) {

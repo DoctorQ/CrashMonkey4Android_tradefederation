@@ -30,7 +30,6 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.wireless.tests.TestResultNotAvailableException;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -127,9 +126,7 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
 
             try {
                 resFile = mTestDevice.pullFileFromExternal(outputFileName);
-                if (resFile == null) {
-                    throw new TestResultNotAvailableException();
-                }
+                Assert.assertNotNull("no test results, test failed?", resFile);
                 // Save a copy of the output file
                 CLog.d("Sending %d byte file %s into the logosphere!",
                         resFile.length(), resFile);
@@ -140,11 +137,8 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
                 // Parse the results file and report results to dash board
                 parseOutputFile(resFile, testName, testResults, i, listener);
             } catch (IOException e) {
-                CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
-            } catch (TestResultNotAvailableException e) {
-                CLog.e("No test result is available, test failed?");
-            }
-            finally {
+                CLog.e("IOException while reading outputfile %s", outputFileName);
+            } finally {
                 if (resFile != null) {
                     resFile.delete();
                 }
