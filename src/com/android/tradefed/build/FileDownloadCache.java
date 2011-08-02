@@ -113,6 +113,11 @@ public class FileDownloadCache {
             // now insert them into the map
             for (FilePair cacheEntry : cacheEntryList) {
                 mCacheMap.put(cacheEntry.mRelPath, cacheEntry.mFile);
+                mCurrentCacheSize += cacheEntry.mFile.length();
+            }
+            // this would be an unusual situation, but check if current cache is already too big
+            if (mCurrentCacheSize > getMaxFileCacheSize()) {
+                incrementAndAdjustCache(0);
             }
         }
     }
@@ -272,7 +277,7 @@ public class FileDownloadCache {
             Iterator<Map.Entry<String, File>> mapIterator = mCacheMap.entrySet().iterator();
             // map cannot be modified while iterating, so store entries to be deleted in another list
             Collection<String> keysToDelete = new LinkedList<String>();
-            while (mCurrentCacheSize > mMaxFileCacheSize && mapIterator.hasNext()) {
+            while (mCurrentCacheSize > getMaxFileCacheSize() && mapIterator.hasNext()) {
                 Map.Entry<String, File> currentEntry = mapIterator.next();
                 keysToDelete.add(currentEntry.getKey());
                 mCurrentCacheSize -= currentEntry.getValue().length();
@@ -317,7 +322,7 @@ public class FileDownloadCache {
      * exposed for unit testing
      */
      void empty() {
-        long currentMax = mMaxFileCacheSize;
+        long currentMax = getMaxFileCacheSize();
         // reuse incrementAndAdjustCache to clear cache, by setting cache cap to 0
         setMaxCacheSize(0L);
         incrementAndAdjustCache(0);
@@ -342,5 +347,16 @@ public class FileDownloadCache {
         } finally {
             mCacheMapLock.unlock();
         }
+    }
+
+    /**
+     * Get the current max size of file cache.
+     * <p/>
+     * exposed for unit testing.
+     *
+     * @return the mMaxFileCacheSize
+     */
+    long getMaxFileCacheSize() {
+        return mMaxFileCacheSize;
     }
 }

@@ -140,4 +140,36 @@ public class FileDownloadCacheFuncTest extends TestCase {
             FileUtil.recursiveDelete(cacheRoot);
         }
     }
+
+    /**
+     * Test scenario where an already too large cache is built from disk contents.
+     */
+    public void testConstructor_cacheExceeded() throws Exception {
+        File cacheRoot = FileUtil.createTempDir("testConstructor_cacheExceeded");
+        try {
+            // create a couple existing files in cache
+            final String filecontents = "these are the file contents";
+            final File file1 = new File(cacheRoot, REMOTE_PATH);
+            FileUtil.writeToFile(filecontents, file1);
+            // sleep for a small amount to ensure file2 has later timestamp
+            // TODO: use mock File instead
+            Thread.sleep(1000);
+            final File file2 = new File(cacheRoot, "anotherpath");
+            FileUtil.writeToFile(filecontents, file2);
+
+            new FileDownloadCache(cacheRoot) {
+                @Override
+                long getMaxFileCacheSize() {
+                    return file2.length() + 1;
+                }
+            };
+            // expect cache to be cleaned on startup, with oldest file1 deleted, but newest file
+            // retained
+            assertFalse(file1.exists());
+            assertTrue(file2.exists());
+
+        } finally {
+            FileUtil.recursiveDelete(cacheRoot);
+        }
+    }
 }
