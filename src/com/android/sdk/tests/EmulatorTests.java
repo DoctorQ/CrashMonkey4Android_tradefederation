@@ -16,10 +16,7 @@
 
 package com.android.sdk.tests;
 
-import java.io.File;
-
-import junit.framework.Assert;
-
+import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
@@ -32,6 +29,10 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.FileUtil;
 
+import junit.framework.Assert;
+
+import java.io.File;
+
 /**
  * Runs all the emulator test applications
  */
@@ -40,7 +41,13 @@ public class EmulatorTests implements IRemoteTest, IBuildReceiver, IDeviceTest {
     private ITestDevice mDevice;
     private ISdkBuildInfo mSdkBuild;
     private static final String EMULATOR_TEST_FOLDER = "tests/emulator-test-apps";
-    private static final String EMULATOR_TEST_PACKAGE = "com.android.emulator.connectivity.test";
+    private static final String[] EMULATOR_TEST_PACKAGES = {
+        "com.android.emulator.connectivity.test","com.android.emulator.gps.test" };
+
+    // default gps location for the gps test
+    private static final double LONGITUDE = -122.08345770835876;
+    private static final double LATITUDE = 37.41991859119417;
+
     /**
      * {@inheritDoc}
      */
@@ -64,7 +71,7 @@ public class EmulatorTests implements IRemoteTest, IBuildReceiver, IDeviceTest {
         Assert.assertNotNull("missing sdk build to test", mSdkBuild);
         Assert.assertNotNull("missing sdk build to test", mSdkBuild.getSdkDir());
         Assert.assertNotNull("missing emulator", mDevice);
-        //Assert.assertTrue("device is not a emulator", mDevice.getIDevice().isEmulator());
+        Assert.assertTrue("device is not a emulator", mDevice.getIDevice().isEmulator());
 
         // wait for the device to become available for 1 minute
         mDevice.waitForDeviceAvailable( 60 * 1000 );
@@ -82,11 +89,15 @@ public class EmulatorTests implements IRemoteTest, IBuildReceiver, IDeviceTest {
                 mSdkBuild.getSdkTargets().length > 0);
 
         installTestApps(emulatorTestAppDir.listFiles(), listener);
-        runTestApps(EMULATOR_TEST_PACKAGE, listener);
+        setEmulatorPreTestState();
+        for (int i = 0; i < EMULATOR_TEST_PACKAGES.length; i++){
+            runTestApps(EMULATOR_TEST_PACKAGES[i], listener);
+        }
     }
 
     /**
      * Install the given list of apk's
+     *
      * @param testApps an array of apk files
      * @param listener test result listener
      * @throws DeviceNotAvailableException
@@ -104,6 +115,15 @@ public class EmulatorTests implements IRemoteTest, IBuildReceiver, IDeviceTest {
                 }
             }
         }
+    }
+
+    /**
+     * Set the emulator to the state that tests expect it in
+     */
+    private void setEmulatorPreTestState(){
+        // GPS location
+        EmulatorConsole console = EmulatorConsole.getConsole(mDevice.getIDevice());
+        console.sendLocation(LONGITUDE, LATITUDE, 0);
     }
 
     /**
