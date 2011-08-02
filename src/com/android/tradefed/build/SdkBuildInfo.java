@@ -112,8 +112,8 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
 
     @Override
     public IBuildInfo clone() {
-        SdkBuildInfo cloneBuild = new SdkBuildInfo(getBuildId(), getTestTarget(), getBuildName());
-        cloneBuild.addAllBuildAttributes(getAttributesMultiMap());
+        SdkBuildInfo cloneBuild = new SdkBuildInfo(getBuildId(), getTestTag(), getBuildTargetName());
+        cloneBuild.addAllBuildAttributes(this);
         try {
             File cloneAdtDir = null;
             if (getAdtDir() != null) {

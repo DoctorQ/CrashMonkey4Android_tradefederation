@@ -61,8 +61,8 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
 
     @Override
     public IBuildInfo clone() {
-        FolderBuildInfo copy = new FolderBuildInfo(getBuildId(), getTestTarget(), getBuildName());
-        copy.addAllBuildAttributes(getAttributesMultiMap());
+        FolderBuildInfo copy = new FolderBuildInfo(getBuildId(), getTestTag(), getBuildTargetName());
+        copy.addAllBuildAttributes(this);
         try {
             File copyDir = FileUtil.createTempDir("foldercopy");
             FileUtil.recursiveCopy(mRootDir, copyDir);

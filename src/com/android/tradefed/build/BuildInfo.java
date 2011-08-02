@@ -26,9 +26,11 @@ import java.util.Map;
 public class BuildInfo implements IBuildInfo {
 
     private int mBuildInfo = 0;
-    private String mTestTarget = "stub";
-    private String mBuildName = "stub";
+    private String mTestTag = "stub";
+    private String mBuildTargetName = "stub";
     private UniqueMultiMap<String, String> mBuildAttributes = new UniqueMultiMap<String, String>();
+    private String mBuildFlavor = null;
+    private String mBuildBranch = null;
 
     /**
      * Creates a {@link BuildInfo} using default attribute values.
@@ -40,29 +42,35 @@ public class BuildInfo implements IBuildInfo {
      * Creates a {@link BuildInfo}
      *
      * @param buildId the build id
-     * @param testTarget the test target name
-     * @param buildName the build name
+     * @param testTag the test tag name
+     * @param buildTargetName the build target name
      */
-    public BuildInfo(int buildId, String testTarget, String buildName) {
+    public BuildInfo(int buildId, String testTag, String buildTargetName) {
         mBuildInfo = buildId;
-        mTestTarget = testTarget;
-        mBuildName = buildName;
+        mTestTag = testTag;
+        mBuildTargetName = buildTargetName;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public int getBuildId() {
         return mBuildInfo;
     }
 
-    public String getTestTarget() {
-        return mTestTarget;
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getTestTag() {
+        return mTestTag;
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public Map<String, String> getBuildAttributes() {
         return mBuildAttributes.getUniqueMap();
     }
@@ -70,8 +78,9 @@ public class BuildInfo implements IBuildInfo {
     /**
      * {@inheritDoc}
      */
-    public String getBuildName() {
-        return mBuildName;
+    @Override
+    public String getBuildTargetName() {
+        return mBuildTargetName;
     }
 
     /**
@@ -81,8 +90,13 @@ public class BuildInfo implements IBuildInfo {
         mBuildAttributes.put(attributeName, attributeValue);
     }
 
-    protected void addAllBuildAttributes(MultiMap<String, String> attributes) {
-        mBuildAttributes.putAll(attributes);
+    /**
+     * Helper method to copy build attributes, branch, and flavor from other build.
+     */
+    protected void addAllBuildAttributes(BuildInfo build) {
+        mBuildAttributes.putAll(build.getAttributesMultiMap());
+        setBuildFlavor(build.getBuildFlavor());
+        setBuildBranch(build.getBuildBranch());
     }
 
     protected MultiMap<String, String> getAttributesMultiMap() {
@@ -97,10 +111,45 @@ public class BuildInfo implements IBuildInfo {
         // ignore
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IBuildInfo clone() {
-        BuildInfo copy = new BuildInfo(mBuildInfo, mTestTarget, mBuildName);
-        copy.addAllBuildAttributes(mBuildAttributes);
+        BuildInfo copy = new BuildInfo(mBuildInfo, mTestTag, mBuildTargetName);
+        copy.addAllBuildAttributes(this);
         return copy;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBuildFlavor() {
+        return mBuildFlavor ;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildFlavor(String buildFlavor) {
+        mBuildFlavor = buildFlavor;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBuildBranch() {
+        return mBuildBranch;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBuildBranch(String branch) {
+        mBuildBranch = branch;
     }
 }

@@ -245,7 +245,7 @@ public class TestInvocation implements ITestInvocation {
      */
     private void logStartInvocation(IBuildInfo info, ITestDevice device) {
         StringBuilder msg = new StringBuilder("Starting invocation for target ");
-        msg.append(info.getTestTarget());
+        msg.append(info.getTestTag());
         msg.append(" on build ");
         msg.append(info.getBuildId());
         for (String buildAttr : info.getBuildAttributes().values()) {
@@ -255,7 +255,7 @@ public class TestInvocation implements ITestInvocation {
         msg.append(" on device ");
         msg.append(device.getSerialNumber());
         Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg.toString());
-        mStatus = String.format("running %s on build %d", info.getTestTarget(), info.getBuildId());
+        mStatus = String.format("running %s on build %d", info.getTestTag(), info.getBuildId());
     }
 
     /**

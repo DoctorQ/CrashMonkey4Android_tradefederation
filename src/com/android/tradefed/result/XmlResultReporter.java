@@ -175,7 +175,7 @@ public class XmlResultReporter extends CollectingTestListener {
     void printTestResults(KXmlSerializer serializer, String timestamp, long elapsedTime)
             throws IOException {
         serializer.startTag(ns, TESTSUITE);
-        serializer.attribute(ns, ATTR_NAME, mBuildInfo.getTestTarget());
+        serializer.attribute(ns, ATTR_NAME, mBuildInfo.getTestTag());
         serializer.attribute(ns, ATTR_TESTS, Integer.toString(getNumTotalTests()));
         serializer.attribute(ns, ATTR_FAILURES, Integer.toString(getNumFailedTests()));
         serializer.attribute(ns, ATTR_ERRORS, Integer.toString(getNumErrorTests()));

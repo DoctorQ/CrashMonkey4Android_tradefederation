@@ -227,9 +227,9 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     @Override
     public IBuildInfo clone()  {
         try {
-            DeviceBuildInfo copy = new DeviceBuildInfo(getBuildId(), getTestTarget(),
-                    getBuildName());
-            copy.addAllBuildAttributes(getAttributesMultiMap());
+            DeviceBuildInfo copy = new DeviceBuildInfo(getBuildId(), getTestTag(),
+                    getBuildTargetName());
+            copy.addAllBuildAttributes(this);
             for (Map.Entry<String, ImageFile> fileEntry : mImageFileMap.entrySet()) {
                 File origImageFile = fileEntry.getValue().getImageFile();
                 File hardlinkFile;
