@@ -358,6 +358,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
                 flashPartition(device, deviceBuild.getUserDataImageFile(), "userdata");
                 break;
 
+            case FORCE_WIPE:  // intentional fallthrough
             case WIPE:
                 CLog.i("Wiping userdata %s", device.getSerialNumber());
                 erasePartition(device, "userdata");
