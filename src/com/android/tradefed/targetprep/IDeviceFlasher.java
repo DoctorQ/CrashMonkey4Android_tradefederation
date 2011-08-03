@@ -31,8 +31,10 @@ public interface IDeviceFlasher {
     public enum UserDataFlashOption {
         /** flash the given userdata image on device */
         FLASH,
-        /** wipe the device's userdata partition */
+        /** wipe the device's userdata partition using fastboot erase */
         WIPE,
+        /** delete content from the devices /data partition using adb shell rm */
+        WIPE_RM,
         /** push the contents of the tests zip file onto the device's userdata partition */
         TESTS_ZIP,
         /** leave the userdata partition as is */

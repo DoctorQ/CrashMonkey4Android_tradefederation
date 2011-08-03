@@ -41,7 +41,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
     private long mDeviceBootTime = 5 * 60 * 1000;
 
     @Option(name="userdata-flash", description=
-        "specify handling of userdata partition. One of FLASH, TESTS_ZIP, WIPE, SKIP.")
+        "specify handling of userdata partition. One of FLASH, TESTS_ZIP, WIPE, WIPE_RM, SKIP.")
     private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
 
     /**

@@ -41,9 +41,21 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
     private Set<String> mDataWipeSkipList;
 
     /**
-     * @param skipList A list of file names to keep when cleaning everything under userdata.
+     * This convenience constructor allows the caller to set the skip list directly, rather than
+     * needing to call {@link #setDataWipeSkipList} separately.
+     *
+     * @param skipList The list of paths under {@code /data} to keep when clearing the filesystem
+     * @see #setDataWipeSkipList
      */
     public DefaultTestsZipInstaller(String... skipList) {
+        setDataWipeSkipList(skipList);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDataWipeSkipList(String... skipList) {
         mDataWipeSkipList = new HashSet<String>(skipList.length);
         mDataWipeSkipList.addAll(Arrays.asList(skipList));
     }
@@ -59,6 +71,32 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         Log.i(LOG_TAG, String.format("Pushing test zips content onto userdata on %s",
                 device.getSerialNumber()));
 
+        deleteData(device);
+        IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
+        Log.d(LOG_TAG, "Syncing test files/apks");
+        File hostDir = new File(deviceBuild.getTestsDir(), "DATA");
+
+        File[] hostDataFiles = getTestsZipDataFiles(hostDir);
+        for (File hostSubDir : hostDataFiles) {
+            device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
+        }
+
+        // after push, everything in /data is owned by root, need to revert to system
+        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
+            if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
+                // change owner to system, no -R support
+                device.executeShellCommand(String.format("chown system.system %s %s/*",
+                        dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void deleteData(ITestDevice device) throws DeviceNotAvailableException,
+            TargetSetupError {
         device.rebootUntilOnline();
 
         // TODO: if any of the following commands fail, need to instruct ITestDevice to only recover
@@ -78,23 +116,6 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
                 device.executeShellCommand(String.format("rm -r %s",
                         dataSubDir.getFullEscapedPath()));
-            }
-        }
-
-        Log.d(LOG_TAG, "Syncing test files/apks");
-        File hostDir = new File(deviceBuild.getTestsDir(), "DATA");
-
-        File[] hostDataFiles = getTestsZipDataFiles(hostDir);
-        for (File hostSubDir : hostDataFiles) {
-            device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
-        }
-
-        // after push, everything in /data is owned by root, need to revert to system
-        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
-            if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                // change owner to system, no -R support
-                device.executeShellCommand(String.format("chown system.system %s %s/*",
-                        dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
             }
         }
     }
