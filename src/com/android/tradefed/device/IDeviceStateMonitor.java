@@ -57,7 +57,8 @@ public interface IDeviceStateMonitor {
     public boolean waitForDeviceShell(final long waitTime);
 
     /**
-     * Waits for the device to be responsive and available for testing.
+     * Waits for the device to be responsive and available for testing. Currently this means that
+     * the package manager and external storage are available.
      *
      * @param waitTime the time in ms to wait
      * @return the {@link IDevice} if device becomes online before time expires. <code>null</code>

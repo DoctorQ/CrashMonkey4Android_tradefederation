@@ -28,6 +28,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.TestDevice.LogCatReceiver;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -475,7 +476,7 @@ public class TestDeviceTest extends TestCase {
                         throw new ShellCommandUnresponsiveException();
                     }
                 });
-        mMockRecovery.recoverDevice(mMockMonitor);
+        mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(false));
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
 
         EasyMock.replay(mMockIDevice);
@@ -542,7 +543,7 @@ public class TestDeviceTest extends TestCase {
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
                 EasyMock.anyInt());
         EasyMock.expectLastCall().andThrow(new IOException());
-        mMockRecovery.recoverDevice(mMockMonitor);
+        mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(false));
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(mMockIDevice);
         EasyMock.replay(mMockRecovery);
@@ -552,6 +553,27 @@ public class TestDeviceTest extends TestCase {
         } catch (DeviceNotAvailableException e) {
             // expected
         }
+    }
+
+    /**
+     * Test {@link TestDevice#executeShellCommand(String, IShellOutputReceiver)} behavior when
+     * {@link IDevice} throws IOException and device is in recovery until online mode.
+     * <p/>
+     * Verify that a DeviceNotAvailableException is thrown.
+     */
+    public void testExecuteShellCommand_recoveryUntilOnline() throws Exception {
+        final String testCommand = "simple command";
+        // expect shell command to be called
+        mRecoveryTestDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
+        EasyMock.expectLastCall().andThrow(new IOException());
+        mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(true));
+        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
+                EasyMock.anyInt());
+        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockRecovery);
+        mRecoveryTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
 
     /**
@@ -577,7 +599,7 @@ public class TestDeviceTest extends TestCase {
      */
     private void assertRecoverySuccess() throws DeviceNotAvailableException, IOException,
             TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        mMockRecovery.recoverDevice(mMockMonitor);
+        mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(false));
         // expect post boot up steps
         mMockIDevice.executeShellCommand(EasyMock.eq(mTestDevice.getDisableKeyguardCmd()),
                 (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
@@ -614,7 +636,8 @@ public class TestDeviceTest extends TestCase {
         // expect shell command to be called
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
                 EasyMock.anyInt());
-        EasyMock.expectLastCall().andThrow(new IOException()).times(TestDevice.MAX_RETRY_ATTEMPTS+1);
+        EasyMock.expectLastCall().andThrow(new IOException()).times(
+                TestDevice.MAX_RETRY_ATTEMPTS+1);
         for (int i=0; i <= TestDevice.MAX_RETRY_ATTEMPTS; i++) {
             assertRecoverySuccess();
         }
@@ -742,7 +765,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expectLastCall().andThrow(new IOException());
         EasyMock.expect(mockRunner.getPackageName()).andReturn("foo");
         listener.testRunFailed((String)EasyMock.anyObject());
-        mMockRecovery.recoverDevice(mMockMonitor);
+        mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(false));
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
         EasyMock.replay(listener, mockRunner, mMockIDevice, mMockRecovery);
         try {

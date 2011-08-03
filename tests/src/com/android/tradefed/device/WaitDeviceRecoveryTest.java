@@ -62,10 +62,11 @@ public class WaitDeviceRecoveryTest extends TestCase {
         mMockMonitor.waitForDeviceBootloaderStateUpdate();
         EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
                 mMockDevice);
         replayMocks();
-        mRecovery.recoverDevice(mMockMonitor);
+        mRecovery.recoverDevice(mMockMonitor, false);
         verifyMocks();
     }
 
@@ -81,7 +82,7 @@ public class WaitDeviceRecoveryTest extends TestCase {
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(null);
         replayMocks();
         try {
-            mRecovery.recoverDevice(mMockMonitor);
+            mRecovery.recoverDevice(mMockMonitor, false);
             fail("DeviceNotAvailableException not thrown");
         } catch (DeviceNotAvailableException e) {
             // expected
@@ -99,12 +100,13 @@ public class WaitDeviceRecoveryTest extends TestCase {
         mMockMonitor.waitForDeviceBootloaderStateUpdate();
         EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice).anyTimes();
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong()))
                 .andReturn(null).anyTimes();
         mMockDevice.reboot((String)EasyMock.isNull());
         replayMocks();
         try {
-            mRecovery.recoverDevice(mMockMonitor);
+            mRecovery.recoverDevice(mMockMonitor, false);
             fail("DeviceUnresponsiveException not thrown");
         } catch (DeviceUnresponsiveException e) {
             // expected
@@ -128,10 +130,11 @@ public class WaitDeviceRecoveryTest extends TestCase {
                 EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("reboot"))).
                 andReturn(result);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(true);
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
                 mMockDevice);
         replayMocks();
-        mRecovery.recoverDevice(mMockMonitor);
+        mRecovery.recoverDevice(mMockMonitor, false);
         verifyMocks();
     }
 

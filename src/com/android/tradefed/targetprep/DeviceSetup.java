@@ -141,10 +141,6 @@ public class DeviceSetup implements ITargetPreparer {
 
         checkExternalStoreSpace(device);
 
-        // postBootSetup will disable keyguard - this must be done before attempting to clear error
-        // dialogs
-        device.postBootSetup();
-
         device.clearErrorDialogs();
     }
 

@@ -23,7 +23,8 @@ public class StubDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
-    public void recoverDevice(IDeviceStateMonitor monitor)
+    @Override
+    public void recoverDevice(IDeviceStateMonitor monitor, boolean recoverUntilOnline)
             throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException("device recovery not implemented");
     }
@@ -31,6 +32,7 @@ public class StubDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void recoverDeviceBootloader(IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException("device recovery not implemented");

@@ -498,6 +498,14 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     @Override
     public void clearLogcat() {
+     // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setRecoveryMode(RecoveryMode mode) {
         // ignore
     }
 }

@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
@@ -41,6 +42,14 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
             description="maximum time in ms to wait for a single device recovery command.")
     protected long mWaitTime = 4 * 60 * 1000;
 
+    @Option(name="bootloader-wait-time",
+            description="maximum time in ms to wait for device to be in fastboot.")
+    protected long mBootloaderWaitTime = 30 * 1000;
+
+    @Option(name="shell-wait-time",
+            description="maximum time in ms to wait for device shell to be responsive.")
+    protected long mShellWaitTime = 30 * 1000;
+
     /**
      * Get the {@link RunUtil} instance to use.
      * <p/>
@@ -60,7 +69,8 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
-    public void recoverDevice(IDeviceStateMonitor monitor)
+    @Override
+    public void recoverDevice(IDeviceStateMonitor monitor, boolean recoverUntilOnline)
             throws DeviceNotAvailableException {
         // device may have just gone offline
         // sleep a small amount to give ddms state a chance to settle
@@ -72,7 +82,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // ensure bootloader state is updated
         monitor.waitForDeviceBootloaderStateUpdate();
 
-        if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
+        if (monitor.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
             Log.i(LOG_TAG, String.format(
                     "Found device %s in fastboot but expected online. Rebooting...",
                     monitor.getSerialNumber()));
@@ -84,12 +94,22 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // wait for device online
         IDevice device = monitor.waitForDeviceOnline();
         if (device == null) {
-            handleDeviceNotAvailable(monitor);
+            handleDeviceNotAvailable(monitor, recoverUntilOnline);
             return;
         }
-        if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
-            // device is online but not responsive
-            handleDeviceUnresponsive(device, monitor);
+        // occasionally device is erroneously reported as online - double check that we can shell
+        // into device
+        if (!monitor.waitForDeviceShell(mShellWaitTime)) {
+            // treat this as a not available device
+            handleDeviceNotAvailable(monitor, recoverUntilOnline);
+            return;
+        }
+
+        if (!recoverUntilOnline) {
+            if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
+                // device is online but not responsive
+                handleDeviceUnresponsive(device, monitor);
+            }
         }
     }
 
@@ -103,7 +123,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         rebootDevice(device);
         IDevice newdevice = monitor.waitForDeviceOnline();
         if (newdevice == null) {
-            handleDeviceNotAvailable(monitor);
+            handleDeviceNotAvailable(monitor, false);
             return;
         }
         if (monitor.waitForDeviceAvailable(mWaitTime) == null) {
@@ -116,9 +136,11 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      * Handle situation where device is not available.
      *
      * @param monitor the {@link IDeviceStateMonitor}
+     * @param recoverTillOnline if true this method should return if device is online, and not
+     * check for responsiveness
      * @throws DeviceNotAvailableException
      */
-    protected void handleDeviceNotAvailable(IDeviceStateMonitor monitor)
+    protected void handleDeviceNotAvailable(IDeviceStateMonitor monitor, boolean recoverTillOnline)
             throws DeviceNotAvailableException {
         throw new DeviceNotAvailableException(String.format("Could not find device %s",
                 monitor.getSerialNumber()));
@@ -139,10 +161,9 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
         // ensure bootloader state is updated
         monitor.waitForDeviceBootloaderStateUpdate();
 
-        if (monitor.getDeviceState() == TestDeviceState.FASTBOOT) {
-            Log.i(LOG_TAG, String.format(
-                    "Found device %s in fastboot but unresponsive.",
-                    monitor.getSerialNumber()));
+        if (monitor.getDeviceState().equals(TestDeviceState.FASTBOOT)) {
+            CLog.i("Found device %s in fastboot but potentially unresponsive.",
+                    monitor.getSerialNumber());
             handleDeviceBootloaderUnresponsive(monitor);
         } else {
             if (monitor.getDeviceState() == TestDeviceState.ONLINE) {
@@ -156,7 +177,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
                 }
                 rebootDeviceIntoBootloader(device);
             }
-            if (!monitor.waitForDeviceBootloader(mWaitTime)) {
+            if (!monitor.waitForDeviceBootloader(mBootloaderWaitTime)) {
                 handleDeviceBootloaderNotAvailable(monitor);
             }
         }
