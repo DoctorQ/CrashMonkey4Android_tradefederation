@@ -487,14 +487,18 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             }
         }
         if (communicationFailure) {
-            // TODO: report this as a run failure?
-            throw new DeviceUnresponsiveException(String.format(
-                    "Communication failure when attempting to collect tests %s on device %s",
-                    mPackageName, mDevice.getSerialNumber()));
+            // TODO: find a better way to handle this
+            // throwing DeviceUnresponsiveException is not always ideal because a misbehaving
+            // instrumentation can hang, even though device is responsive. Would be nice to have
+            // a louder signal for this situation though than just logging an error
+//            throw new DeviceUnresponsiveException(String.format(
+//                    "Communication failure when attempting to collect tests %s on device %s",
+//                    mPackageName, mDevice.getSerialNumber()));
+            CLog.w("Ignoring repeated communication failure when collecting tests %s for device %s",
+                    mPackageName, mDevice.getSerialNumber());
         }
-        Log.e(LOG_TAG, String.format(
-                "Failed to collect tests to run to run for %s on device %s.",
-                mPackageName, mDevice.getSerialNumber()));
+        CLog.e("Failed to collect tests to run to run for %s on device %s.",
+                mPackageName, mDevice.getSerialNumber());
         return null;
     }
 }
