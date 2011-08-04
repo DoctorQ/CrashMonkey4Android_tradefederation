@@ -18,10 +18,12 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 /**
@@ -31,33 +33,36 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
 
     private static final String LOG_TAG = "DeviceSelectionOptions";
 
-    @Option(name="serial", shortName='s', description=
+    @Option(name = "serial", shortName = 's', description =
         "run this test on a specific device with given serial number(s).")
     private Collection<String> mSerials = new ArrayList<String>();
 
-    @Option(name="exclude-serial", description=
+    @Option(name = "exclude-serial", description =
         "run this test on any device except those with this serial number(s).")
     private Collection<String> mExcludeSerials = new ArrayList<String>();
 
-    @Option(name="product-type", description=
-        "run this test on device with this product type(s).")
+    @Option(name = "product-type", description =
+            "run this test on device with this product type(s).  May also filter by variant " +
+            "using product:variant.")
     private Collection<String> mProductTypes = new ArrayList<String>();
 
-    @Option(name="property", description=
+    @Option(name = "property", description =
         "run this test on device with this property value. " +
         "Expected format <propertyname>=<propertyvalue>.")
     private Collection<String> mPropertyStrings = new ArrayList<String>();
 
-    @Option(name = "emulator", shortName = 'e', description=
+    @Option(name = "emulator", shortName = 'e', description =
         "run this test on emulator.")
     private boolean mEmulatorRequested = false;
 
-    @Option(name = "null-device", shortName = 'n', description=
+    @Option(name = "null-device", shortName = 'n', description =
         "do not allocate a device for this test.")
     private boolean mNullDeviceRequested = false;
 
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.
     private boolean mFetchedEnvVariable = false;
+
+    private static final String VARIANT_SEPARATOR = ":";
 
     /**
      * Add a serial number to the device selection options.
@@ -200,7 +205,8 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     public boolean matches(IDevice device) {
         Collection<String> serials = getSerials();
         Collection<String> excludeSerials = getExcludeSerials();
-        Collection<String> productTypes = getProductTypes();
+        Map<String, Collection<String>> productVariants = splitOnVariant(getProductTypes());
+        Collection<String> productTypes = productVariants.keySet();
         Map<String, String> properties = getProperties();
 
         if (!serials.isEmpty() &&
@@ -210,9 +216,19 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         if (excludeSerials.contains(device.getSerialNumber())) {
             return false;
         }
-        if (!productTypes.isEmpty() &&
-                !productTypes.contains(getDeviceProductType(device))) {
-            return false;
+        if (!productTypes.isEmpty()) {
+            String productType = getDeviceProductType(device);
+            if (productTypes.contains(productType)) {
+                // check variant
+                String productVariant = getDeviceProductVariant(device);
+                Collection<String> variants = productVariants.get(productType);
+                if (!variants.contains(productVariant)) {
+                    return false;
+                }
+            } else {
+                // no product type matches; bye-bye
+                return false;
+            }
         }
         for (Map.Entry<String, String> propEntry : properties.entrySet()) {
             if (!propEntry.getValue().equals(device.getProperty(propEntry.getKey()))) {
@@ -230,13 +246,57 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
         return true;
     }
 
+    private Map<String, Collection<String>> splitOnVariant(Collection<String> products) {
+        // FIXME: we should validate all provided device selection options once, on the first
+        // FIXME: call to #matches
+        Map<String, Collection<String>> splitProducts =
+                new HashMap<String, Collection<String>>(products.size());
+        // FIXME: cache this
+        for (String prod : products) {
+            String[] parts = prod.split(VARIANT_SEPARATOR);
+            if (parts.length == 1) {
+                splitProducts.put(parts[0], null);
+            } else if (parts.length == 2) {
+                // A variant was specified as product:variant
+                Collection<String> variants = splitProducts.get(parts[0]);
+                if (variants == null) {
+                    variants = new HashSet<String>();
+                    splitProducts.put(parts[0], variants);
+                }
+                variants.add(parts[1]);
+            } else {
+                throw new IllegalArgumentException(String.format("The product type filter \"%s\" " +
+                "is invalid.  It must contain 0 or 1 '%s' characters, not %d.",
+                prod, VARIANT_SEPARATOR, parts.length));
+            }
+        }
+
+        return splitProducts;
+    }
+
     private String getDeviceProductType(IDevice device) {
-        // TODO: merge this into the getProperties match
-        String type = device.getProperty("ro.product.board");
-        if(type == null || type.isEmpty()) {
-            // last-chance fallback to ro.product.device, which may be set if ro.product.board isn't
-            type = device.getProperty("ro.product.device");
+        // FIXME: merge this into the getProperties match
+        if (device.isEmulator() || (device instanceof NullDevice)) {
+            return null;
+        }
+
+        String type = device.getProperty("ro.hardware");
+        if (type == null || type.isEmpty()) {
+
+            type = device.getProperty("ro.product.board");
+            if (type == null || type.isEmpty()) {
+                // last-chance fallback to ro.product.device
+                type = device.getProperty("ro.product.device");
+            }
+            // FIXME: if ro.hardware works for all the hardware we care about, send the rest of this
+            // FIXME: code to the bitbucket in the sky
+            CLog.e("WARNING: ro.hardware is broken for %s device %s; please report this to TF " +
+                    "maintainers", type, device.getSerialNumber());
         }
         return type;
+    }
+
+    private String getDeviceProductVariant(IDevice device) {
+        return device.getProperty("ro.product.device");
     }
 }
