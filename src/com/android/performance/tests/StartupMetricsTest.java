@@ -63,9 +63,11 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     void executeRebootTest(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Map<String, String> runMetrics = new HashMap<String, String>();
 
+        mTestDevice.nonBlockingReboot();
         long startTime = System.currentTimeMillis();
-        mTestDevice.rebootUntilOnline();
+        mTestDevice.waitForDeviceOnline();
         long onlineTime = System.currentTimeMillis();
+        // Note that in the past, we checked for the dev.bootcomplete prop flag to be set.
         mTestDevice.waitForDeviceAvailable();
         long availableTime = System.currentTimeMillis();
 
@@ -73,8 +75,8 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         long unavailDuration = availableTime - startTime;
         CLog.d("Reboot: %d millis until online, %d until available",
                 offlineDuration, unavailDuration);
-        runMetrics.put("online", Long.toString(offlineDuration));
-        runMetrics.put("bootcomplete", Long.toString(unavailDuration));
+        runMetrics.put("online", Long.toString(offlineDuration/1000));
+        runMetrics.put("bootcomplete", Long.toString(unavailDuration/1000));
 
         reportMetrics(listener, "boottime", runMetrics);
     }
@@ -110,7 +112,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         item = bugreport.getFirstItemByType(ProcRankParser.SECTION_NAME);
         if (item != null) {
             Map <String, Map<String, Integer>> procRankMap =
-                (GenericMapItem<String, Map<String, Integer>>) item;
+                    (GenericMapItem<String, Map<String, Integer>>) item;
             parseProcRankMap(listener, procRankMap);
         }
     }
@@ -179,8 +181,8 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
             Integer rss = valueMap.get("Rss");
             Integer uss = valueMap.get("Uss");
             if (pss != null) {
-              pssTotal += pss;
-              pssOutput.put(entry.getKey(), pss.toString());
+                pssTotal += pss;
+                pssOutput.put(entry.getKey(), pss.toString());
             }
             if (rss != null) {
                 rssTotal += rss;

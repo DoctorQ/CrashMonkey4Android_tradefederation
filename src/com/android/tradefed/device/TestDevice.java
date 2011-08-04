@@ -1863,6 +1863,13 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public void nonBlockingReboot() throws DeviceNotAvailableException {
+        doReboot();
+    }
+
+    /**
      * @throws DeviceNotAvailableException
      */
     private void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {

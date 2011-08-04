@@ -508,6 +508,14 @@ public interface ITestDevice {
     public void rebootUntilOnline() throws DeviceNotAvailableException;
 
     /**
+     * Issues a command to reboot device and returns on command complete and when device is no
+     * longer visible to adb.
+     *
+     * @throws DeviceNotAvailableException
+     */
+    public void nonBlockingReboot() throws DeviceNotAvailableException;
+
+    /**
      * Turns on adb root.
      * <p/>
      * Enabling adb root may cause device to disconnect from adb. This method will block until
