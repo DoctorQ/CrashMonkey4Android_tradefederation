@@ -96,6 +96,18 @@ public interface ITestDevice {
     public String getProductType() throws DeviceNotAvailableException;
 
     /**
+     * Convenience method to get the product variant of this device.
+     * <p/>
+     * This method will work if device is in either adb or fastboot mode.
+     *
+     * @return the {@link String} product variant name or <code>null</code> if it cannot be
+     *         determined
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String getProductVariant() throws DeviceNotAvailableException;
+
+    /**
      * Convenience method to get the product type of this device when its in fastboot mode.
      * <p/>
      * This method should only be used if device should be in fastboot. Its a bit safer variant
@@ -108,6 +120,20 @@ public interface ITestDevice {
      *             recovered.
      */
     public String getFastbootProductType() throws DeviceNotAvailableException;
+
+    /**
+     * Convenience method to get the product type of this device when its in fastboot mode.
+     * <p/>
+     * This method should only be used if device should be in fastboot. Its a bit safer variant
+     * than the generic {@link #getProductType()} method in this case, because ITestDevice
+     * will know to recover device into fastboot if device is in incorrect state or is
+     * unresponsive.
+     *
+     * @return the {@link String} product type name or <code>null</code> if it cannot be determined
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     *             recovered.
+     */
+    public String getFastbootProductVariant() throws DeviceNotAvailableException;
 
     /**
      * Convenience method to get the bootloader version of this device.
