@@ -24,6 +24,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -97,9 +98,10 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
         flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
-        flasher.setEncryptUserData(mEncryptUserData);
+        preEncryptDevice(device, flasher);
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();
+        postEncryptDevice(device, flasher);
         // only want logcat captured for current build, delete any accumulated log data
         device.clearLogcat();
         try {
@@ -141,5 +143,87 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         }
         throw new BuildError(String.format("Device %s running build %d did not boot after %d ms",
                 device.getSerialNumber(), buildId, mDeviceBootTime));
+    }
+
+    /**
+     * Handle encrypting or unencrypting of the device pre-flash.
+     *
+     * @see #postEncryptDevice(ITestDevice, IDeviceFlasher)
+     * @param device
+     * @throws DeviceNotAvailableException
+     * @throws TargetSetupError if the device should be unencrypted but the
+     * {@link IDeviceFlasher.UserDataFlashOption#RETAIN} flash option is used.
+     */
+    private void preEncryptDevice(ITestDevice device, IDeviceFlasher flasher)
+            throws DeviceNotAvailableException, TargetSetupError {
+        if (!device.isEncryptionSupported()) {
+            if (mEncryptUserData) {
+                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+            }
+            return;
+        }
+
+        // Need to unencrypt device
+        if (!mEncryptUserData && device.isDeviceEncrypted()) {
+            if (flasher.getUserDataFlashOption() == UserDataFlashOption.RETAIN) {
+                throw new TargetSetupError(String.format("not possible to go from encrypted "
+                        + "userdata partition to unencrypted with %s",
+                        flasher.getUserDataFlashOption()));
+            }
+            device.unencryptDevice();
+        }
+
+        // Need to encrypt device
+        if (mEncryptUserData && !device.isDeviceEncrypted()) {
+            switch(flasher.getUserDataFlashOption()) {
+                case TESTS_ZIP:
+                case WIPE_RM:
+                    device.encryptDevice(false);
+                    device.unlockDevice();
+                    break;
+                case RETAIN:
+                    device.encryptDevice(true);
+                    device.unlockDevice();
+                    break;
+                default:
+                    // Do nothing, userdata will be encrypted post-flash.
+            }
+        }
+    }
+
+    /**
+     * Handle encrypting of the device post-flash.
+     * <p>
+     * This method handles encrypting the device after a flash in cases where a flash would undo any
+     * encryption pre-flash, such as when the device is flashed or wiped.
+     * </p>
+     *
+     * @see #preEncryptDevice(ITestDevice, IDeviceFlasher)
+     * @param device
+     * @throws DeviceNotAvailableException
+     */
+    private void postEncryptDevice(ITestDevice device, IDeviceFlasher flasher)
+            throws DeviceNotAvailableException {
+        if (!device.isEncryptionSupported()) {
+            if (mEncryptUserData) {
+                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+            }
+            return;
+        }
+
+        if (mEncryptUserData) {
+            switch(flasher.getUserDataFlashOption()) {
+                case FLASH:
+                    device.encryptDevice(true);
+                    break;
+                case WIPE:
+                case FORCE_WIPE:
+                    device.encryptDevice(false);
+                    break;
+                default:
+                    // Do nothing, userdata was encrypted pre-flash.
+            }
+            device.unlockDevice();
+        }
     }
 }

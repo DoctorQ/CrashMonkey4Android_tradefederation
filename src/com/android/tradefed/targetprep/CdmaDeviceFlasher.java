@@ -81,8 +81,6 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         // get system build id before booting into fastboot
         int systemBuildId = device.getBuildId();
 
-        //preEncryptDevice(device);
-
         device.rebootIntoBootloader();
 
         downloadFlashingResources(device, deviceBuild);
@@ -101,16 +99,11 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
             // flashSystem will leave the device in fastboot; reboot into userspace
             device.reboot();
-            // FIXME: We can't boot into userspace until after all of the partitions have been
-            // FIXME: flashed.  postEncrypt should probably go in #flashSystem somewhere.
-            // postEncryptDevice(device);
         } else {
             // Do the standard thing
             flashUserData(device, deviceBuild);
             eraseCache(device);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
-            // FIXME: see above
-            // postEncryptDevice(device);
         }
     }
 
@@ -206,4 +199,3 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         return RunUtil.getDefault();
     }
 }
-

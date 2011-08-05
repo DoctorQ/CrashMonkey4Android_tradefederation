@@ -98,7 +98,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     /**
      * {@inheritDoc}
      * <p>
-     * This implementation only supports {@link UserDataFlashOption.TESTS_ZIP}
+     * This implementation only supports {@link IDeviceFlasher.UserDataFlashOption#TESTS_ZIP}
      * as a valid option
      */
     public void setUserDataFlashOption(UserDataFlashOption flashOption) {
@@ -110,12 +110,12 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         mFlashOption = flashOption;
     }
 
+
     /**
      * {@inheritDoc}
      */
-    public void setEncryptUserData(boolean encrypt) {
-        if (encrypt) {
-            throw new IllegalArgumentException("Encryption not supported");
-        }
+    @Override
+    public UserDataFlashOption getUserDataFlashOption() {
+        return mFlashOption;
     }
 }

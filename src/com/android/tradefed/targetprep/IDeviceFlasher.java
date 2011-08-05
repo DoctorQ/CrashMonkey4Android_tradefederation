@@ -51,11 +51,11 @@ public interface IDeviceFlasher {
     public void setUserDataFlashOption(UserDataFlashOption flashOption);
 
     /**
-     * Toggles whether the user data image should be encrypted.
+     * Gets whether the user data image should be flashed, wiped, or retained
      *
-     * @param encrypt
+     * @return Whether the user data image should be flashed, wiped, or retained
      */
-    public void setEncryptUserData(boolean encrypt);
+    public UserDataFlashOption getUserDataFlashOption();
 
     /**
      * Flashes build on device.
