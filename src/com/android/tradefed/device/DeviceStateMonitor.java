@@ -127,7 +127,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     @Override
     public boolean waitForDeviceShell(final long waitTime) {
-        CLog.i(LOG_TAG, "Waiting %d ms for device %s shell to be responsive", waitTime,
+        CLog.i("Waiting %d ms for device %s shell to be responsive", waitTime,
                 getSerialNumber());
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < waitTime) {
