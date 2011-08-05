@@ -271,7 +271,25 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
+    public String getProductVariant() {
+        // ignore
+        return "";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getFastbootProductType() {
+        // ignore
+        return "";
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getFastbootProductVariant() {
         // ignore
         return "";
     }

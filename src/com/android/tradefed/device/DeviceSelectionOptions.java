@@ -275,6 +275,7 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     }
 
     private String getDeviceProductType(IDevice device) {
+        // FIXME: stop duplicating code with TestDevice#internalGetProductVariant
         // FIXME: merge this into the getProperties match
         if (device.isEmulator() || (device instanceof NullDevice)) {
             return null;

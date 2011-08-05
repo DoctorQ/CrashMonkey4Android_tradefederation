@@ -293,14 +293,6 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public String getProductType() throws DeviceNotAvailableException {
-        return internalGetProductType(MAX_RETRY_ATTEMPTS);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public String getBootloaderVersion() throws UnsupportedOperationException,
             DeviceNotAvailableException {
@@ -340,16 +332,23 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public String getProductType() throws DeviceNotAvailableException {
+        return internalGetProductType(MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
      * {@see getProductType()}
      *
      * @param retryAttempts The number of times to try calling {@see recoverDevice()} if the
      *        device's product type cannot be found.
      */
-    private String internalGetProductType(int retryAttempts)
-            throws DeviceNotAvailableException {
+    private String internalGetProductType(int retryAttempts) throws DeviceNotAvailableException {
+        // FIXME: switch this to ro.hardware
         String productType = getIDevice().getProperty("ro.product.board");
         if (productType == null || productType.isEmpty()) {
-            /* DDMS may not have processes all of the properties yet, or the device may be in
+            /* DDMS may not have processed all of the properties yet, or the device may be in
              * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
              * directly.
              */
@@ -389,10 +388,51 @@ class TestDevice implements IManagedTestDevice {
         return productType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public String getProductVariant() throws DeviceNotAvailableException {
+        return internalGetProductVariant(MAX_RETRY_ATTEMPTS);
+    }
+
+    /**
+     * {@see getProductVariant()}
+     *
+     * @param retryAttempts The number of times to try calling {@see recoverDevice()} if the
+     *        device's product type cannot be found.
+     */
+    private String internalGetProductVariant(int retryAttempts) throws DeviceNotAvailableException {
+        String variant = getIDevice().getProperty("ro.product.device");
+        if (variant == null || variant.isEmpty()) {
+            /* DDMS may not have processes all of the properties yet, or the device may be in
+             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
+             * directly.
+             */
+            if (getDeviceState() == TestDeviceState.FASTBOOT) {
+                Log.i(LOG_TAG, String.format(
+                        "Product type for device %s is null, re-querying in fastboot",
+                        getSerialNumber()));
+                variant = getFastbootProductVariant();
+            } else {
+                Log.w(LOG_TAG, String.format(
+                        "Product type for device %s is null, re-querying", getSerialNumber()));
+                variant = executeShellCommand("getprop ro.product.device").trim();
+            }
+        }
+
+        return variant;
+    }
+
     @Override
     public String getFastbootProductType()
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return getFastbootVariable("product");
+    }
+
+    @Override
+    public String getFastbootProductVariant()
+            throws DeviceNotAvailableException, UnsupportedOperationException {
+        return getFastbootVariable("variant");
     }
 
     private String getFastbootBootloader()
