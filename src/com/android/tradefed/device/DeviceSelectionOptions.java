@@ -222,7 +222,7 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
                 // check variant
                 String productVariant = getDeviceProductVariant(device);
                 Collection<String> variants = productVariants.get(productType);
-                if (!variants.contains(productVariant)) {
+                if (variants != null && !variants.contains(productVariant)) {
                     return false;
                 }
             } else {
