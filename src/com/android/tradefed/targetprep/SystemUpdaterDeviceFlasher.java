@@ -110,4 +110,12 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         mFlashOption = flashOption;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public void setEncryptUserData(boolean encrypt) {
+        if (encrypt) {
+            throw new IllegalArgumentException("Encryption not supported");
+        }
+    }
 }

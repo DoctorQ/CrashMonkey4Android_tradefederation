@@ -44,6 +44,10 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         "specify handling of userdata partition. One of FLASH, TESTS_ZIP, WIPE, WIPE_RM, SKIP.")
     private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
 
+    @Option(name="encrypt-userdata", description=
+        "specify if userdata partition should be encrypted")
+    private boolean mEncryptUserData = false;
+
     /**
      * Sets the device boot time
      * <p/>
@@ -93,6 +97,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
         flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
+        flasher.setEncryptUserData(mEncryptUserData);
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();
         // only want logcat captured for current build, delete any accumulated log data

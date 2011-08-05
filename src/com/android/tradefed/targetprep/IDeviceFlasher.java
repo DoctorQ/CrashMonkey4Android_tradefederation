@@ -51,6 +51,13 @@ public interface IDeviceFlasher {
     public void setUserDataFlashOption(UserDataFlashOption flashOption);
 
     /**
+     * Toggles whether the user data image should be encrypted.
+     *
+     * @param encrypt
+     */
+    public void setEncryptUserData(boolean encrypt);
+
+    /**
      * Flashes build on device.
      * <p/>
      * Returns immediately after flashing is complete. Callers should wait for device to be

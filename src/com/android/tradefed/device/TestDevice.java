@@ -22,6 +22,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
@@ -89,6 +90,15 @@ class TestDevice implements IManagedTestDevice {
      *  will ever terminate on its own.
      */
     private static final int BUGREPORT_TIMEOUT = 2 * 60 * 1000;
+
+    /** The password for encrypting and decrypting the device. */
+    private static final String ENCRYPTION_PASSWORD = "android";
+    /** Encrypting with inplace can take up to 90 minutes. */
+    private static final int ENCRYPTION_INPLACE_TIMEOUT = 90 * 60 * 1000;
+    /** Encrypting with wipe can take up to 5 minutes. */
+    private static final int ENCRYPTION_WIPE_TIMEOUT = 5 * 60 * 1000;
+    /** Beginning of the string returned by vdc for "vdc enablecrypto". */
+    private static final String ENCRYPTION_SUPPORTED_OUTPUT = "500 Usage: cryptfs enablecrypto";
 
     /** The time in ms to wait before starting logcat for a device */
     private int mLogStartDelay = 5*1000;
@@ -1820,7 +1830,16 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void reboot() throws DeviceNotAvailableException {
-        doReboot();
+        rebootUntilOnline();
+
+        setRecoveryMode(RecoveryMode.ONLINE);
+
+        if (isEncryptionSupported() && isDeviceEncrypted()) {
+            unlockDevice();
+        }
+
+        setRecoveryMode(RecoveryMode.AVAILABLE);
+
         if (mMonitor.waitForDeviceAvailable() != null) {
             postBootSetup();
             return;
@@ -1938,6 +1957,183 @@ class TestDevice implements IManagedTestDevice {
     private boolean isAdbRoot() throws DeviceNotAvailableException {
         String output = executeShellCommand("id");
         return output.contains("uid=0(root)");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean encryptDevice(boolean inplace) throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        if (!isEncryptionSupported()) {
+            throw new UnsupportedOperationException(String.format("Can't encrypt device %s: "
+                    + "encryption not supported", getSerialNumber()));
+        }
+
+        if (isDeviceEncrypted()) {
+            CLog.d("Device %s is already encrypted, skipping", getSerialNumber());
+            return true;
+        }
+
+        String encryptMethod;
+        int timeout;
+        if (inplace) {
+            encryptMethod = "inplace";
+            timeout = ENCRYPTION_INPLACE_TIMEOUT;
+        } else {
+            encryptMethod = "wipe";
+            timeout = ENCRYPTION_WIPE_TIMEOUT;
+        }
+
+        CLog.i("Encrypting device %s via %s", getSerialNumber(), encryptMethod);
+        executeShellCommand(String.format("vdc cryptfs enablecrypto %s \"%s\"", encryptMethod,
+                ENCRYPTION_PASSWORD), new NullOutputReceiver(), timeout, 1);
+
+        waitForDeviceNotAvailable("reboot", getCommandTimeout());
+        waitForDeviceOnline();  // Device will not become available until the user data is unlockedu.
+
+        return isDeviceEncrypted();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean unencryptDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        if (!isEncryptionSupported()) {
+            throw new UnsupportedOperationException(String.format("Can't unencrypt device %s: "
+                    + "encryption not supported", getSerialNumber()));
+        }
+
+        if (!isDeviceEncrypted()) {
+            CLog.d("Device %s is already unencrypted, skipping", getSerialNumber());
+            return true;
+        }
+
+        CLog.i("Unencrypting device %s", getSerialNumber());
+
+        // Determine if we need to format partition instead of wipe.
+        boolean format = false;
+        String output = executeShellCommand("vdc volume list");
+        String[] splitOutput;
+        if (output != null) {
+            splitOutput = output.split("\r\n");
+            for (String line : splitOutput) {
+                if (line.startsWith("110 ") && line.contains("sdcard /mnt/sdcard") &&
+                        !line.endsWith("0")) {
+                    format = true;
+                }
+            }
+        }
+
+        rebootIntoBootloader();
+        executeLongFastbootCommand("erase", "userdata");
+
+        if (format) {
+            CLog.d("Need to format sdcard for device %s", getSerialNumber());
+
+            rebootUntilOnline();
+            setRecoveryMode(RecoveryMode.ONLINE);
+
+            output = executeShellCommand("vdc volume format sdcard");
+            if (output == null) {
+                CLog.e("Command vdc volume format sdcard failed will no output for device %s:\n%s",
+                        getSerialNumber());
+                return false;
+            }
+            splitOutput = output.split("\r\n");
+            if (!splitOutput[splitOutput.length - 1].startsWith("200 ")) {
+                CLog.e("Command vdc volume format sdcard failed for device %s:\n%s",
+                        getSerialNumber(), output);
+                return false;
+            }
+
+            setRecoveryMode(RecoveryMode.AVAILABLE);
+        }
+
+        reboot();
+
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean unlockDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        if (!isEncryptionSupported()) {
+            throw new UnsupportedOperationException(String.format("Can't unlock userdata on device "
+                    + "%s: encryption not supported", getSerialNumber()));
+        }
+
+        if (!isDeviceEncrypted()) {
+            CLog.d("Device %s is not encrypted, skipping", getSerialNumber());
+            return true;
+        }
+
+        CLog.i("Unlocking device %s", getSerialNumber());
+
+        // Enter the password. Output will be:
+        // "200 -1" if the password has already been entered correctly,
+        // "200 0" if the password is entered correctly,
+        // "200 N" where N is any positive number if the password is incorrect,
+        // any other string if there is an error.
+        String output = executeShellCommand(String.format("vdc cryptfs checkpw \"%s\"",
+                ENCRYPTION_PASSWORD)).trim();
+
+        if ("200 -1".equals(output)) {
+            return true;
+        }
+
+        if (!"200 0".equals(output)) {
+            CLog.e("checkpw gave output '%s' while trying to unlock userdata on device %s",
+                    output, getSerialNumber());
+            return false;
+        }
+
+        // Restart the framework. Output will be:
+        // "200 0" if the user data partition can be mounted,
+        // "200 -1" if the user data partition can not be mounted (no correct password given),
+        // any other string if there is an error.
+        output = executeShellCommand("vdc cryptfs restart").trim();
+
+        if (!"200 0".equals(output)) {
+            CLog.e("restart gave output '%s' while trying to unlock userdata on device %s",
+                    output, getSerialNumber());
+            return false;
+        }
+
+        waitForDeviceAvailable();
+
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isDeviceEncrypted() {
+        String output = getIDevice().getProperty("ro.crypto.state");
+
+        // TODO: Remove cruft once getProperty() null caching issue is fixed.
+        if (output == null) {
+            try {
+                output = executeShellCommand("getprop ro.crypto.state").trim();
+                if ("".equals(output)) {
+                    output = null;
+                }
+            } catch (DeviceNotAvailableException e) {
+                output = null;
+            }
+        }
+
+        return "encrypted".equals(output);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isEncryptionSupported() throws DeviceNotAvailableException {
+        String output = executeShellCommand("vdc cryptfs enablecrypto").trim();
+        return (output != null && output.startsWith(ENCRYPTION_SUPPORTED_OUTPUT));
     }
 
     /**

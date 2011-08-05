@@ -81,6 +81,8 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         // get system build id before booting into fastboot
         int systemBuildId = device.getBuildId();
 
+        preEncryptDevice(device);
+
         device.rebootIntoBootloader();
 
         downloadFlashingResources(device, deviceBuild);
@@ -93,12 +95,14 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
             checkAndFlashBaseband(device, deviceBuild);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
             flashUserData(device, deviceBuild);
+            postEncryptDevice(device);
             device.reboot();
         } else {
             // Do the standard thing
             flashUserData(device, deviceBuild);
             eraseCache(device);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            postEncryptDevice(device);
         }
     }
 

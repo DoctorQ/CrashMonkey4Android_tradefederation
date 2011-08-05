@@ -533,6 +533,70 @@ public interface ITestDevice {
     public TestDeviceState getDeviceState();
 
     /**
+     * Encrypts the device.
+     * <p/>
+     * Encrypting the device may be done inplace or with a wipe.  Inplace encryption will not wipe
+     * any data on the device but normally takes a couple orders of magnitude longer than the wipe.
+     * <p/>
+     * This method will reboot the device if it is not already encrypted and will block until device
+     * is online.  Also, it will not decrypt the device after the reboot.  Therefore, the device
+     * might not be fully booted and/or ready to be tested when this method returns.
+     *
+     * @param inplace if the encryption process should take inplace and the device should not be
+     * wiped.
+     * @return <code>true</code> if successful.
+     * @throws DeviceNotAvailableException if device is not available after reboot.
+     * @throws UnsupportedOperationException if encryption is not supported on the device.
+     */
+    public boolean encryptDevice(boolean inplace) throws DeviceNotAvailableException,
+            UnsupportedOperationException;
+
+    /**
+     * Unencrypts the device.
+     * <p/>
+     * Unencrypting the device may cause device to be wiped and may reboot device. This method will
+     * block until device is available and ready for testing.
+     *
+     * @return <code>true</code> if successful.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     * @throws UnsupportedOperationException if encryption is not supported on the device.
+     */
+    public boolean unencryptDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException;
+
+    /**
+     * Unlocks the device if the device is in an encrypted state.
+     * </p>
+     * This method may restart the framework but will not call {@link #postBootSetup()}. Therefore,
+     * the device might not be fully ready to be tested when this method returns.
+     *
+     * @return <code>true</code> if successful or if the device is unencrypted.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     * @throws UnsupportedOperationException if encryption is not supported on the device.
+     */
+    public boolean unlockDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException;
+
+    /**
+     * Returns if the device is encrypted.
+     *
+     * @return <code>true</code> if the device is encrypted.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean isDeviceEncrypted() throws DeviceNotAvailableException;
+
+    /**
+     * Returns if encryption is supported on the device.
+     *
+     * @return <code>true</code> if the device supports encryption.
+     * @throws DeviceNotAvailableException
+     */
+    public boolean isEncryptionSupported() throws DeviceNotAvailableException;
+
+    /**
      * Waits for the device to be responsive and available for testing.
      *
      * @param waitTime the time in ms to wait

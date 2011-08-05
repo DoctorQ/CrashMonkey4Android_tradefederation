@@ -179,6 +179,54 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
+    public boolean encryptDevice(boolean inplace) throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean unencryptDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean unlockDevice() throws DeviceNotAvailableException,
+            UnsupportedOperationException {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isDeviceEncrypted() throws DeviceNotAvailableException {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isEncryptionSupported() throws DeviceNotAvailableException {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void postBootSetup() throws DeviceNotAvailableException {
         // ignore
     }
@@ -498,7 +546,7 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     @Override
     public void clearLogcat() {
-     // ignore
+        // ignore
     }
 
     /**

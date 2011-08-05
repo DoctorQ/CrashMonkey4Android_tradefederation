@@ -22,13 +22,10 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
-import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.zip.ZipFile;
 
 /**
  * A class that relies on fastboot to flash an image on physical Android hardware.
@@ -37,6 +34,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     public static final String BASEBAND_IMAGE_NAME = "radio";
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
+
+    private boolean mEncryptUserData = false;
 
     private final IFlashingResourcesRetriever mResourceRetriever;
     // TODO: make this list configurable
@@ -63,6 +62,14 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         return mUserDataFlashOption;
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setEncryptUserData(boolean encrypt) {
+        mEncryptUserData = encrypt;
+    }
+
     void setTestsZipInstaller(ITestsZipInstaller testsZipInstaller) {
         mTestsZipInstaller = testsZipInstaller;
     }
@@ -84,6 +91,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         // get system build id before booting into fastboot
         int systemBuildId = device.getBuildId();
 
+        preEncryptDevice(device);
+
         device.rebootIntoBootloader();
 
         downloadFlashingResources(device, deviceBuild);
@@ -93,6 +102,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         flashUserData(device, deviceBuild);
         eraseCache(device);
         checkAndFlashSystem(device, systemBuildId, deviceBuild);
+        postEncryptDevice(device);
     }
 
     /**
@@ -509,6 +519,87 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
             return result.getStderr();
         } else {
             return result.getStdout();
+        }
+    }
+
+    /**
+     * Handle encrypting or unencrypting of the device pre-flash.
+     *
+     * @see #postEncryptDevice(ITestDevice)
+     * @param device
+     * @throws DeviceNotAvailableException
+     * @throws TargetSetupError if the device should be unencrypted but the
+     * {@link IDeviceFlasher.UserDataFlashOption#RETAIN} flash option is used.
+     */
+    protected void preEncryptDevice(ITestDevice device) throws DeviceNotAvailableException,
+            TargetSetupError {
+        if (!device.isEncryptionSupported()) {
+            if (mEncryptUserData) {
+                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+            }
+            return;
+        }
+
+        // Need to unencrypt device
+        if (!mEncryptUserData && device.isDeviceEncrypted()) {
+            if (mUserDataFlashOption == UserDataFlashOption.RETAIN) {
+                throw new TargetSetupError(String.format("not possible to go from encrypted "
+                        + "userdata partition to unencrypted with %s", mUserDataFlashOption));
+            }
+            device.unencryptDevice();
+        }
+
+        // Need to encrypt device
+        if (mEncryptUserData && !device.isDeviceEncrypted()) {
+            switch(mUserDataFlashOption) {
+                case TESTS_ZIP:
+                case WIPE_RM:
+                    device.encryptDevice(false);
+                    device.unlockDevice();
+                    break;
+                case RETAIN:
+                    device.encryptDevice(true);
+                    device.unlockDevice();
+                    break;
+                default:
+                    // Do nothing, userdata will be encrypted post-flash.
+            }
+        }
+    }
+
+    /**
+     * Handle encrypting of the device post-flash.
+     * <p>
+     * This method handles encrypting the device after a flash in cases where a flash would undo any
+     * encryption pre-flash, such as when the device is flashed or wiped.
+     * </p>
+     *
+     * @see #preEncryptDevice(ITestDevice)
+     * @param device
+     * @throws DeviceNotAvailableException
+     */
+    protected void postEncryptDevice(ITestDevice device) throws DeviceNotAvailableException {
+        if (!device.isEncryptionSupported()) {
+            if (mEncryptUserData) {
+                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+            }
+            return;
+        }
+
+        if (mEncryptUserData) {
+            device.waitForDeviceOnline();
+            switch(mUserDataFlashOption) {
+                case FLASH:
+                    device.encryptDevice(true);
+                    break;
+                case WIPE:
+                case FORCE_WIPE:
+                    device.encryptDevice(false);
+                    break;
+                default:
+                    // Do nothing, userdata was encrypted pre-flash.
+            }
+            device.unlockDevice();
         }
     }
 }

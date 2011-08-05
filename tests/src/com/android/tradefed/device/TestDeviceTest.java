@@ -167,7 +167,6 @@ public class TestDeviceTest extends TestCase {
         mNoFastbootTestDevice.setRecovery(mMockRecovery);
         mNoFastbootTestDevice.setCommandTimeout(100);
         mNoFastbootTestDevice.setLogStartDelay(-1);
-
     }
 
     /**
@@ -849,6 +848,55 @@ public class TestDeviceTest extends TestCase {
         mTestDevice.executeFastbootCommand("foo");
         verifyMocks();
 
+    }
+
+    /**
+     * Basic test for encryption if encryption is not supported.
+     * <p>
+     * Calls {@link TestDevice#encryptDevice(boolean)}, {@link TestDevice#unlockDevice()}, and
+     * {@link TestDevice#unencryptDevice()} and makes sure that a
+     * {@link UnsupportedOperationException} is thrown for each method.
+     * </p>
+     * @throws DeviceNotAvailableException
+     * @throws IOException
+     * @throws ShellCommandUnresponsiveException
+     * @throws AdbCommandRejectedException
+     * @throws TimeoutException
+     */
+    public void testEncryptionUnsupported() throws DeviceNotAvailableException, TimeoutException,
+            AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        final String expectedCmd = "vdc cryptfs enablecrypto";
+        final String output = "\r\n";
+        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd),
+                (IShellOutputReceiver) EasyMock.anyObject(), EasyMock.anyInt());
+        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
+            @Override
+            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
+                    int timeout) {
+                byte[] inputData = output.getBytes();
+                receiver.addOutput(inputData, 0, inputData.length);
+            }
+        });
+        EasyMock.replay(mMockIDevice);
+        try {
+            mTestDevice.encryptDevice(false);
+            fail("encryptUserData() did not throw UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+        try {
+            mTestDevice.unlockDevice();
+            fail("decryptUserData() did not throw UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+        try {
+            mTestDevice.unencryptDevice();
+            fail("unencryptUserData() did not throw UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+        return;
     }
 
     /**
