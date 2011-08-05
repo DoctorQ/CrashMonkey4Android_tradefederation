@@ -102,9 +102,9 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         device.waitForDeviceOnline();
         // only want logcat captured for current build, delete any accumulated log data
         device.clearLogcat();
-        waitForBootComplete(device, buildInfo.getBuildId());
-        device.setRecoveryMode(RecoveryMode.AVAILABLE);
         try {
+            waitForBootComplete(device, buildInfo.getBuildId());
+            device.setRecoveryMode(RecoveryMode.AVAILABLE);
             device.waitForDeviceAvailable();
         } catch (DeviceUnresponsiveException e) {
             // assume this is a build problem
