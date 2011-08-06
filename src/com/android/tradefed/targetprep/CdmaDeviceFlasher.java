@@ -90,19 +90,27 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         checkAndFlashBootloader(device, deviceBuild);
         if (checkShouldFlashBaseband(device, deviceBuild)) {
             Log.i(LOG_TAG, "Performing special CDMA baseband update flash procedure");
+            // Flash baseband; userdata and system are out-of-date now
             mShouldFlashBaseband = true;
-            eraseCache(device);
             checkAndFlashBaseband(device, deviceBuild);
-            checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            // Flash userdata and erase cache; system is out-of-date now
             flashUserData(device, deviceBuild);
-            //postEncryptDevice(device);
+            eraseCache(device);
+            // Flash system, which will cause a reboot.  After system is flashed, all partitions are
+            // up-to-date
+            checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            // flashSystem will leave the device in fastboot; reboot into userspace
             device.reboot();
+            // FIXME: We can't boot into userspace until after all of the partitions have been
+            // FIXME: flashed.  postEncrypt should probably go in #flashSystem somewhere.
+            // postEncryptDevice(device);
         } else {
             // Do the standard thing
             flashUserData(device, deviceBuild);
             eraseCache(device);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
-            //postEncryptDevice(device);
+            // FIXME: see above
+            // postEncryptDevice(device);
         }
     }
 
