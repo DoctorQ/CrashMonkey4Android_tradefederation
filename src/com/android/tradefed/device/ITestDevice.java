@@ -20,6 +20,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 
@@ -65,6 +66,13 @@ public interface ITestDevice {
      * @param mode whether 'recover till online only' mode should be on or not.
      */
     public void setRecoveryMode(RecoveryMode mode);
+
+    /**
+     * Get the current recovery mode used for the device.
+     *
+     * @return the current recovery mode used for the device.
+     */
+    public RecoveryMode getRecoveryMode();
 
     /**
      * Returns a reference to the associated ddmlib {@link IDevice}.
