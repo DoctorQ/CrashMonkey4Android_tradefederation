@@ -43,10 +43,6 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
     /** Time to allow for baseband to flash (in recovery mode), in ms */
     protected static final int BASEBAND_FLASH_TIMEOUT = 1000*60*10;
 
-    public CdmaDeviceFlasher(IFlashingResourcesRetriever resourceRetriever) {
-        super(resourceRetriever);
-    }
-
     /**
      * {@inheritDoc}
      */

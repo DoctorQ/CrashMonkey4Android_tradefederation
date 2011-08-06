@@ -38,6 +38,13 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
 
     /**
      * {@inheritDoc}
+     */
+    public void setFlashingResourcesRetriever(IFlashingResourcesRetriever retriever) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * This implementation assumes the device image file returned by
      * {@link IDeviceBuildInfo#getDeviceImageFile()} is an OTA update zip. It's
