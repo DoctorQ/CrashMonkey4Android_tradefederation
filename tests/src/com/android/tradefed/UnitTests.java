@@ -52,6 +52,7 @@ import com.android.tradefed.targetprep.FlashingResourcesParserTest;
 import com.android.tradefed.targetprep.SdkAvdPreparerTest;
 import com.android.tradefed.targetprep.SystemUpdaterDeviceFlasherTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
+import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.GTestResultParserTest;
 import com.android.tradefed.testtype.GTestTest;
 import com.android.tradefed.testtype.HostTestTest;
@@ -74,14 +75,13 @@ import com.android.tradefed.util.RunUtilTest;
 import com.android.tradefed.util.xml.AndroidManifestWriterTest;
 
 import junit.framework.Test;
-import junit.framework.TestSuite;
 
 /**
  * A test suite for all Trade Federation unit tests.
  * <p/>
  * All tests listed here should be self-contained, and should not require any external dependencies.
  */
-public class UnitTests extends TestSuite {
+public class UnitTests extends DeviceTestSuite {
 
     public UnitTests() {
         super();

@@ -52,6 +52,16 @@ public class BuildInfo implements IBuildInfo {
     }
 
     /**
+     * Creates a {@link BuildInfo}, populated with attributes given in another build.
+     *
+     * @param buildToCopy
+     */
+    BuildInfo(BuildInfo buildToCopy) {
+        this(buildToCopy.getBuildId(), buildToCopy.getTestTag(), buildToCopy.getBuildTargetName());
+        addAllBuildAttributes(buildToCopy);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
