@@ -16,14 +16,17 @@
 
 package com.android.performance.tests;
 
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.brillopad.BugreportParser;
 import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
@@ -43,32 +46,36 @@ import junit.framework.Assert;
 public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     public static final String BUGREPORT_LOG_NAME = "bugreport_startup.txt";
 
+    @Option(name="boot-time-ms", description="Timeout in ms to wait for device to boot.")
+    private static final long mBootTimeMs = 5 * 60 * 1000;
+
+    @Option(name="boot-poll-time-ms", description="Delay in ms between polls for device to boot.")
+    private static final long mBootPoolTimeMs = 500;
+
     ITestDevice mTestDevice = null;
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
-
         executeRebootTest(listener);
         fetchBugReportMetrics(listener);
-        // TODO: pass build metrics? does it make sense to have it here?
     }
 
     /**
      * Check how long the device takes to come online and become available after
-     * a reboot
+     * a reboot.
      *
      * @param listener the {@link ITestInvocationListener} of test results
      */
     void executeRebootTest(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Map<String, String> runMetrics = new HashMap<String, String>();
-
+        mTestDevice.setRecoveryMode(RecoveryMode.NONE);
+        CLog.d("Reboot test start.");
         mTestDevice.nonBlockingReboot();
         long startTime = System.currentTimeMillis();
         mTestDevice.waitForDeviceOnline();
         long onlineTime = System.currentTimeMillis();
-        // Note that in the past, we checked for the dev.bootcomplete prop flag to be set.
-        mTestDevice.waitForDeviceAvailable();
+        Assert.assertTrue(waitForBootComplete(mTestDevice, mBootTimeMs, mBootPoolTimeMs));
         long availableTime = System.currentTimeMillis();
 
         long offlineDuration = onlineTime - startTime;
@@ -82,7 +89,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     }
 
     /**
-     * Fetch proc rank metrics from the bugreport after reboot
+     * Fetch proc rank metrics from the bugreport after reboot.
      *
      * @param listener the {@link ITestInvocationListener} of test results
      */
@@ -118,7 +125,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     }
 
     /**
-     * Helper method to convert Map<String, Integer> to Map<String, String>
+     * Helper method to convert Map<String, Integer> to Map<String, String>.
      *
      * @param input the {@link Map} to convert from
      * @return output the converted {@link Map}
@@ -133,8 +140,6 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
 
     /**
      * Report run metrics by creating an empty test run to stick them in
-     * <p />
-     * Exposed for unit testing
      *
      * @param listener the {@link ITestInvocationListener} of test results
      * @param runName the test name
@@ -205,6 +210,30 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         reportMetrics(listener, "startup-procrank-pss", pssOutput);
         reportMetrics(listener, "startup-procrank-rss", rssOutput);
         reportMetrics(listener, "startup-procrank-uss", ussOutput);
+    }
+
+    /**
+     * Blocks until the device's boot complete flag is set.
+     *
+     * @param device the {@link ITestDevice}
+     * @param timeOut time in msecs to wait for the flag to be set
+     * @param pollDelay time in msecs between checks
+     * @return true if device's boot complete flag is set within the timeout
+     * @throws DeviceNotAvailableException
+     */
+    private boolean waitForBootComplete(ITestDevice device,long timeOut, long pollDelay)
+            throws DeviceNotAvailableException {
+        long startTime = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startTime) < timeOut) {
+            String output = device.executeShellCommand("getprop dev.bootcomplete");
+            output = output.replace('#', ' ').trim();
+            if (output.equals("1")) {
+                return true;
+            }
+            RunUtil.getDefault().sleep(pollDelay);
+        }
+        CLog.w("Device %s did not boot after %d ms", device.getSerialNumber(), timeOut);
+        return false;
     }
 
     @Override
