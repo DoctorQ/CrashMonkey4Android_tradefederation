@@ -25,7 +25,7 @@ public interface IBuildInfo {
     /**
      * Default value when build ID is unknown.
      */
-    public final static String UNKOWN_BUILD_ID = "-1";
+    public final static String UNKNOWN_BUILD_ID = "-1";
 
     /**
      * @return the unique identifier of build under test. Should never be null.

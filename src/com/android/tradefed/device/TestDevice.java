@@ -431,7 +431,7 @@ class TestDevice implements IManagedTestDevice {
         String bid = getIDevice().getProperty(BUILD_ID_PROP);
         if (bid == null) {
             Log.w(LOG_TAG, String.format("Could not get device %s build id.", getSerialNumber()));
-            return IBuildInfo.UNKOWN_BUILD_ID;
+            return IBuildInfo.UNKNOWN_BUILD_ID;
         }
         return bid;
     }
