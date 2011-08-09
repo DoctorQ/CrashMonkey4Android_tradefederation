@@ -275,26 +275,8 @@ public class DeviceSelectionOptions implements IDeviceSelectionOptions {
     }
 
     private String getDeviceProductType(IDevice device) {
-        // FIXME: stop duplicating code with TestDevice#internalGetProductVariant
         // FIXME: merge this into the getProperties match
-        if (device.isEmulator() || (device instanceof NullDevice)) {
-            return null;
-        }
-
-        String type = device.getProperty("ro.hardware");
-        if (type == null || type.isEmpty()) {
-
-            type = device.getProperty("ro.product.board");
-            if (type == null || type.isEmpty()) {
-                // last-chance fallback to ro.product.device
-                type = device.getProperty("ro.product.device");
-            }
-            // FIXME: if ro.hardware works for all the hardware we care about, send the rest of this
-            // FIXME: code to the bitbucket in the sky
-            CLog.e("WARNING: ro.hardware is broken for %s device %s; please report this to TF " +
-                    "maintainers", type, device.getSerialNumber());
-        }
-        return type;
+        return device.getProperty("ro.hardware");
     }
 
     private String getDeviceProductVariant(IDevice device) {
