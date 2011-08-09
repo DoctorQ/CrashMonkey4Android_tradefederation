@@ -68,12 +68,12 @@ public class TfTestLauncher implements IRemoteTest, IBuildReceiver {
                 "--build-target",mBuildInfo.getBuildTargetName(), mConfigName);
         if (result.getStatus().equals(CommandStatus.SUCCESS)) {
             Log.logAndDisplay(LogLevel.INFO, "TfTestLauncher",
-                    String.format("Successfully ran TF tests for build %d. stdout: %s\n, stderr: %s",
+                    String.format("Successfully ran TF tests for build %s. stdout: %s\n, stderr: %s",
                     mBuildInfo.getBuildId(), result.getStdout(), result.getStderr()));
 
         } else {
             Log.logAndDisplay(LogLevel.INFO, "TfTestLauncher",
-                    String.format("Failed to run TF tests for build %d. stdout: %s\n, stderr: %s",
+                    String.format("Failed to run TF tests for build %s. stdout: %s\n, stderr: %s",
                     mBuildInfo.getBuildId(), result.getStdout(),
                     result.getStderr()));
         }
