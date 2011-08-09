@@ -63,7 +63,7 @@ public class TfTestLauncher implements IRemoteTest, IBuildReceiver {
                 //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=10088",
                 "-cp", jarClasspath,
                 "com.android.tradefed.command.CommandRunner", "-n", "--build-id",
-                Integer.toString(mBuildInfo.getBuildId()), "--test-tag",
+                mBuildInfo.getBuildId(), "--test-tag",
                 mBuildInfo.getTestTag(),
                 "--build-target",mBuildInfo.getBuildTargetName(), mConfigName);
         if (result.getStatus().equals(CommandStatus.SUCCESS)) {
