@@ -25,6 +25,7 @@ import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
@@ -57,7 +58,7 @@ import junit.framework.AssertionFailedError;
  */
 @OptionClass(alias = "ota-stability")
 public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigurationReceiver,
-        IShardableTest {
+        IShardableTest, IResumableTest {
 
     private static final String LOG_TAG = "OtaStabilityTest";
     private IBuildInfo mDeviceBuild;
@@ -83,6 +84,13 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
     @Option(name = "shards", description = "Optional number of shards to split test into. " +
             "Iterations will be split evenly among shards.", importance = Importance.IF_UNSET)
     private Integer mShards = null;
+
+    @Option(name = "resume", description = "Resume the ota test run if an device setup error " +
+            "stopped the previous test run.")
+    private boolean mResumeMode = false;
+
+    /** controls if this test should be resumed. Only used if mResumeMode is enabled */
+    private boolean mResumable = true;
 
     /**
      * {@inheritDoc}
@@ -192,6 +200,8 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        // started run, turn to off
+        mResumable = false;
         checkFields();
 
         long startTime = System.currentTimeMillis();
@@ -209,7 +219,11 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
         } catch (AssertionFailedError error) {
             Log.e(LOG_TAG, error);
         } catch (TargetSetupError e) {
-            Log.e(LOG_TAG, e);
+            CLog.i("Encountered TargetSetupError, marking this test as resumable");
+            mResumable = true;
+            CLog.e(e);
+            // throw up an exception so this test can be resumed
+            Assert.fail(e.toString());
         } catch (BuildError e) {
             Log.e(LOG_TAG, e);
         } catch (ConfigurationException e) {
@@ -331,5 +345,13 @@ public class OtaStabilityTest implements IDeviceTest, IBuildReceiver, IConfigura
         if (mDeviceBuild == null) {
             throw new IllegalArgumentException("missing build info");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isResumable() {
+        return mResumeMode && mResumable;
     }
 }
