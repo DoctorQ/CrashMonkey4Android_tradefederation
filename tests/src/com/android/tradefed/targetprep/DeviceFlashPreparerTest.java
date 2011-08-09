@@ -99,6 +99,8 @@ public class DeviceFlashPreparerTest extends TestCase {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
+        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andStubReturn(Boolean.FALSE);
         mMockDevice.clearLogcat();
         // expect shell command to test if boot is complete
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).andReturn(
@@ -128,6 +130,8 @@ public class DeviceFlashPreparerTest extends TestCase {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
+        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andStubReturn(Boolean.FALSE);
         mMockDevice.clearLogcat();
         EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).

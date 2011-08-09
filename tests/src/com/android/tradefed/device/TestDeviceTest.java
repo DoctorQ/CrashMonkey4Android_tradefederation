@@ -16,16 +16,10 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.Client;
-import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.InstallException;
-import com.android.ddmlib.RawImage;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.android.ddmlib.log.LogReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
@@ -35,8 +29,6 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.StreamUtil;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
@@ -44,7 +36,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
+
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TestDevice}.
@@ -138,6 +131,15 @@ public class TestDeviceTest extends TestCase {
      * Test {@link TestDevice#enableAdbRoot()} when adb is not root
      */
     public void testEnableAdbRoot_notRoot() throws Exception {
+        setEnableAdbRootExpectations();
+        EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
+        assertTrue(mTestDevice.enableAdbRoot());
+    }
+
+    /**
+     * Configure EasyMock expectations for a successful adb root call
+     */
+    private void setEnableAdbRootExpectations() throws Exception {
         injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
         CommandResult adbResult = new CommandResult();
         adbResult.setStatus(CommandStatus.SUCCESS);
@@ -150,8 +152,6 @@ public class TestDeviceTest extends TestCase {
                 Boolean.TRUE);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
                 mMockIDevice);
-        EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
-        assertTrue(mTestDevice.enableAdbRoot());
     }
 
     /**
@@ -256,21 +256,11 @@ public class TestDeviceTest extends TestCase {
      * Test {@link TestDevice#getProductType()} when device is in adb and IDevice has not cached
      * product type property
      */
-    public void testGetProductType_adb() throws DeviceNotAvailableException, IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testGetProductType_adb() throws Exception {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null);
         final String expectedOutput = "nexusone";
-        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.board"),
-                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                    int timeout) {
-                byte[] inputData = expectedOutput.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        });
+        injectShellResponse("getprop ro.product.board", expectedOutput);
         EasyMock.replay(mMockIDevice);
         assertEquals(expectedOutput, mTestDevice.getProductType());
     }
@@ -279,33 +269,18 @@ public class TestDeviceTest extends TestCase {
      * Verify that {@link TestDevice#getProductType()} throws an exception if requesting a product
      * type directly still fails.
      */
-    public void testGetProductType_adbFail() throws DeviceNotAvailableException, IOException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testGetProductType_adbFail() throws Exception {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null).anyTimes();
         // direct query fails: getprop ro.product.board --> ""
         final String expectedOutput = "";
-        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.board"),
-                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                    int timeout) {
-                byte[] inputData = expectedOutput.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        }).anyTimes();
-        // last-ditch query fails: getprop ro.product.device --> ""
-        mMockIDevice.executeShellCommand(EasyMock.eq("getprop ro.product.device"),
-                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                    int timeout) {
-                byte[] inputData = expectedOutput.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        }).anyTimes();
+        injectShellResponse("getprop ro.product.board", expectedOutput);
+        injectShellResponse("getprop ro.product.board", expectedOutput);
+        injectShellResponse("getprop ro.product.board", expectedOutput);
+         // last-ditch query fails: getprop ro.product.device --> ""
+        injectShellResponse("getprop ro.product.device", expectedOutput);
+        injectShellResponse("getprop ro.product.device", expectedOutput);
+        injectShellResponse("getprop ro.product.device", expectedOutput);
         EasyMock.replay(mMockIDevice);
         try {
             mTestDevice.getProductType();
@@ -318,8 +293,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test {@link TestDevice#clearErrorDialogs()} when both a error and anr dialog are present.
      */
-    public void testClearErrorDialogs() throws IOException, DeviceNotAvailableException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testClearErrorDialogs() throws Exception {
         final String anrOutput = "debugging=false crashing=false null notResponding=true "
                 + "com.android.server.am.AppNotRespondingDialog@4534aaa0 bad=false\n blah\n";
         final String crashOutput = "debugging=false crashing=true "
@@ -327,18 +301,9 @@ public class TestDeviceTest extends TestCase {
                 + "blah \n";
         // construct a string with 2 error dialogs of each type to ensure proper detection
         final String fourErrors = anrOutput + anrOutput + crashOutput + crashOutput;
+        injectShellResponse(null, fourErrors);
         mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
                 (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                byte[] inputData = fourErrors.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        });
-
-        mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
         // expect 4 key events to be sent - one for each dialog
         // and expect another dialog query - but return nothing
         EasyMock.expectLastCall().times(5);
@@ -350,6 +315,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test the log file size limiting.
      */
+    @SuppressWarnings("unchecked")
     public void testLogCatReceiver() throws IOException, InterruptedException, TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mTestDevice.setTmpLogcatSize(10);
@@ -363,38 +329,40 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expect(mMockIDevice.getProperty((String)EasyMock.anyObject())).andStubReturn("1");
 
         try {
+            IAnswer shellAnswer = new IAnswer() {
+                @Override
+                public Object answer() throws Throwable {
+                    IShellOutputReceiver receiver =
+                        (IShellOutputReceiver)EasyMock.getCurrentArguments()[1];
+                    byte[] inputData = input.getBytes();
+                    // add log data > maximum. This will trigger a log swap, where inputData
+                    // will be moved to the backup log file
+                    receiver.addOutput(inputData, 0, inputData.length);
+                    // inject the second input data > maximum. This will trigger another log
+                    // swap, that will discard inputData. the backup log file will have
+                    // inputData2, and the current log file will be empty
+                    byte[] inputData2 = input2.getBytes();
+                    receiver.addOutput(inputData2, 0, inputData2.length);
+                    // inject log data smaller than max log data - that will not trigger a
+                    // log swap. The backup log file should contain inputData2, and the
+                    // current should contain inputData3
+                    byte[] inputData3 = input3.getBytes();
+                    receiver.addOutput(inputData3, 0, inputData3.length);
+                    synchronized (notifier) {
+                        notifier.notify();
+                        try {
+                          // block until interrupted
+                          notifier.wait();
+                        } catch (InterruptedException e) {
+                      }
+                    }
+                    return null;
+                }
+            };
             // expect shell command to be called, with any receiver
             mMockIDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
                     EasyMock.anyObject(), EasyMock.eq(0));
-            EasyMock.expectLastCall().andDelegateTo(
-                  new MockDevice() {
-                      @Override
-                      public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                              int timeout) {
-                          byte[] inputData = input.getBytes();
-                          // add log data > maximum. This will trigger a log swap, where inputData
-                          // will be moved to the backup log file
-                          receiver.addOutput(inputData, 0, inputData.length);
-                          // inject the second input data > maximum. This will trigger another log
-                          // swap, that will discard inputData. the backup log file will have
-                          // inputData2, and the current log file will be empty
-                          byte[] inputData2 = input2.getBytes();
-                          receiver.addOutput(inputData2, 0, inputData2.length);
-                          // inject log data smaller than max log data - that will not trigger a
-                          // log swap. The backup log file should contain inputData2, and the
-                          // current should contain inputData3
-                          byte[] inputData3 = input3.getBytes();
-                          receiver.addOutput(inputData3, 0, inputData3.length);
-                          synchronized (notifier) {
-                              notifier.notify();
-                              try {
-                                // block until interrupted
-                                notifier.wait();
-                              } catch (InterruptedException e) {
-                            }
-                          }
-                      }
-                  });
+            EasyMock.expectLastCall().andAnswer(shellAnswer);
             EasyMock.replay(mMockIDevice);
             receiver.start();
             synchronized (notifier) {
@@ -416,21 +384,7 @@ public class TestDeviceTest extends TestCase {
         final String testCommand = "bugreport";
         final String expectedOutput = "this is the output\r\n in two lines\r\n";
         // FIXME: this isn't actually causing a DeviceNotAvailableException to be thrown
-
-        // expect shell command to be called, with any receiver
-        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(
-                new MockDevice() {
-                    @Override
-                    public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                            int timeout) throws ShellCommandUnresponsiveException {
-                        byte[] inputData = expectedOutput.getBytes();
-                        receiver.addOutput(inputData, 0, inputData.length);
-                        // device goes away
-                        throw new ShellCommandUnresponsiveException();
-                    }
-                });
+        injectShellResponse(testCommand, expectedOutput);
         mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(false));
         EasyMock.expectLastCall().andThrow(new DeviceNotAvailableException());
 
@@ -461,27 +415,11 @@ public class TestDeviceTest extends TestCase {
      * {@link TestDevice#executeShellCommand(String)}.
      * <p/>
      * Verify that the shell command is routed to the IDevice, and shell output is collected.
-     * @throws ShellCommandUnresponsiveException
-     * @throws AdbCommandRejectedException
-     * @throws TimeoutException
      */
-    public void testExecuteShellCommand() throws IOException, DeviceNotAvailableException,
-            TimeoutException, AdbCommandRejectedException, ShellCommandUnresponsiveException {
+    public void testExecuteShellCommand() throws Exception {
         final String testCommand = "simple command";
         final String expectedOutput = "this is the output\r\n in two lines\r\n";
-
-        // expect shell command to be called, with any receiver
-        mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), (IShellOutputReceiver)
-                EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(
-              new MockDevice() {
-                  @Override
-                  public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                          int timeout) {
-                      byte[] inputData = expectedOutput.getBytes();
-                      receiver.addOutput(inputData, 0, inputData.length);
-                  }
-              });
+        injectShellResponse(testCommand, expectedOutput);
         EasyMock.replay(mMockIDevice);
         assertEquals(expectedOutput, mTestDevice.executeShellCommand(testCommand));
     }
@@ -668,15 +606,7 @@ public class TestDeviceTest extends TestCase {
         EasyMock.expect(mMockMonitor.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)).andReturn(
                 mntPoint);
         // expect shell command to be called, and return the test df output
-        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd),
-                (IShellOutputReceiver)EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver, int timeout) {
-                byte[] inputData = dfOutput.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        });
+        injectShellResponse(expectedCmd, dfOutput);
         EasyMock.replay(mMockIDevice, mMockMonitor);
         assertEquals(expectedFreeSpaceKB, mTestDevice.getExternalStoreFreeSpace());
     }
@@ -813,26 +743,11 @@ public class TestDeviceTest extends TestCase {
      * {@link TestDevice#unencryptDevice()} and makes sure that a
      * {@link UnsupportedOperationException} is thrown for each method.
      * </p>
-     * @throws DeviceNotAvailableException
-     * @throws IOException
-     * @throws ShellCommandUnresponsiveException
-     * @throws AdbCommandRejectedException
-     * @throws TimeoutException
      */
-    public void testEncryptionUnsupported() throws DeviceNotAvailableException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        final String expectedCmd = "vdc cryptfs enablecrypto";
-        final String output = "\r\n";
-        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCmd),
-                (IShellOutputReceiver) EasyMock.anyObject(), EasyMock.anyInt());
-        EasyMock.expectLastCall().andDelegateTo(new MockDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver,
-                    int timeout) {
-                byte[] inputData = output.getBytes();
-                receiver.addOutput(inputData, 0, inputData.length);
-            }
-        });
+    public void testEncryptionUnsupported() throws Exception {
+        setEncryptedUnsupportedExpectations();
+        setEncryptedUnsupportedExpectations();
+        setEncryptedUnsupportedExpectations();
         EasyMock.replay(mMockIDevice);
         try {
             mTestDevice.encryptDevice(false);
@@ -853,6 +768,13 @@ public class TestDeviceTest extends TestCase {
             // Expected
         }
         return;
+    }
+
+    /**
+     * Configure EasyMock for a encryption check call, that returns that encryption is unsupported
+     */
+    private void setEncryptedUnsupportedExpectations() throws Exception {
+        injectShellResponse("vdc cryptfs enablecrypto", "\r\n");
     }
 
     /**
@@ -894,7 +816,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Helper method to build a response to a executeShellCommand call
      *
-     * @param expectedCommand the shell command to expect
+     * @param expectedCommand the shell command to expect or null to skip verification of command
      * @param response the response to simulate
      */
     @SuppressWarnings("unchecked")
@@ -910,16 +832,28 @@ public class TestDeviceTest extends TestCase {
                 return null;
             }
         };
-        mMockIDevice.executeShellCommand(EasyMock.eq(expectedCommand),
-                (IShellOutputReceiver)EasyMock.anyObject(),
-                EasyMock.anyInt());
+        if (expectedCommand != null) {
+            mMockIDevice.executeShellCommand(EasyMock.eq(expectedCommand),
+                    (IShellOutputReceiver)EasyMock.anyObject(),
+                    EasyMock.anyInt());
+        } else {
+            mMockIDevice.executeShellCommand((String)EasyMock.anyObject(),
+                    (IShellOutputReceiver)EasyMock.anyObject(),
+                    EasyMock.anyInt());
+
+        }
         EasyMock.expectLastCall().andAnswer(shellAnswer);
     }
 
     /**
      * Test normal success case for {@link TestDevice#reboot()}
      */
-    public void testReboot() throws DeviceNotAvailableException {
+    public void testReboot() throws Exception {
+
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
+                mMockIDevice);
+        setEnableAdbRootExpectations();
+        setEncryptedUnsupportedExpectations();
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(
                 mMockIDevice);
         replayMocks();
@@ -930,167 +864,16 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test {@link TestDevice#reboot()} attempts a recovery upon failure
      */
-    public void testRebootRecovers() throws DeviceNotAvailableException {
-        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockIDevice);
+    public void testRebootRecovers() throws Exception {
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
+                mMockIDevice);
+        setEnableAdbRootExpectations();
+        setEncryptedUnsupportedExpectations();
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(null);
         mMockRecovery.recoverDevice(mMockMonitor, false);
         replayMocks();
         mRecoveryTestDevice.reboot();
         verifyMocks();
-    }
-
-    /**
-     * Concrete mock implementation of {@link IDevice}.
-     * <p/>
-     * Needed in order to handle the EasyMock andDelegateTo operation.
-     */
-    private static class MockDevice implements IDevice {
-
-        @Override
-        public void createForward(int localPort, int remotePort) {
-        }
-
-        @Override
-        public void executeShellCommand(String command, IShellOutputReceiver receiver)
-                throws IOException, ShellCommandUnresponsiveException {
-        }
-
-        @Override
-        public void executeShellCommand(String command, IShellOutputReceiver receiver, int timeout)
-                throws TimeoutException, IOException, ShellCommandUnresponsiveException {
-        }
-
-        @Override
-        public String getAvdName() {
-            return null;
-        }
-
-        @Override
-        public Client getClient(String applicationName) {
-            return null;
-        }
-
-        @Override
-        public String getClientName(int pid) {
-            return null;
-        }
-
-        @Override
-        public Client[] getClients() {
-            return null;
-        }
-
-        @Override
-        public FileListingService getFileListingService() {
-            return null;
-        }
-
-        @Override
-        public Map<String, String> getProperties() {
-            return null;
-        }
-
-        @Override
-        public String getProperty(String name) {
-            return null;
-        }
-
-        @Override
-        public int getPropertyCount() {
-            return 0;
-        }
-
-        @Override
-        public String getMountPoint(String name) {
-            return null;
-        }
-
-        @Override
-        public RawImage getScreenshot() throws IOException {
-            return null;
-        }
-
-        @Override
-        public String getSerialNumber() {
-            return null;
-        }
-
-        @Override
-        public DeviceState getState() {
-            return null;
-        }
-
-        @Override
-        public SyncService getSyncService() throws IOException {
-            return null;
-        }
-
-        @Override
-        public boolean hasClients() {
-            return false;
-        }
-
-        @Override
-        public String installPackage(String packageFilePath, boolean reinstall)
-                throws InstallException {
-            return null;
-        }
-
-        @Override
-        public String installRemotePackage(String remoteFilePath, boolean reinstall)
-                throws InstallException {
-            return null;
-        }
-
-        @Override
-        public boolean isBootLoader() {
-            return false;
-        }
-
-        @Override
-        public boolean isEmulator() {
-            return false;
-        }
-
-        @Override
-        public boolean isOffline() {
-            return false;
-        }
-
-        @Override
-        public boolean isOnline() {
-            return false;
-        }
-
-        @Override
-        public void removeForward(int localPort, int remotePort) {
-        }
-
-        @Override
-        public void removeRemotePackage(String remoteFilePath) throws InstallException {
-        }
-
-        @Override
-        public void runEventLogService(LogReceiver receiver) throws IOException {
-        }
-
-        @Override
-        public void runLogService(String logname, LogReceiver receiver) throws IOException {
-        }
-
-        @Override
-        public String syncPackageToDevice(String localFilePath) throws IOException {
-            return null;
-        }
-
-        @Override
-        public String uninstallPackage(String packageName) throws InstallException {
-            return null;
-        }
-
-        @Override
-        public void reboot(String into) throws IOException {
-        }
     }
 }
 

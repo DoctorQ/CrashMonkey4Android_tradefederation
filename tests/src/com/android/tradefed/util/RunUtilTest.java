@@ -80,16 +80,6 @@ public class RunUtilTest extends TestCase {
     }
 
     /**
-     * Test that {@link RunUtil#runTimedCmd(long, String)} succeeds when given a simple command.
-     */
-    public void testRunTimedCmd_dir() {
-        CommandResult result = mRunUtil.runTimedCmd(1000, "dir");
-        assertEquals(CommandStatus.SUCCESS, result.getStatus());
-        assertTrue(result.getStdout().length() > 0);
-        assertEquals(0, result.getStderr().length());
-    }
-
-    /**
      * Test that {@link RunUtil#runTimedCmd(long, String)} fails when garbage times out.
      */
     public void testRunTimedCmd_timeout() {
