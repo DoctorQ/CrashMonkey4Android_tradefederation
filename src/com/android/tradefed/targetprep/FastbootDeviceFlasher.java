@@ -35,17 +35,19 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
 
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
 
-    private final IFlashingResourcesRetriever mResourceRetriever;
+    private IFlashingResourcesRetriever mResourceRetriever;
     // TODO: make this list configurable
     private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller("media");
 
     /**
-     * Creates a {@link FastbootDeviceFlasher}.
-     *
-     * @param resourceRetriever the {@link IFlashingResourcesRetriever} to use
+     * {@inheritDoc}
      */
-    public FastbootDeviceFlasher(IFlashingResourcesRetriever resourceRetriever) {
-        mResourceRetriever = resourceRetriever;
+    public void setFlashingResourcesRetriever(IFlashingResourcesRetriever retriever) {
+        mResourceRetriever = retriever;
+    }
+
+    protected IFlashingResourcesRetriever getFlashingResourcesRetriever() {
+        return mResourceRetriever;
     }
 
     /**
@@ -151,16 +153,16 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         // only set bootloader image if this build doesn't have one already
         // TODO: move this logic to the BuildProvider step
         if (bootloaderVersion != null && localBuild.getBootloaderImageFile() == null) {
-           localBuild.setBootloaderImageFile(mResourceRetriever.retrieveFile(
+           localBuild.setBootloaderImageFile(getFlashingResourcesRetriever().retrieveFile(
                    getBootloaderFilePrefix(device), bootloaderVersion), bootloaderVersion);
         }
         String basebandVersion = resourceParser.getRequiredBasebandVersion();
         // only set baseband image if this build doesn't have one already
         if (basebandVersion != null && localBuild.getBasebandImageFile() == null) {
-            localBuild.setBasebandImage(mResourceRetriever.retrieveFile(BASEBAND_IMAGE_NAME,
-                    basebandVersion), basebandVersion);
+            localBuild.setBasebandImage(getFlashingResourcesRetriever().retrieveFile(
+                    BASEBAND_IMAGE_NAME, basebandVersion), basebandVersion);
         }
-        downloadExtraImageFiles(resourceParser, mResourceRetriever, localBuild);
+        downloadExtraImageFiles(resourceParser, getFlashingResourcesRetriever(), localBuild);
     }
 
     /**

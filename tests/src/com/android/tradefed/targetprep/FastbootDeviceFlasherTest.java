@@ -62,13 +62,14 @@ public class FastbootDeviceFlasherTest extends TestCase {
         mMockRetriever = EasyMock.createNiceMock(IFlashingResourcesRetriever.class);
         mMockParser = EasyMock.createNiceMock(IFlashingResourcesParser.class);
 
-        mFlasher = new FastbootDeviceFlasher(mMockRetriever) {
+        mFlasher = new FastbootDeviceFlasher() {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
                     IDeviceBuildInfo localBuild) {
                 return mMockParser;
             }
         };
+        mFlasher.setFlashingResourcesRetriever(mMockRetriever);
         mFlasher.setUserDataFlashOption(UserDataFlashOption.RETAIN);
     }
 
@@ -223,8 +224,7 @@ public class FastbootDeviceFlasherTest extends TestCase {
 
     private FastbootDeviceFlasher getFlasherWithParserData(final String androidInfoData)
             throws IOException {
-        return new FastbootDeviceFlasher(EasyMock.createNiceMock(
-                IFlashingResourcesRetriever.class)) {
+        FastbootDeviceFlasher flasher = new FastbootDeviceFlasher() {
             @Override
             protected IFlashingResourcesParser createFlashingResourcesParser(
                     IDeviceBuildInfo localBuild) throws TargetSetupError {
@@ -242,5 +242,8 @@ public class FastbootDeviceFlasherTest extends TestCase {
                 throw new DeviceNotAvailableException("error");
             }
         };
+        flasher.setFlashingResourcesRetriever(EasyMock.createNiceMock(
+                IFlashingResourcesRetriever.class));
+        return flasher;
     }
 }
