@@ -305,43 +305,47 @@ class TestDevice implements IManagedTestDevice {
         return getIDevice().getSerialNumber();
     }
 
+    private boolean nullOrEmpty(String string) {
+        return string == null || string.isEmpty();
+    }
+
     /**
-     * {@inheritDoc}
+     * Fetch a device property, from the ddmlib cache by default, and falling back to either
+     * `adb shell getprop` or `fastboot getvar` depending on whether the device is in Fastboot or
+     * not.
+     *
+     * @param prop The name of the device property as returned by `adb shell getprop`
+     * @param fastbootVar The name of the equivalent fastboot variable to query
+     * @param description A simple description of the variable.  First letter should be capitalized.
+     * @return A string, possibly {@code null} or empty, containing the value of the given property
      */
-    @Override
-    public String getBootloaderVersion() throws UnsupportedOperationException,
-            DeviceNotAvailableException {
-        String bootloader = getIDevice().getProperty("ro.bootloader");
-        if (bootloader == null || bootloader.isEmpty()) {
+    private String getProperty(String prop, String fastbootVar, String description)
+            throws DeviceNotAvailableException, UnsupportedOperationException {
+        String value = getIDevice().getProperty(prop);
+        if (nullOrEmpty(value)) {
             /* DDMS may not have processed all of the properties yet, or the device may be in
              * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
              * directly.
              */
             if (getDeviceState() == TestDeviceState.FASTBOOT) {
-                Log.i(LOG_TAG, String.format(
-                        "Bootloader for device %s is null, re-querying in fastboot",
-                        getSerialNumber()));
-                bootloader = getFastbootBootloader();
+                CLog.i("%s for device %s is null, re-querying in fastboot", description,
+                        getSerialNumber());
+                value = getFastbootVariable(fastbootVar);
             } else {
-                Log.w(LOG_TAG, String.format(
-                        "Bootloader for device %s is null, re-querying", getSerialNumber()));
-                bootloader = executeShellCommand("getprop ro.bootloader").trim();
+                CLog.w("%s for device %s is null, re-querying", description, getSerialNumber());
+                value = executeShellCommand(String.format("getprop '%s'", prop)).trim();
             }
         }
-        return bootloader;
+        return value;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getBuildId() {
-        String bid = getIDevice().getProperty(BUILD_ID_PROP);
-        if (bid == null) {
-            Log.w(LOG_TAG, String.format("Could not get device %s build id.", getSerialNumber()));
-            return IBuildInfo.UNKOWN_BUILD_ID;
-        }
-        return bid;
+    public String getBootloaderVersion() throws UnsupportedOperationException,
+            DeviceNotAvailableException {
+        return getProperty("ro.bootloader", "version-bootloader", "Bootloader");
     }
 
     /**
@@ -358,41 +362,17 @@ class TestDevice implements IManagedTestDevice {
      *        device's product type cannot be found.
      */
     private String internalGetProductType(int retryAttempts) throws DeviceNotAvailableException {
-        // FIXME: switch this to ro.hardware
-        String productType = getIDevice().getProperty("ro.product.board");
-        if (productType == null || productType.isEmpty()) {
-            /* DDMS may not have processed all of the properties yet, or the device may be in
-             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
-             * directly.
-             */
-            if (getDeviceState() == TestDeviceState.FASTBOOT) {
-                Log.i(LOG_TAG, String.format(
-                        "Product type for device %s is null, re-querying in fastboot",
-                        getSerialNumber()));
-                productType = getFastbootProductType();
-            } else {
-                Log.w(LOG_TAG, String.format(
-                        "Product type for device %s is null, re-querying", getSerialNumber()));
-                productType = executeShellCommand("getprop ro.product.board").trim();
-
-                if (productType.isEmpty()) {
-                    // last ditch effort; try ro.product.device
-                    productType = executeShellCommand("getprop ro.product.device").trim();
-                    Log.i(LOG_TAG, String.format("Fell back to ro.product.device because " +
-                            "ro.product.board is unset. product type is %s.", productType));
-                }
-            }
-        }
+        String productType = getProperty("ro.hardware", "product", "Product type");
 
         // Things will likely break if we don't have a valid product type.  Try recovery (in case
         // the device is only partially booted for some reason), and if that doesn't help, bail.
-        if (productType == null || productType.isEmpty()) {
+        if (nullOrEmpty(productType)) {
             if (retryAttempts > 0) {
                 recoverDevice();
                 productType = internalGetProductType(retryAttempts - 1);
             }
 
-            if (productType == null || productType.isEmpty()) {
+            if (nullOrEmpty(productType)) {
                 throw new DeviceNotAvailableException(String.format(
                         "Could not determine product type for device %s.", getSerialNumber()));
             }
@@ -404,53 +384,26 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public String getProductVariant() throws DeviceNotAvailableException {
-        return internalGetProductVariant(MAX_RETRY_ATTEMPTS);
-    }
-
-    /**
-     * {@see getProductVariant()}
-     *
-     * @param retryAttempts The number of times to try calling {@see recoverDevice()} if the
-     *        device's product type cannot be found.
-     */
-    private String internalGetProductVariant(int retryAttempts) throws DeviceNotAvailableException {
-        String variant = getIDevice().getProperty("ro.product.device");
-        if (variant == null || variant.isEmpty()) {
-            /* DDMS may not have processes all of the properties yet, or the device may be in
-             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
-             * directly.
-             */
-            if (getDeviceState() == TestDeviceState.FASTBOOT) {
-                Log.i(LOG_TAG, String.format(
-                        "Product type for device %s is null, re-querying in fastboot",
-                        getSerialNumber()));
-                variant = getFastbootProductVariant();
-            } else {
-                Log.w(LOG_TAG, String.format(
-                        "Product type for device %s is null, re-querying", getSerialNumber()));
-                variant = executeShellCommand("getprop ro.product.device").trim();
-            }
-        }
-
-        return variant;
-    }
-
     @Override
     public String getFastbootProductType()
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return getFastbootVariable("product");
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    public String getProductVariant() throws DeviceNotAvailableException {
+        return getProperty("ro.product.device", "variant", "Product variant");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public String getFastbootProductVariant()
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return getFastbootVariable("variant");
-    }
-
-    private String getFastbootBootloader()
-            throws DeviceNotAvailableException, UnsupportedOperationException {
-        return getFastbootVariable("version-bootloader");
     }
 
     private String getFastbootVariable(String variableName)
@@ -474,6 +427,19 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public String getBuildId() {
+        String bid = getIDevice().getProperty(BUILD_ID_PROP);
+        if (bid == null) {
+            Log.w(LOG_TAG, String.format("Could not get device %s build id.", getSerialNumber()));
+            return IBuildInfo.UNKNOWN_BUILD_ID;
+        }
+        return bid;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void executeShellCommand(final String command, final IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
         DeviceAction action = new DeviceAction() {

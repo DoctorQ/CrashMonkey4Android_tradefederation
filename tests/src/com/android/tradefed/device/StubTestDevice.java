@@ -483,7 +483,7 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     @Override
     public String getBuildId() {
-        return IBuildInfo.UNKOWN_BUILD_ID;
+        return IBuildInfo.UNKNOWN_BUILD_ID;
     }
 
     /**
