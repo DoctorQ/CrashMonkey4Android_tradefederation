@@ -60,7 +60,9 @@ public class LogFileSaverTest extends TestCase {
      */
     public void testGetFileDir() throws IOException {
         final String buildId = "88888";
+        final String branch = "somebranch";
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
+        EasyMock.expect(mockBuild.getBuildBranch()).andReturn(branch).anyTimes();
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
         EasyMock.replay(mockBuild);
         ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir);
@@ -68,8 +70,11 @@ public class LogFileSaverTest extends TestCase {
         File buildDir = generatedDir.getParentFile();
         // ensure a directory with name == build number is parent of generated directory
         assertEquals(buildId, buildDir.getName());
+        // ensure a directory with name == branch is parent of generated directory
+        File branchDir = buildDir.getParentFile();
+        assertEquals(branch, branchDir.getName());
         // ensure parent directory is rootDir
-        assertEquals(0, mRootDir.compareTo(buildDir.getParentFile()));
+        assertEquals(0, mRootDir.compareTo(branchDir.getParentFile()));
 
         // now create a new log saver,
         ILogFileSaver newsaver = new LogFileSaver(mockBuild, mRootDir);
@@ -79,6 +84,24 @@ public class LogFileSaverTest extends TestCase {
         // verify buildDir is reused
         File newbuildDir = newgeneratedDir.getParentFile();
         assertEquals(0, buildDir.compareTo(newbuildDir));
+    }
+
+    /**
+     * Test that a unique directory is created when no branch is specified
+     */
+    public void testGetFileDir_nobranch() throws IOException {
+        final String buildId = "88888";
+        IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
+        EasyMock.expect(mockBuild.getBuildBranch()).andReturn(null).anyTimes();
+        EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.replay(mockBuild);
+        ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir);
+        File generatedDir = saver.getFileDir();
+        File buildDir = generatedDir.getParentFile();
+        // ensure a directory with name == build number is parent of generated directory
+        assertEquals(buildId, buildDir.getName());
+        // ensure parent directory is rootDir
+        assertEquals(0, mRootDir.compareTo(buildDir.getParentFile()));
     }
 
     /**
