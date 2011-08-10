@@ -580,6 +580,14 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
+    public RecoveryMode getRecoveryMode() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void nonBlockingReboot() throws DeviceNotAvailableException {
         // ignore
 

@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
+import com.android.ddmlib.FileListingService.FileEntry;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -26,10 +27,9 @@ import com.android.ddmlib.NullOutputReceiver;
 import com.android.ddmlib.RawImage;
 import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.SyncException;
+import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.SyncService;
 import com.android.ddmlib.TimeoutException;
-import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.SyncException.SyncError;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
@@ -1851,13 +1851,14 @@ class TestDevice implements IManagedTestDevice {
     public void reboot() throws DeviceNotAvailableException {
         rebootUntilOnline();
 
+        RecoveryMode cachedRecoveryMode = getRecoveryMode();
         setRecoveryMode(RecoveryMode.ONLINE);
 
         if (isEncryptionSupported() && isDeviceEncrypted()) {
             unlockDevice();
         }
 
-        setRecoveryMode(RecoveryMode.AVAILABLE);
+        setRecoveryMode(cachedRecoveryMode);
 
         if (mMonitor.waitForDeviceAvailable(REBOOT_TIMEOUT) != null) {
             postBootSetup();
@@ -1872,15 +1873,16 @@ class TestDevice implements IManagedTestDevice {
      */
     public void rebootUntilOnline() throws DeviceNotAvailableException {
         doReboot();
+        RecoveryMode cachedRecoveryMode = getRecoveryMode();
+        setRecoveryMode(RecoveryMode.ONLINE);
         if (mMonitor.waitForDeviceOnline() != null) {
             if (mEnableAdbRoot) {
                 enableAdbRoot();
             }
-            return;
         } else {
-            // TODO: change this into a recoverDeviceUntilOnline type method
             recoverDevice();
         }
+        setRecoveryMode(cachedRecoveryMode);
     }
 
     /**
@@ -2052,22 +2054,25 @@ class TestDevice implements IManagedTestDevice {
             CLog.d("Need to format sdcard for device %s", getSerialNumber());
 
             rebootUntilOnline();
+            RecoveryMode cachedRecoveryMode = getRecoveryMode();
             setRecoveryMode(RecoveryMode.ONLINE);
 
             output = executeShellCommand("vdc volume format sdcard");
             if (output == null) {
                 CLog.e("Command vdc volume format sdcard failed will no output for device %s:\n%s",
                         getSerialNumber());
+                setRecoveryMode(cachedRecoveryMode);
                 return false;
             }
             splitOutput = output.split("\r\n");
             if (!splitOutput[splitOutput.length - 1].startsWith("200 ")) {
                 CLog.e("Command vdc volume format sdcard failed for device %s:\n%s",
                         getSerialNumber(), output);
+                setRecoveryMode(cachedRecoveryMode);
                 return false;
             }
 
-            setRecoveryMode(RecoveryMode.AVAILABLE);
+            setRecoveryMode(cachedRecoveryMode);
         }
 
         reboot();
@@ -2081,8 +2086,8 @@ class TestDevice implements IManagedTestDevice {
     public boolean unlockDevice() throws DeviceNotAvailableException,
             UnsupportedOperationException {
         if (!isEncryptionSupported()) {
-            throw new UnsupportedOperationException(String.format("Can't unlock userdata on device "
-                    + "%s: encryption not supported", getSerialNumber()));
+            throw new UnsupportedOperationException(String.format("Can't unlock device %s: "
+                    + "encryption not supported", getSerialNumber()));
         }
 
         if (!isDeviceEncrypted()) {
@@ -2092,22 +2097,34 @@ class TestDevice implements IManagedTestDevice {
 
         CLog.i("Unlocking device %s", getSerialNumber());
 
-        // Enter the password. Output will be:
-        // "200 -1" if the password has already been entered correctly,
-        // "200 0" if the password is entered correctly,
-        // "200 N" where N is any positive number if the password is incorrect,
-        // any other string if there is an error.
-        String output = executeShellCommand(String.format("vdc cryptfs checkpw \"%s\"",
-                ENCRYPTION_PASSWORD)).trim();
+        // FIXME: currently, vcd checkpw can return an empty string when it never should.  Try 3
+        // times.
+        String output;
+        int i = 0;
+        do {
+            // Enter the password. Output will be:
+            // "200 -1" if the password has already been entered correctly,
+            // "200 0" if the password is entered correctly,
+            // "200 N" where N is any positive number if the password is incorrect,
+            // any other string if there is an error.
+            output = executeShellCommand(String.format("vdc cryptfs checkpw \"%s\"",
+                    ENCRYPTION_PASSWORD)).trim();
 
-        if ("200 -1".equals(output)) {
-            return true;
-        }
+            if ("200 -1".equals(output)) {
+                return true;
+            }
 
-        if (!"200 0".equals(output)) {
-            CLog.e("checkpw gave output '%s' while trying to unlock userdata on device %s",
-                    output, getSerialNumber());
-            return false;
+            if (!"".equals(output) && !"200 0".equals(output)) {
+                CLog.e("checkpw gave output '%s' while trying to unlock device %s",
+                        output, getSerialNumber());
+                return false;
+            }
+
+            getRunUtil().sleep(500);
+        } while ("".equals(output) && i++ < 3);
+
+        if ("".equals(output)) {
+            CLog.e("checkpw gave no output while trying to unlock device %s");
         }
 
         // Restart the framework. Output will be:
@@ -2117,8 +2134,8 @@ class TestDevice implements IManagedTestDevice {
         output = executeShellCommand("vdc cryptfs restart").trim();
 
         if (!"200 0".equals(output)) {
-            CLog.e("restart gave output '%s' while trying to unlock userdata on device %s",
-                    output, getSerialNumber());
+            CLog.e("restart gave output '%s' while trying to unlock device %s", output,
+                    getSerialNumber());
             return false;
         }
 
@@ -2232,6 +2249,14 @@ class TestDevice implements IManagedTestDevice {
     @Override
     public void setRecoveryMode(RecoveryMode mode) {
         mRecoveryMode = mode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public RecoveryMode getRecoveryMode() {
+        return mRecoveryMode;
     }
 
     /**
