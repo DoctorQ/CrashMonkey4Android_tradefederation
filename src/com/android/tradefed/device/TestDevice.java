@@ -111,6 +111,8 @@ class TestDevice implements IManagedTestDevice {
     private static final int REBOOT_TIMEOUT = 2 * 60 * 1000;
     /** The time in ms to wait for a device to become unavailable. Should usually be short */
     private static final int DEFAULT_UNAVAILABLE_TIMEOUT = 10 * 1000;
+    /** The time in ms to wait for a recovery that we skip because of the NONE mode */
+    static final int NONE_RECOVERY_MODE_DELAY = 1000;
     /** number of attempts made to clear dialogs */
     private static final int NUM_CLEAR_ATTEMPTS = 5;
     /** the command used to dismiss a error dialog. Currently sends a DPAD_CENTER key event */
@@ -1173,6 +1175,7 @@ class TestDevice implements IManagedTestDevice {
     public void recoverDevice() throws DeviceNotAvailableException {
         if (mRecoveryMode.equals(RecoveryMode.NONE)) {
             CLog.i("Skipping recovery on %s", getSerialNumber());
+            getRunUtil().sleep(NONE_RECOVERY_MODE_DELAY);
             return;
         }
         CLog.i("Attempting recovery on %s", getSerialNumber());

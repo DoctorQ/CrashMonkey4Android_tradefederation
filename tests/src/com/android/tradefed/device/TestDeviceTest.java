@@ -260,7 +260,7 @@ public class TestDeviceTest extends TestCase {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null);
         final String expectedOutput = "nexusone";
-        injectShellResponse("getprop ro.product.board", expectedOutput);
+        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
         EasyMock.replay(mMockIDevice);
         assertEquals(expectedOutput, mTestDevice.getProductType());
     }
@@ -272,15 +272,10 @@ public class TestDeviceTest extends TestCase {
     public void testGetProductType_adbFail() throws Exception {
         mMockIDevice.getProperty((String)EasyMock.anyObject());
         EasyMock.expectLastCall().andReturn((String)null).anyTimes();
-        // direct query fails: getprop ro.product.board --> ""
         final String expectedOutput = "";
-        injectShellResponse("getprop ro.product.board", expectedOutput);
-        injectShellResponse("getprop ro.product.board", expectedOutput);
-        injectShellResponse("getprop ro.product.board", expectedOutput);
-         // last-ditch query fails: getprop ro.product.device --> ""
-        injectShellResponse("getprop ro.product.device", expectedOutput);
-        injectShellResponse("getprop ro.product.device", expectedOutput);
-        injectShellResponse("getprop ro.product.device", expectedOutput);
+        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
+        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
+        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
         EasyMock.replay(mMockIDevice);
         try {
             mTestDevice.getProductType();
