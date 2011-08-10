@@ -145,6 +145,31 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         mTestList.add(t);
     }
 
+    /**
+     * Configure screen timeout property
+     * @throws DeviceNotAvailableException
+     */
+    private void configDevice() throws DeviceNotAvailableException {
+        // Set device screen_off_timeout as svc power can be set to false in the Wi-Fi test
+        String command = ("sqlite3 /data/data/com.android.providers.settings/databases/settings.db "
+                + "\"UPDATE system SET value=\'600000\' WHERE name=\'screen_off_timeout\';\"");
+        CLog.d("Command to set screen timeout value to 10 minutes: %s", command);
+        mTestDevice.executeShellCommand(command);
+
+        // reboot to allow the setting to take effect, post setup will be taken care by the reboot
+        mTestDevice.reboot();
+    }
+
+    /**
+     * Enable/disable screen never timeout property
+     * @param on
+     * @throws DeviceNotAvailableException
+     */
+    private void setScreenProperty(boolean on) throws DeviceNotAvailableException {
+        CLog.d("set svc power stay on " + on);
+        mTestDevice.executeShellCommand("svc power stayon " + on);
+    }
+
     @Override
     public void setDevice(ITestDevice testDevice) {
         mTestDevice = testDevice;
@@ -166,6 +191,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
 
         setupTests();
+        configDevice();
+
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.addInstrumentationArg("softap_iterations", mApIteration);
@@ -181,6 +208,12 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
 
         for (TestInfo testCase : mTestList) {
+            // for Wi-Fi reconnection test,
+            if (testCase.mTestName == "WifiReconnectionStress") {
+                setScreenProperty(false);
+            } else {
+                setScreenProperty(true);
+            }
             CLog.d("TestInfo: " + testCase.toString());
             runner.setClassName(testCase.mTestClass);
             runner.setMethodName(testCase.mTestClass, testCase.mTestMethod);
