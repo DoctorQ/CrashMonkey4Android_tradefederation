@@ -38,7 +38,12 @@ public class ProcRankParserTest extends TestCase {
                 " 3247   61652K   61492K   33122K   30972K  com.android.browser",
                 "  334   55740K   55572K   29629K   28360K  com.android.launcher",
                 " 2072   51348K   51172K   24263K   22812K  android.process.acore",
-                " 1236   51440K   51312K   22911K   20608K  com.android.settings");
+                " 1236   51440K   51312K   22911K   20608K  com.android.settings",
+                "                 51312K   22911K   20608K  invalid.format",
+                "                          ------   ------  ------",
+                "                          203624K  163604K  TOTAL",
+                "RAM: 731448K total, 415804K free, 9016K buffers, 108548K cached",
+                "[procrank: 1.6s elapsed]");
         ProcRankParser parser = new ProcRankParser();
         ItemList br = new ItemList();
 
@@ -52,7 +57,11 @@ public class ProcRankParserTest extends TestCase {
         Map<String, Integer> map;
         Map<String, Map<String, Integer>> output =
                 (GenericMapItem<String, Map<String, Integer>>)items.get(0);
+
+        // Ensures that only valid lines are parsed. Only 6 of the 11 lines under the header are
+        // valid.
         assertEquals(6, output.size());
+
         // Make sure all expected rows are present, and do a diagonal check of values
         map = output.get("system_server");
         assertNotNull(map);

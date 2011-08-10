@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util.brillopad.section;
 
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.IBlockParser;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
@@ -33,11 +34,15 @@ public class ProcRankParser implements IBlockParser {
     public static final String SECTION_NAME = "PROCRANK";
     public static final String SECTION_REGEX = "------ PROCRANK .*";
 
+
     private int mNumFields = -1;
     private String[] mFieldNames = null;
 
     /** Match a memory amount, such as "12345K" */
     private static final Pattern NUMBER_PAT = Pattern.compile("(\\d+)([BKMGbkmg])?");
+
+    /** Match the end of the Procrank table, determined by three sets of "------". */
+    private static final Pattern END_PAT = Pattern.compile("^\\s+-{6}\\s+-{6}\\s+-{6}");
 
     /**
      * A utility function to parse a memory amount, such as "12345K", and return the number of
@@ -75,6 +80,12 @@ public class ProcRankParser implements IBlockParser {
                 new GenericMapItem<String, Map<String, Integer>>(SECTION_NAME);
 
         for (String line : block) {
+            // If we have reached the end.
+            Matcher endMatcher = END_PAT.matcher(line);
+            if (endMatcher.matches()) {
+                break;
+            }
+
             // Trim leading whitespace so that split() works properly
             line = line.replaceFirst("^\\s+", "");
             if (mFieldNames == null) {
@@ -85,11 +96,27 @@ public class ProcRankParser implements IBlockParser {
             }
 
             String[] fields = line.split("\\s+", mNumFields);
+            if (fields.length != mNumFields) {
+                CLog.w("Skipping line which contains invalid format: %s", line);
+                continue;
+            }
             String cmdline = fields[fields.length - 1];
             Map<String, Integer> valueMap = new HashMap<String, Integer>();
+            boolean validLine = true;
             for (int i = 0; i < mNumFields - 1 && i < fields.length; ++i) {
                 // FIXME: it's not correct to send PID through this, but in practice it works
-                valueMap.put(mFieldNames[i], parseMem(fields[i]));
+                Integer value = parseMem(fields[i]);
+                if (value == null) {
+                    validLine = false;
+                    break;
+                } else{
+                    valueMap.put(mFieldNames[i], value);
+                }
+            }
+            // If line contains unparsable values, skip it.
+            if (!validLine) {
+                CLog.w("Skipping line which contains invalid format: %s", line);
+                continue;
             }
             output.put(cmdline, valueMap);
         }
