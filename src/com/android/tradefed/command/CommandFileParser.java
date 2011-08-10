@@ -265,10 +265,16 @@ class CommandFileParser {
                                     expansion.size(), prev.size());
                         }
                     } else if (isLineIncludeDirective(lArgs)) {
-                        File parent = file.getParentFile();
-                        CLog.d("Got an include directive for file %s, using '%s' for parent dir",
-                                lArgs.get(1), parent);
-                        scanFile(new File(parent, lArgs.get(1)));
+                        File toScan = new File(lArgs.get(1));
+                        if (toScan.isAbsolute()) {
+                            CLog.d("Got an include directive for absolute path %s.", lArgs.get(1));
+                        } else {
+                            File parent = file.getParentFile();
+                            toScan = new File(parent, lArgs.get(1));
+                            CLog.d("Got an include directive for relative path %s, using '%s' " +
+                                    "for parent dir", lArgs.get(1), parent);
+                        }
+                        scanFile(toScan);
                     } else {
                         mLines.add(lArgs);
                     }

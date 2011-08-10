@@ -461,6 +461,46 @@ public class CommandFileParserTest extends TestCase {
     }
 
     /**
+     * Verify that INCLUDEing an absolute path works, even if a parent directory is specified.
+     * <p />
+     * This verifies the fix for a bug that existed because {@code File("/tmp", "/usr/bin")} creates
+     * the path {@code /tmp/usr/bin}, rather than {@code /usr/bin} (which might be expected since
+     * the child is actually an absolute path on its own.
+     */
+    public void testMacroParserInclude_absoluteInclude() throws Exception {
+        // When we pass an unqualified filename, expect it to be taken relative to mMockFile's
+        // parent directory
+        final String includeFileName = "/usr/bin/somefile.txt";
+        final File expectedFile = new File(includeFileName);
+
+        final String mockFileData = String.format("INCLUDE %s\n", includeFileName);
+        final String mockIncludedFileData = "--foo bar\n";
+        String[] expectedArgs = new String[] {"--foo", "bar"};
+
+        CommandFileParser commandFile = new CommandFileParser() {
+            @Override
+            BufferedReader createCommandFileReader(File file) {
+                if (mMockFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockFileData));
+                } else if (expectedFile.equals(file)) {
+                    return new BufferedReader(new StringReader(mockIncludedFileData));
+                } else {
+                    fail(String.format("Received unexpected request for contents of file %s", file));
+                    // shouldn't actually reach here
+                    throw new RuntimeException();
+                }
+            }
+        };
+
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(expectedArgs))).andReturn(
+                Boolean.TRUE);
+
+        EasyMock.replay(mMockScheduler);
+        commandFile.parseFile(mMockFile, mMockScheduler);
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
      * Verify that if the original file is relative to no directory (aka ./), that the referenced
      * file is also relative to no directory.
      */
