@@ -300,4 +300,22 @@ class StubDevice implements IDevice {
     public String uninstallPackage(String packageName) throws InstallException {
         throw new InstallException(new IOException("stub"));
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void pushFile(String local, String remote) throws IOException,
+            AdbCommandRejectedException, TimeoutException, SyncException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void pullFile(String remote, String local) throws IOException,
+            AdbCommandRejectedException, TimeoutException, SyncException {
+        // ignore
+    }
 }
