@@ -184,8 +184,7 @@ public class TestDeviceTest extends TestCase {
      * cached product type property
      */
     public void testGetProductType_fastboot() throws DeviceNotAvailableException {
-        mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null);
+        EasyMock.expect(mMockIDevice.arePropertiesSet()).andReturn(false);
         CommandResult fastbootResult = new CommandResult();
         fastbootResult.setStatus(CommandStatus.SUCCESS);
         // output of this cmd goes to stderr
@@ -206,8 +205,7 @@ public class TestDeviceTest extends TestCase {
      * product type
      */
     public void testGetProductType_fastbootNonalpha() throws DeviceNotAvailableException {
-        mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null);
+        EasyMock.expect(mMockIDevice.arePropertiesSet()).andReturn(false);
         CommandResult fastbootResult = new CommandResult();
         fastbootResult.setStatus(CommandStatus.SUCCESS);
         // output of this cmd goes to stderr
@@ -228,8 +226,7 @@ public class TestDeviceTest extends TestCase {
      * type directly fails while the device is in fastboot.
      */
     public void testGetProductType_fastbootFail() throws DeviceNotAvailableException {
-        mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null).anyTimes();
+        EasyMock.expect(mMockIDevice.arePropertiesSet()).andStubReturn(false);
         CommandResult fastbootResult = new CommandResult();
         fastbootResult.setStatus(CommandStatus.SUCCESS);
         // output of this cmd goes to stderr
@@ -257,10 +254,9 @@ public class TestDeviceTest extends TestCase {
      * product type property
      */
     public void testGetProductType_adb() throws Exception {
-        mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null);
+        EasyMock.expect(mMockIDevice.arePropertiesSet()).andReturn(false);
         final String expectedOutput = "nexusone";
-        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
+        EasyMock.expect(mMockIDevice.getPropertyCacheOrSync("ro.hardware")).andReturn(expectedOutput);
         EasyMock.replay(mMockIDevice);
         assertEquals(expectedOutput, mTestDevice.getProductType());
     }
@@ -270,12 +266,11 @@ public class TestDeviceTest extends TestCase {
      * type directly still fails.
      */
     public void testGetProductType_adbFail() throws Exception {
-        mMockIDevice.getProperty((String)EasyMock.anyObject());
-        EasyMock.expectLastCall().andReturn((String)null).anyTimes();
+        EasyMock.expect(mMockIDevice.arePropertiesSet()).andStubReturn(false);
         final String expectedOutput = "";
-        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
-        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
-        injectShellResponse("getprop 'ro.hardware'", expectedOutput);
+        EasyMock.expect(mMockIDevice.getPropertyCacheOrSync("ro.hardware"))
+                .andReturn(expectedOutput)
+                .times(3);
         EasyMock.replay(mMockIDevice);
         try {
             mTestDevice.getProductType();

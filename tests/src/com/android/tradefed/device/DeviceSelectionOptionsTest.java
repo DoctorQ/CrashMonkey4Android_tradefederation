@@ -122,51 +122,38 @@ public class DeviceSelectionOptionsTest extends TestCase {
         };
     }
 
-    public void testGetProductType_mismatchWithEmptyBoard() {
+    public void testGetProductType_mismatch() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(OTHER_DEVICE_TYPE);
 
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE);
-        EasyMock.replay(mMockDevice);
-
-        assertFalse(options.matches(mMockDevice));
-    }
-
-    public void testGetProductType_mismatchWithProperBoard() {
-        DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.addProductType(OTHER_DEVICE_TYPE);
-
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn(DEVICE_TYPE);
-        EasyMock.replay(mMockDevice);
-
-        assertFalse(options.matches(mMockDevice));
-    }
-
-    public void testGetProductType_matchWithEmptyBoard() {
-        DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.addProductType(DEVICE_TYPE);
-
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(DEVICE_TYPE)
-                .times(2);
-        EasyMock.replay(mMockDevice);
-
-        assertTrue(options.matches(mMockDevice));
-    }
-
-    public void testGetProductType_matchWithProperBoard() {
-        DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.addProductType(DEVICE_TYPE);
-
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn("");
-        EasyMock.expect(mMockDevice.getProperty("ro.product.board")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
         EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
         EasyMock.replay(mMockDevice);
 
+        assertFalse(options.matches(mMockDevice));
+    }
+
+    public void testGetProductType_match() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProductType(DEVICE_TYPE);
+
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
+        EasyMock.replay(mMockDevice);
+        assertTrue(options.matches(mMockDevice));
+    }
+
+    /**
+     * Test scenario where device does not return a valid product type. For now, this will result
+     * in device not being matched.
+     */
+    public void testGetProductType_missingProduct() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addProductType(DEVICE_TYPE);
+
+        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
+        EasyMock.replay(mMockDevice);
         assertTrue(options.matches(mMockDevice));
     }
 

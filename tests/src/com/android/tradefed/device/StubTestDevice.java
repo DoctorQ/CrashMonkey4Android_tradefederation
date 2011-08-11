@@ -592,4 +592,13 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
 
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getProperty(String name) throws DeviceNotAvailableException {
+        // ignore
+        return null;
+    }
 }
