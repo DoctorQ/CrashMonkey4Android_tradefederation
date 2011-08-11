@@ -24,11 +24,11 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.MockFileUtil;
 
-import junit.framework.TestCase;
-
 import org.easymock.EasyMock;
 
 import java.io.File;
+
+import junit.framework.TestCase;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";
@@ -68,6 +68,9 @@ public class DefaultTestsZipInstallerTest extends TestCase {
 
         // expect initial reboot and android stop
         mMockDevice.rebootUntilOnline();
+        EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
@@ -76,7 +79,6 @@ public class DefaultTestsZipInstallerTest extends TestCase {
 
         // expect second reboot and android stop
         mMockDevice.rebootUntilOnline();
-        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         EasyMock.expect(mMockDevice.isDeviceEncrypted()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 

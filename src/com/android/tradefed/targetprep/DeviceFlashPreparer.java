@@ -176,7 +176,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         // Need to encrypt device
         if (mEncryptUserData && !device.isDeviceEncrypted()) {
             switch(flasher.getUserDataFlashOption()) {
-                case TESTS_ZIP:
+                case TESTS_ZIP: // Intentional fall through.
                 case WIPE_RM:
                     device.encryptDevice(false);
                     device.unlockDevice();
@@ -216,7 +216,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
                 case FLASH:
                     device.encryptDevice(true);
                     break;
-                case WIPE:
+                case WIPE: // Intentional fall through.
                 case FORCE_WIPE:
                     device.encryptDevice(false);
                     break;
