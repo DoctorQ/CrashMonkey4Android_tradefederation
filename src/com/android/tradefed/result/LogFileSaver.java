@@ -46,7 +46,7 @@ public class LogFileSaver implements ILogFileSaver {
     /**
      * Creates a {@link LogFileSaver}.
      * <p/>
-     * Construct a unique file system directory in rootDir/build_id/uniqueDir
+     * Construct a unique file system directory in rootDir/branch/build_id/uniqueDir
      *
      * @param buildInfo the {@link IBuildInfo}
      * @param rootDir the root file system path
@@ -73,14 +73,20 @@ public class LogFileSaver implements ILogFileSaver {
     }
 
     /**
-     * Attempt to create a folder to store log's for given build id.
+     * Attempt to create a folder to store log's for given build info.
      *
      * @param buildInfo the {@link IBuildInfo}
      * @param rootDir the root file system path to create directory from
      * @return a {@link File} pointing to the directory to store log files in
      */
     private File createBuildDir(IBuildInfo buildInfo, File rootDir) {
-        File buildReportDir = new File(rootDir, buildInfo.getBuildId());
+        File buildReportDir;
+        if (buildInfo.getBuildBranch() != null) {
+            buildReportDir = FileUtil.getFileForPath(rootDir, buildInfo.getBuildBranch(),
+                    buildInfo.getBuildId());
+        } else {
+            buildReportDir = FileUtil.getFileForPath(rootDir, buildInfo.getBuildId());
+        }
         // if buildReportDir already exists and is a directory - use it.
         if (buildReportDir.exists()) {
             if (buildReportDir.isDirectory()) {
