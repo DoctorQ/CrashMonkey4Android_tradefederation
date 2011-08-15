@@ -52,14 +52,18 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
 
     @Option(name = "test-package-name", description = "Android test package name.")
-    private static String TEST_PACKAGE_NAME = null;
+    private String mTestPackageName;
 
     @Option(name = "test-class-name", description = "Test class name.")
-    private static String TEST_CLASS_NAME = null;
+    private String mTestClassName;
 
     @Option(name = "dashboard-test-label",
             description = "Test label to use when posting to dashboard.")
-            private static String DASHBOARD_TEST_LABEL = null;
+    private String mDashboardTestLabel;
+
+    @Option(name = "setup-shell-command",
+            description = "Setup shell command to run before the test, if any.")
+    private String mSetupShellCommand;
 
     private static final String CURRENT_ITERATION_LABEL= "currentiterations";
 
@@ -67,9 +71,12 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
     @SuppressWarnings("unchecked")
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
-        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
+        if (mSetupShellCommand != null) {
+            mTestDevice.executeShellCommand(mSetupShellCommand);
+        }
+        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 mTestDevice.getIDevice());
-        runner.setClassName(TEST_CLASS_NAME);
+        runner.setClassName(mTestClassName);
         CollectingTestListener collectingListener = new CollectingTestListener();
         mTestDevice.runInstrumentationTests(runner, collectingListener, listener);
         // Retrieve bugreport
@@ -139,7 +146,7 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
         stressTestMetrics.put("iterations", numSuccessfulIterations.toString());
 
         // Post everything to the dashboard.
-        reportMetrics(listener, DASHBOARD_TEST_LABEL, stressTestMetrics);
+        reportMetrics(listener, mDashboardTestLabel, stressTestMetrics);
     }
 
     /**
