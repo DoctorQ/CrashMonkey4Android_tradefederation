@@ -41,6 +41,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         "com.android.connectivitymanagertest";
     private static final String TEST_RUNNER_NAME =
         ".ConnectivityManagerTestRunner";
+    private RadioHelper mRadioHelper;
 
     @Option(name="ssid",
             description="The ssid used for wi-fi connection.")
@@ -61,7 +62,8 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mSsid);
-        Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
+        mRadioHelper = new RadioHelper(mTestDevice);
+        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
 
         // Add bugreport listener for bugreport after each test case fails
         BugreportCollector bugListener = new
