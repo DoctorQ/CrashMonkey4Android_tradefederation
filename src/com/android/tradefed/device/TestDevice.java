@@ -19,6 +19,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
+import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -317,28 +318,46 @@ class TestDevice implements IManagedTestDevice {
      * not.
      *
      * @param prop The name of the device property as returned by `adb shell getprop`
-     * @param fastbootVar The name of the equivalent fastboot variable to query
+     * @param fastbootVar The name of the equivalent fastboot variable to query. if {@code null},
+     * fastboot query will not be attempted
      * @param description A simple description of the variable.  First letter should be capitalized.
      * @return A string, possibly {@code null} or empty, containing the value of the given property
      */
-    private String getProperty(String prop, String fastbootVar, String description)
+    private String internalGetProperty(String prop, String fastbootVar, String description)
             throws DeviceNotAvailableException, UnsupportedOperationException {
-        String value = getIDevice().getProperty(prop);
-        if (nullOrEmpty(value)) {
-            /* DDMS may not have processed all of the properties yet, or the device may be in
-             * fastboot, or the device may simply be misconfigured or malfunctioning.  Try querying
-             * directly.
-             */
-            if (getDeviceState() == TestDeviceState.FASTBOOT) {
-                CLog.i("%s for device %s is null, re-querying in fastboot", description,
-                        getSerialNumber());
-                value = getFastbootVariable(fastbootVar);
-            } else {
-                CLog.w("%s for device %s is null, re-querying", description, getSerialNumber());
-                value = executeShellCommand(String.format("getprop '%s'", prop)).trim();
-            }
+        if (getIDevice().arePropertiesSet()) {
+            return getIDevice().getProperty(prop);
+        } else if (TestDeviceState.FASTBOOT.equals(getDeviceState()) &&
+                fastbootVar != null) {
+            CLog.i("%s for device %s is null, re-querying in fastboot", description,
+                    getSerialNumber());
+            return getFastbootVariable(fastbootVar);
+        } else {
+            CLog.d("property collection for device %s is null, re-querying for prop %s",
+                    getSerialNumber(), description);
+            return getProperty(prop);
         }
-        return value;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getProperty(final String name) throws DeviceNotAvailableException {
+        final String[] result = new String[1];
+        DeviceAction propAction = new DeviceAction() {
+
+            @Override
+            public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                    ShellCommandUnresponsiveException, InstallException, SyncException {
+                result[0] = getIDevice().getPropertyCacheOrSync(name);
+                return true;
+            }
+
+        };
+        performDeviceAction("getprop", propAction, MAX_RETRY_ATTEMPTS);
+        return result[0];
+
     }
 
     /**
@@ -347,7 +366,7 @@ class TestDevice implements IManagedTestDevice {
     @Override
     public String getBootloaderVersion() throws UnsupportedOperationException,
             DeviceNotAvailableException {
-        return getProperty("ro.bootloader", "version-bootloader", "Bootloader");
+        return internalGetProperty("ro.bootloader", "version-bootloader", "Bootloader");
     }
 
     /**
@@ -364,7 +383,7 @@ class TestDevice implements IManagedTestDevice {
      *        device's product type cannot be found.
      */
     private String internalGetProductType(int retryAttempts) throws DeviceNotAvailableException {
-        String productType = getProperty("ro.hardware", "product", "Product type");
+        String productType = internalGetProperty("ro.hardware", "product", "Product type");
 
         // Things will likely break if we don't have a valid product type.  Try recovery (in case
         // the device is only partially booted for some reason), and if that doesn't help, bail.
@@ -396,7 +415,7 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public String getProductVariant() throws DeviceNotAvailableException {
-        return getProperty("ro.product.device", "variant", "Product variant");
+        return internalGetProperty("ro.product.device", "variant", "Product variant");
     }
 
     /**
@@ -2148,16 +2167,13 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public boolean isDeviceEncrypted() {
-        String output = getIDevice().getProperty("ro.crypto.state");
-
-        // TODO: Remove cruft once getProperty() null caching issue is fixed.
+        String output = null;
         if (output == null) {
             try {
-                output = executeShellCommand("getprop ro.crypto.state").trim();
-                if ("".equals(output)) {
-                    output = null;
-                }
+                getProperty("ro.crypto.state");
+
             } catch (DeviceNotAvailableException e) {
+                // TODO: why is this not thrown
                 output = null;
             }
         }

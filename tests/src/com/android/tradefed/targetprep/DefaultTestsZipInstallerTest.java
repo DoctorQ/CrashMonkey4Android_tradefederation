@@ -87,7 +87,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
                 .andReturn(Boolean.TRUE);
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("chown system.system")))
                 .andReturn(null);
-
+        EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
 
         EasyMock.replay(mMockDevice);

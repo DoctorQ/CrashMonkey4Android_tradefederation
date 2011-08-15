@@ -476,6 +476,15 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test that {@link TestDevice#getProperty(String)} works after a reboot.
+     */
+    public void testGetProperty() throws Exception {
+        assertNotNull(getDevice().getProperty("ro.hardware"));
+        getDevice().rebootUntilOnline();
+        assertNotNull(getDevice().getProperty("ro.hardware"));
+    }
+
+    /**
      * Run the test app UI tests and return true if they all pass.
      */
     private boolean runUITests() throws DeviceNotAvailableException {

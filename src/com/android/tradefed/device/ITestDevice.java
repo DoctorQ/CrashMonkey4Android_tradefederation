@@ -158,9 +158,18 @@ public interface ITestDevice {
     /**
      * Retrieve the build the device is currently running.
      *
-     * @return the build id or {@link IBuildInfo#UNKOWN_BUILD_ID} if it could not be retrieved
+     * @return the build id or {@link IBuildInfo#UNKNOWN_BUILD_ID} if it could not be retrieved
      */
     public String getBuildId();
+
+    /**
+     * Retrieve the given property value from the device.
+     *
+     * @param name the property name
+     * @return the property value or <code>null</code> if it does not exist
+     * @throws DeviceNotAvailableException
+     */
+    public String getProperty(String name) throws DeviceNotAvailableException;
 
     /**
      * Executes the given adb shell command, retrying multiple times if command fails.

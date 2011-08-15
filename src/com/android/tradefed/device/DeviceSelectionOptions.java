@@ -18,7 +18,6 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
 import java.util.Collection;

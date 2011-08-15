@@ -318,4 +318,33 @@ class StubDevice implements IDevice {
             AdbCommandRejectedException, TimeoutException, SyncException {
         // ignore
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getPropertySync(String name) throws TimeoutException,
+            AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        // TODO implement this
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean arePropertiesSet() {
+        // TODO implement this
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getPropertyCacheOrSync(String name) throws TimeoutException,
+            AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
+        // TODO implement this
+        return null;
+    }
 }
