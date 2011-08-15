@@ -70,7 +70,7 @@ public class VideoEditingPerformanceTest implements IDeviceTest, IRemoteTest {
 
     private static final String mOutputPath = "VideoEditorPerformance.txt";
 
-    private RegexTrie<String> mPatternMap = new RegexTrie<String>();
+    private final RegexTrie<String> mPatternMap = new RegexTrie<String>();
 
     public VideoEditingPerformanceTest() {
         mPatternMap.put("ImageItemCreate",
@@ -98,11 +98,11 @@ public class VideoEditingPerformanceTest implements IDeviceTest, IRemoteTest {
         mPatternMap.put("VideoItemRemove",
                 "^.*Time taken to remove  Media Video Item :(\\d+)");
         mPatternMap.put("EffectOverlappingTransition",
-                "^.*Time taken to testPerformanceEffectOverlappingTransition :(\\d+)");
+                "^.*Time taken to testPerformanceEffectOverlappingTransition :(\\d+.\\d+)");
         mPatternMap.put("ExportStoryboard",
                 "^.*Time taken to do ONE export of storyboard duration 69000 is :(\\d+)");
         mPatternMap.put("PreviewWithTransition",
-                "^.*Time taken to Generate Preview with transition :(\\d+)");
+                "^.*Time taken to Generate Preview with transition :(\\d+.\\d+)");
         mPatternMap.put("OverlayCreate",
                 "^.*Time taken to add & create Overlay :(\\d+)");
         mPatternMap.put("OverlayRemove",
@@ -110,7 +110,7 @@ public class VideoEditingPerformanceTest implements IDeviceTest, IRemoteTest {
         mPatternMap.put("GetVideoThumbnails",
                 "^.*Duration taken to get Video Thumbnails :(\\d+)");
         mPatternMap.put("TransitionWithEffectOverlapping",
-                "^.*Time taken to TransitionWithEffectOverlapping :(\\d+)");
+                "^.*Time taken to TransitionWithEffectOverlapping :(\\d+.\\d+)");
         mPatternMap.put("MediaPropertiesGet",
                 "^.*Time taken to get Media Properties :(\\d+)");
         mPatternMap.put("AACLCAdd",
@@ -118,11 +118,11 @@ public class VideoEditingPerformanceTest implements IDeviceTest, IRemoteTest {
         mPatternMap.put("AMRNBAdd",
                 "^.*Time taken for 2nd Audio Track.*AMRNB.*:(\\d+)");
         mPatternMap.put("KenBurnGeneration",
-                "^.*Time taken to Generate KenBurn Effect :(\\d+)");
+                "^.*Time taken to Generate KenBurn Effect :(\\d+.\\d+)");
         mPatternMap.put("ThumbnailsGeneration",
-                "^.*Time taken Thumbnail generation :(\\d+)");
+                "^.*Time taken Thumbnail generation :(\\d+.\\d+)");
         mPatternMap.put("H264ThumbnailGeneration",
-                "^.*Time taken for Thumbnail generation :(\\d+)");
+                "^.*Time taken for Thumbnail generation :(\\d+.\\d+)");
     }
 
     @Override
