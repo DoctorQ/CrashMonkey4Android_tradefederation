@@ -269,20 +269,4 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             throw new RuntimeException(e);
         }
     }
-
-    /**
-     * Override finalize to determine when a DeviceBuildInfo is being destroyed without having been
-     * cleaned up.  This is temporary as we try to hunt down file leaks.
-     */
-    @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        String name = String.format("%s[%s]", LOG_TAG, Thread.currentThread().getName());
-        Log.d(LOG_TAG, String.format("%s in finalizer", name));
-        if (!mImageFileMap.isEmpty()) {
-            Log.e(LOG_TAG, String.format("%s was not cleaned up: %s", name,
-                    mImageFileMap.toString()));
-            cleanUp();
-        }
-    }
 }
