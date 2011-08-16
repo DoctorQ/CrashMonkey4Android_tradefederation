@@ -103,7 +103,7 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
         device.setRecoveryMode(RecoveryMode.ONLINE);
 
-        if (device.isDeviceEncrypted()) {
+        if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
             device.unlockDevice();
         }
 
@@ -128,7 +128,7 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         // reboot, so they have the right permissions and ownership
         device.rebootUntilOnline();
 
-        if (device.isDeviceEncrypted()) {
+        if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
             device.unlockDevice();
         }
 

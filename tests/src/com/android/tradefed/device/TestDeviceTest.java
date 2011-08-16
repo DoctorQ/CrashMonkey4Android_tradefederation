@@ -859,6 +859,7 @@ public class TestDeviceTest extends TestCase {
                 mMockIDevice);
         setEnableAdbRootExpectations();
         setEncryptedUnsupportedExpectations();
+        setEncryptedUnsupportedExpectations();
         EasyMock.expect(mMockMonitor.waitForDeviceAvailable(EasyMock.anyLong())).andReturn(null);
         mMockRecovery.recoverDevice(mMockMonitor, false);
         replayMocks();

@@ -70,7 +70,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         mMockDevice.rebootUntilOnline();
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
-        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andReturn(false);
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
@@ -79,7 +79,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
 
         // expect second reboot and android stop
         mMockDevice.rebootUntilOnline();
-        EasyMock.expect(mMockDevice.isDeviceEncrypted()).andReturn(false);
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         EasyMock.expect(mMockDevice.syncFiles((File) EasyMock.anyObject(),

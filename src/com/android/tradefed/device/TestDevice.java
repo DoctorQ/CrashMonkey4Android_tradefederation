@@ -1205,6 +1205,9 @@ class TestDevice implements IManagedTestDevice {
             // recovery itself
             mRecoveryMode = RecoveryMode.NONE;
             // this might be a runtime reset - still need to run post boot setup steps
+            if (isEncryptionSupported() && isDeviceEncrypted()) {
+                unlockDevice();
+            }
             postBootSetup();
             mRecoveryMode = RecoveryMode.AVAILABLE;
         }
