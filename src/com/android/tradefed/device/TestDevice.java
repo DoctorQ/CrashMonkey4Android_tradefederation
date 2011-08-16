@@ -574,14 +574,14 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public String installPackage(final File packageFile, final boolean reinstall)
-            throws DeviceNotAvailableException {
+    public String installPackage(final File packageFile, final boolean reinstall,
+            final String... extraArgs) throws DeviceNotAvailableException {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction installAction = new DeviceAction() {
             public boolean run() throws InstallException {
                 String result = getIDevice().installPackage(packageFile.getAbsolutePath(),
-                        reinstall);
+                        reinstall, extraArgs);
                 response[0] = result;
                 return result == null;
             }

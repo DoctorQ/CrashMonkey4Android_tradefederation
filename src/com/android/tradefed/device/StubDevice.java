@@ -195,7 +195,8 @@ class StubDevice implements IDevice {
      * {@inheritDoc}
      */
     @Override
-    public String installPackage(String packageFilePath, boolean reinstall) throws InstallException {
+    public String installPackage(String packageFilePath, boolean reinstall, String... extraArgs)
+            throws InstallException {
         throw new InstallException(new IOException("stub"));
     }
 
@@ -203,8 +204,8 @@ class StubDevice implements IDevice {
      * {@inheritDoc}
      */
     @Override
-    public String installRemotePackage(String remoteFilePath, boolean reinstall)
-            throws InstallException {
+    public String installRemotePackage(String remoteFilePath, boolean reinstall,
+            String... extraArgs) throws InstallException {
         throw new InstallException(new IOException("stub"));
     }
 
