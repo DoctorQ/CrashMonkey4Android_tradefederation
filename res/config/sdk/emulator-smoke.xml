@@ -18,5 +18,5 @@
     <build_provider class="com.android.tradefed.build.LocalSdkBuildProvider" />
     <target_preparer class="com.android.tradefed.targetprep.SdkAvdPreparer" />
     <test class="com.android.sdk.tests.EmulatorSmokeTest" />
-
+    <test class="com.android.sdk.tests.EmulatorTest" />
 </configuration>
