@@ -163,13 +163,28 @@ public interface ITestDevice {
     public String getBuildId();
 
     /**
-     * Retrieve the given property value from the device.
+     * Retrieve the given cached property value from the device.
+     * <p/>
+     * Note this method should only be used for read-only properties that won't change after
+     * device comes online. For volatile properties, use {@link #getPropertySync()}
      *
      * @param name the property name
      * @return the property value or <code>null</code> if it does not exist
      * @throws DeviceNotAvailableException
      */
     public String getProperty(String name) throws DeviceNotAvailableException;
+
+    /**
+     * Retrieve the given property value from the device.
+     * <p/>
+     * Note this method performs a live query against device. Its recommended to use
+     * {@link #getProperty(String)} instead for read-only properties.
+     *
+     * @param name the property name
+     * @return the property value or <code>null</code> if it does not exist
+     * @throws DeviceNotAvailableException
+     */
+    public String getPropertySync(String name) throws DeviceNotAvailableException;
 
     /**
      * Executes the given adb shell command, retrying multiple times if command fails.

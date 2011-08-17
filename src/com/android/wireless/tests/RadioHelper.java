@@ -33,7 +33,7 @@ public class RadioHelper {
      * get phone type: current support type: 0, 1, 2
      */
     private static int getPhoneType(ITestDevice device) throws DeviceNotAvailableException {
-        String phoneType = device.getProperty("gsm.current.phone-type");
+        String phoneType = device.getPropertySync("gsm.current.phone-type");
         if (phoneType == null || phoneType.isEmpty()) {
             return 0; // phone type is unknown
         } else {
