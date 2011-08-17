@@ -74,6 +74,7 @@ import com.android.tradefed.util.MultiMapTest;
 import com.android.tradefed.util.QuotationAwareTokenizerTest;
 import com.android.tradefed.util.RegexTrieTest;
 import com.android.tradefed.util.RunUtilTest;
+import com.android.tradefed.util.brillopad.BrillopadTests;
 import com.android.tradefed.util.xml.AndroidManifestWriterTest;
 
 import junit.framework.Test;
@@ -166,7 +167,10 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(QuotationAwareTokenizerTest.class);
         addTestSuite(RegexTrieTest.class);
         addTestSuite(RunUtilTest.class);
+
+        // util subdirs
         addTestSuite(AndroidManifestWriterTest.class);
+        addTest(BrillopadTests.suite());
     }
 
     public static Test suite() {
