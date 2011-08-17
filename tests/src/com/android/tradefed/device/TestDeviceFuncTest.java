@@ -485,6 +485,17 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test that {@link TestDevice#getPropertySync(String)} works for volatile properties.
+     */
+    public void testGetPropertySync() throws Exception {
+        getDevice().executeShellCommand("setprop prop.test 0");
+        assertEquals("0", getDevice().getPropertySync("prop.test"));
+        getDevice().executeShellCommand("setprop prop.test 1");
+        assertEquals("1", getDevice().getPropertySync("prop.test"));
+
+    }
+
+    /**
      * Run the test app UI tests and return true if they all pass.
      */
     private boolean runUITests() throws DeviceNotAvailableException {

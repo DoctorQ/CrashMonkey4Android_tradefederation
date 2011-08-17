@@ -357,7 +357,26 @@ class TestDevice implements IManagedTestDevice {
         };
         performDeviceAction("getprop", propAction, MAX_RETRY_ATTEMPTS);
         return result[0];
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getPropertySync(final String name) throws DeviceNotAvailableException {
+        final String[] result = new String[1];
+        DeviceAction propAction = new DeviceAction() {
+
+            @Override
+            public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                    ShellCommandUnresponsiveException, InstallException, SyncException {
+                result[0] = getIDevice().getPropertySync(name);
+                return true;
+            }
+
+        };
+        performDeviceAction("getprop", propAction, MAX_RETRY_ATTEMPTS);
+        return result[0];
     }
 
     /**
