@@ -17,9 +17,9 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.FileListingService;
 import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.InstallException;
@@ -2188,16 +2188,11 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
-    public boolean isDeviceEncrypted() {
-        String output = null;
-        if (output == null) {
-            try {
-                getProperty("ro.crypto.state");
+    public boolean isDeviceEncrypted() throws DeviceNotAvailableException {
+        String output = getPropertySync("ro.crypto.state");
 
-            } catch (DeviceNotAvailableException e) {
-                // TODO: why is this not thrown
-                output = null;
-            }
+        if (output == null && isEncryptionSupported()) {
+            CLog.e("Property ro.crypto.state is null on device %s", getSerialNumber());
         }
 
         return "encrypted".equals(output);
