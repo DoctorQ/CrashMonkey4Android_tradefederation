@@ -120,8 +120,8 @@ public class ConfigurationFactoryTest extends TestCase {
      */
     public void testCreateConfigurationFromArgs() throws ConfigurationException {
         // pick an arbitrary option to test to ensure it gets populated
-        IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {"--log-level",
-                LogLevel.VERBOSE.getStringValue(), TEST_CONFIG});
+        IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {TEST_CONFIG,
+                "--log-level", LogLevel.VERBOSE.getStringValue()});
         ILeveledLogOutput logger = config.getLogOutput();
         assertEquals(LogLevel.VERBOSE.getStringValue(), logger.getLogLevel());
     }
@@ -132,9 +132,8 @@ public class ConfigurationFactoryTest extends TestCase {
      */
     public void testCreateConfigurationFromArgs_unprocessedArgs() throws ConfigurationException {
         try {
-            mFactory.createConfigurationFromArgs(new String[] {"--log-level",
-                    LogLevel.VERBOSE.getStringValue(), "blah",
-                    TEST_CONFIG});
+            mFactory.createConfigurationFromArgs(new String[] {TEST_CONFIG, "--log-level",
+                    LogLevel.VERBOSE.getStringValue(), "blah"});
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected

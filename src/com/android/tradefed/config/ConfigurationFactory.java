@@ -182,8 +182,8 @@ public class ConfigurationFactory implements IConfigurationFactory {
             throw new ConfigurationException("Configuration to run was not specified");
         }
         optionArgsRef.addAll(Arrays.asList(arrayArgs));
-        // last arg is config name
-        final String configName = optionArgsRef.remove(optionArgsRef.size()-1);
+        // first arg is config name
+        final String configName = optionArgsRef.remove(0);
         ConfigurationDef configDef = getConfigurationDef(configName);
         return configDef.createConfiguration();
     }
