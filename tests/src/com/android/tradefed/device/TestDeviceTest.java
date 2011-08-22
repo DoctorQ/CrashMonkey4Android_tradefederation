@@ -782,7 +782,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test for {@link TestDevice#switchToAdbTcp()} when device has no ip address
      */
-    public void testSwitchToAdbTcp_noIp() throws Exception  {
+    public void testSwitchToAdbTcp_noIp() throws Exception {
         EasyMock.expect(mMockWifi.getIpAddress(null)).andReturn(null);
         replayMocks();
         assertNull(mTestDevice.switchToAdbTcp());
@@ -792,7 +792,7 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test normal success case for {@link TestDevice#switchToAdbTcp()}.
      */
-    public void testSwitchToAdbTcp() throws Exception  {
+    public void testSwitchToAdbTcp() throws Exception {
         EasyMock.expect(mMockWifi.getIpAddress(null)).andReturn("ip");
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("adb"),
                 EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("tcpip"),
@@ -801,6 +801,29 @@ public class TestDeviceTest extends TestCase {
         replayMocks();
         assertEquals("ip:5555", mTestDevice.switchToAdbTcp());
         verifyMocks();
+    }
+
+    /**
+     * Test simple success case for
+     * {@link TestDevice#installPackage(File, File, boolean, String...)}.
+     */
+    public void testInstallPackages() throws Exception {
+        final String certFile = "foo.dc";
+        final String apkFile = "foo.apk";
+        EasyMock.expect(mMockIDevice.syncPackageToDevice(EasyMock.contains(certFile))).andReturn(
+                certFile);
+        EasyMock.expect(mMockIDevice.syncPackageToDevice(EasyMock.contains(apkFile))).andReturn(
+                apkFile);
+        // expect apk path to be passed as extra arg
+        EasyMock.expect(
+                mMockIDevice.installRemotePackage(EasyMock.eq(certFile), EasyMock.eq(true),
+                        EasyMock.eq("-l"), EasyMock.contains(apkFile))).andReturn(null);
+        mMockIDevice.removeRemotePackage(certFile);
+        mMockIDevice.removeRemotePackage(apkFile);
+
+        replayMocks();
+
+        assertNull(mTestDevice.installPackage(new File(apkFile), new File(certFile), true, "-l"));
     }
 
     /**
@@ -839,7 +862,6 @@ public class TestDeviceTest extends TestCase {
      * Test normal success case for {@link TestDevice#reboot()}
      */
     public void testReboot() throws Exception {
-
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
                 mMockIDevice);
         setEnableAdbRootExpectations();

@@ -594,6 +594,42 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public String installPackage(final File packageFile, final File certFile,
+            final boolean reinstall, final String... extraArgs) throws DeviceNotAvailableException {
+        // use array to store response, so it can be returned to caller
+        final String[] response = new String[1];
+        DeviceAction installAction = new DeviceAction() {
+            public boolean run() throws InstallException, SyncException, IOException,
+            TimeoutException, AdbCommandRejectedException {
+                // TODO: create a getIDevice().installPackage(File, File...) method when the dist
+                // cert functionality is ready to be open sourced
+                String remotePackagePath = getIDevice().syncPackageToDevice(
+                        packageFile.getAbsolutePath());
+                String remoteCertPath = getIDevice().syncPackageToDevice(
+                        certFile.getAbsolutePath());
+                // trick installRemotePackage into issuing a 'pm install <apk> <cert>' command,
+                // by adding apk path to extraArgs, and using cert as the 'apk file'
+                String[] newExtraArgs = new String[extraArgs.length + 1];
+                System.arraycopy(extraArgs, 0, newExtraArgs, 0, extraArgs.length);
+                newExtraArgs[newExtraArgs.length - 1] = String.format("\"%s\"", remotePackagePath);
+                try {
+                    response[0] = getIDevice().installRemotePackage(remoteCertPath, reinstall,
+                            newExtraArgs);
+                } finally {
+                    getIDevice().removeRemotePackage(remotePackagePath);
+                    getIDevice().removeRemotePackage(remoteCertPath);
+                }
+                return true;
+            }
+        };
+        performDeviceAction(String.format("install %s", packageFile.getAbsolutePath()),
+                installAction, MAX_RETRY_ATTEMPTS);
+        return response[0];
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public String uninstallPackage(final String packageName) throws DeviceNotAvailableException {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
