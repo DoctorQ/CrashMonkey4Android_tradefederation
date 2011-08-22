@@ -16,7 +16,6 @@
 
 package com.android.framework.tests;
 
-import com.android.ddmlib.MultiLineReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -27,8 +26,6 @@ import com.android.tradefed.result.CollectingTestListener;
 import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import junit.framework.Assert;
 
@@ -179,18 +176,11 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param apkFile the {@link File} to install
      * @param replace set to <code>true</code> if re-install of app should be performed
-     * @throws Exception if failed to install file
+     * @throws DeviceNotAvailableException if communication with device is lost
      */
     public String installFileForwardLocked(final File apkFile, final boolean replace)
-            throws Exception {
-        // TODO: replace these IDevice calls with a single ITestDevice call
-        String remoteFilePath = mDevice.getIDevice().syncPackageToDevice(apkFile.getAbsolutePath());
-        InstallReceiver receiver = new InstallReceiver();
-        String cmd = String.format(replace ? "pm install -r -l \"%1$s\"" :
-                "pm install -l \"%1$s\"", remoteFilePath);
-        mDevice.executeShellCommand(cmd, receiver);
-        mDevice.getIDevice().removeRemotePackage(remoteFilePath);
-        return receiver.getErrorMessage();
+            throws DeviceNotAvailableException {
+        return mDevice.installPackage(apkFile, replace, "-l");
     }
 
     /**
@@ -262,45 +252,6 @@ public class PackageManagerHostTestUtils extends Assert {
     public void waitForPackageManager() throws DeviceNotAvailableException {
        CLog.i("waiting for device");
        mDevice.waitForDeviceAvailable(MAX_WAIT_FOR_DEVICE_TIME);
-    }
-
-    /**
-     * Output receiver for "pm install package.apk" command line.
-     *
-     */
-    private static final class InstallReceiver extends MultiLineReceiver {
-
-        private static final String SUCCESS_OUTPUT = "Success"; //$NON-NLS-1$
-        private static final Pattern FAILURE_PATTERN = Pattern.compile("Failure\\s+\\[(.*)\\]"); //$NON-NLS-1$
-
-        private String mErrorMessage = null;
-
-        public InstallReceiver() {
-        }
-
-        @Override
-        public void processNewLines(String[] lines) {
-            for (String line : lines) {
-                if (line.length() > 0) {
-                    if (line.startsWith(SUCCESS_OUTPUT)) {
-                        mErrorMessage = null;
-                    } else {
-                        Matcher m = FAILURE_PATTERN.matcher(line);
-                        if (m.matches()) {
-                            mErrorMessage = m.group(1);
-                        }
-                    }
-                }
-            }
-        }
-
-        public boolean isCancelled() {
-            return false;
-        }
-
-        public String getErrorMessage() {
-            return mErrorMessage;
-        }
     }
 
     /**

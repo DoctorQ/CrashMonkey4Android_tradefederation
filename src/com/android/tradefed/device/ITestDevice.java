@@ -306,11 +306,13 @@ public interface ITestDevice {
      *
      * @param packageFile the apk file to install
      * @param reinstall <code>true</code> if a reinstall should be performed
+     * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
+     *            available options.
      * @return a {@link String} with an error code, or <code>null</code> if success.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      *             recovered.
      */
-    public String installPackage(File packageFile, boolean reinstall)
+    public String installPackage(File packageFile, boolean reinstall, String... extraArgs)
             throws DeviceNotAvailableException;
 
     /**
