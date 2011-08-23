@@ -29,10 +29,9 @@ public interface ITestsZipInstaller {
 
     /**
      * Pushes the contents of the tests.zip file onto the device's data partition.
-     *
-     * @param device the {@link ITestDevice} to flash
+     * 
+     * @param device the {@link ITestDevice} to flash, assumed to be in adb mode.
      * @param deviceBuild the {@link IDeviceBuildInfo} that contains the tests zip to flash
-     *
      * @throws DeviceNotAvailableException
      * @throws TargetSetupError
      */

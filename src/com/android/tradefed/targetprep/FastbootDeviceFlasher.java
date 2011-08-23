@@ -368,6 +368,10 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
                 break;
 
             case TESTS_ZIP:
+                device.rebootUntilOnline(); // required to install tests
+                if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
+                    device.unlockDevice();
+                }
                 getTestsZipInstaller().pushTestsZipOntoData(device, deviceBuild);
                 // Reboot into bootloader to continue the flashing process
                 device.rebootIntoBootloader();

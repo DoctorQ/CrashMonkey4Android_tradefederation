@@ -161,6 +161,7 @@ public class FastbootDeviceFlasherTest extends TestCase {
         // expect
         mockZipInstaller.pushTestsZipOntoData(EasyMock.eq(mMockDevice), EasyMock.eq(mMockBuildInfo));
         // expect
+        mMockDevice.rebootUntilOnline();
         mMockDevice.rebootIntoBootloader();
 
         EasyMock.replay(mMockDevice, mockZipInstaller);

@@ -22,6 +22,7 @@ import com.android.tradefed.targetprep.DeviceSetupFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.testtype.GTestFuncTest;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;
+import com.android.tradefed.util.FileUtilFuncTest;
 import com.android.tradefed.util.RunUtilFuncTest;
 
 import junit.framework.Test;
@@ -37,11 +38,12 @@ public class FuncTests extends DeviceTestSuite {
         super();
         this.addTestSuite(CommandSchedulerFuncTest.class);
         this.addTestSuite(DeviceSetupFuncTest.class);
-        this.addTestSuite(TestDeviceFuncTest.class);
+        this.addTestSuite(FileDownloadCacheFuncTest.class);
+        this.addTestSuite(FileUtilFuncTest.class);
+        this.addTestSuite(GTestFuncTest.class);
         this.addTestSuite(InstrumentationTestFuncTest.class);
         this.addTestSuite(RunUtilFuncTest.class);
-        this.addTestSuite(GTestFuncTest.class);
-        this.addTestSuite(FileDownloadCacheFuncTest.class);
+        this.addTestSuite(TestDeviceFuncTest.class);
     }
 
     public static Test suite() {

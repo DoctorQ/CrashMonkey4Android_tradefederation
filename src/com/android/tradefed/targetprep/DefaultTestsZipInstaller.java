@@ -17,12 +17,13 @@
 package com.android.tradefed.targetprep;
 
 import com.android.ddmlib.FileListingService;
-import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.util.Arrays;
@@ -67,14 +68,17 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
      * This implementation will reboot the device into userland before
      * proceeding. It will also stop the Android runtime and leave it down upon return
      */
+    @Override
     public void pushTestsZipOntoData(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
-        Log.i(LOG_TAG, String.format("Pushing test zips content onto userdata on %s",
+        CLog.i(String.format("Pushing test zips content onto userdata on %s",
                 device.getSerialNumber()));
 
+        // Stop the runtime, so it doesn't notice us mucking with the filesystem
+        device.executeShellCommand("stop");
         deleteData(device);
-        IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
-        Log.d(LOG_TAG, "Syncing test files/apks");
+
+        CLog.d("Syncing test files/apks");
         File hostDir = new File(deviceBuild.getTestsDir(), "DATA");
 
         File[] hostDataFiles = getTestsZipDataFiles(hostDir);
@@ -82,13 +86,10 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
         }
 
-        // after push, everything in /data is owned by root, need to revert to system
-        for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
-            if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                // change owner to system, no -R support
-                device.executeShellCommand(String.format("chown system.system %s %s/*",
-                        dataSubDir.getFullEscapedPath(), dataSubDir.getFullEscapedPath()));
-            }
+        File deviceRootPath = new File(FileListingService.FILE_SEPARATOR
+                + FileListingService.DIRECTORY_DATA);
+        for (File dir : findDirs(hostDir, deviceRootPath)) {
+            device.executeShellCommand("chown system.system " + dir.getPath());
         }
     }
 
@@ -98,20 +99,12 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
     @Override
     public void deleteData(ITestDevice device) throws DeviceNotAvailableException,
             TargetSetupError {
-        device.rebootUntilOnline();
-
         RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
         device.setRecoveryMode(RecoveryMode.ONLINE);
 
-        if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
-            device.unlockDevice();
-        }
+        CLog.d("clearing " + FileListingService.DIRECTORY_DATA + " directory on device "
+                + device.getSerialNumber());
 
-        // Stop the runtime, so it doesn't notice us mucking with the filesystem
-        Log.d(LOG_TAG, "Stopping runtime");
-        device.executeShellCommand("stop");
-
-        Log.d(LOG_TAG, String.format("Cleaning %s", FileListingService.DIRECTORY_DATA));
         IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
         if (dataEntry == null) {
             throw new TargetSetupError(String.format("Could not find %s folder on %s",
@@ -123,17 +116,6 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
                         dataSubDir.getFullEscapedPath()));
             }
         }
-
-        // reboot and let the system recreate top level dirs under /data/ upon
-        // reboot, so they have the right permissions and ownership
-        device.rebootUntilOnline();
-
-        if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
-            device.unlockDevice();
-        }
-
-        Log.d(LOG_TAG, "Stopping runtime again");
-        device.executeShellCommand("stop");
 
         device.setRecoveryMode(cachedRecoveryMode);
     }
@@ -157,5 +139,12 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
                     "Unrecognized tests.zip content: DATA folder has no content");
         }
         return childFiles;
+    }
+
+    /**
+     * Indirection to {@link FileUtil#findDirsUnder(File, File)} to allow for unit testing.
+     */
+    Set<File> findDirs(File hostDir, File deviceRootPath) {
+        return FileUtil.findDirsUnder(hostDir, deviceRootPath);
     }
 }

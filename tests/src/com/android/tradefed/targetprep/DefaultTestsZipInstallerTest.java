@@ -26,14 +26,21 @@ import com.android.tradefed.device.MockFileUtil;
 
 import junit.framework.TestCase;
 
-import org.easymock.EasyMock;
-
 import java.io.File;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.easymock.EasyMock;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";
 
     private static final String TEST_STRING = "foo";
+
+    private static final File SOME_PATH_1 = new File("/some/path/1");
+
+    private static final File SOME_PATH_2 = new File("/some/path/2");
 
     private ITestDevice mMockDevice;
     private IDeviceBuildInfo mDeviceBuild;
@@ -47,6 +54,14 @@ public class DefaultTestsZipInstallerTest extends TestCase {
             File[] getTestsZipDataFiles(File hostDir) {
                 return new File[] { new File("foo") };
             }
+
+            @Override
+            Set<File> findDirs(File hostDir, File deviceRootPath) {
+                Set<File> files = new HashSet<File>(2);
+                files.add(SOME_PATH_1);
+                files.add(SOME_PATH_2);
+                return files;
+            };
         };
 
         mMockDevice = EasyMock.createMock(ITestDevice.class);
@@ -66,28 +81,28 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         MockFileUtil.setMockDirContents(
                 mMockDevice, FileListingService.DIRECTORY_DATA, "app", SKIP_THIS);
 
-        // expect initial reboot and android stop
-        mMockDevice.rebootUntilOnline();
+        // expect initial android stop
+        EasyMock.expect(mMockDevice.getSerialNumber()).andReturn("serial_number_stub").anyTimes();
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
-        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))
                 .andReturn("");
 
-        // expect second reboot and android stop
-        mMockDevice.rebootUntilOnline();
-        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(false);
-        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+        mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
 
         EasyMock.expect(mMockDevice.syncFiles((File) EasyMock.anyObject(),
                 EasyMock.contains(FileListingService.DIRECTORY_DATA)))
                 .andReturn(Boolean.TRUE);
-        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("chown system.system")))
-                .andReturn(null);
-        mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
+
+        EasyMock.expect(
+                mMockDevice.executeShellCommand(EasyMock.startsWith("chown system.system "
+                        + SOME_PATH_1.getPath()))).andReturn("");
+        EasyMock.expect(
+                mMockDevice.executeShellCommand(EasyMock.startsWith("chown system.system "
+                        + SOME_PATH_2.getPath()))).andReturn("");
 
         EasyMock.replay(mMockDevice);
         mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);

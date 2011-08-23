@@ -27,9 +27,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -639,5 +642,33 @@ public class FileUtil {
             }
         }
         return null;
+    }
+
+    /**
+     * Recursively find all directories under the given {@code rootDir}
+     *
+     * @param rootDir the root directory to search in
+     * @param relativeParent An optional parent for all {@link File}s returned. If not specified,
+     *            all {@link File}s will be relative to {@code rootDir}.
+     * @return An set of {@link File}s, representing all directories under {@code rootDir},
+     *         including {@code rootDir} itself. If {@code rootDir} is null, an empty set is
+     *         returned.
+     */
+    public static Set<File> findDirsUnder(File rootDir, File relativeParent) {
+        Set<File> dirs = new HashSet<File>();
+        if (rootDir != null) {
+            if (!rootDir.isDirectory()) {
+                throw new IllegalArgumentException("Can't find dirs under '" + rootDir
+                        + "'. It's not a directory.");
+            }
+            File thisDir = new File(relativeParent, rootDir.getName());
+            dirs.add(thisDir);
+            for (File file : rootDir.listFiles()) {
+                if (file.isDirectory()) {
+                    dirs.addAll(findDirsUnder(file, thisDir));
+                }
+            }
+        }
+        return dirs;
     }
 }
