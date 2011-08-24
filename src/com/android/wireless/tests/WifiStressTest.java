@@ -60,6 +60,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Pattern.compile("^iteration (\\d+) out of (\\d+)");
 
     private String mOutputFile = "WifiStressTestOutput.txt";
+    private RadioHelper mRadioHelper;
 
     /**
      * Stores the test cases that we should consider running.
@@ -143,6 +144,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_reconnection_stress", ITERATION_PATTERN);
         mTestList.add(t);
+
+        // get RadioHelper
+        mRadioHelper = new RadioHelper(mTestDevice);
     }
 
     /**
@@ -188,7 +192,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener standardListener)
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
-        Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
+        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
 
         setupTests();
         configDevice();

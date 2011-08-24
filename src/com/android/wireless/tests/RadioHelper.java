@@ -18,9 +18,10 @@ package com.android.wireless.tests;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import java.util.Arrays;
-
 
 /**
  * Helper class to get device radio settings
@@ -28,97 +29,94 @@ import java.util.Arrays;
 public class RadioHelper {
     private final static String[] PING_SERVER_LIST = {"www.google.com", "www.facebook.com",
         "www.bing.com", "www.ask.com", "www.yahoo.com"};
+    private final int RETRY_ATTEMPTS = 3;
+    private final int ACTIVATION_WAITING_TIME =  5 * 60 * 1000; // 5 minutes;
+    private ITestDevice mDevice;
 
-    /**
-     * get phone type: current support type: 0, 1, 2
-     */
-    private static int getPhoneType(ITestDevice device) throws DeviceNotAvailableException {
-        String phoneType = device.getPropertySync("gsm.current.phone-type");
-        if (phoneType == null || phoneType.isEmpty()) {
-            return 0; // phone type is unknown
-        } else {
-            return Integer.parseInt(phoneType);
-        }
+    RadioHelper(ITestDevice device) {
+        mDevice = device;
     }
 
     /**
-     * Verify whether the device is a phone or tablet
-     * @param device
-     * @param nonPhoneDevices is a string with product type separated by ", "
-     * @return
+     * Gets the {@link IRunUtil} instance to use.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
+    }
+
+    /**
+     * Get phone type 0 - None, 1 - GSM, 2 - CDMA
+     */
+    private String getPhoneType() throws DeviceNotAvailableException {
+        return mDevice.getPropertySync("gsm.current.phone-type");
+    }
+
+    /**
+     * Get sim state
+     */
+    private String getSimState() throws DeviceNotAvailableException {
+        return mDevice.getPropertySync("gsm.sim.state");
+    }
+
+    /**
+     * Verify whether a device is a CDMA only device
+     * @return true for CDMA only device, false for GSM or LTE device
      * @throws DeviceNotAvailableException
      */
-    public static boolean isVoiceCapable(ITestDevice device, String nonePhoneDevices)
-        throws DeviceNotAvailableException {
-        String productType = device.getProductType();
-        CLog.d("productType: " + productType);
-        String[] noneVoiceDevice = nonePhoneDevices.split(", ");
-        CLog.d("None voice-capable devices: ");
-        for (int i = 0; i < noneVoiceDevice.length; i++) {
-            CLog.d("%s ", noneVoiceDevice[i]);
+    public boolean isCdmaDevice() throws DeviceNotAvailableException {
+        // Wait 30 seconds for SIM to load
+        getRunUtil().sleep(30*1000);
+        String phoneType = null;
+        String simState = null;
+        for (int i = 0; i < RETRY_ATTEMPTS && (phoneType == null || simState == null); i++) {
+            phoneType = getPhoneType();
+            simState = getSimState();
+            CLog.d("phonetype: %s", phoneType);
+            CLog.d("gsm.sim.state: %s", simState);
+            RunUtil.getDefault().sleep(5 * 1000);
         }
-        if (productType == null || Arrays.asList(noneVoiceDevice).contains(productType)) {
+
+        if (phoneType == null || simState == null) {
+            CLog.d("Error: phoneType or simState is null.");
             return false;
         }
-        return true;
-    }
 
-    /**
-     * Verify whether a device is a GSM phone
-     * @param device
-     * @return true for GSM phone, false for others
-     * @throws DeviceNotAvailableException
-     */
-    public static boolean isGsmPhone(ITestDevice device) throws DeviceNotAvailableException {
-        if (getPhoneType(device) == 1) {
+        if ((phoneType.compareToIgnoreCase("2") == 0) &&
+            (simState.compareToIgnoreCase("UNKNOWN") == 0)) {
+            // GSM device as phoneType "1"
+            // LTE device should have SIM state set to "READY"
+            CLog.d("it is a CDMA device, return true");
             return true;
         }
         return false;
     }
 
-    /**
-     * Verify whether a device is a CDMA phone
-     * @param device
-     * @return true for CDMA phone
-     * @throws DeviceNotAvailableException
-     */
-    public static boolean isCdmaPhone(ITestDevice device) throws DeviceNotAvailableException {
-        if (getPhoneType(device) == 2) {
-            return true;
-        }
-        return false;
+    public void resetBootComplete() throws DeviceNotAvailableException {
+        mDevice.executeShellCommand("setprop dev.bootcomplete 0");
     }
 
-    public static void resetBootComplete(ITestDevice device) throws DeviceNotAvailableException {
-        device.executeShellCommand("setprop dev.bootcomplete 0");
-    }
-
-    public static boolean waitForBootComplete(ITestDevice device)
+    public boolean waitForBootComplete()
         throws DeviceNotAvailableException {
         long deviceBootTime = 5 * 60 * 1000;
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < deviceBootTime) {
-            String output = device.executeShellCommand("getprop dev.bootcomplete");
+            String output = mDevice.executeShellCommand("getprop dev.bootcomplete");
             output = output.replace('#', ' ').trim();
             if (output.equals("1")) {
                 return true;
             }
-            try {
-                Thread.sleep(5 * 1000);
-            } catch (Exception e) {
-                CLog.d("thread is interrupted: %s", e.toString());
-            }
+            getRunUtil().sleep(5*1000);
         }
         return false;
     }
 
-    public static boolean pingTest(ITestDevice device) throws DeviceNotAvailableException {
+    public boolean pingTest() throws DeviceNotAvailableException {
         String failString = "ping: unknown host";
         // assume the chance that all servers are down is very small
         for (int i = 0; i < PING_SERVER_LIST.length; i++ ) {
             String host = PING_SERVER_LIST[i];
             CLog.d("Start ping test, ping %s", host);
-            String res = device.executeShellCommand("ping -c 10 -w 100 " + host);
+            String res = mDevice.executeShellCommand("ping -c 10 -w 100 " + host);
             CLog.d("res: %s", res);
             if (!res.contains(failString)) {
                 return true;
@@ -128,27 +126,30 @@ public class RadioHelper {
     }
 
     /**
-     * Activate a device if it hasn't been activated yet
-     * @param device
-     * @return true
+     * Activate a device if it is needed.
+     * @return true if the activation is successful.
      * @throws DeviceNotAvailableException
      */
-    public static boolean radioActivation(ITestDevice device) throws DeviceNotAvailableException {
-        if (isGsmPhone(device) || pingTest(device)) {
-            // for GSM device, CDMA/LTE device that is already activated
+    public boolean radioActivation() throws DeviceNotAvailableException {
+        if (!isCdmaDevice()) {
+            // for GSM device and LTE device
+            CLog.d("not a CDMA device, no need to activiate the device");
+            return true;
+        } else if (pingTest()) {
+            // for CDMA device which has been activiated (e.g. no radio updates)
+            CLog.d("CDMA device has been activated.");
             return true;
         }
 
-        int retries = 3;
-        for (int i = 0; i < retries; i++ ) {
-            device.executeShellCommand("radiooptions 8 *22899");
-            try {
-                Thread.sleep(5*60*1000); // wait for 5 minutes
-            } catch (Exception e) {
-                CLog.d("interrupted while in sleep %s", e);
-            }
-            if (pingTest(device)) {
-                return true;
+        // Activate a CDMA device which doesn't have data connection yet
+        for (int i = 0; i < RETRY_ATTEMPTS; i++ ) {
+            mDevice.executeShellCommand("radiooptions 8 *22899");
+            long startTime = System.currentTimeMillis();
+            while ((System.currentTimeMillis() - startTime) < ACTIVATION_WAITING_TIME) {
+                getRunUtil().sleep(30 * 1000);
+                if (pingTest()) {
+                    return true;
+                }
             }
         }
         return false;

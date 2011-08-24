@@ -23,8 +23,12 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.HashMap;
@@ -39,7 +43,10 @@ import junit.framework.Assert;
 public class RadioStressTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
     private static String mTestName = "RadioStartupStress";
-    private static int MAX_DATA_SETUP_TIME = 5 * 60 * 1000; // 5 minutes after boot up
+    /* Maxium time to wait for SETUP_DATA_CALL */
+    private static int MAX_DATA_SETUP_TIME = 5 * 60 * 1000;
+    /* Time to wait for framework to bootup */
+    private static final int BOOTING_TIME = 2 * 60 * 1000;
 
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME = "com.android.phonetests";
@@ -51,6 +58,7 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     // Define metrics for result report
     private static final String mMetricsName = "RadioStartupStress";
 
+    private RadioHelper mRadioHelper;
     @Option(name="iteration",
             description="The number of times to run the tests")
     private int mIteration = 100;
@@ -63,9 +71,9 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             description="The phone number used for outgoing call test")
     private String mPhoneNumber = null;
 
-    @Option(name="none-phone-device-list",
-            description="A list of product type that is not voice capable")
-    private String mNonePhoneDevices = null;
+    @Option(name="voice",
+            description="to verify the voice call")
+    private boolean mVoiceVerificationFlag = true;
 
     /**
      * Run radio startup stress test, capture bugreport if the test failed.
@@ -75,25 +83,25 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         CLog.d("input options: mIteration(%s), mCallDuration(%s), mPhoneNumber(%s), "
-                + "mNonePhoneDevices(%s)", mIteration, mCallDuration, mPhoneNumber,
-                mNonePhoneDevices);
+               + "mVoiceVerificationFlag(%s)", mIteration, mCallDuration, mPhoneNumber,
+               mVoiceVerificationFlag);
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mPhoneNumber);
-        Assert.assertTrue("Activation failed", RadioHelper.radioActivation(mTestDevice));
+        mRadioHelper = new RadioHelper(mTestDevice);
+        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
 
-        boolean voiceTest = RadioHelper.isVoiceCapable(mTestDevice, mNonePhoneDevices);
         int mSuccessRun = 0;
         for (int i = 0; i < mIteration; i++) {
             // reset device before rebooting
             CLog.d("Radio startup test iteration : %d, success runs: %d", i, mSuccessRun);
-            RadioHelper.resetBootComplete(mTestDevice);
+            mRadioHelper.resetBootComplete();
 
             // run-time reboot device
             mTestDevice.executeShellCommand("stop");
             mTestDevice.executeShellCommand("start");
 
             Assert.assertTrue("Device failed to reboot",
-                    RadioHelper.waitForBootComplete(mTestDevice));
+                    mRadioHelper.waitForBootComplete());
             mTestDevice.waitForDeviceAvailable();
 
             // Setup up device
@@ -101,27 +109,27 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             mTestDevice.postBootSetup();
             mTestDevice.clearErrorDialogs();
 
-            try {
-                Thread.sleep(2 * 60 * 1000); // wait for 2 minutes for fully boot up
-            } catch (Exception e) {
-                CLog.e("thread is interrupted after device rebooted: %s", e.toString());
-            }
+            // Wait 2 minutes for the device to fully booting up
+            getRunUtil().sleep(BOOTING_TIME);
 
             // verify voice connection
-            if (voiceTest) {
+            if (mVoiceVerificationFlag) {
                 boolean voiceRes = verifyVoiceConnection(listener);
-                try {
-                    Thread.sleep(5 * 60 * 1000); // Maximum time for setup data call
-                } catch (Exception e) {
-                    CLog.e("thread is interrupted: %s", e.toString());
-                }
+                getRunUtil().sleep(MAX_DATA_SETUP_TIME);
                 boolean dataRes = verifyDataConnection();
                 if (voiceRes && dataRes) {
                     mSuccessRun++;
                 }
+                if (!dataRes) {
+                    // Take a bugreport if data verification failed. A bugreport should be captured
+                    // if voice verification failed in the instrumentation test.
+                    getBugReport(listener, i);
+                }
             } else {
                 if (verifyDataConnection()) {
                     mSuccessRun++;
+                } else {
+                    getBugReport(listener, i);
                 }
             }
         }
@@ -133,9 +141,23 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
         reportMetrics(mMetricsName, runMetrics, listener);
     }
 
+    /**
+     * Capture a bugreport
+     * @param listener is the TestInvocationListener
+     * @param iteration is the index of the test run
+     * @throws DeviceNotAvailableException
+     */
+    private void getBugReport(ITestInvocationListener listener, int iteration)
+            throws DeviceNotAvailableException {
+        // take a bug report, it is possible the system crashed
+        InputStreamSource bugreport = mTestDevice.getBugreport();
+        listener.testLog(String.format("bugreport_%d.txt", iteration), LogDataType.TEXT, bugreport);
+        bugreport.cancel();
+    }
+
     private boolean verifyVoiceConnection(ITestInvocationListener listener)
-        throws DeviceNotAvailableException {
-        CLog.d("Verify voice connection");
+            throws DeviceNotAvailableException {
+        CLog.d("Verify voice connection started");
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
@@ -164,14 +186,10 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
         // After 10 minutes, fail the test
         long startTime = System.currentTimeMillis();
         while ((System.currentTimeMillis() - startTime) < MAX_DATA_SETUP_TIME) {
-            if (RadioHelper.pingTest(mTestDevice)) {
+            if (mRadioHelper.pingTest()) {
                 return true;
             } else {
-                try {
-                    Thread.sleep(10 * 1000);  // wait for 10 seconds
-                } catch (Exception e) {
-                    CLog.e("interrupted while waiting for data connection: %s", e.toString());
-                }
+                getRunUtil().sleep(30 * 1000);
             }
         }
         return false;
@@ -198,5 +216,12 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
+    }
+
+    /**
+     * Gets the {@link IRunUtil} instance to use.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 }
