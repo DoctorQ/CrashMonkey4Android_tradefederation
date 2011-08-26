@@ -854,9 +854,8 @@ public class DeviceManagerTest extends TestCase {
      */
     private void setCheckAvailableDeviceExpectations() {
         EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
-        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE);
-        EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
-                Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE);
         EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
     }
 }

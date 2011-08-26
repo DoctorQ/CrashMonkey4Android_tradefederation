@@ -41,9 +41,9 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private TestDeviceState mDeviceState;
 
     /** the time in ms to wait between 'poll for responsiveness' attempts */
-    private static final long CHECK_POLL_TIME = 5 * 1000;
+    private static final long CHECK_POLL_TIME = 3 * 1000;
     /** the maximum operation time in ms for a 'poll for responsiveness' command */
-    private static final int MAX_OP_TIME = 30 * 1000;
+    private static final int MAX_OP_TIME = 10 * 1000;
 
     /** The  time in ms to wait for a device to be online. */
     // TODO: make this configurable

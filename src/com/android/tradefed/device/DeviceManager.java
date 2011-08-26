@@ -55,9 +55,9 @@ public class DeviceManager implements IDeviceManager {
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
     /**  time to wait in ms between fastboot devices requests */
     private static final long FASTBOOT_POLL_WAIT_TIME = 5 * 1000;
-    /** time to monitor device adb connection before declaring it available for testing */
-    // TODO: 5 seconds is a bit annoyingly long. Try to reduce in future
-    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 5 * 1000;
+    /** time to wait for device adb shell responsive connection before declaring it unavailable
+     * for testing */
+    private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 30 * 1000;
 
     /** a {@link DeviceSelectionOptions} that matches any device */
     private static final IDeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
@@ -214,21 +214,13 @@ public class DeviceManager implements IDeviceManager {
             public void run() {
                 Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
                         device.getSerialNumber()));
-                // Ensure the device adb connection is stable before allocating for testing.
-                // To do so, wait a small amount to ensure device does not disappear from adb
-                boolean isAvail = false;
-                if (!monitor.waitForDeviceNotAvailable(CHECK_WAIT_DEVICE_AVAIL_MS)) {
-                    if (monitor.getDeviceState().equals(TestDeviceState.ONLINE)) {
-                        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
-                                "Detected new device %s", device.getSerialNumber()));
-                        addAvailableDevice(device);
-                        isAvail = true;
-                    }
-                }
-                if (!isAvail) {
-                    Log.e(LOG_TAG, String.format(
-                            "Device %s adb connection is not stable, skip adding to available pool",
-                            device.getSerialNumber()));
+                if (monitor.waitForDeviceShell(CHECK_WAIT_DEVICE_AVAIL_MS)) {
+                    Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
+                            "Detected new device %s", device.getSerialNumber()));
+                    addAvailableDevice(device);
+                } else{
+                    CLog.e("Device %s is not responsive to adb shell command , " +
+                            "skip adding to available pool", device.getSerialNumber());
                 }
                 mCheckDeviceMap.remove(device.getSerialNumber());
             }
