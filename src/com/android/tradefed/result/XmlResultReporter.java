@@ -19,9 +19,11 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.util.FileUtil;
 
@@ -108,6 +110,12 @@ public class XmlResultReporter extends CollectingTestListener {
         }
         mLogFileSaver = new LogFileSaver(buildInfo, mReportDir);
         mBuildInfo = buildInfo;
+    }
+
+    @Override
+    public void testFailed(TestFailure status, TestIdentifier test, String trace) {
+        super.testFailed(status, test, trace);
+        CLog.d("%s %s: %s", test, status, trace);
     }
 
     /**

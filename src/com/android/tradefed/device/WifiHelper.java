@@ -29,7 +29,7 @@ import java.util.regex.Pattern;
 /**
  * Helper class for manipulating wifi services on device.
  */
-class WifiHelper implements IWifiHelper {
+public class WifiHelper implements IWifiHelper {
 
     private static final String INTERFACE_KEY = "interface";
 
@@ -47,7 +47,7 @@ class WifiHelper implements IWifiHelper {
 
     private final ITestDevice mDevice;
 
-    WifiHelper(ITestDevice device) {
+    public WifiHelper(ITestDevice device) {
         mDevice = device;
     }
 
