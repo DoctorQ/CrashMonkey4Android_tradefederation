@@ -192,10 +192,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener standardListener)
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
-        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
-
         setupTests();
         configDevice();
+        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
