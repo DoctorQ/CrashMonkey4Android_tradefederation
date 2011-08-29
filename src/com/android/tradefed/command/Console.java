@@ -305,11 +305,11 @@ public class Console {
 
         commandHelp.put(RUN_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
-                "\tcommand [options] <config>        Run the specified command" + LINE_SEPARATOR +
-                "\t[options] <config>                Shortcut for the above: run specified command" +
+                "\tcommand <config>  [options]       Run the specified command" + LINE_SEPARATOR +
+                "\t<config> [options]                Shortcut for the above: run specified command" +
                     LINE_SEPARATOR +
                 "\tcmdfile <cmdfile.txt>             Run the specified commandfile" + LINE_SEPARATOR +
-                "\tsingleCommand [options] <config>  Run the specified command, and run 'exit' " +
+                "\tsingleCommand <config> [options]  Run the specified command, and run 'exit' " +
                         "immediately afterward" + LINE_SEPARATOR,
                 RUN_PATTERN));
 
