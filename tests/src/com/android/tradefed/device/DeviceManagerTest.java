@@ -320,7 +320,8 @@ public class DeviceManagerTest extends TestCase {
         replayMocks(mockEmulator, mockIEmulator);
         DeviceManager manager = createDeviceManager();
         assertEquals(mockEmulator, manager.allocateDevice(100, options));
-        manager.freeDevice(mockEmulator, FreeDeviceState.AVAILABLE);
+        // a freed 'unavailable' emulator should be returned to the available queue.
+        manager.freeDevice(mockEmulator, FreeDeviceState.UNAVAILABLE);
         // ensure device can be allocated again
         assertEquals(mockEmulator, manager.allocateDevice(100, options));
     }
