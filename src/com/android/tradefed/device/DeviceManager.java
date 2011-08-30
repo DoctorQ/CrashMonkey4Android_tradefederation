@@ -417,6 +417,7 @@ public class DeviceManager implements IDeviceManager {
                 // TODO: this is a bit of a hack. Consider having DeviceManager inject a StubDevice
                 // when deviceDisconnected event is received
                 ideviceToReturn = new StubDevice(ideviceToReturn.getSerialNumber(), true);
+                deviceState = FreeDeviceState.AVAILABLE;
             } catch (DeviceNotAvailableException e) {
                 Log.e(LOG_TAG, e);
                 deviceState = FreeDeviceState.UNAVAILABLE;
