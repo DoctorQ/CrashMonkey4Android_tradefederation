@@ -23,6 +23,7 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,6 +44,10 @@ public class DeviceSetup implements ITargetPreparer {
 
     @Option(name="wifi-psk", description="WPA-PSK passphrase of wifi network to connect to.")
     private String mWifiPsk = null;
+
+    @Option(name = "wifi-attempts", description =
+        "maximum number of attempts to connect to wifi network.")
+    private int mWifiAttempts = 2;
 
     @Option(name="min-external-store-space", description="the minimum amount of free space in KB" +
             " that must be present on device's external storage.")
@@ -224,13 +229,16 @@ public class DeviceSetup implements ITargetPreparer {
     private void connectToWifi(ITestDevice device) throws DeviceNotAvailableException,
             TargetSetupError {
         if (mWifiNetwork != null) {
-            if (device.connectToWifiNetwork(mWifiNetwork, mWifiPsk)) {
-                Log.i(LOG_TAG, String.format("Connected to wifi network %s", mWifiNetwork));
-            } else {
-                throw new TargetSetupError(String.format(
+            for (int i=0; i < mWifiAttempts; i++) {
+                if (device.connectToWifiNetwork(mWifiNetwork, mWifiPsk)) {
+                    CLog.i("Connected to wifi network %s", mWifiNetwork);
+                    return;
+                }
+            }
+            throw new TargetSetupError(String.format(
                         "Failed to connect to wifi network %s on %s", mWifiNetwork,
                         device.getSerialNumber()));
-            }
+
         }
     }
 
