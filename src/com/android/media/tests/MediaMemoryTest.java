@@ -72,6 +72,9 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
 
     private final String mOutputPath = "mediaMemOutput.txt";
 
+    //Max test timeout - 4 hrs
+    private static final int MAX_TEST_TIMEOUT = 4 * 60 * 60 * 1000;
+
     public Map<String, String> mPatternMap = new HashMap<String, String>();
     private static final Pattern TOTAL_MEM_DIFF_PATTERN =
             Pattern.compile("^The total diff = (\\d+)");
@@ -98,6 +101,7 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
+        runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
         if (mGetHeapDump) {
             runner.addInstrumentationArg("get_heap_dump", "getNativeHeap");
         }

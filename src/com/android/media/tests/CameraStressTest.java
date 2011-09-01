@@ -62,6 +62,9 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
     // Constants for running the tests
     private static final String TEST_PACKAGE_NAME = "com.google.android.camera.tests";
 
+    //Max test timeout - 3 hrs
+    private static final int MAX_TEST_TIMEOUT = 3 * 60 * 60 * 1000;
+
     private final String mOutputPath = "mediaStressOut.txt";
 
     /**
@@ -164,6 +167,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         CollectingTestListener auxListener = new CollectingTestListener();
 
         runner.setClassName(test.mClassName);
+        runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
         mTestDevice.runInstrumentationTests(runner, listener, auxListener);
 
         // Grab a bugreport if warranted

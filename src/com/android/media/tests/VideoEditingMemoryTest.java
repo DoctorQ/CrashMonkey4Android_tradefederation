@@ -69,6 +69,9 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_PACKAGE_NAME = "com.android.mediaframeworktest";
     private static final String TEST_RUNNER_NAME = ".MediaPlayerStressTestRunner";
 
+    //Max test timeout - 3 hrs
+    private static final int MAX_TEST_TIMEOUT = 3 * 60 * 60 * 1000;
+
     /*
      * Pattern to find the test case name and test result.
      * Example of a matching line:
@@ -100,6 +103,7 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
+        runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
         if (mGetHeapDump) {
             runner.addInstrumentationArg("get_heap_dump", "getNativeHeap");
         }

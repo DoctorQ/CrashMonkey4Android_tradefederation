@@ -57,6 +57,9 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
     private static final String METRICS_RUN_NAME = "VideoRecordingStress";
 
+    //Max test timeout - 5 hrs
+    private static final int MAX_TEST_TIMEOUT = 5 * 60 * 60 * 1000;
+
     // Constants for running the tests
     private static final String mTestClassName =
             "com.android.mediaframeworktest.stress.MediaRecorderStressTest";
@@ -82,6 +85,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 mTestRunnerName, mTestDevice.getIDevice());
         runner.setClassName(mTestClassName);
+        runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
 
         cleanTmpFiles();
         mTestDevice.runInstrumentationTests(runner, listener);

@@ -64,6 +64,9 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
 
     private final String mOutputPath = "mediaStressOut.txt";
 
+    //Max timeout for the test - 30 mins
+    private static final int MAX_TEST_TIMEOUT = 30 * 60 * 1000;
+
     /**
      * Stores the test cases that we should consider running.
      * <p/>
@@ -137,6 +140,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         CollectingTestListener auxListener = new CollectingTestListener();
 
         runner.setClassName(test.mClassName);
+        runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
         mTestDevice.runInstrumentationTests(runner, listener, auxListener);
 
         // Grab a bugreport if warranted
