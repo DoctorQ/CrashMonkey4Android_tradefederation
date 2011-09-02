@@ -63,7 +63,6 @@ import com.android.tradefed.testtype.InstrumentationTestTest;
 import com.android.tradefed.testtype.NativeBenchmarkTestParserTest;
 import com.android.tradefed.testtype.NativeStressTestParserTest;
 import com.android.tradefed.testtype.NativeStressTestTest;
-import com.android.tradefed.testtype.OtaStabilityTestTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
 import com.android.tradefed.util.ByteArrayListTest;
@@ -152,7 +151,6 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(NativeBenchmarkTestParserTest.class);
         addTestSuite(NativeStressTestParserTest.class);
         addTestSuite(NativeStressTestTest.class);
-        addTestSuite(OtaStabilityTestTest.class);
 
         // testtype/testdefs
         addTestSuite(XmlDefsParserTest.class);

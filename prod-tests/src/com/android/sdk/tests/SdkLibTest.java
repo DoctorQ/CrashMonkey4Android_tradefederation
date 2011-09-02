@@ -13,13 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.testtype;
+package com.android.sdk.tests;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.testtype.IBuildReceiver;
+import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.testtype.JUnitRunUtil;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.TestLoader;
 

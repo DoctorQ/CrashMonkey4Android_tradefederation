@@ -3,8 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/kxml2"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/tradefederation"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ddmlib"/>
-	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/junit"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

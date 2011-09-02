@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.testtype;
+package com.android.ota.tests;
+
+import com.android.tradefed.testtype.IRemoteTest;
 
 import java.util.Collection;
 import java.util.Iterator;

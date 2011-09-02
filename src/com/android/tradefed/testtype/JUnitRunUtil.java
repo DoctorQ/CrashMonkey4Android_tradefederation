@@ -28,7 +28,7 @@ import junit.framework.TestResult;
  * A helper class for directing a {@link IRemoteTest#run(ITestInvocationListener)} call to a
  * {@link Test#run(TestResult)} call.
  */
-class JUnitRunUtil {
+public class JUnitRunUtil {
 
     public static void runTest(ITestInvocationListener listener, Test junitTest) {
 
