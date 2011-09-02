@@ -21,7 +21,8 @@ import com.android.tradefed.command.CommandOptions;
 import com.android.tradefed.command.ICommandOptions;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceRecovery;
-import com.android.tradefed.device.IDeviceSelectionOptions;
+import com.android.tradefed.device.IDeviceSelection;
+import com.android.tradefed.device.TestDeviceOptions;
 import com.android.tradefed.device.WaitDeviceRecovery;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.StdoutLogger;
@@ -53,6 +54,7 @@ public class Configuration implements IConfiguration {
     public static final String LOGGER_TYPE_NAME = "logger";
     public static final String RESULT_REPORTER_TYPE_NAME = "result_reporter";
     public static final String CMD_OPTIONS_TYPE_NAME = "cmd_options";
+    public static final String DEVICE_REQUIREMENTS_TYPE_NAME = "device_requirements";
     public static final String DEVICE_OPTIONS_TYPE_NAME = "device_options";
 
     private static Map<String, ObjTypeInfo> sObjTypeMap = null;
@@ -98,9 +100,10 @@ public class Configuration implements IConfiguration {
                     true));
             sObjTypeMap.put(CMD_OPTIONS_TYPE_NAME, new ObjTypeInfo(ICommandOptions.class,
                     false));
-            sObjTypeMap.put(DEVICE_OPTIONS_TYPE_NAME, new ObjTypeInfo(IDeviceSelectionOptions.class,
+            sObjTypeMap.put(DEVICE_REQUIREMENTS_TYPE_NAME, new ObjTypeInfo(IDeviceSelection.class,
                     false));
-
+            sObjTypeMap.put(DEVICE_OPTIONS_TYPE_NAME, new ObjTypeInfo(TestDeviceOptions.class,
+                    false));
         }
         return sObjTypeMap;
     }
@@ -113,7 +116,8 @@ public class Configuration implements IConfiguration {
         mDescription = description;
         mConfigMap = new LinkedHashMap<String, List<Object>>();
         setCommandOptions(new CommandOptions());
-        setDeviceSelectionOptions(new DeviceSelectionOptions());
+        setDeviceRequirements(new DeviceSelectionOptions());
+        setDeviceOptions(new TestDeviceOptions());
         setBuildProvider(new StubBuildProvider());
         setTargetPreparer(new StubTargetPreparer());
         setTest(new StubTest());
@@ -199,8 +203,16 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public IDeviceSelectionOptions getDeviceSelectionOptions() {
-        return (IDeviceSelectionOptions)getConfigurationObject(DEVICE_OPTIONS_TYPE_NAME);
+    public IDeviceSelection getDeviceRequirements() {
+        return (IDeviceSelection)getConfigurationObject(DEVICE_REQUIREMENTS_TYPE_NAME);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TestDeviceOptions getDeviceOptions() {
+        return (TestDeviceOptions)getConfigurationObject(DEVICE_OPTIONS_TYPE_NAME);
     }
 
     /**
@@ -353,7 +365,15 @@ public class Configuration implements IConfiguration {
      * {@inheritDoc}
      */
     @Override
-    public void setDeviceSelectionOptions(IDeviceSelectionOptions devOptions) {
+    public void setDeviceRequirements(IDeviceSelection devRequirements) {
+        setConfigurationObjectNoThrow(DEVICE_REQUIREMENTS_TYPE_NAME, devRequirements);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDeviceOptions(TestDeviceOptions devOptions) {
         setConfigurationObjectNoThrow(DEVICE_OPTIONS_TYPE_NAME, devOptions);
     }
 

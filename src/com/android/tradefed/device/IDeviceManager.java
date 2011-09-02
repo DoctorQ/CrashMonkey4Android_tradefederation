@@ -69,7 +69,7 @@ public interface IDeviceManager {
      * Initialize the device manager with a device filter. This filter can be used to instruct
      * the DeviceManager to ignore certain connected devices.
      */
-    public void init(IDeviceSelectionOptions globalDeviceFilter);
+    public void init(IDeviceSelection globalDeviceFilter);
 
     /**
      * Request a physical device for testing, waiting indefinitely until one becomes available.
@@ -91,11 +91,11 @@ public interface IDeviceManager {
      * Request a device for testing that meets certain criteria.
      *
      * @param timeout max time in ms to wait for a device to become available.
-     * @param options the {@link IDeviceSelectionOptions} the device should meet.
+     * @param options the {@link IDeviceSelection} the device should meet.
      * @return a {@link ITestDevice} for testing, or <code>null</code> if timeout expired before one
      *         became available
      */
-    public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options);
+    public ITestDevice allocateDevice(long timeout, IDeviceSelection options);
 
     /**
      * Return a device to the pool

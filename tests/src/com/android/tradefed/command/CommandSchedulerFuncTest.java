@@ -61,9 +61,9 @@ public class CommandSchedulerFuncTest extends TestCase {
         mCommandOptions.setMinLoopTime(0);
         EasyMock.expect(mSlowConfig.getCommandOptions()).andStubReturn(mCommandOptions);
         EasyMock.expect(mFastConfig.getCommandOptions()).andStubReturn(mCommandOptions);
-        EasyMock.expect(mSlowConfig.getDeviceSelectionOptions()).andStubReturn(
+        EasyMock.expect(mSlowConfig.getDeviceRequirements()).andStubReturn(
                 new DeviceSelectionOptions());
-        EasyMock.expect(mFastConfig.getDeviceSelectionOptions()).andStubReturn(
+        EasyMock.expect(mFastConfig.getDeviceRequirements()).andStubReturn(
                 new DeviceSelectionOptions());
 
         mCommandScheduler = new CommandScheduler() {

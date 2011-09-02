@@ -767,4 +767,9 @@ public interface ITestDevice {
      */
     public boolean switchToAdbUsb() throws DeviceNotAvailableException;
 
+    /**
+     * Set the {@link TestDeviceOptions} for the device
+     */
+    public void setOptions(TestDeviceOptions options);
+
 }

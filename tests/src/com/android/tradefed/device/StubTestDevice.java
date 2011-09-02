@@ -620,4 +620,9 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return null;
     }
+
+    @Override
+    public void setOptions(TestDeviceOptions options) {
+        // ignore
+    }
 }

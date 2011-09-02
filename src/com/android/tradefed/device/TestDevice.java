@@ -34,7 +34,6 @@ import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.config.Option;
 import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
@@ -135,26 +134,7 @@ class TestDevice implements IManagedTestDevice {
     private IFileEntry mRootFile = null;
     private boolean mFastbootEnabled = true;
 
-    // TODO: TestDevice is not loaded from configuration yet, so these options are currently fixed
-
-    @Option(name = "enable-root", description = "enable adb root on boot.")
-    private boolean mEnableAdbRoot = true;
-
-    @Option(name = "disable-keyguard", description = "attempt to disable keyguard once complete.")
-    private boolean mDisableKeyguard = true;
-
-    @Option(name = "disable-keyguard-cmd", description = "shell command to disable keyguard.")
-    private String mDisableKeyguardCmd = "input keyevent 82";
-
-    /**
-     * The maximum size of a tmp logcat file, in bytes.
-     * <p/>
-     * The actual size of the log info stored will be up to twice this number, as two logcat files
-     * are stored.
-     */
-    @Option(name = "max-tmp-logcat-file", description =
-        "The maximum size of a tmp logcat file, in bytes.")
-    private long mMaxLogcatFileSize = 10 * 1024 * 1024;
+    private TestDeviceOptions mOptions = new TestDeviceOptions();
     private Process mEmulatorProcess;
 
     private RecoveryMode mRecoveryMode = RecoveryMode.AVAILABLE;
@@ -261,13 +241,18 @@ class TestDevice implements IManagedTestDevice {
         return RunUtil.getDefault();
     }
 
+    @Override
+    public void setOptions(TestDeviceOptions options) {
+        mOptions = options;
+    }
+
     /**
      * Sets the max size of a tmp logcat file.
      *
      * @param size max byte size of tmp file
      */
     void setTmpLogcatSize(long size) {
-        mMaxLogcatFileSize = size;
+        mOptions.setMaxLogcatFileSize(size);
     }
 
     /**
@@ -1432,7 +1417,7 @@ class TestDevice implements IManagedTestDevice {
             try {
                 mOutStream.write(data, offset, length);
                 mTmpBytesStored += length;
-                if (mTmpBytesStored > mMaxLogcatFileSize) {
+                if (mTmpBytesStored > mOptions.getMaxLogcatFileSize()) {
                     Log.i(LOG_TAG, String.format(
                             "Max tmp logcat file size reached for %s, swapping",
                             getSerialNumber()));
@@ -1850,13 +1835,13 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public void postBootSetup() throws DeviceNotAvailableException  {
-        if (mEnableAdbRoot) {
+        if (isEnableAdbRoot()) {
             enableAdbRoot();
         }
-        if (mDisableKeyguard) {
+        if (mOptions.isDisableKeyguard()) {
             Log.i(LOG_TAG, String.format("Attempting to disable keyguard on %s using %s",
-                    getSerialNumber(), mDisableKeyguardCmd));
-            executeShellCommand(mDisableKeyguardCmd);
+                    getSerialNumber(), getDisableKeyguardCmd()));
+            executeShellCommand(getDisableKeyguardCmd());
         }
     }
 
@@ -1866,7 +1851,7 @@ class TestDevice implements IManagedTestDevice {
      * Exposed for unit testing.
      */
     String getDisableKeyguardCmd() {
-        return mDisableKeyguardCmd;
+        return mOptions.getDisableKeyguardCmd();
     }
 
     /**
@@ -1953,7 +1938,7 @@ class TestDevice implements IManagedTestDevice {
         RecoveryMode cachedRecoveryMode = getRecoveryMode();
         setRecoveryMode(RecoveryMode.ONLINE);
         if (mMonitor.waitForDeviceOnline() != null) {
-            if (mEnableAdbRoot) {
+            if (isEnableAdbRoot()) {
                 enableAdbRoot();
             }
         } else {
@@ -2292,10 +2277,6 @@ class TestDevice implements IManagedTestDevice {
         return mMonitor.waitForDeviceInRecovery(waitTime);
     }
 
-    void setEnableAdbRoot(boolean enable) {
-        mEnableAdbRoot = enable;
-    }
-
     /**
      * Retrieve this device's recovery mechanism.
      * <p/>
@@ -2406,5 +2387,12 @@ class TestDevice implements IManagedTestDevice {
     @Override
     public Process getEmulatorProcess() {
         return mEmulatorProcess;
+    }
+
+    /**
+     * @return <code>true</code> if adb root should be enabled on device
+     */
+    public boolean isEnableAdbRoot() {
+        return mOptions.isEnableAdbRoot();
     }
 }

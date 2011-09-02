@@ -60,12 +60,12 @@ public class MockDeviceManager implements IDeviceManager {
     }
 
     private static class TestDeviceMatcher implements IMatcher<ITestDevice> {
-        private IDeviceSelectionOptions mDeviceOptions;
+        private IDeviceSelection mDeviceOptions;
 
         /**
          * @param deviceSelectionOptions
          */
-        public TestDeviceMatcher(IDeviceSelectionOptions deviceSelectionOptions) {
+        public TestDeviceMatcher(IDeviceSelection deviceSelectionOptions) {
             mDeviceOptions = deviceSelectionOptions;
         }
 
@@ -154,7 +154,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
-    public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
+    public ITestDevice allocateDevice(long timeout, IDeviceSelection options) {
         try {
             return mDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,
                     new TestDeviceMatcher(options));
@@ -180,7 +180,7 @@ public class MockDeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public void init(IDeviceSelectionOptions globalDeviceFilter) {
+    public void init(IDeviceSelection globalDeviceFilter) {
         // ignore
     }
 
