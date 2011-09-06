@@ -28,7 +28,7 @@ import java.util.Map;
 /**
  * Container for for device selection criteria.
  */
-public class DeviceSelectionOptions implements IDeviceSelectionOptions {
+public class DeviceSelectionOptions implements IDeviceSelection {
 
     private static final String LOG_TAG = "DeviceSelectionOptions";
 

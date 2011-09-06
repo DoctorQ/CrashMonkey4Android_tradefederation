@@ -46,7 +46,7 @@ public class CommandSchedulerStressApp  {
         mCommandOptions.setLoopMode(false);
         mCommandOptions.setMinLoopTime(0);
         EasyMock.expect(mMockConfig.getCommandOptions()).andStubReturn(mCommandOptions);
-        EasyMock.expect(mMockConfig.getDeviceSelectionOptions()).andStubReturn(
+        EasyMock.expect(mMockConfig.getDeviceRequirements()).andStubReturn(
                 new DeviceSelectionOptions());
 
         mCommandScheduler = new CommandScheduler() {

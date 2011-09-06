@@ -25,7 +25,7 @@ import java.util.Map;
 /**
  * Interface for device selection criteria.
  */
-public interface IDeviceSelectionOptions extends IMatcher<IDevice> {
+public interface IDeviceSelection extends IMatcher<IDevice> {
 
     /**
      * Gets a copy of the serial numbers

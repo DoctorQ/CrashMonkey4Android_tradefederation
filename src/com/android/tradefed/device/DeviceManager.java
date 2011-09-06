@@ -60,7 +60,7 @@ public class DeviceManager implements IDeviceManager {
     private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 30 * 1000;
 
     /** a {@link DeviceSelectionOptions} that matches any device */
-    private static final IDeviceSelectionOptions ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
+    private static final IDeviceSelection ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
 
     private static DeviceManager sInstance;
 
@@ -77,7 +77,7 @@ public class DeviceManager implements IDeviceManager {
     private Map<String, IDeviceStateMonitor> mCheckDeviceMap;
     private boolean mEnableLogcat = true;
     private boolean mIsTerminated = false;
-    private IDeviceSelectionOptions mGlobalDeviceFilter;
+    private IDeviceSelection mGlobalDeviceFilter;
     /** the maximum number of emulators that can be allocated at one time */
     private int mNumEmulatorSupported = 1;
     /** the maximum number of no device runs that can be allocated at one time */
@@ -99,7 +99,7 @@ public class DeviceManager implements IDeviceManager {
      * methods are called.
      */
     @Override
-    public synchronized void init(IDeviceSelectionOptions globalDeviceFilter) {
+    public synchronized void init(IDeviceSelection globalDeviceFilter) {
         if (mIsInitialized) {
             throw new IllegalStateException("already initialized");
         }
@@ -332,7 +332,7 @@ public class DeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public ITestDevice allocateDevice(long timeout, IDeviceSelectionOptions options) {
+    public ITestDevice allocateDevice(long timeout, IDeviceSelection options) {
         checkInit();
         IDevice allocatedDevice = pollAvailableDevice(timeout, options);
         if (allocatedDevice == null) {
@@ -350,7 +350,7 @@ public class DeviceManager implements IDeviceManager {
      *
      * @return the {@link IDevice} or <code>null</code> if interrupted
      */
-    private IDevice pollAvailableDevice(long timeout, IDeviceSelectionOptions options) {
+    private IDevice pollAvailableDevice(long timeout, IDeviceSelection options) {
         try {
             return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS, options);
         } catch (InterruptedException e) {

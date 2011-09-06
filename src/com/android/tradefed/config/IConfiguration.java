@@ -19,7 +19,8 @@ package com.android.tradefed.config;
 import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.command.ICommandOptions;
 import com.android.tradefed.device.IDeviceRecovery;
-import com.android.tradefed.device.IDeviceSelectionOptions;
+import com.android.tradefed.device.IDeviceSelection;
+import com.android.tradefed.device.TestDeviceOptions;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.targetprep.ITargetPreparer;
@@ -73,6 +74,13 @@ public interface IConfiguration {
     public IDeviceRecovery getDeviceRecovery();
 
     /**
+     * Gets the {@link TestDeviceOptions} to use from the configuration.
+     *
+     * @return the {@link TestDeviceOptions} provided in the configuration.
+     */
+    public TestDeviceOptions getDeviceOptions();
+
+    /**
      * Gets the {@link ILeveledLogOutput} to use from the configuration.
      *
      * @return the {@link ILeveledLogOutput} provided in the configuration.
@@ -87,11 +95,11 @@ public interface IConfiguration {
     public ICommandOptions getCommandOptions();
 
     /**
-     * Gets the {@link IDeviceSelectionOptions} to use from the configuration.
+     * Gets the {@link IDeviceSelection} to use from the configuration.
      *
-     * @return the {@link IDeviceSelectionOptions} provided in the configuration.
+     * @return the {@link IDeviceSelection} provided in the configuration.
      */
-    public IDeviceSelectionOptions getDeviceSelectionOptions();
+    public IDeviceSelection getDeviceRequirements();
 
     /**
      * Generic interface to get the configuration object with the given type name.
@@ -214,11 +222,16 @@ public interface IConfiguration {
     public void setCommandOptions(ICommandOptions cmdOptions);
 
     /**
-     * Set the {@link IDeviceSelectionOptions}, replacing any existing values
+     * Set the {@link IDeviceSelection}, replacing any existing values
      *
-     * @param deviceOptions
+     * @param deviceSelection
      */
-    public void setDeviceSelectionOptions(IDeviceSelectionOptions deviceOptions);
+    public void setDeviceRequirements(IDeviceSelection deviceSelection);
+
+    /**
+     * Set the {@link TestDeviceOptions}, replacing any existing values
+     */
+    public void setDeviceOptions(TestDeviceOptions deviceOptions);
 
     /**
      * Generic method to set the config object with the given name, replacing any existing value.

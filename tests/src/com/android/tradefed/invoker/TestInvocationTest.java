@@ -26,6 +26,7 @@ import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.TestDeviceOptions;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.ILogRegistry;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
@@ -300,6 +301,7 @@ public class TestInvocationTest extends TestCase {
         IRemoteTest test = EasyMock.createMock(IRemoteTest.class);
         mStubConfiguration.setTest(test);
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
+        mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
 
@@ -333,7 +335,7 @@ public class TestInvocationTest extends TestCase {
 
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         resumeListener.invocationStarted(mMockBuildInfo);
-
+        mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
@@ -362,6 +364,7 @@ public class TestInvocationTest extends TestCase {
 
         mMockLogger.init();
         // now set resumed invocation expectations
+        mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
@@ -404,6 +407,8 @@ public class TestInvocationTest extends TestCase {
     private void setupNormalInvoke(IRemoteTest test) throws Exception {
         mStubConfiguration.setTest(test);
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
+        mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
+
         mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
                 (String)EasyMock.anyObject());
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);

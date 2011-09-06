@@ -17,7 +17,7 @@ package com.android.tradefed.device;
 
 /**
  * A placeholder {@link IDevice} used by {@link DeviceManager} to allocate when
- * {@link IDeviceSelectionOptions#nullDeviceRequested()} is <code>true</code>
+ * {@link IDeviceSelection#nullDeviceRequested()} is <code>true</code>
  */
 class NullDevice extends StubDevice {
 

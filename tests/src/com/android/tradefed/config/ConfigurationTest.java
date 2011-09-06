@@ -22,7 +22,7 @@ import com.android.tradefed.build.IBuildProvider;
 import com.android.tradefed.command.ICommandOptions;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceRecovery;
-import com.android.tradefed.device.IDeviceSelectionOptions;
+import com.android.tradefed.device.IDeviceSelection;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TextResultReporter;
@@ -272,15 +272,15 @@ public class ConfigurationTest extends TestCase {
     }
 
     /**
-     * Test method for {@link Configuration#getDeviceSelectionOptions()}.
+     * Test method for {@link Configuration#getDeviceRequirements()}.
      */
-    public void testGetDeviceSelectionOptions() throws ConfigurationException {
+    public void testGetDeviceRequirements() throws ConfigurationException {
         // check that the default object is present
-        assertNotNull(mConfig.getDeviceSelectionOptions());
-        final IDeviceSelectionOptions deviceOptions = EasyMock.createMock(
-                IDeviceSelectionOptions.class);
-        mConfig.setDeviceSelectionOptions(deviceOptions);
-        assertEquals(deviceOptions, mConfig.getDeviceSelectionOptions());
+        assertNotNull(mConfig.getDeviceRequirements());
+        final IDeviceSelection deviceSelection = EasyMock.createMock(
+                IDeviceSelection.class);
+        mConfig.setDeviceRequirements(deviceSelection);
+        assertEquals(deviceSelection, mConfig.getDeviceRequirements());
     }
 
     /**

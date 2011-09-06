@@ -318,7 +318,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             ExecutableCommand cmd = dequeueConfigCommand();
             if (cmd != null) {
                 ITestDevice device = manager.allocateDevice(0,
-                        cmd.getConfiguration().getDeviceSelectionOptions());
+                        cmd.getConfiguration().getDeviceRequirements());
                 if (device != null) {
                     // Spawn off a thread to perform the invocation
                     InvocationThread invThread = startInvocation(manager, device, cmd);

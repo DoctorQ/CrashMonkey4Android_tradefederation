@@ -320,7 +320,7 @@ public class CommandSchedulerTest extends TestCase {
         setCreateConfigExpectations(args, 1);
         final IConfiguration rescheduledConfig = EasyMock.createMock(IConfiguration.class);
         EasyMock.expect(rescheduledConfig.getCommandOptions()).andStubReturn(mCommandOptions);
-        EasyMock.expect(rescheduledConfig.getDeviceSelectionOptions()).andStubReturn(
+        EasyMock.expect(rescheduledConfig.getDeviceRequirements()).andStubReturn(
                 mDeviceOptions);
 
         // an ITestInvocationn#invoke response for calling reschedule
@@ -379,7 +379,7 @@ public class CommandSchedulerTest extends TestCase {
                 .andReturn(mMockConfiguration)
                 .times(times);
         EasyMock.expect(mMockConfiguration.getCommandOptions()).andStubReturn(mCommandOptions);
-        EasyMock.expect(mMockConfiguration.getDeviceSelectionOptions()).andStubReturn(
+        EasyMock.expect(mMockConfiguration.getDeviceRequirements()).andStubReturn(
                 mDeviceOptions);
     }
 }

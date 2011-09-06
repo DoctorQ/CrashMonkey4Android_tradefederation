@@ -282,6 +282,7 @@ public class TestInvocation implements ITestInvocation {
             if (device != null) {
                 info.addBuildAttribute("device_serial", device.getSerialNumber());
             }
+            device.setOptions(config.getDeviceOptions());
             for (ITargetPreparer preparer : config.getTargetPreparers()) {
                 preparer.setUp(device, info);
             }
