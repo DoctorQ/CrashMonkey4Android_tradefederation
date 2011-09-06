@@ -111,7 +111,7 @@ class TestDevice implements IManagedTestDevice {
     /** The time in ms to wait for a device to reboot to full system. */
     private static final int REBOOT_TIMEOUT = 2 * 60 * 1000;
     /** The time in ms to wait for a device to become unavailable. Should usually be short */
-    private static final int DEFAULT_UNAVAILABLE_TIMEOUT = 10 * 1000;
+    private static final int DEFAULT_UNAVAILABLE_TIMEOUT = 20 * 1000;
     /** The time in ms to wait for a recovery that we skip because of the NONE mode */
     static final int NONE_RECOVERY_MODE_DELAY = 1000;
     /** number of attempts made to clear dialogs */
