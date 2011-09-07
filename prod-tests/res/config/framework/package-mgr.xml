@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <configuration description="Runs download manager host-based tests">
-    <test class="com.android.framework.tests.DownloadManagerHostTests" />
+    <test class="com.android.framework.tests.PackageManagerHostTests" />
     <logger class="com.android.tradefed.log.FileLogger">
         <option name="log-level-display" value="debug" />
     </logger>
