@@ -372,7 +372,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public void setDevicePreferredInstallLocation(InstallLocPreference pref)
             throws DeviceNotAvailableException {
-        String command = "pm setInstallLocation %d";
+        String command = "pm set-install-location %d";
         int locValue = 0;
         switch (pref) {
             case INTERNAL:
