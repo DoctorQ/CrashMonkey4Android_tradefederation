@@ -29,6 +29,7 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -91,6 +92,51 @@ public class ConfigurationFactory implements IConfigurationFactory {
 
     }
 
+    /**
+     * Implementation of {@link IConfigDefLoader} that tracks the included configurations from one
+     * root config, and throws an exception on circular includes.
+     */
+    class ConfigLoader implements IConfigDefLoader {
+
+        private Set<String> mIncludedConfigs = new HashSet<String>();
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public ConfigurationDef getConfigurationDef(String name) throws ConfigurationException {
+            if (mIncludedConfigs.contains(name)) {
+                throw new ConfigurationException(String.format(
+                        "Circular configuration include: config '%s' is already included", name));
+            }
+            mIncludedConfigs.add(name);
+            // first attempt to load cached config def
+            ConfigurationDef def = mConfigDefMap.get(name);
+            if (def == null) {
+                // not found - load from file
+                def = loadConfiguration(name);
+                mConfigDefMap.put(name, def);
+            }
+            return def;
+        }
+
+        /**
+         * Loads a configuration.
+         *
+         * @param name the name of a built-in configuration to load or a file
+         *            path to configuration xml to load
+         * @return the loaded {@link ConfigurationDef}
+         * @throws ConfigurationException if a configuration with given
+         *             name/file path cannot be loaded or parsed
+         */
+        ConfigurationDef loadConfiguration(String name) throws ConfigurationException {
+            Log.i(LOG_TAG, String.format("Loading configuration '%s'", name));
+            BufferedInputStream bufStream = getConfigStream(name);
+            ConfigurationXmlParser parser = new ConfigurationXmlParser(this);
+            return parser.parse(name, bufStream);
+        }
+    }
+
     ConfigurationFactory() {
         mConfigDefMap = new Hashtable<String, ConfigurationDef>();
     }
@@ -105,52 +151,16 @@ public class ConfigurationFactory implements IConfigurationFactory {
         return sInstance;
     }
 
-    private ConfigurationDef getConfigurationDef(String name) throws ConfigurationException {
-        ConfigurationDef def = mConfigDefMap.get(name);
-        if (def == null) {
-            def = loadConfiguration(name);
-            mConfigDefMap.put(name, def);
-        }
-        return def;
-    }
-
     /**
-     * Loads a configuration.
+     * Retrieve the {@link ConfigurationDef} for the given name
      *
      * @param name the name of a built-in configuration to load or a file path to configuration xml
      *            to load
-     * @return the loaded {@link ConfigurationDef}
-     * @throws ConfigurationException if a configuration with given name/file path cannot be loaded
-     *             or parsed
+     * @return {@link ConfigurationDef}
+     * @throws ConfigurationException if an error occurred loading the config
      */
-    private ConfigurationDef loadConfiguration(String name) throws ConfigurationException {
-        Log.i(LOG_TAG, String.format("Loading configuration '%s'", name));
-        BufferedInputStream bufStream = getConfigStream(name);
-        ConfigurationXmlParser parser = new ConfigurationXmlParser();
-        return parser.parse(name, bufStream);
-    }
-
-    /**
-     * Loads an InputStream for given config name
-     *
-     * @param name the configuration name to load
-     * @return a {@link BufferedInputStream} for reading config contents
-     * @throws ConfigurationException if config could not be found
-     */
-    private BufferedInputStream getConfigStream(String name) throws ConfigurationException {
-        InputStream configStream = getClass().getResourceAsStream(
-                String.format("/%s%s%s", CONFIG_PREFIX, name, CONFIG_SUFFIX));
-        if (configStream == null) {
-            // now try to load from file
-            try {
-                configStream = new FileInputStream(name);
-            } catch (FileNotFoundException e) {
-                throw new ConfigurationException(String.format("Could not find configuration '%s'",
-                        name));
-            }
-        }
-        // buffer input for performance - just in case config file is large
-        return new BufferedInputStream(configStream);
+    private ConfigurationDef getConfigurationDef(String name) throws ConfigurationException {
+        return new ConfigLoader().getConfigurationDef(name);
     }
 
     /**
@@ -268,5 +278,38 @@ public class ConfigurationFactory implements IConfigurationFactory {
         } catch (IOException e) {
             Log.e(LOG_TAG, e);
         }
+    }
+
+    /**
+     * Return the path prefix of config xml files on classpath
+     * <p/>
+     * Exposed so unit tests can mock.
+     * @return {@link String} path with trailing /
+     */
+    String getConfigPrefix() {
+        return CONFIG_PREFIX;
+    }
+
+    /**
+     * Loads an InputStream for given config name
+     *
+     * @param name the configuration name to load
+     * @return a {@link BufferedInputStream} for reading config contents
+     * @throws ConfigurationException if config could not be found
+     */
+    private BufferedInputStream getConfigStream(String name) throws ConfigurationException {
+        InputStream configStream = getClass().getResourceAsStream(
+                String.format("/%s%s%s", getConfigPrefix(), name, CONFIG_SUFFIX));
+        if (configStream == null) {
+            // now try to load from file
+            try {
+                configStream = new FileInputStream(name);
+            } catch (FileNotFoundException e) {
+                throw new ConfigurationException(String.format("Could not find configuration '%s'",
+                        name));
+            }
+        }
+        // buffer input for performance - just in case config file is large
+        return new BufferedInputStream(configStream);
     }
 }

@@ -16,6 +16,8 @@
 package com.android.tradefed.config;
 
 import com.android.tradefed.build.StubBuildProvider;
+import com.android.tradefed.testtype.HostTest;
+import com.android.tradefed.testtype.InstrumentationTest;
 
 import junit.framework.TestCase;
 
@@ -91,12 +93,95 @@ public class ConfigurationDefTest extends TestCase {
     /**
      * Test {@link ConfigurationDef#createConfiguration()} for a String field.
      */
-    public void testCreateConfiguration() throws ConfigurationException  {
+    public void testCreateConfiguration() throws ConfigurationException {
         mConfigDef.addOptionDef(OPTION_NAME, null, OPTION_VALUE);
         IConfiguration config = mConfigDef.createConfiguration();
         OptionTest test = (OptionTest)config.getBuildProvider();
         assertEquals(OPTION_VALUE, test.mOption);
     }
 
+    /**
+     * Test {@link ConfigurationDef#includeConfigDef(ConfigurationDef)} for two configs each with
+     * one unique object.
+     * <p/>
+     */
+    public void testIncludeConfigDef_combineObjects() throws ConfigurationException {
+        ConfigurationDef def2 = new ConfigurationDef("def2");
+        def2.addConfigObjectDef(Configuration.TEST_TYPE_NAME, HostTest.class.getName());
+        mConfigDef.includeConfigDef(def2);
+        IConfiguration config = mConfigDef.createConfiguration();
+        assertTrue(config.getBuildProvider() instanceof OptionTest);
+        assertTrue(config.getTests().get(0) instanceof HostTest);
+    }
 
+    /**
+     * Test {@link ConfigurationDef#includeConfigDef(ConfigurationDef)} for two configs each with
+     * defined options.
+     * <p/>
+     */
+    public void testIncludeConfigDef_combineOptions() throws ConfigurationException {
+        mConfigDef.addOptionDef(OPTION_NAME, null, OPTION_VALUE);
+        ConfigurationDef def2 = new ConfigurationDef("def2");
+        def2.addOptionDef(COLLECTION_OPTION_NAME, null, OPTION_VALUE);
+        mConfigDef.includeConfigDef(def2);
+        IConfiguration config = mConfigDef.createConfiguration();
+        OptionTest test = (OptionTest)config.getBuildProvider();
+        assertEquals(OPTION_VALUE, test.mOption);
+        assertTrue(test.mCollectionOption.contains(OPTION_VALUE));
+    }
+
+    /**
+     * Test {@link ConfigurationDef#includeConfigDef(ConfigurationDef)} for two configs each with
+     * one unique object of the same type.
+     * <p/>
+     */
+    public void testIncludeConfigDef_addObjects() throws ConfigurationException {
+        mConfigDef.addConfigObjectDef(Configuration.TEST_TYPE_NAME,
+                InstrumentationTest.class.getName());
+        ConfigurationDef def2 = new ConfigurationDef("def2");
+        def2.addConfigObjectDef(Configuration.TEST_TYPE_NAME, HostTest.class.getName());
+        mConfigDef.includeConfigDef(def2);
+        IConfiguration config = mConfigDef.createConfiguration();
+        assertEquals(2, config.getTests().size());
+        assertTrue(config.getTests().get(0) instanceof InstrumentationTest);
+        assertTrue(config.getTests().get(1) instanceof HostTest);
+    }
+
+    /**
+     * Test {@link ConfigurationDef#includeConfigDef(ConfigurationDef)} for two configs each with
+     * one unique object of the same type - where that type only allows a single object.
+     * <p/>
+     * Expect {@link ConfigurationException}
+     */
+    public void testIncludeConfigDef_duplicateObjectsForType() throws ConfigurationException {
+        ConfigurationDef def2 = new ConfigurationDef("def2");
+        def2.addConfigObjectDef(Configuration.BUILD_PROVIDER_TYPE_NAME,
+                StubBuildProvider.class.getName());
+        mConfigDef.includeConfigDef(def2);
+        try {
+            mConfigDef.createConfiguration();
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test {@link ConfigurationDef#includeConfigDef(ConfigurationDef)} for two configs that define
+     * the same class object.
+     * <p/>
+     * TODO: Currently this is allowed, but its somewhat undesirable since there is no way to
+     * define different option values for the two objects.
+     */
+    public void testIncludeConfigDef_duplicateObjectsForList() throws ConfigurationException {
+        mConfigDef.addConfigObjectDef(Configuration.TEST_TYPE_NAME,
+                InstrumentationTest.class.getName());
+        ConfigurationDef def2 = new ConfigurationDef("def2");
+        def2.addConfigObjectDef(Configuration.TEST_TYPE_NAME, InstrumentationTest.class.getName());
+        mConfigDef.includeConfigDef(def2);
+        IConfiguration config = mConfigDef.createConfiguration();
+        assertEquals(2, config.getTests().size());
+        assertTrue(config.getTests().get(0) instanceof InstrumentationTest);
+        assertTrue(config.getTests().get(1) instanceof InstrumentationTest);
+    }
 }

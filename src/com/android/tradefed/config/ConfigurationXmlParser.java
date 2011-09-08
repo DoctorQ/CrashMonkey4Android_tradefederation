@@ -46,13 +46,16 @@ class ConfigurationXmlParser {
 
         private static final String OBJECT_TAG = "object";
         private static final String OPTION_TAG = "option";
-        private static final Object CONFIG_TAG = "configuration";
+        private static final String INCLUDE_TAG = "include";
+        private static final String CONFIG_TAG = "configuration";
 
         private ConfigurationDef mConfigDef;
         private String mCurrentConfigObject;
+        private final IConfigDefLoader mConfigDefLoader;
 
-        ConfigHandler(String name) {
+        ConfigHandler(String name, IConfigDefLoader loader) {
             mConfigDef = new ConfigurationDef(name);
+            mConfigDefLoader = loader;
         }
 
         ConfigurationDef getParsedDef() {
@@ -94,6 +97,19 @@ class ConfigurationXmlParser {
                 if (description != null) {
                     mConfigDef.setDescription(description);
                 }
+            } else if (INCLUDE_TAG.equals(localName)) {
+                String includeName = attributes.getValue("name");
+                if (includeName == null) {
+                    throwException("Missing 'name' attribute for include");
+                }
+                try {
+                    ConfigurationDef includedDef = mConfigDefLoader.getConfigurationDef(
+                            includeName);
+                    mConfigDef.includeConfigDef(includedDef);
+                } catch (ConfigurationException e) {
+                    throw new SAXException(e);
+                }
+
             } else {
                 Log.w(LOG_TAG, String.format("Unrecognized tag '%s' in configuration", localName));
             }
@@ -122,7 +138,10 @@ class ConfigurationXmlParser {
         }
     }
 
-    ConfigurationXmlParser() {
+    private final IConfigDefLoader mConfigDefLoader;
+
+    ConfigurationXmlParser(IConfigDefLoader loader) {
+        mConfigDefLoader = loader;
     }
 
     /**
@@ -138,10 +157,8 @@ class ConfigurationXmlParser {
         try {
             SAXParserFactory parserFactory = SAXParserFactory.newInstance();
             parserFactory.setNamespaceAware(true);
-            SAXParser parser;
-            parser = parserFactory.newSAXParser();
-
-            ConfigHandler configHandler = new ConfigHandler(name);
+            SAXParser parser = parserFactory.newSAXParser();
+            ConfigHandler configHandler = new ConfigHandler(name, mConfigDefLoader);
             parser.parse(new InputSource(xmlInput), configHandler);
             return configHandler.getParsedDef();
         } catch (ParserConfigurationException e) {

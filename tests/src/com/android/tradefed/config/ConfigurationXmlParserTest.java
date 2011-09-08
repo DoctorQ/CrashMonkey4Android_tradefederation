@@ -17,6 +17,8 @@ package com.android.tradefed.config;
 
 import junit.framework.TestCase;
 
+import org.easymock.EasyMock;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
@@ -24,6 +26,16 @@ import java.io.InputStream;
  * Unit tests for {@link ConfigurationXmlParser}.
  */
 public class ConfigurationXmlParserTest extends TestCase {
+
+    private ConfigurationXmlParser xmlParser;
+    private IConfigDefLoader mMockLoader;
+
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        mMockLoader = EasyMock.createMock(IConfigDefLoader.class);
+        xmlParser = new ConfigurationXmlParser(mMockLoader);
+    }
 
     /**
      * Normal case test for {@link ConfigurationXmlParser#parse(String, InputStream)}.
@@ -35,7 +47,6 @@ public class ConfigurationXmlParserTest extends TestCase {
             "    <option name=\"opName\" value=\"val\" />\n" +
             "  </test>\n" +
             "</configuration>";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         final String configName = "config";
         ConfigurationDef configDef = xmlParser.parse(configName, getStringAsStream(normalConfig));
         assertEquals(configName, configDef.getName());
@@ -55,7 +66,6 @@ public class ConfigurationXmlParserTest extends TestCase {
             "  <test class=\"junit.framework.TestCase\">\n" +
             "  </test>\n" +
             "</configuration>";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         final String configName = "config";
         ConfigurationDef configDef = xmlParser.parse(configName, getStringAsStream(normalConfig));
         assertEquals(configName, configDef.getName());
@@ -72,7 +82,6 @@ public class ConfigurationXmlParserTest extends TestCase {
     public void testParse_objectMissingAttr() {
         final String config =
             "<object name=\"foo\" />";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         try {
             xmlParser.parse("name", getStringAsStream(config));
             fail("ConfigurationException not thrown");
@@ -87,7 +96,6 @@ public class ConfigurationXmlParserTest extends TestCase {
     public void testParse_optionMissingAttr() {
         final String config =
             "<option name=\"foo\" />";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         try {
             xmlParser.parse("name", getStringAsStream(config));
             fail("ConfigurationException not thrown");
@@ -102,9 +110,40 @@ public class ConfigurationXmlParserTest extends TestCase {
     public void testParse_object() throws ConfigurationException {
         final String config =
             "<object type=\"foo\" class=\"junit.framework.TestCase\" />";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         ConfigurationDef configDef = xmlParser.parse("name", getStringAsStream(config));
         assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("foo").get(0));
+    }
+
+    /**
+     * Test parsing a include tag.
+     */
+    public void testParse_include() throws ConfigurationException {
+        final String includedConfig = "<object type=\"foo\" class=\"junit.framework.TestCase\" />";
+        String includedName = "includeme";
+        ConfigurationDef includedConfigDef = xmlParser.parse(includedName,
+                getStringAsStream(includedConfig));
+        EasyMock.expect(mMockLoader.getConfigurationDef(includedName)).andReturn(includedConfigDef);
+        EasyMock.replay(mMockLoader);
+        final String config = "<include name=\"includeme\" />";
+        ConfigurationDef configDef = xmlParser.parse("name", getStringAsStream(config));
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("foo").get(0));
+    }
+
+    /**
+     * Test parsing a include tag where named config does not exist
+     */
+    public void testParse_includeMissing() throws ConfigurationException {
+        String includedName = "non-existent";
+        ConfigurationException exception = new ConfigurationException("I don't exist");
+        EasyMock.expect(mMockLoader.getConfigurationDef(includedName)).andThrow(exception);
+        EasyMock.replay(mMockLoader);
+        final String config = String.format("<include name=\"%s\" />", includedName);
+        try {
+            xmlParser.parse("name", getStringAsStream(config));
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 
     /**
@@ -112,7 +151,6 @@ public class ConfigurationXmlParserTest extends TestCase {
      */
     public void testParse_xml() throws ConfigurationException {
         final String config = "blah";
-        ConfigurationXmlParser xmlParser = new ConfigurationXmlParser();
         try {
             xmlParser.parse("name", getStringAsStream(config));
             fail("ConfigurationException not thrown");

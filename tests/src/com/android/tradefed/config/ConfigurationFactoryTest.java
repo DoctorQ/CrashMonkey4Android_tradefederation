@@ -17,6 +17,7 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.ILeveledLogOutput;
+import com.android.tradefed.testtype.HostTest;
 import com.android.tradefed.util.FileUtil;
 
 import junit.framework.TestCase;
@@ -36,9 +37,6 @@ public class ConfigurationFactoryTest extends TestCase {
 
     /** the test config name that is built into this jar */
     private static final String TEST_CONFIG = "test-config";
-    /** the config descrption for {@link TEST_CONFIG} */
-    private static final String TEST_DESCRIPTION =
-        "test that jar plugins to Tradefed can contribute config.xml";
 
     /**
      * {@inheritDoc}
@@ -46,14 +44,19 @@ public class ConfigurationFactoryTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mFactory = new ConfigurationFactory();
+        mFactory = new ConfigurationFactory() {
+            @Override
+            String getConfigPrefix() {
+                return "testconfigs/";
+            }
+        };
     }
 
     /**
      * Sanity test to ensure all configs on classpath are loadable
      */
     public void testLoadAllConfigs() throws ConfigurationException {
-        mFactory.loadAllConfigs(false);
+        new ConfigurationFactory().loadAllConfigs(false);
     }
 
     /**
@@ -69,7 +72,7 @@ public class ConfigurationFactoryTest extends TestCase {
     public void testGetConfiguration_xmlpath() throws ConfigurationException, IOException {
         // extract the test-config.xml into a tmp file
         InputStream configStream = getClass().getResourceAsStream(
-                String.format("/config/%s.xml", TEST_CONFIG));
+                String.format("/testconfigs/%s.xml", TEST_CONFIG));
         File tmpFile = FileUtil.createTempFile(TEST_CONFIG, ".xml");
         try {
             FileUtil.writeToFile(configStream, tmpFile);
@@ -146,11 +149,10 @@ public class ConfigurationFactoryTest extends TestCase {
     public void testPrintHelp() {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream mockPrintStream = new PrintStream(outputStream);
-        mFactory.printHelp(mockPrintStream);
-        // verify all the config names are present
+        new ConfigurationFactory().printHelp(mockPrintStream);
+        // verify all the instrument config names are present
         final String usageString = outputStream.toString();
-        assertTrue(usageString.contains(TEST_CONFIG));
-        assertTrue(usageString.contains(TEST_DESCRIPTION));
+        assertTrue(usageString.contains("instrument"));
     }
 
     /**
@@ -167,5 +169,38 @@ public class ConfigurationFactoryTest extends TestCase {
         final String usageString = outputStream.toString();
         assertTrue(usageString.contains(TEST_CONFIG));
         // TODO: add stricter verification
+    }
+
+    /**
+     * Test loading a config that includes another config.
+     */
+    public void testCreateConfigurationFromArgs_includeConfig() throws Exception {
+        IConfiguration config = mFactory.createConfigurationFromArgs(
+                new String[]{"include-config"});
+        assertTrue(config.getTests().get(0) instanceof HostTest);
+    }
+
+    /**
+     * Test loading a config that tries to include itself
+     */
+    public void testCreateConfigurationFromArgs_recursiveInclude() throws Exception {
+        try {
+            mFactory.createConfigurationFromArgs(new String[] {"recursive-config"});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test loading a config that has a circular include
+     */
+    public void testCreateConfigurationFromArgs_circularInclude() throws Exception {
+        try {
+            mFactory.createConfigurationFromArgs(new String[] {"circular-config"});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 }
