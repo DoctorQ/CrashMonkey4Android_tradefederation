@@ -93,33 +93,27 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testStarted(TestIdentifier test) {
-        // ignore
+        mCurrentResults.reportTestStarted(test);
     }
 
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
-        // only record test pass if failure not already recorded
-        if (mCurrentResults.addResult(test, new TestResult(TestStatus.PASSED))) {
-            mNumPassedTests++;
-        }
-        mCurrentResults.getTestResults().get(test).setMetrics(testMetrics);
+        mCurrentResults.reportTestEnded(test, testMetrics);
     }
 
     /**
      * {@inheritDoc}
      */
-    public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-        if (status.equals(TestFailure.ERROR)) {
-            if (mCurrentResults.addResult(test, new TestResult(TestStatus.ERROR, trace))) {
-                mNumErrorTests++;
-            }
+    public void testFailed(TestFailure testFailure, TestIdentifier test, String trace) {
+        if (testFailure.equals(TestFailure.ERROR)) {
+            mCurrentResults.reportTestFailure(test, TestStatus.ERROR, trace);
         } else {
-            if (mCurrentResults.addResult(test, new TestResult(TestStatus.FAILURE, trace))) {
-                mNumFailedTests++;
-            }
+            mCurrentResults.reportTestFailure(test, TestStatus.FAILURE, trace);
         }
     }
 
@@ -137,7 +131,6 @@ public class CollectingTestListener implements ITestInvocationListener {
      */
     public void testRunFailed(String errorMessage) {
         mCurrentResults.setRunFailureError(errorMessage);
-
     }
 
     /**
@@ -170,6 +163,8 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of tests for all runs.
+     * <p/>
+     * This will only return a valid value after invocation has completed
      */
     public int getNumTotalTests() {
         return getNumFailedTests() + getNumErrorTests() + getNumPassedTests();
@@ -177,6 +172,8 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of failed tests for all runs.
+     * <p/>
+     * This will only return a valid value after invocation has completed
      */
     public int getNumFailedTests() {
         return mNumFailedTests;
@@ -184,6 +181,8 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of error tests for all runs.
+     * <p/>
+     * This will only return a valid value after invocation has completed
      */
     public int getNumErrorTests() {
         return mNumErrorTests;
@@ -191,6 +190,8 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of passed tests for all runs.
+     * <p/>
+     * This will only return a valid value after invocation has completed
      */
     public int getNumPassedTests() {
         return mNumPassedTests;
@@ -198,6 +199,8 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * @returns true if invocation had any failed or error tests.
+     * <p/>
+     * This will only return a valid value after invocation has completed
      */
     public boolean hasFailedTests() {
         return getNumErrorTests() > 0 || getNumFailedTests() > 0;
@@ -207,7 +210,11 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void invocationEnded(long elapsedTime) {
-        // ignore
+        for (TestRunResult result : mRunResultsMap.values()) {
+            mNumErrorTests += result.getNumErrorTests();
+            mNumFailedTests += result.getNumFailedTests();
+            mNumPassedTests += result.getNumPassedTests();
+        }
     }
 
     /**

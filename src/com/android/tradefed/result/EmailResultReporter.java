@@ -216,6 +216,7 @@ public class EmailResultReporter extends CollectingTestListener implements ITest
      */
     @Override
     public void invocationEnded(long elapsedTime) {
+        super.invocationEnded(elapsedTime);
         if (!shouldSendMessage()) {
             return;
         }

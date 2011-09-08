@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.result;
 
+import com.android.ddmlib.testrunner.TestIdentifier;
+
 import java.util.Map;
 
 /**
@@ -28,20 +30,21 @@ public class TestResult {
         /** Test failed. */
         FAILURE,
         /** Test passed */
-        PASSED
+        PASSED,
+        /** Test started but not ended */
+        INCOMPLETE
     }
 
-    private final TestStatus mStatus;
-    private final String mStackTrace;
+    private TestStatus mStatus;
+    private String mStackTrace;
     private Map<String, String> mMetrics;
+    // the start and end time of the test, measured via {@link System#currentTimeMillis()}
+    private long mStartTime = 0;
+    private long mEndTime = 0;
 
-    TestResult(TestStatus status, String trace) {
-        mStatus = status;
-        mStackTrace = trace;
-    }
-
-    TestResult(TestStatus status) {
-        this(status, null);
+    TestResult() {
+        mStatus = TestStatus.INCOMPLETE;
+        mStartTime = System.currentTimeMillis();
     }
 
     /**
@@ -71,5 +74,42 @@ public class TestResult {
      */
     public void setMetrics(Map<String, String> metrics) {
         mMetrics = metrics;
+    }
+
+    /**
+     * Return the {@link System#currentTimeMillis()} time that the
+     * {@link ITestInvocationListener#testStarted(TestIdentifier)} event was received.
+     */
+    public long getStartTime() {
+        return mStartTime;
+    }
+
+    /**
+     * Return the {@link System#currentTimeMillis()} time that the
+     * {@link ITestInvocationListener#testEnded(TestIdentifier)} event was received.
+     */
+    public long getEndTime() {
+        return mEndTime;
+    }
+
+    /**
+     * Set the {@link TestStatus}.
+     */
+    void setStatus(TestStatus status) {
+       mStatus = status;
+    }
+
+    /**
+     * Set the stack trace.
+     */
+    void setStackTrace(String trace) {
+        mStackTrace = trace;
+    }
+
+    /**
+     * Sets the end time
+     */
+    void setEndTime(long currentTimeMillis) {
+        mEndTime = currentTimeMillis;
     }
 }

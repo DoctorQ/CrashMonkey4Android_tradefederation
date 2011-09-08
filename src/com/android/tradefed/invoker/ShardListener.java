@@ -87,6 +87,7 @@ class ShardListener extends CollectingTestListener {
      */
     @Override
     public void invocationEnded(long elapsedTime) {
+        super.invocationEnded(elapsedTime);
         synchronized (mMasterListener) {
             for (TestRunResult runResult : getRunResults()) {
                 mMasterListener.testRunStarted(runResult.getName(), runResult.getNumTests());

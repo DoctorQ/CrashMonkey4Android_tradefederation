@@ -16,6 +16,8 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.TestResult.TestStatus;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -209,26 +211,81 @@ public class TestRunResult {
     }
 
     /**
-     * Adds a test result.
-     *
+     * Report the start of a test.
      * @param test
-     * @param testResult
-     * @return true if result was added. false if test result had already existed
      */
-    public boolean addResult(TestIdentifier test, TestResult testResult) {
-        if (!mTestResults.containsKey(test)) {
-            mTestResults.put(test, testResult);
-            switch (testResult.getStatus()) {
+    void reportTestStarted(TestIdentifier test) {
+        TestResult result = mTestResults.get(test);
+
+        if (result != null) {
+            CLog.d("Replacing result for %s", test);
+            switch (result.getStatus()) {
                 case ERROR:
-                    mNumErrorTests++;
+                    mNumErrorTests--;
                     break;
                 case FAILURE:
-                    mNumFailedTests++;
+                    mNumFailedTests--;
                     break;
                 case PASSED:
-                    mNumPassedTests++;
+                    mNumPassedTests--;
                     break;
             }
+        }
+        mTestResults.put(test, new TestResult());
+    }
+
+    /**
+     * Report a test failure.
+     *
+     * @param test
+     * @param status
+     * @param trace
+     */
+    void reportTestFailure(TestIdentifier test, TestStatus status, String trace) {
+        TestResult result = mTestResults.get(test);
+        if (result == null) {
+            CLog.d("Received test failure for %s without testStarted", test);
+            result = new TestResult();
+            mTestResults.put(test, result);
+        } else if (result.getStatus().equals(TestStatus.PASSED)) {
+            // this should never happen...
+            CLog.d("Replacing passed result for %s", test);
+            mNumPassedTests--;
+        }
+
+        result.setStackTrace(trace);
+        switch (status) {
+            case ERROR:
+                mNumErrorTests++;
+                result.setStatus(TestStatus.ERROR);
+                break;
+            case FAILURE:
+                result.setStatus(TestStatus.FAILURE);
+                mNumFailedTests++;
+                break;
+        }
+    }
+
+    /**
+     * Report the end of the test
+     *
+     * @param test
+     * @param testMetrics
+     * @return <code>true</code> if test was recorded as passed, false otherwise
+     */
+    boolean reportTestEnded(TestIdentifier test, Map<String, String> testMetrics) {
+        TestResult result = mTestResults.get(test);
+        if (result == null) {
+            CLog.d("Received test ended for %s without testStarted", test);
+            result = new TestResult();
+            mTestResults.put(test, result);
+        }
+
+        result.setEndTime(System.currentTimeMillis());
+        result.setMetrics(testMetrics);
+        if (result.getStatus().equals(TestStatus.INCOMPLETE)) {
+            result.setStatus(TestStatus.PASSED);
+            mNumPassedTests++;
             return true;
         }
         return false;
