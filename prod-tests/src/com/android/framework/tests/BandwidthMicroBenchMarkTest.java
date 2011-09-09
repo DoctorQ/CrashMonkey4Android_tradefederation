@@ -61,7 +61,8 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
     private String mTestLabel;
 
     @Option(name = "bandwidth-test-server",
-            description = "Test label to use when posting to dashboard.")
+            description = "Test label to use when posting to dashboard.",
+            importance=Option.Importance.IF_UNSET)
     private String mTestServer;
 
     @Option(name = "ssid",
@@ -116,6 +117,8 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         // Fetch the data from the test server.
         String deviceId = bandwidthTestMetrics.get(DEVICE_ID_LABEL);
         String timestamp = bandwidthTestMetrics.get(TIMESTAMP_LABEL);
+        Assert.assertNotNull(deviceId);
+        Assert.assertNotNull(timestamp);
         Map<String, String> serverData = fetchDataFromTestServer(deviceId, timestamp);
 
         // Parse results and calculate differences.
