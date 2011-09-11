@@ -16,7 +16,7 @@
 <configuration description="Builds the test-apps in local sdk using ant">
     <option name="null-device" value="true" />
     <build_provider class="com.android.tradefed.build.LocalSdkBuildProvider" />
-    <test class="com.android.tradefed.testtype.SdkTestAppTest" />
+    <test class="com.android.sdk.tests.SdkTestAppTest" />
     <result_reporter class="com.android.tradefed.result.XmlResultReporter" />
     <logger class="com.android.tradefed.log.FileLogger">
         <option name="log-level-display" value="debug" />
