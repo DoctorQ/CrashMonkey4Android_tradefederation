@@ -95,10 +95,14 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+        Assert.assertNotNull("Need a test server, specify it using --bandwidth-test-server",
+                mTestServer);
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 TEST_RUNNER, mTestDevice.getIDevice());
         runner.setMethodName(mTestClassName, mTestMethodName);
-        runner.addInstrumentationArg("ssid", mSsid);
+        if (mSsid != null) {
+            runner.addInstrumentationArg("ssid", mSsid);
+        }
         runner.addInstrumentationArg("server", mTestServer);
         CollectingTestListener collectingListener = new CollectingTestListener();
         Assert.assertTrue(
@@ -117,8 +121,8 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         // Fetch the data from the test server.
         String deviceId = bandwidthTestMetrics.get(DEVICE_ID_LABEL);
         String timestamp = bandwidthTestMetrics.get(TIMESTAMP_LABEL);
-        Assert.assertNotNull(deviceId);
-        Assert.assertNotNull(timestamp);
+        Assert.assertNotNull("Failed to fetch deviceId from server", deviceId);
+        Assert.assertNotNull("Failed to fetch timestamp from server", timestamp);
         Map<String, String> serverData = fetchDataFromTestServer(deviceId, timestamp);
 
         // Parse results and calculate differences.
