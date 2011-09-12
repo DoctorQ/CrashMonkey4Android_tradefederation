@@ -15,10 +15,10 @@
  */
 package com.android.tradefed.config;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ConfigurationXmlParser}.

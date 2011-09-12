@@ -23,11 +23,11 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
 
+import junit.framework.Assert;
+
 import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
-
-import junit.framework.Assert;
 
 /**
  * Set of tests that verify host side install cases

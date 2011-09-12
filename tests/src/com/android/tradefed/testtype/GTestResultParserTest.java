@@ -19,6 +19,8 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.BufferedReader;
@@ -29,8 +31,6 @@ import java.io.InputStreamReader;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Vector;
-
-import junit.framework.TestCase;
 
 
 /**

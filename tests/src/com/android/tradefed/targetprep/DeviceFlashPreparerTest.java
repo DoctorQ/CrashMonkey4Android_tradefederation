@@ -22,19 +22,14 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
-import com.android.tradefed.targetprep.BuildError;
-import com.android.tradefed.targetprep.DeviceFlashPreparer;
-import com.android.tradefed.targetprep.DeviceSetup;
-import com.android.tradefed.targetprep.IDeviceFlasher;
-import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.FileUtil;
+
+import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
 
 import java.io.File;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link DeviceFlashPreparer}.

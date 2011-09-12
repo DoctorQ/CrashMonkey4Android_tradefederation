@@ -21,8 +21,6 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import java.lang.IllegalArgumentException;
-
 public class QuotationAwareTokenizer {
     private static final String LOG_TAG = "TOKEN";
 

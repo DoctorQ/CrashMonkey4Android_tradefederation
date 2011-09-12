@@ -32,6 +32,9 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -51,9 +54,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
 
 /**
  * Runs the Bluetooth stress testcases.

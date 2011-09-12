@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.IDevice;
+
 /**
  * A placeholder {@link IDevice} used by {@link DeviceManager} to allocate when
  * {@link IDeviceSelection#nullDeviceRequested()} is <code>true</code>

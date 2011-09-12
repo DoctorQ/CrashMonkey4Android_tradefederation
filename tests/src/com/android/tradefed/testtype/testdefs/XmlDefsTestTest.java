@@ -22,6 +22,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.InstrumentationTest;
 import com.android.tradefed.testtype.MockInstrumentationTest;
 
+import junit.framework.TestCase;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
@@ -29,8 +31,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link XmlDefTest}.

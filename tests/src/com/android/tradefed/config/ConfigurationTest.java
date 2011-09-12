@@ -29,6 +29,8 @@ import com.android.tradefed.result.TextResultReporter;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.testtype.IRemoteTest;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.ByteArrayOutputStream;
@@ -37,8 +39,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link Configuration}.

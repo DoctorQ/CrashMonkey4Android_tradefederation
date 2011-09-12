@@ -18,9 +18,9 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.OptionClass;
 
-import java.util.Map;
-
 import junit.textui.ResultPrinter;
+
+import java.util.Map;
 
 /**
  * A test result reporter that forwards results to the JUnit text result printer.

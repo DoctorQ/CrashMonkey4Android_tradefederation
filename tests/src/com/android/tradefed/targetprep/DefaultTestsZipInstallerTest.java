@@ -24,11 +24,11 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.MockFileUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.File;
-
-import junit.framework.TestCase;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";

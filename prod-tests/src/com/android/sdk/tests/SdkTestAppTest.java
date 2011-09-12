@@ -31,6 +31,9 @@ import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.xml.AndroidManifestWriter;
 
+import junit.framework.Assert;
+import junit.framework.AssertionFailedError;
+
 import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -40,9 +43,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.util.Collections;
 import java.util.Properties;
-
-import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
 
 /**
  * A class that builds all the test-apps included in an SDK with ant, against all targets included

@@ -17,12 +17,12 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.build.StubBuildProvider;
 
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ConfigurationDef}

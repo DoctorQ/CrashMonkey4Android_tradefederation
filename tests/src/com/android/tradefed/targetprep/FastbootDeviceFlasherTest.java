@@ -24,14 +24,14 @@ import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link FastbootDeviceFlasher}.

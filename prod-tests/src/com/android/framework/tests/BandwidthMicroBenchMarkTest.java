@@ -27,17 +27,18 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.net.HttpHelper;
 import com.android.tradefed.util.net.IHttpHelper;
 import com.android.tradefed.util.net.IHttpHelper.DataSizeException;
+
+import junit.framework.Assert;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import junit.framework.Assert;
 
 /**
  * Test that instruments a bandwidth test, gathers bandwidth metrics, and posts

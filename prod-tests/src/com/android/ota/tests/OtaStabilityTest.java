@@ -21,8 +21,8 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationReceiver;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
@@ -42,6 +42,9 @@ import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import junit.framework.Assert;
+import junit.framework.AssertionFailedError;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -49,9 +52,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
 
 /**
  * A test that will flash a build on a device, wait for the device to be OTA-ed to another build,

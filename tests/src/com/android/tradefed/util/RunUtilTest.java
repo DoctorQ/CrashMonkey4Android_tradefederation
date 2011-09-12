@@ -15,12 +15,11 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
 
-import org.easymock.EasyMock;
-
 import junit.framework.TestCase;
+
+import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link RunUtilTest}

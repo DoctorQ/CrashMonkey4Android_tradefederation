@@ -15,8 +15,8 @@
  */
 package com.android.tradefed.util.brillopad.section;
 
-import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.IBlockParser;
+import com.android.tradefed.util.brillopad.ItemList;
 
 import java.util.List;
 

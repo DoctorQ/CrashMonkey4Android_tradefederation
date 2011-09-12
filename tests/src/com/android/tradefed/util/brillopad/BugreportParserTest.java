@@ -15,16 +15,15 @@
  */
 package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 import com.android.tradefed.util.brillopad.section.MemInfoParser;
 
+import junit.framework.TestCase;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link BugreportParser}

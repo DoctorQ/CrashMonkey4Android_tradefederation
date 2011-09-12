@@ -15,9 +15,6 @@
  */
 package com.android.tradefed.result;
 
-import com.android.tradefed.result.ITestInvocationListener;
-import com.android.tradefed.result.TestSummary;
-
 import java.util.List;
 
 public interface ITestSummaryListener extends ITestInvocationListener {

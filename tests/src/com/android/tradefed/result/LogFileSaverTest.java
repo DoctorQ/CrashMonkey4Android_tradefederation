@@ -20,6 +20,8 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.BufferedInputStream;
@@ -34,7 +36,6 @@ import java.io.OutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link LogFileSaver}.

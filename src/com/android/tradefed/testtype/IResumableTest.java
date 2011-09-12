@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.testtype;
 
+import java.util.List;
+
 
 /**
  * An {@link IRemoteTest} that supports resuming a previous aborted test run from where it left off.

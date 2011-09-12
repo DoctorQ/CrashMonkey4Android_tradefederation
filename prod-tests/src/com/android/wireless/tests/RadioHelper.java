@@ -21,8 +21,6 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
-import java.util.Arrays;
-
 /**
  * Helper class to get device radio settings
  */

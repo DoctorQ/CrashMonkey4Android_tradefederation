@@ -18,12 +18,12 @@ package com.android.tradefed.targetprep;
 
 import com.android.tradefed.device.ITestDevice;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.File;
 import java.util.Arrays;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link PushFilePreparer}

@@ -18,11 +18,11 @@ package com.android.tradefed.device;
 
 import com.android.tradefed.device.TopHelper.TopStats;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TopHelper}

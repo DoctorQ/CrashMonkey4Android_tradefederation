@@ -18,14 +18,14 @@ package com.android.tradefed.util.net;
 
 import com.android.tradefed.util.net.IHttpHelper.DataSizeException;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.LinkedHashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link HttpHelper}.

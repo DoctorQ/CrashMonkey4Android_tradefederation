@@ -19,10 +19,10 @@ import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.brillopad.IBlockParser;
 import com.android.tradefed.util.brillopad.ItemList;
 
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link AbstractSectionParser}

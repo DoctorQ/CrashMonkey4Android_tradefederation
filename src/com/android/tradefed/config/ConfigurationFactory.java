@@ -17,8 +17,8 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.ClassPathScanner;
-import com.android.tradefed.util.StreamUtil;
 import com.android.tradefed.util.ClassPathScanner.IClassPathFilter;
+import com.android.tradefed.util.StreamUtil;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;

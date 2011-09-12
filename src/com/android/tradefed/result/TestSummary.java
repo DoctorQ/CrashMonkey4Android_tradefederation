@@ -15,8 +15,8 @@
  */
 package com.android.tradefed.result;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A class to represent a test summary.  Provides a single field for a summary, in addition to a

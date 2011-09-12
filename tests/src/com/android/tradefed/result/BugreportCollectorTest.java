@@ -24,14 +24,14 @@ import com.android.tradefed.result.BugreportCollector.Predicate;
 import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.result.BugreportCollector.SubPredicate;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 public class BugreportCollectorTest extends TestCase {
     private BugreportCollector mCollector = null;

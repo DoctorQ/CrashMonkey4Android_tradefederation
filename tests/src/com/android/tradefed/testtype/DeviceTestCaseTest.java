@@ -19,12 +19,12 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+
 import org.easymock.EasyMock;
 
 import java.util.Collections;
-
-import junit.framework.TestCase;
-import junit.framework.TestResult;
 
 /**
  * Unit tests for {@link DeviceTestCase}.

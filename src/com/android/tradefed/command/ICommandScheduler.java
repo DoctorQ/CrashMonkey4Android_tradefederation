@@ -19,8 +19,6 @@ package com.android.tradefed.command;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.invoker.ITestInvocation;
 
-import java.lang.UnsupportedOperationException;
-
 import java.util.Collection;
 
 /**

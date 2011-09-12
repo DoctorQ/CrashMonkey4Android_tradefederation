@@ -15,14 +15,14 @@
  */
 package com.android.tradefed.util;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.ZipFile;
-
-import junit.framework.TestCase;
 
 /**
  * Functional tests for {@link FileUtil}

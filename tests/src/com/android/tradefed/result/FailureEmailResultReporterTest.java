@@ -20,12 +20,12 @@ import com.android.tradefed.targetprep.BuildError;
 import com.android.tradefed.util.IEmail;
 import com.android.tradefed.util.IEmail.Message;
 
+import junit.framework.TestCase;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link EmailResultReporter}.

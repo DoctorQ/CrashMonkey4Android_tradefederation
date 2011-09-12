@@ -18,9 +18,9 @@ package com.android.tradefed.targetprep;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.DeviceBuildInfo;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetprep.DeviceSetup;
 import com.android.tradefed.testtype.DeviceTestCase;
 
 /**

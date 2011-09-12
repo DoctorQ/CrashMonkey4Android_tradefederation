@@ -19,6 +19,8 @@ import com.android.ddmlib.Log;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
@@ -26,8 +28,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Longer running, concurrency based tests for {@link FileDownloadCache}.

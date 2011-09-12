@@ -15,10 +15,10 @@
  */
 package com.android.tradefed.util;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link FileUtil}

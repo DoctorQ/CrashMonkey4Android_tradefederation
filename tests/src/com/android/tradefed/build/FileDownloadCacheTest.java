@@ -18,14 +18,14 @@ package com.android.tradefed.build;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link FileDownloadCache}.

@@ -16,6 +16,7 @@
 package com.android.tradefed.testtype;
 
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.targetprep.ITargetPreparer;
 
 /**
  * A test that needs reference to the build under test.

@@ -20,14 +20,14 @@ import com.android.tradefed.targetprep.FlashingResourcesParser.AndroidInfo;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.MultiMap;
 
+import junit.framework.TestCase;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link FlashingResourcesParser}.

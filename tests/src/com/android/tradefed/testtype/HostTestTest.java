@@ -19,14 +19,14 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
-import org.easymock.EasyMock;
-
-import java.util.Map;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
+
+import org.easymock.EasyMock;
+
+import java.util.Map;
 
 /**
  * Unit tests for {@link HostTest}.

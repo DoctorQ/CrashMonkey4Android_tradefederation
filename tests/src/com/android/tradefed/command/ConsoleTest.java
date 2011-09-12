@@ -18,11 +18,11 @@ package com.android.tradefed.command;
 import com.android.tradefed.command.Console.CaptureList;
 import com.android.tradefed.util.RegexTrie;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.util.Arrays;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link Console}.

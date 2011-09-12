@@ -15,11 +15,11 @@
  */
 package com.android.tradefed.result;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.InputStream;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for the {@link SnapshotInputStreamSource} class

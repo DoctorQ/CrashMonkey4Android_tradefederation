@@ -19,11 +19,11 @@ import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.File;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link SdkBuildInfo}.

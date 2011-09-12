@@ -18,14 +18,14 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.util.FileUtil;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link OptionSetter}.

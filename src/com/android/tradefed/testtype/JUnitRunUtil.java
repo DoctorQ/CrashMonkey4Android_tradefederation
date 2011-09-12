@@ -18,11 +18,11 @@ package com.android.tradefed.testtype;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
 
-import java.util.Collections;
-import java.util.Map;
-
 import junit.framework.Test;
 import junit.framework.TestResult;
+
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * A helper class for directing a {@link IRemoteTest#run(ITestInvocationListener)} call to a

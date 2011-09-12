@@ -18,17 +18,15 @@ package com.android.tradefed.result;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.result.TestSummary;
-
-import java.io.PrintStream;
-import java.io.PrintWriter;
-import java.util.Map;
 
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestListener;
 import junit.framework.TestResult;
+
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.util.Map;
 
 /**
  * A class that listens to {@link ITestInvocationListener} events and forwards them to a

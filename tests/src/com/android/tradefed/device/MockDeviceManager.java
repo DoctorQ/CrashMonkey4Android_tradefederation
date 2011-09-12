@@ -20,14 +20,14 @@ import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 import com.android.tradefed.util.IRunUtil;
 
+import junit.framework.Assert;
+
 import org.easymock.EasyMock;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
-import junit.framework.Assert;
 
 /**
  * A {@link IDeviceManager} that simulates the resource allocation of {@link DeviceManager}

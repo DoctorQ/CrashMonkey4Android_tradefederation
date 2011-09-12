@@ -18,9 +18,9 @@ package com.android.tradefed.device;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tradefed.device.WifiHelper.WifiState;
 
-import org.easymock.EasyMock;
-
 import junit.framework.TestCase;
+
+import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link WifiHelper}.

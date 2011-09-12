@@ -18,10 +18,9 @@ package com.android.tradefed.util.brillopad.section;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.brillopad.AbstractBlockParser;
-import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.IBlockParser;
 import com.android.tradefed.util.brillopad.ILineParser;
-import com.android.tradefed.util.brillopad.section.NoopSectionParser;
+import com.android.tradefed.util.brillopad.ItemList;
 
 import java.util.LinkedList;
 import java.util.List;

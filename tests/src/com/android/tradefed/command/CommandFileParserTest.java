@@ -18,6 +18,8 @@ package com.android.tradefed.command;
 
 import com.android.tradefed.config.ConfigurationException;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.BufferedReader;
@@ -26,8 +28,6 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link CommandFileParser}

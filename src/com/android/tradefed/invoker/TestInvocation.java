@@ -44,12 +44,12 @@ import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
 import com.android.tradefed.testtype.IShardableTest;
 
+import junit.framework.Test;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.Test;
 
 /**
  * Default implementation of {@link ITestInvocation}.

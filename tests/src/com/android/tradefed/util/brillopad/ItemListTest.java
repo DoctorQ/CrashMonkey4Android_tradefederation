@@ -17,11 +17,11 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.util.brillopad.item.IItem;
 
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.PatternSyntaxException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ItemList}

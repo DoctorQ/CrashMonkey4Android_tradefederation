@@ -15,12 +15,11 @@
  */
 package com.android.tradefed.build;
 
-import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.util.FileUtil;
 
-import java.io.File;
-
 import junit.framework.TestCase;
+
+import java.io.File;
 
 /**
  * Unit tests for {@link DeviceBuildInfo}.

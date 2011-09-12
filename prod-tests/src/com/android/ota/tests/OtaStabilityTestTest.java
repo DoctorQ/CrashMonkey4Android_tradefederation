@@ -17,10 +17,10 @@ package com.android.ota.tests;
 
 import com.android.tradefed.testtype.IRemoteTest;
 
+import junit.framework.TestCase;
+
 import java.util.Collection;
 import java.util.Iterator;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link OtaStabilityTest}

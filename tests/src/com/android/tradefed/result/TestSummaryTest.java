@@ -15,12 +15,11 @@
  */
 package com.android.tradefed.result;
 
-import com.android.tradefed.result.TestSummary;
 import com.android.tradefed.result.TestSummary.TypedString;
 
-import java.util.Map;
-
 import junit.framework.TestCase;
+
+import java.util.Map;
 
 /**
  * Unit tests for {@link TestSummary}

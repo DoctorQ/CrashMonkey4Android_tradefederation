@@ -18,9 +18,9 @@ package com.android.tradefed.device;
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.RunUtil;
 
-import java.util.Collection;
-
 import junit.framework.TestCase;
+
+import java.util.Collection;
 
 /**
  * A test that diagnoses the devices available to run tests.

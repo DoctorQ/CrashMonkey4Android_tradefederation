@@ -42,6 +42,9 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
@@ -49,9 +52,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TestInvocation}.

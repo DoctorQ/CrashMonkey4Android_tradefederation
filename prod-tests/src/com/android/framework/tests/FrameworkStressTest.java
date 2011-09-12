@@ -37,11 +37,12 @@ import com.android.tradefed.util.brillopad.section.syslog.AnrParser;
 import com.android.tradefed.util.brillopad.section.syslog.JavaCrashParser;
 import com.android.tradefed.util.brillopad.section.syslog.NativeCrashParser;
 
+import junit.framework.Assert;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import junit.framework.Assert;
 
 /**
  * Test that instruments a stress test package, gathers iterations metrics, and posts the results.

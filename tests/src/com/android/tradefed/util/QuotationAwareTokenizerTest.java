@@ -16,10 +16,9 @@
 
 package com.android.tradefed.util;
 
-import java.lang.IllegalArgumentException;
-import java.util.Arrays;
-
 import junit.framework.TestCase;
+
+import java.util.Arrays;
 
 /**
  * Unit tests for {@link QuotationAwareTokenizer}

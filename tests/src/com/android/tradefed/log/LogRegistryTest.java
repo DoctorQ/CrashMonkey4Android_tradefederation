@@ -18,11 +18,9 @@ package com.android.tradefed.log;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 
-import org.easymock.EasyMock;
-
-import java.lang.Runnable;
-
 import junit.framework.TestCase;
+
+import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link LogRegistry}.

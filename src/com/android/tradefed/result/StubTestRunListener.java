@@ -15,10 +15,10 @@
  */
 package com.android.tradefed.result;
 
-import java.util.Map;
-
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
+
+import java.util.Map;
 
 /**
  * Stub implementation of {@link ITestRunListener}

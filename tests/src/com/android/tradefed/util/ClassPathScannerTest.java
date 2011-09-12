@@ -18,9 +18,9 @@ package com.android.tradefed.util;
 import com.android.tradefed.util.ClassPathScanner.ClassNameFilter;
 import com.android.tradefed.util.ClassPathScanner.IClassPathFilter;
 
-import java.util.Set;
-
 import junit.framework.TestCase;
+
+import java.util.Set;
 
 /**
  * Unit tests for {@link ClassPathScannerTest}

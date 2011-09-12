@@ -18,11 +18,11 @@ package com.android.tradefed.util.xml;
 
 import com.android.tradefed.util.FileUtil;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link AndroidManifestWriter}.

@@ -21,12 +21,12 @@ import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.ITestInvocationListener;
 
+import junit.framework.TestCase;
+
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link NativeStressTest}.

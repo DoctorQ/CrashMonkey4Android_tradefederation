@@ -17,11 +17,11 @@ package com.android.tradefed.config;
 
 import com.android.tradefed.config.Option.Importance;
 
+import junit.framework.TestCase;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ArgsOptionParser}.

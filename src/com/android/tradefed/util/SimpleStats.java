@@ -17,8 +17,8 @@ package com.android.tradefed.util;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * A small utility class that calculates a few statistical measures given a numerical dataset.  The

@@ -16,8 +16,8 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.AndroidDebugBridge;
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
+import com.android.ddmlib.IDevice;
 
 /**
  * Interface definition for {@link com.android.ddmlib.AndroidDebugBridge} methods used in this

@@ -16,8 +16,6 @@
 package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.ILineParser;
 
 import java.util.List;
 

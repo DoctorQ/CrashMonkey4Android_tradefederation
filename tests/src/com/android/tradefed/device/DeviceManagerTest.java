@@ -15,21 +15,21 @@
  */
 package com.android.tradefed.device;
 
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link DeviceManager}.

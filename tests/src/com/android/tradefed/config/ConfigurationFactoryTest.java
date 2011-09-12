@@ -19,13 +19,13 @@ import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.util.FileUtil;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ConfigurationFactory}

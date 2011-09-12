@@ -19,12 +19,12 @@ import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.util.brillopad.item.IItem;
 
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Functional tests for {@link BugreportParser}

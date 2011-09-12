@@ -15,16 +15,17 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
+import com.android.ddmlib.testrunner.TestIdentifier;
+
+import junit.framework.AssertionFailedError;
+import junit.framework.Test;
+import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
 
 import java.util.Collections;
 import java.util.Map;
-
-import junit.framework.AssertionFailedError;
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link JUnitToInvocationResultForwarder}.

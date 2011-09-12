@@ -19,11 +19,11 @@ import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.item.GenericMapItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 
+import junit.framework.TestCase;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ProcRankParser}

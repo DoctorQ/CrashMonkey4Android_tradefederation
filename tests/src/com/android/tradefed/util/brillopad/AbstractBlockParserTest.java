@@ -15,13 +15,11 @@
  */
 package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.ItemList;
+import junit.framework.TestCase;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link AbstractBlockParser}

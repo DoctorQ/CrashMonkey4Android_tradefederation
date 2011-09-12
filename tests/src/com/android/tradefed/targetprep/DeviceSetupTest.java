@@ -18,19 +18,18 @@ package com.android.tradefed.targetprep;
 
 import com.android.ddmlib.IDevice;
 import com.android.tradefed.build.DeviceBuildInfo;
+import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
-import com.android.tradefed.targetprep.DeviceSetup;
-import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.FileUtil;
+
+import junit.framework.TestCase;
 
 import org.easymock.EasyMock;
 
 import java.io.File;
 import java.io.IOException;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link DeviceSetup}.

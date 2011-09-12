@@ -15,9 +15,9 @@
  */
 package com.android.tradefed.util;
 
-import java.util.Map;
-
 import junit.framework.TestCase;
+
+import java.util.Map;
 
 /**
  * Unit tests for {@link MultiMap}.

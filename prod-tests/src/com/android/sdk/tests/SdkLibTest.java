@@ -26,15 +26,15 @@ import com.android.tradefed.testtype.JUnitRunUtil;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.TestLoader;
 
+import junit.framework.Assert;
+import junit.framework.Test;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.Assert;
-import junit.framework.Test;
 
 /**
  * A class for running all the unit tests for SDK java libraries.

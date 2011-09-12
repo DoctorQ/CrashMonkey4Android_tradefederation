@@ -25,10 +25,10 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.SimpleStats;
 
+import junit.framework.Assert;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.Assert;
 
 /**
  * Runs the encryption stress tests.

@@ -34,11 +34,11 @@ import com.android.tradefed.util.brillopad.item.IItem;
 import com.android.tradefed.util.brillopad.section.MemInfoParser;
 import com.android.tradefed.util.brillopad.section.ProcRankParser;
 
+import junit.framework.Assert;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.Assert;
 
 /**
  * Tests to gather device metrics from during and immediately after boot

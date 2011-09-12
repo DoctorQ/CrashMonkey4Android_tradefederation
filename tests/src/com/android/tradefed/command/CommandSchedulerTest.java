@@ -27,12 +27,12 @@ import com.android.tradefed.device.MockDeviceManager;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 
+import junit.framework.TestCase;
+
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 
 import java.lang.Thread.UncaughtExceptionHandler;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link CommandScheduler}.

@@ -22,8 +22,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
-import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.result.TestResult.TestStatus;
+import com.android.tradefed.result.TestRunResult;
 
 import java.util.Map;
 

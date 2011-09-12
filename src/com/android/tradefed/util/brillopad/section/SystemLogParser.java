@@ -16,8 +16,8 @@
 package com.android.tradefed.util.brillopad.section;
 
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.IBlockParser;
+import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.section.syslog.AnrParser;
 import com.android.tradefed.util.brillopad.section.syslog.ISyslogParser;
 import com.android.tradefed.util.brillopad.section.syslog.JavaCrashParser;

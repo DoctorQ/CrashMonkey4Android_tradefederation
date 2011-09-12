@@ -16,10 +16,10 @@
 
 package com.android.tradefed.util.net;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayInputStream;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link XmlRpcHelper} module

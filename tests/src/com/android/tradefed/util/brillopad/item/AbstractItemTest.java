@@ -15,9 +15,9 @@
  */
 package com.android.tradefed.util.brillopad.item;
 
-import java.util.Map;
-
 import junit.framework.TestCase;
+
+import java.util.Map;
 
 /**
  * Unit test for {@link AbstractItem}.

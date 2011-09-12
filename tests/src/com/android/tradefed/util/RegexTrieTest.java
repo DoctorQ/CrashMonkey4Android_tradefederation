@@ -17,13 +17,13 @@ package com.android.tradefed.util;
 
 import com.android.tradefed.util.RegexTrie.CompPattern;
 
+import junit.framework.TestCase;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import junit.framework.TestCase;
 
 /**
  * Set of unit tests to verify the behavior of the RegexTrie

@@ -31,6 +31,9 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -41,9 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
 
 /**
  * Runs the FIO benchmarks.

@@ -18,12 +18,12 @@ package com.android.tradefed.util;
 
 import com.android.tradefed.util.IEmail.Message;
 
+import junit.framework.TestCase;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-
-import junit.framework.TestCase;
 
 public class EmailTest extends TestCase {
     private TestEmail mEmail = null;

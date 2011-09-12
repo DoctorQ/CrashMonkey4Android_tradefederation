@@ -15,13 +15,13 @@
  */
 package com.android.tradefed.util;
 
-import java.io.File;
-import java.io.InputStream;
-import java.util.Collections;
-
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
+
+import java.io.File;
+import java.io.InputStream;
+import java.util.Collections;
 
 /**
  *

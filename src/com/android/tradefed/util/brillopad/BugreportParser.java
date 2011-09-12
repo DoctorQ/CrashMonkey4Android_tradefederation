@@ -17,8 +17,6 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.RegexTrie;
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ItemList;
 import com.android.tradefed.util.brillopad.section.AbstractSectionParser;
 import com.android.tradefed.util.brillopad.section.MemInfoParser;
 import com.android.tradefed.util.brillopad.section.NoopSectionParser;

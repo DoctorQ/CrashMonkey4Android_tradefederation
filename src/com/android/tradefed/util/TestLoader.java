@@ -18,6 +18,10 @@ package com.android.tradefed.util;
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.ClassPathScanner.ExternalClassNameFilter;
 
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -26,10 +30,6 @@ import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
-
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
 
 /**
  * A class for loading all JUnit3 tests in a jar file

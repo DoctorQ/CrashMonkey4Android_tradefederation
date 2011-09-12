@@ -15,13 +15,12 @@
  */
 package com.android.tradefed.util;
 
-import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
+
+import junit.framework.TestCase;
 
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
-
-import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link ConditionPriorityBlockingQueue}.
