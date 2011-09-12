@@ -96,24 +96,24 @@ public class TestResult {
     /**
      * Set the {@link TestStatus}.
      */
-    void setStatus(TestStatus status) {
+    public void setStatus(TestStatus status) {
        mStatus = status;
     }
 
     /**
      * Set the stack trace.
      */
-    void setStackTrace(String trace) {
+    public void setStackTrace(String trace) {
         mStackTrace = trace;
     }
 
     /**
      * Sets the end time
      */
-    void setEndTime(long currentTimeMillis) {
+    public void setEndTime(long currentTimeMillis) {
         mEndTime = currentTimeMillis;
     }
-    
+
     /**
      * {@inheritDoc}
      */
