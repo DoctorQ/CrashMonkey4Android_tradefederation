@@ -6,5 +6,7 @@
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/kxml2"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/ddmlib"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/junit"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/guava"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/jsr305"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
