@@ -204,4 +204,19 @@ public class ConfigurationDef {
                             objectTypeName), e);
         }
     }
+
+    /**
+     * Add a included ConfigurationDef to this.
+     *
+     * @param includedDef
+     */
+    void includeConfigDef(ConfigurationDef includedDef) {
+        for (Map.Entry<String, List<String>> mapEntry :
+                includedDef.getObjectClassMap().entrySet()) {
+            for (String configClass : mapEntry.getValue()) {
+                addConfigObjectDef(mapEntry.getKey(), configClass);
+            }
+        }
+        mOptionList.addAll(includedDef.getOptionList());
+    }
 }
