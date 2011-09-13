@@ -83,6 +83,8 @@ public class DeviceManager implements IDeviceManager {
     /** the maximum number of no device runs that can be allocated at one time */
     private int mNumNullDevicesSupported = 1;
 
+    private boolean mSynchronousMode = false;
+
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
@@ -139,6 +141,17 @@ public class DeviceManager implements IDeviceManager {
         mAdbBridge.init(false /* client support */, "adb");
         addEmulators();
         addNullDevices();
+    }
+
+    /**
+     * Instruct DeviceManager whether to use background threads or not.
+     * <p/>
+     * Exposed to make unit tests more deterministic.
+     *
+     * @param syncMode
+     */
+    void setSynchronousMode(boolean syncMode) {
+        mSynchronousMode = syncMode;
     }
 
     private void checkInit() {
@@ -209,7 +222,7 @@ public class DeviceManager implements IDeviceManager {
         mCheckDeviceMap.put(device.getSerialNumber(), monitor);
 
         final String threadName = String.format("Check device %s", device.getSerialNumber());
-        Thread checkThread = new Thread(threadName) {
+        Runnable checkRunnable = new Runnable() {
             @Override
             public void run() {
                 Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
@@ -225,7 +238,11 @@ public class DeviceManager implements IDeviceManager {
                 mCheckDeviceMap.remove(device.getSerialNumber());
             }
         };
-        checkThread.start();
+        if (mSynchronousMode ) {
+            checkRunnable.run();
+        } else {
+            new Thread(checkRunnable, threadName).start();
+        }
     }
 
     /**

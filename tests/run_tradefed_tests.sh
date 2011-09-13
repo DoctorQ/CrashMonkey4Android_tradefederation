@@ -19,5 +19,5 @@
 
 # A simpler helper script that runs the Trade Federation unit tests
 
-tradefed.sh run singleCommand -n --class  com.android.tradefed.UnitTests "$@" host
+tradefed.sh run singleCommand host -n --class  com.android.tradefed.UnitTests "$@"
 

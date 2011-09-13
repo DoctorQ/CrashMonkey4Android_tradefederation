@@ -202,6 +202,7 @@ public class DeviceManagerTest extends TestCase {
             }
         };
         mgr.setEnableLogcat(false);
+        mgr.setSynchronousMode(true);
         return mgr;
     }
 
@@ -609,10 +610,6 @@ public class DeviceManagerTest extends TestCase {
 
         replayMocks();
         DeviceManager manager = createDeviceManager(mMockIDevice);
-        // allocate and free device to avoid race condition with waitForDeviceAvailable being
-        // called on background thread
-        assertEquals(mMockTestDevice, manager.allocateDevice());
-        manager.freeDevice(mMockTestDevice, FreeDeviceState.AVAILABLE);
         mDeviceListener.deviceChanged(mMockIDevice, IDevice.CHANGE_STATE);
         // verify device can still be allocated even though its in offline state
         // this is desired because then recovery can attempt to resurrect the device
