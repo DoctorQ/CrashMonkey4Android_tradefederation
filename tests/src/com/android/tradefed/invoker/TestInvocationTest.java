@@ -59,6 +59,7 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 public class TestInvocationTest extends TestCase {
 
+    private static final String SERIAL = "serial";
     private static final Map<String, String> EMPTY_MAP = Collections.emptyMap();
     private static final TestSummary mSummary = new TestSummary("http://www.url.com/report.txt");
 
@@ -107,7 +108,7 @@ public class TestInvocationTest extends TestCase {
         mStubConfiguration.setTestInvocationListeners(listenerList);
 
         mStubConfiguration.setLogOutput(mMockLogger);
-        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(SERIAL);
         mMockDevice.setRecovery(mMockRecovery);
 
         EasyMock.expect(mMockBuildInfo.getBuildId()).andStubReturn("1");
@@ -302,8 +303,7 @@ public class TestInvocationTest extends TestCase {
         mStubConfiguration.setTest(test);
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
-        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject());
+        mMockBuildInfo.setDeviceSerial(SERIAL);
 
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
         EasyMock.expectLastCall().andThrow(exception);
@@ -336,8 +336,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         resumeListener.invocationStarted(mMockBuildInfo);
         mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
-        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject());
+        mMockBuildInfo.setDeviceSerial(SERIAL);
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
 
         resumableTest.run((ITestInvocationListener)EasyMock.anyObject());
@@ -365,8 +364,7 @@ public class TestInvocationTest extends TestCase {
         mMockLogger.init();
         // now set resumed invocation expectations
         mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
-        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject());
+        mMockBuildInfo.setDeviceSerial(SERIAL);
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
         mMockDevice.setRecovery(mMockRecovery);
         resumableTest.run((ITestInvocationListener)EasyMock.anyObject());
@@ -409,8 +407,7 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(mMockBuildInfo);
         mMockDevice.setOptions((TestDeviceOptions)EasyMock.anyObject());
 
-        mMockBuildInfo.addBuildAttribute((String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject());
+        mMockBuildInfo.setDeviceSerial(SERIAL);
         mMockPreparer.setUp(mMockDevice, mMockBuildInfo);
 
         EasyMock.expect(mMockDevice.getLogcat())

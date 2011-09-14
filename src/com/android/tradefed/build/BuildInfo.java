@@ -33,6 +33,7 @@ public class BuildInfo implements IBuildInfo {
             new UniqueMultiMap<String, String>();
     private String mBuildFlavor = null;
     private String mBuildBranch = null;
+    private String mDeviceSerial = null;
 
     /**
      * Creates a {@link BuildInfo} using default attribute values.
@@ -77,6 +78,14 @@ public class BuildInfo implements IBuildInfo {
     @Override
     public String getTestTag() {
         return mTestTag;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDeviceSerial() {
+        return mDeviceSerial;
     }
 
     /**
@@ -131,6 +140,9 @@ public class BuildInfo implements IBuildInfo {
     public IBuildInfo clone() {
         BuildInfo copy = new BuildInfo(mBuildInfo, mTestTag, mBuildTargetName);
         copy.addAllBuildAttributes(this);
+        copy.setBuildBranch(mBuildBranch);
+        copy.setBuildFlavor(mBuildFlavor);
+        // don't copy device serial
         return copy;
     }
 
@@ -139,7 +151,7 @@ public class BuildInfo implements IBuildInfo {
      */
     @Override
     public String getBuildFlavor() {
-        return mBuildFlavor ;
+        return mBuildFlavor;
     }
 
     /**
@@ -170,9 +182,17 @@ public class BuildInfo implements IBuildInfo {
      * {@inheritDoc}
      */
     @Override
+    public void setDeviceSerial(String serial) {
+        mDeviceSerial = serial;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public int hashCode() {
         return Objects.hashCode(mBuildAttributes, mBuildBranch, mBuildFlavor, mBuildInfo,
-                mBuildTargetName, mTestTag);
+                mBuildTargetName, mTestTag, mDeviceSerial);
     }
 
     /**
@@ -195,6 +215,7 @@ public class BuildInfo implements IBuildInfo {
                 Objects.equal(mBuildFlavor, other.mBuildFlavor) &&
                 Objects.equal(mBuildInfo, other.mBuildInfo) &&
                 Objects.equal(mBuildTargetName, other.mBuildTargetName) &&
-                Objects.equal(mTestTag, other.mTestTag);
+                Objects.equal(mTestTag, other.mTestTag) &&
+                Objects.equal(mDeviceSerial, other.mDeviceSerial);
     }
 }
