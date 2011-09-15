@@ -69,15 +69,6 @@ public class TestInvocation implements ITestInvocation {
     private ITestDevice mDevice = null;
     private String mStatus = "(not invoked)";
 
-    @Override
-    public String toString() {
-        String devString = "(none)";
-        if (mDevice != null) {
-            devString = mDevice.getSerialNumber();
-        }
-        return String.format("Device %s: %s", devString, mStatus);
-    }
-
     /**
      * A {@link ResultForwarder} for forwarding resumed invocations.
      * <p/>
@@ -278,10 +269,7 @@ public class TestInvocation implements ITestInvocation {
 
         startInvocation(config, device, info);
         try {
-            // TODO: find a cleaner way to add this info
-            if (device != null) {
-                info.addBuildAttribute("device_serial", device.getSerialNumber());
-            }
+            info.setDeviceSerial(device.getSerialNumber());
             device.setOptions(config.getDeviceOptions());
             for (ITargetPreparer preparer : config.getTargetPreparers()) {
                 preparer.setUp(device, info);
@@ -451,5 +439,14 @@ public class TestInvocation implements ITestInvocation {
             }
             test.run(new ResultForwarder(listeners));
         }
+    }
+
+    @Override
+    public String toString() {
+        String devString = "(none)";
+        if (mDevice != null) {
+            devString = mDevice.getSerialNumber();
+        }
+        return String.format("Device %s: %s", devString, mStatus);
     }
 }

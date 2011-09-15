@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.build;
 
+import com.android.tradefed.device.ITestDevice;
+
 import java.util.Map;
 
 /**
@@ -58,6 +60,12 @@ public interface IBuildInfo {
     public String getBuildFlavor();
 
     /**
+     * @return the {@link ITestDevice} serial that this build was executed on. Returns <code>null
+     * </code> if no device is associated with this build.
+     */
+    public String getDeviceSerial();
+
+    /**
      * Set the build flavor.
      *
      * @param buildFlavor
@@ -78,6 +86,13 @@ public interface IBuildInfo {
      * @param branch
      */
     public void setBuildBranch(String branch);
+
+    /**
+     * Set the {@link ITestDevice} serial associated with this build.
+     *
+     * @param serial the {@link ITestDevice#getSerialNumber()}.
+     */
+    public void setDeviceSerial(String serial);
 
     /**
      * Get a set of name-value pairs of additional attributes describing the build.
