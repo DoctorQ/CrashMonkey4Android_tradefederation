@@ -99,6 +99,11 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             description="Optional file path to apk file that contains the tests.")
     private File mInstallFile = null;
 
+    @Option(name = "run-name",
+            description="Optional custom test run name to pass to listener. " +
+            "If unspecified, will use package name.")
+    private String mRunName = null;
+
     private ITestDevice mDevice = null;
 
     private IRemoteAndroidTestRunner mRunner;
@@ -161,6 +166,20 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     public String getPackageName() {
         return mPackageName;
+    }
+
+    /**
+     * Get the custom test run name that will be provided to listener
+     */
+    public String getRunName() {
+        return mRunName;
+    }
+
+    /**
+     * Set the custom test run name that will be provided to listener
+     */
+    public void setRunName(String runName) {
+        mRunName = runName;
     }
 
     /**
@@ -334,6 +353,9 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
         mRunner.setMaxtimeToOutputResponse((int)mTestTimeout);
+        if (mRunName != null) {
+            mRunner.setRunName(mRunName);
+        }
 
         if (mInstallFile != null) {
             mDevice.installPackage(mInstallFile, true);
