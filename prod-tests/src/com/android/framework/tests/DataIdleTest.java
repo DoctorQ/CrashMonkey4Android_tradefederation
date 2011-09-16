@@ -56,7 +56,7 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
     private String mTestLabel;
 
     @Option(name = "idle-time-msecs", description = "Time in msecs to wait for data to propagate.")
-    private int mIdleTime =  60 * 60 * 1000;
+    private int mIdleTime = 60 * 60 * 1000;
 
 
     @Override
@@ -88,6 +88,7 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
             Map<String, String> testMetrics = testResults.iterator().next().getMetrics();
             if (testMetrics != null) {
                 idleTestMetrics.putAll(testMetrics);
+                idleTestMetrics.put("Idle time", Integer.toString(mIdleTime));
                 reportMetrics(listener, mTestLabel, idleTestMetrics);
             }
         }
