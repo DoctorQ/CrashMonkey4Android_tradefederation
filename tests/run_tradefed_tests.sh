@@ -14,10 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A helper script that launches TradeFederation from the current build
-# environment.
+# A simple helper script that runs the Trade Federation unit tests
 
-# A simpler helper script that runs the Trade Federation unit tests
-
-tradefed.sh run singleCommand host -n --class  com.android.tradefed.UnitTests "$@"
-
+tfdir=`dirname $0`/..
+$tfdir/tradefed.sh run singleCommand host -n --class com.android.tradefed.UnitTests "$@"

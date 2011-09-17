@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# A simpler helper script that runs the Trade Federation functional tests
+# A simple helper script that runs the Trade Federation functional tests
 
-# run the functional test suite that contains all the functional tests
-tradefed.sh run singleCommand host --class com.android.tradefed.FuncTests "$@"
+tfdir=`dirname $0`/..
+$tfdir/tradefed.sh run singleCommand host --class com.android.tradefed.FuncTests "$@"

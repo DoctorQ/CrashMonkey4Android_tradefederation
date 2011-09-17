@@ -54,7 +54,7 @@ import java.util.regex.Pattern;
  * <li>shutdown
  * </ul>
  */
-public class Console {
+public class Console extends Thread {
 
     private static final String LOG_TAG = "Console";
     private static final String CONSOLE_PROMPT = "tf >";
@@ -87,6 +87,7 @@ public class Console {
     protected java.io.Console mTerminal;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
     private boolean mShouldExit = false;
+    private String[] mMainArgs = new String[] {};
 
     /** A convenience type for List<List<String>> */
     @SuppressWarnings("serial")
@@ -152,6 +153,7 @@ public class Console {
      * Exposed for unit testing
      */
     Console(ICommandScheduler scheduler) {
+        super();
         mScheduler = scheduler;
         mTerminal = System.console();
 
@@ -565,12 +567,20 @@ public class Console {
      * @param args
      */
     @SuppressWarnings("unchecked")
-    public void run(String[] args) {
+    public void run() {
         initLogging();
-        List<String> arrrgs = new LinkedList<String>(Arrays.asList(args));
+        List<String> arrrgs = new LinkedList<String>(Arrays.asList(mMainArgs));
 
         try {
             mScheduler.start();
+
+            // Notify the main thread that the scheduler is started, and will hold the JVM open.
+            // This is necessary since the Console thread is a Daemon thread.  If not for this, the
+            // main thread would exit before we got a chance to #start() mScheduler, at which point
+            // the JVM would shut down immediately.
+            synchronized(this) {
+                notify();
+            }
 
             if (mTerminal == null) {
                 // If we're running in non-interactive mode, just wait indefinitely for the
@@ -696,8 +706,19 @@ public class Console {
         LogRegistry.getLogRegistry().dumpLogs();
     }
 
-    public static void main(final String[] mainArgs) {
+    public void setArgs(String[] mainArgs) {
+        mMainArgs = mainArgs;
+    }
+
+    public static void main(final String[] mainArgs) throws Exception {
         Console console = new Console();
-        console.run(mainArgs);
+        console.setArgs(mainArgs);
+        console.setDaemon(true);
+        console.start();
+        synchronized(console) {
+            // Wait for the console to get started before we exit the main thread.  See full
+            // explanation near the top of #run()
+            console.wait();
+        }
     }
 }

@@ -377,9 +377,9 @@ public class DeviceManager implements IDeviceManager {
     }
 
     private ITestDevice createAllocatedDevice(IDevice allocatedDevice) {
-        IManagedTestDevice testDevice =  createTestDevice(allocatedDevice,
+        IManagedTestDevice testDevice = createTestDevice(allocatedDevice,
                 createStateMonitor(allocatedDevice));
-        if (mEnableLogcat) {
+        if (mEnableLogcat && !(allocatedDevice instanceof StubDevice)) {
             testDevice.startLogcat();
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);

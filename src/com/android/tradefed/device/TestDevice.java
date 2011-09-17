@@ -1564,6 +1564,12 @@ class TestDevice implements IManagedTestDevice {
                     appendDeviceLogMsg(msg);
                     // sleep a small amount for device to settle
                     getRunUtil().sleep(5 * 1000);
+
+                    // Make sure we haven't been cancelled before we sleep for a long time
+                    if (isCancelled()) {
+                        break;
+                    }
+
                     // wait a long time for device to be online
                     mMonitor.waitForDeviceOnline(10 * 60 * 1000);
                 }

@@ -275,8 +275,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         // use a ScheduledThreadPoolExecutorTimer as a single-threaded timer. This class
         // is used instead of a java.util.Timer because it offers advanced shutdown options
         mCommandTimer = new ScheduledThreadPoolExecutor(1);
-        // Don't hold TF alive if there are no other threads running
-        setDaemon(true);
     }
 
     /**

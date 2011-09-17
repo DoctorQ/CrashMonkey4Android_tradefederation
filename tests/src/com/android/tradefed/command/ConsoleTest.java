@@ -61,7 +61,8 @@ public class ConsoleTest extends TestCase {
         EasyMock.replay(mMockScheduler);
         // This should force the console to drop into non-interactive mode
         mConsole.setTerminal(null);
-        mConsole.run(new String[] {});
+        mConsole.start();
+        mConsole.join();
         EasyMock.verify(mMockScheduler);
     }
 
