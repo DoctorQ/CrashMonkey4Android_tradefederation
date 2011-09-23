@@ -92,9 +92,13 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
      * Fetch proc rank metrics from the bugreport after reboot.
      *
      * @param listener the {@link ITestInvocationListener} of test results
+     * @throws DeviceNotAvailableException
      */
     @SuppressWarnings("unchecked")
-    void fetchBugReportMetrics(ITestInvocationListener listener) {
+    void fetchBugReportMetrics(ITestInvocationListener listener)
+            throws DeviceNotAvailableException {
+        // Make sure the device is available and settled, before getting bugreport.
+        mTestDevice.waitForDeviceAvailable();
         BugreportParser parser = new BugreportParser();
         ItemList bugreport = null;
         // Retrieve bugreport
