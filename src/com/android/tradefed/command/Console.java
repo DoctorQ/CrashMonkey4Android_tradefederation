@@ -710,9 +710,19 @@ public class Console extends Thread {
         mMainArgs = mainArgs;
     }
 
-    public static void main(final String[] mainArgs) throws Exception {
+    public static void main(final String[] mainArgs) throws InterruptedException {
         Console console = new Console();
-        console.setArgs(mainArgs);
+        startConsole(console, mainArgs);
+    }
+
+    /**
+     * Starts the given tradefed console with given args
+     *
+     * @param console the {@link Console} to start
+     * @param args the command line arguments
+     */
+    public static void startConsole(Console console, String[] args) throws InterruptedException {
+        console.setArgs(args);
         console.setDaemon(true);
         console.start();
         synchronized(console) {
