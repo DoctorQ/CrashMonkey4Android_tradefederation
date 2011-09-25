@@ -375,6 +375,19 @@ public class FileUtil {
      */
     public static File createZip(File dir) throws IOException {
         File zipFile = FileUtil.createTempFile("dir", ".zip");
+        createZip(dir, zipFile);
+        return zipFile;
+    }
+
+    /**
+     * Utility method to create a zip file containing the given directory and
+     * all its contents.
+     *
+     * @param dir the directory to zip
+     * @param zipFile the zip file to create - it should not already exist
+     * @throws IOException if failed to create zip file
+     */
+    public static void createZip(File dir, File zipFile) throws IOException {
         ZipOutputStream out = null;
         try {
             FileOutputStream fileStream = new FileOutputStream(zipFile);
@@ -389,7 +402,6 @@ public class FileUtil {
         } finally {
             StreamUtil.closeStream(out);
         }
-        return zipFile;
     }
 
     /**
