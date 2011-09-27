@@ -18,6 +18,7 @@ package com.android.tradefed.testtype;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import junit.framework.Test;
@@ -91,9 +92,11 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
             Collection<String> testMethodNames = getTestMethodNames(this.getClass());
             for (String methodName : testMethodNames) {
                 setName(methodName);
+                CLog.d("Running %s#%s()", this.getClass().getName(), methodName);
                 super.run(result);
             }
         } else {
+            CLog.d("Running %s#%s()", this.getClass().getName(), getName());
             super.run(result);
         }
         // TODO: customize this method further to support aborting if DeviceNotAvailableException
