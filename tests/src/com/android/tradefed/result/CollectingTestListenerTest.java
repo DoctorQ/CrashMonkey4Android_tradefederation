@@ -55,7 +55,6 @@ public class CollectingTestListenerTest extends TestCase {
      */
     public void testSingleRun() {
         final TestIdentifier test = injectTestRun("run", "testFoo", METRIC_VALUE);
-        mCollectingTestListener.invocationEnded(0);
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertTrue(runResult.isRunComplete());
         assertFalse(runResult.isRunFailure());
@@ -75,7 +74,6 @@ public class CollectingTestListenerTest extends TestCase {
         mCollectingTestListener.testRunStarted("foo", 1);
         mCollectingTestListener.testRunFailed("error");
         mCollectingTestListener.testRunEnded(0, Collections.EMPTY_MAP);
-        mCollectingTestListener.invocationEnded(0);
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertTrue(runResult.isRunComplete());
         assertTrue(runResult.isRunFailure());
@@ -88,7 +86,6 @@ public class CollectingTestListenerTest extends TestCase {
     public void testTwoRuns() {
         final TestIdentifier test1 = injectTestRun("run1", "testFoo1", METRIC_VALUE);
         final TestIdentifier test2 = injectTestRun("run2", "testFoo2", METRIC_VALUE2);
-        mCollectingTestListener.invocationEnded(0);
         assertEquals(2, mCollectingTestListener.getNumTotalTests());
         assertEquals(2, mCollectingTestListener.getNumPassedTests());
         assertEquals(2, mCollectingTestListener.getRunResults().size());
@@ -116,7 +113,6 @@ public class CollectingTestListenerTest extends TestCase {
     public void testReRun() {
         final TestIdentifier test1 = injectTestRun("run", "testFoo1", METRIC_VALUE);
         final TestIdentifier test2 = injectTestRun("run", "testFoo2", METRIC_VALUE2);
-        mCollectingTestListener.invocationEnded(0);
         assertEquals(2, mCollectingTestListener.getNumTotalTests());
         assertEquals(2, mCollectingTestListener.getNumPassedTests());
         assertEquals(1, mCollectingTestListener.getRunResults().size());
@@ -133,7 +129,6 @@ public class CollectingTestListenerTest extends TestCase {
     public void testReRun_overlap() {
         injectTestRun("run", "testFoo1", METRIC_VALUE);
         injectTestRun("run", "testFoo1", METRIC_VALUE2, true);
-        mCollectingTestListener.invocationEnded(0);
         assertEquals(1, mCollectingTestListener.getNumTotalTests());
         assertEquals(0, mCollectingTestListener.getNumPassedTests());
         assertEquals(1, mCollectingTestListener.getNumFailedTests());
@@ -151,7 +146,6 @@ public class CollectingTestListenerTest extends TestCase {
         mCollectingTestListener.setIsAggregrateMetrics(true);
         injectTestRun("run", "testFoo1", "1");
         injectTestRun("run", "testFoo1", "1");
-        mCollectingTestListener.invocationEnded(0);
         assertEquals("2", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
                 RUN_KEY));
     }
@@ -163,7 +157,6 @@ public class CollectingTestListenerTest extends TestCase {
         mCollectingTestListener.setIsAggregrateMetrics(true);
         injectTestRun("run", "testFoo1", "1.1");
         injectTestRun("run", "testFoo1", "1.1");
-        mCollectingTestListener.invocationEnded(0);
         assertEquals("2.2", mCollectingTestListener.getCurrentRunResults().getRunMetrics().get(
                 RUN_KEY));
     }

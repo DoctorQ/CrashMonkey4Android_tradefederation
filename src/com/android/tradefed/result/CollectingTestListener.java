@@ -44,10 +44,6 @@ public class CollectingTestListener implements ITestInvocationListener {
         "attempt to add test metrics values for test runs with the same name." )
     private boolean mIsAggregateMetrics = false;
 
-    // cached test constants
-    private int mNumPassedTests = 0;
-    private int mNumFailedTests = 0;
-    private int mNumErrorTests = 0;
     private IBuildInfo mBuildInfo;
 
     /**
@@ -162,8 +158,6 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of tests for all runs.
-     * <p/>
-     * This will only return a valid value after invocation has completed
      */
     public int getNumTotalTests() {
         return getNumFailedTests() + getNumErrorTests() + getNumPassedTests();
@@ -171,35 +165,39 @@ public class CollectingTestListener implements ITestInvocationListener {
 
     /**
      * Gets the total number of failed tests for all runs.
-     * <p/>
-     * This will only return a valid value after invocation has completed
      */
     public int getNumFailedTests() {
-        return mNumFailedTests;
+        int numFailedTests = 0;
+        for (TestRunResult result : mRunResultsMap.values()) {
+            numFailedTests += result.getNumFailedTests();
+        }
+        return numFailedTests;
     }
 
     /**
      * Gets the total number of error tests for all runs.
-     * <p/>
-     * This will only return a valid value after invocation has completed
      */
     public int getNumErrorTests() {
-        return mNumErrorTests;
+        int numErrorTests = 0;
+        for (TestRunResult result : mRunResultsMap.values()) {
+            numErrorTests += result.getNumErrorTests();
+        }
+        return numErrorTests;
     }
 
     /**
      * Gets the total number of passed tests for all runs.
-     * <p/>
-     * This will only return a valid value after invocation has completed
      */
     public int getNumPassedTests() {
-        return mNumPassedTests;
+        int numPassedTests = 0;
+        for (TestRunResult result : mRunResultsMap.values()) {
+            numPassedTests += result.getNumPassedTests();
+        }
+        return numPassedTests;
     }
 
     /**
      * @returns true if invocation had any failed or error tests.
-     * <p/>
-     * This will only return a valid value after invocation has completed
      */
     public boolean hasFailedTests() {
         return getNumErrorTests() > 0 || getNumFailedTests() > 0;
@@ -209,11 +207,7 @@ public class CollectingTestListener implements ITestInvocationListener {
      * {@inheritDoc}
      */
     public void invocationEnded(long elapsedTime) {
-        for (TestRunResult result : mRunResultsMap.values()) {
-            mNumErrorTests += result.getNumErrorTests();
-            mNumFailedTests += result.getNumFailedTests();
-            mNumPassedTests += result.getNumPassedTests();
-        }
+        // ignore
     }
 
     /**
