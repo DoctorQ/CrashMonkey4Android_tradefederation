@@ -438,60 +438,6 @@ public class PackageManagerHostTests extends DeviceTestCase {
     }
 
     /**
-     * Regression test to verify that an app without installLocation in its manifest
-     * will install the app to the device by default when the system default pref is to install
-     * external.
-     * <p/>
-     * Assumes adb is running as root in device under test.
-     */
-    public void testInstallAppNoLocPrefIsExternal() throws Exception {
-        Log.i(LOG_TAG, "Test an app with no installLocation gets installed on SD card");
-
-        PackageManagerHostTestUtils.InstallLocPreference savedPref =
-            PackageManagerHostTestUtils.InstallLocPreference.AUTO;
-
-        try {
-            savedPref = mPMHostUtils.getDevicePreferredInstallLocation();
-            mPMHostUtils.setDevicePreferredInstallLocation(
-                    PackageManagerHostTestUtils.InstallLocPreference.EXTERNAL);
-            mPMHostUtils.installAppAndVerifyExistsOnSDCard(
-                    getTestAppFilePath(NO_LOC_APK), NO_LOC_PKG, false);
-        }
-        // cleanup test app
-        finally {
-            mPMHostUtils.setDevicePreferredInstallLocation(savedPref);
-            mPMHostUtils.uninstallApp(NO_LOC_PKG);
-        }
-    }
-
-    /**
-     * Regression test to verify that an app without installLocation in its manifest
-     * will install the app to the device by default when the system default pref is to install
-     * internal.
-     * <p/>
-     * Assumes adb is running as root in device under test.
-     */
-    public void testInstallAppNoLocPrefIsInternal() throws Exception {
-        Log.i(LOG_TAG, "Test an app with no installLocation gets installed on device");
-
-        PackageManagerHostTestUtils.InstallLocPreference savedPref =
-            PackageManagerHostTestUtils.InstallLocPreference.AUTO;
-
-        try {
-            savedPref = mPMHostUtils.getDevicePreferredInstallLocation();
-            mPMHostUtils.setDevicePreferredInstallLocation(
-                    PackageManagerHostTestUtils.InstallLocPreference.INTERNAL);
-            mPMHostUtils.installAppAndVerifyExistsOnDevice(
-                    getTestAppFilePath(NO_LOC_APK), NO_LOC_PKG, false);
-        }
-        // cleanup test app
-        finally {
-            mPMHostUtils.setDevicePreferredInstallLocation(savedPref);
-            mPMHostUtils.uninstallApp(NO_LOC_PKG);
-        }
-    }
-
-    /**
      * Regression test to verify that an app with its installLocation set to internal that is
      * forward-locked will get installed to the correct location.
      * <p/>

@@ -19,6 +19,7 @@ package com.android.framework.tests;
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.FileUtil;
 
@@ -188,7 +189,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         assertFalse(mPMHostUtils.doesPackageExist(EXTERNAL_LOC_PKG));
 
         for (int i = 0; i <= 500; ++i) {
-            Log.i(LOG_TAG, "Installing app");
+            CLog.i(LOG_TAG, "Installing app (%d)", i);
 
             try {
                 // install the app
