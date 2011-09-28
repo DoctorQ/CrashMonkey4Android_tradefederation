@@ -132,6 +132,10 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         } else {
             CLog.w("Missing server data");
         }
+        // Calculate additional network sanity stats
+        BandwidthUtils bw = new BandwidthUtils(mTestDevice);
+        Map<String, String> stats = bw.calculateStats();
+        bandwidthTestMetrics.putAll(stats);
 
         // Post everything to the dashboard.
         reportMetrics(listener, mTestLabel, bandwidthTestMetrics);
