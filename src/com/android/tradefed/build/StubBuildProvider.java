@@ -39,6 +39,12 @@ public class StubBuildProvider implements IBuildProvider {
     @Option(name="build-target", description="build target name to supply.")
     private String mBuildTargetName = "stub";
 
+    @Option(name="branch", description="build branch name to supply.")
+    private String mBranch = null;
+
+    @Option(name="build-flavor", description="build flavor name to supply.")
+    private String mBuildFlavor = null;
+
     @Option(name="build-attribute", description="build attributes to supply.")
     private Map<String, String> mBuildAttributes = new HashMap<String,String>();
 
@@ -48,6 +54,8 @@ public class StubBuildProvider implements IBuildProvider {
     public IBuildInfo getBuild() throws BuildRetrievalError {
         Log.d("BuildProvider", "skipping build provider step");
         BuildInfo stubBuild = new BuildInfo(mBuildId, mTestTag, mBuildTargetName);
+        stubBuild.setBuildBranch(mBranch);
+        stubBuild.setBuildFlavor(mBuildFlavor);
         for (Map.Entry<String, String> attributeEntry : mBuildAttributes.entrySet()) {
             stubBuild.addBuildAttribute(attributeEntry.getKey(), attributeEntry.getValue());
         }
