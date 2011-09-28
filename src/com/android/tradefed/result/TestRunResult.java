@@ -40,6 +40,7 @@ public class TestRunResult {
     private int mNumFailedTests = 0;
     private int mNumErrorTests = 0;
     private int mNumPassedTests = 0;
+    private int mNumInCompleteTests = 0;
     private String mRunFailureError = null;
 
     /**
@@ -190,6 +191,13 @@ public class TestRunResult {
     }
 
     /**
+     * Gets the number of incomplete tests in this run.
+     */
+    public int getNumIncompleteTests() {
+        return mNumInCompleteTests;
+    }
+
+    /**
      * @return <code>true</code> if test run had any failed or error tests.
      */
     public boolean hasFailedTests() {
@@ -230,6 +238,8 @@ public class TestRunResult {
                     mNumPassedTests--;
                     break;
             }
+        } else {
+            mNumInCompleteTests++;
         }
         mTestResults.put(test, new TestResult());
     }
@@ -279,6 +289,8 @@ public class TestRunResult {
             CLog.d("Received test ended for %s without testStarted", test);
             result = new TestResult();
             mTestResults.put(test, result);
+        } else {
+            mNumInCompleteTests--;
         }
 
         result.setEndTime(System.currentTimeMillis());

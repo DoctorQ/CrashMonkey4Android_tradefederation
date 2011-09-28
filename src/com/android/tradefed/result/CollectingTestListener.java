@@ -197,6 +197,17 @@ public class CollectingTestListener implements ITestInvocationListener {
     }
 
     /**
+     * Gets the total number of incomplete tests for all runs.
+     */
+    public int getNumIncompleteTests() {
+        int numIncompleteTests = 0;
+        for (TestRunResult result : mRunResultsMap.values()) {
+            numIncompleteTests += result.getNumIncompleteTests();
+        }
+        return numIncompleteTests;
+    }
+
+    /**
      * @returns true if invocation had any failed or error tests.
      */
     public boolean hasFailedTests() {

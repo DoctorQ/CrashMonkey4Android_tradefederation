@@ -140,6 +140,17 @@ public class CollectingTestListenerTest extends TestCase {
     }
 
     /**
+     * Test run with incomplete tests
+     */
+    @SuppressWarnings("unchecked")
+    public void testSingleRun_incomplete() {
+        mCollectingTestListener.testRunStarted("run", 1);
+        mCollectingTestListener.testStarted(new TestIdentifier("FooTest", "incomplete"));
+        mCollectingTestListener.testRunEnded(0, Collections.EMPTY_MAP);
+        assertEquals(1, mCollectingTestListener.getNumIncompleteTests());
+    }
+
+    /**
      * Test aggregating of metrics with long values
      */
     public void testRunEnded_aggregateLongMetrics() {
