@@ -34,6 +34,7 @@ import java.util.Map.Entry;
  */
 public class PackageManagerHostTestUtils extends Assert {
     private ITestDevice mDevice = null;
+    private boolean mEmulatedExternalStorage = false;
 
     // TODO: get this value from Android Environment instead of hardcoding
     private static final String APP_PRIVATE_PATH = "/data/app-private/";
@@ -59,8 +60,9 @@ public class PackageManagerHostTestUtils extends Assert {
      * Constructor takes the device to use
      * @param device the {@link ITestDevice} to use when performing operations
      */
-    public PackageManagerHostTestUtils(ITestDevice device) {
+    public PackageManagerHostTestUtils(ITestDevice device) throws DeviceNotAvailableException {
           mDevice = device;
+          determineExternalStorageEmulation();
     }
 
     /**
@@ -229,7 +231,14 @@ public class PackageManagerHostTestUtils extends Assert {
      * @throws DeviceNotAvailableException
      */
     public boolean doesAppExistOnSDCard(String packageName) throws DeviceNotAvailableException {
-        return doesRemoteFileExistContainingString(SDCARD_APP_PATH, packageName);
+
+        // if we're using emulated storage, the SDcard path is actually the device's normal app path
+        if (getIsExternalStorageEmulated()) {
+            return doesRemoteFileExistContainingString(DEVICE_APP_PATH, packageName);
+        }
+        else {
+            return doesRemoteFileExistContainingString(SDCARD_APP_PATH, packageName);
+        }
     }
 
     /**
@@ -278,7 +287,6 @@ public class PackageManagerHostTestUtils extends Assert {
 
         installFile(apkPath, overwrite);
         assertTrue(doesAppExistOnSDCard(pkgName));
-        assertFalse(doesAppExistOnDevice(pkgName));
         // TODO: is this necessary?
         waitForPackageManager();
 
@@ -308,7 +316,6 @@ public class PackageManagerHostTestUtils extends Assert {
         }
 
         installFile(apkFile, overwrite);
-        assertFalse(doesAppExistOnSDCard(pkgName));
         assertTrue(doesAppExistOnDevice(pkgName));
         // TODO: is this necessary?
         waitForPackageManager();
@@ -342,7 +349,6 @@ public class PackageManagerHostTestUtils extends Assert {
         String result = installFileForwardLocked(apkFile, overwrite);
         assertEquals(null, result);
         assertTrue(doesAppExistAsForwardLocked(pkgName));
-        assertFalse(doesAppExistOnSDCard(pkgName));
         waitForPackageManager();
 
         // grep for package to make sure it is installed
@@ -397,7 +403,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public InstallLocPreference getDevicePreferredInstallLocation()
             throws DeviceNotAvailableException {
-        String result = mDevice.executeShellCommand("pm getInstallLocation");
+        String result = mDevice.executeShellCommand("pm get-install-location");
         if (result.indexOf('0') != -1) {
             return InstallLocPreference.AUTO;
         }
@@ -407,5 +413,40 @@ public class PackageManagerHostTestUtils extends Assert {
         else {
             return InstallLocPreference.EXTERNAL;
         }
+    }
+
+    /**
+     * Determines whether the device is using emulated external storage.
+     *
+     * <p/>
+     * Sets mEmulatedExternalStorage based on the result
+     * Assumes adb is running as root in device under test.
+     * @throws DeviceNotAvailableException
+     */
+    private void determineExternalStorageEmulation()
+            throws DeviceNotAvailableException {
+        String result = mDevice.executeShellCommand("dumpsys mount");
+        if (result.indexOf("mEmulated=true") != -1) {
+            CLog.i("Device is using emulated external storage.");
+            mEmulatedExternalStorage = true;
+        }
+        else if (result.indexOf("mEmulated=false") != -1) {
+            CLog.i("Device is using actual external storage.");
+            mEmulatedExternalStorage = false;
+        }
+        else {
+            // older devices will not have mEmulated flag in the output
+            CLog.i("Unable to precisely determine external storage emulation; assuming false.");
+            mEmulatedExternalStorage = false;
+        }
+    }
+
+    /**
+     * Returns whether the external storage is emulated or not.
+     *
+     * @return <code>true</code> if external storage is emulated, <code>false</code> otherwise.
+     */
+    public boolean getIsExternalStorageEmulated() {
+        return mEmulatedExternalStorage;
     }
 }
