@@ -254,11 +254,11 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
             Log.d(LOG_TAG, String.format("Running test %s on %s", test.getPackageName(),
                         getDevice().getSerialNumber()));
 
-            test.setDevice(getDevice());
-            test.run(listener);
             if (mSendCoverage && test.getCoverageTarget() != null) {
                 sendCoverage(test.getPackageName(), test.getCoverageTarget(), listener);
             }
+            test.setDevice(getDevice());
+            test.run(listener);
             // test completed, remove from list
             mTests.remove(0);
         }
