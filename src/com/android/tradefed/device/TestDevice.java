@@ -843,10 +843,39 @@ class TestDevice implements IManagedTestDevice {
     public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException {
         String[] pathComponents = path.split(FileListingService.FILE_SEPARATOR);
         if (mRootFile == null) {
-            FileListingService service = getIDevice().getFileListingService();
+            FileListingService service = getFileListingService();
             mRootFile = new FileEntryWrapper(this, service.getRoot());
         }
         return FileEntryWrapper.getDescendant(mRootFile, Arrays.asList(pathComponents));
+    }
+
+    /**
+     * Retrieve the {@link FileListingService} for the {@link IDevice}, making multiple attempts
+     * and recovery operations if necessary.
+     * <p/>
+     * This is necessary because {@link IDevice#getFileListingService()} can return
+     * <code>null</code> if device is in fastboot.  The symptom of this condition is that the
+     * current {@link #getIDevice()} is a {@link StubDevice}.
+     *
+     * @return the {@link FileListingService}
+     * @throws DeviceNotAvailableException if device communication is lost.
+     */
+    private FileListingService getFileListingService() throws DeviceNotAvailableException  {
+        final FileListingService[] service = new FileListingService[1];
+        DeviceAction serviceAction = new DeviceAction() {
+            @Override
+            public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                    ShellCommandUnresponsiveException, InstallException, SyncException {
+                service[0] = getIDevice().getFileListingService();
+                if (service[0] == null) {
+                    // could not get file listing service - must be a stub device - enter recovery
+                    throw new IOException("Could not get file listing service");
+                }
+                return true;
+            }
+        };
+        performDeviceAction("getFileListingService", serviceAction, MAX_RETRY_ATTEMPTS);
+        return service[0];
     }
 
     /**
@@ -969,8 +998,9 @@ class TestDevice implements IManagedTestDevice {
             mService = service;
         }
 
-        public boolean run() throws TimeoutException, IOException {
-            mFileContents = mService.getChildren(mRemoteFileEntry, false, null);
+        public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
+                ShellCommandUnresponsiveException {
+            mFileContents = mService.getChildrenSync(mRemoteFileEntry);
             return true;
         }
     }
