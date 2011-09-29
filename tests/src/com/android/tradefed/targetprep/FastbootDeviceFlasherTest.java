@@ -163,6 +163,7 @@ public class FastbootDeviceFlasherTest extends TestCase {
         // expect
         mMockDevice.rebootUntilOnline();
         mMockDevice.rebootIntoBootloader();
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(Boolean.FALSE);
 
         EasyMock.replay(mMockDevice, mockZipInstaller);
         mFlasher.flashUserData(mMockDevice, mMockBuildInfo);
@@ -182,7 +183,9 @@ public class FastbootDeviceFlasherTest extends TestCase {
         // expect
         mockZipInstaller.deleteData(EasyMock.eq(mMockDevice));
         // expect
+        mMockDevice.rebootUntilOnline();
         mMockDevice.rebootIntoBootloader();
+        EasyMock.expect(mMockDevice.isEncryptionSupported()).andReturn(Boolean.FALSE);
 
         EasyMock.replay(mMockDevice, mockZipInstaller);
         mFlasher.flashUserData(mMockDevice, mMockBuildInfo);

@@ -378,6 +378,11 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
                 break;
 
             case WIPE_RM:
+                device.rebootUntilOnline(); // required to install tests
+                if (device.isEncryptionSupported() && device.isDeviceEncrypted()) {
+                    // TODO: move this logic into rebootUntilOnline
+                    device.unlockDevice();
+                }
                 getTestsZipInstaller().deleteData(device);
                 // Reboot into bootloader to continue the flashing process
                 device.rebootIntoBootloader();
