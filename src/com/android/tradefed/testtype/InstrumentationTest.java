@@ -119,6 +119,8 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     private int mCollectTestsShellTimeout = 2 * 60 * 1000;
 
+    private boolean mForceBatchMode = false;
+
     /**
      * {@inheritDoc}
      */
@@ -180,6 +182,19 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     public void setRunName(String runName) {
         mRunName = runName;
+    }
+
+    /**
+     * Set the collection of tests that should be executed by this InstrumentationTest.
+     *
+     * @param tests the tests to run
+     * @param forceBatchMode if true, the first attempt to run the tests will proceed as normal
+     * with the InstrumentationTest attempting to run all tests in the package. If false, the given
+     * tests will be run one by one with separate adb commands.
+     */
+    public void setTestsToRun(Collection<TestIdentifier> tests, boolean forceBatchMode) {
+        mRemainingTests = tests;
+        mForceBatchMode = true;
     }
 
     /**
@@ -375,13 +390,16 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     private void doTestRun(final ITestInvocationListener listener)
             throws DeviceNotAvailableException {
 
-        if (mRemainingTests != null) {
+        if (mRemainingTests != null && !mForceBatchMode) {
             // have remaining tests! This must be a rerun - rerun them individually
             rerunTests(listener);
             return;
         }
-        mRemainingTests = collectTestsToRun(mRunner);
         if (mRemainingTests == null) {
+            mRemainingTests = collectTestsToRun(mRunner);
+        }
+        if (mRemainingTests == null) {
+            // failed to collect the tests or collection is off. Just try to run them all
             mDevice.runInstrumentationTests(mRunner, listener);
         } else if (mRemainingTests.size() != 0) {
             runWithRerun(listener, mRemainingTests);
