@@ -496,6 +496,16 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test that the recovery mechanism works in {@link TestDevice#getFileEntry(String)}
+     */
+    public void testGetFileEntry_recovery() throws Exception {
+        getDevice().rebootIntoBootloader();
+        // expect recovery to kick in, and reboot device back to adb so the call works
+        IFileEntry entry = getDevice().getFileEntry("/data");
+        assertNotNull(entry);
+    }
+
+    /**
      * Run the test app UI tests and return true if they all pass.
      */
     private boolean runUITests() throws DeviceNotAvailableException {
