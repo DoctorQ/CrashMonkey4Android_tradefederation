@@ -24,6 +24,8 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
@@ -41,6 +43,7 @@ import java.util.Map;
 public class DataIdleTest implements IDeviceTest, IRemoteTest {
 
     ITestDevice mTestDevice = null;
+    DataIdleTestHelper mTestHelper = null;
 
     @Option(name = "test-package-name", description = "Android test package name.")
     private String mTestPackageName;
@@ -55,13 +58,27 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
             description = "Test label to identify the test run.")
     private String mTestLabel;
 
+    @Option(name = "mobile-data-only",
+            description = "If this test is to use mobile data or not.")
+    private boolean mMobileDataOnly;
+
     @Option(name = "idle-time-msecs", description = "Time in msecs to wait for data to propagate.")
     private int mIdleTime = 60 * 60 * 1000;
 
+    private static final String BUG_REPORT_LABEL = "bugreport";
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+        mTestHelper = new DataIdleTestHelper(mTestDevice);
+        if (mMobileDataOnly) {
+            // Make sure wifi is off. If conducting a WIFI test, make sure to include the
+            // include wifi setup in the configuration file.
+            Assert.assertTrue("Failed to disconnect from Wifi", mTestDevice.disconnectFromWifi());
+        }
+        // Test the Internet connection.
+        Assert.assertTrue("Failed to connect to get data.", mTestHelper.pingTest());
+
         CLog.v("Sleeping for %d", mIdleTime);
         RunUtil.getDefault().sleep(mIdleTime);
 
@@ -92,6 +109,18 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
                 reportMetrics(listener, mTestLabel, idleTestMetrics);
             }
         }
+        // Capture the bugreport.
+        logBugReport(listener);
+    }
+
+    /**
+     * Capture the bugreport and log it.
+     * @param listener {@link ITestInvocationListener}
+     */
+    void logBugReport(ITestInvocationListener listener) {
+        InputStreamSource bugreport = mTestDevice.getBugreport();
+        listener.testLog(BUG_REPORT_LABEL, LogDataType.TEXT, bugreport);
+        bugreport.cancel();
     }
 
     /**
