@@ -194,7 +194,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     public void setTestsToRun(Collection<TestIdentifier> tests, boolean forceBatchMode) {
         mRemainingTests = tests;
-        mForceBatchMode = true;
+        mForceBatchMode = forceBatchMode;
     }
 
     /**
