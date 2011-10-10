@@ -126,7 +126,6 @@ public class FlashingResourcesParserTest extends TestCase {
         // Verify parsing for the first line
         AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader);
         // 1 for global reqs, 1 for gamma-specific reqs
-        System.err.println(fullInfo.toString());
         assertEquals(2, fullInfo.size());
 
         MultiMap<String, String> globalReqs = fullInfo.get(null);
@@ -183,5 +182,27 @@ public class FlashingResourcesParserTest extends TestCase {
         } finally {
             badFile.delete();
         }
+    }
+
+    /**
+     * Test {@link FlashingResourcesParser#getRequiredImageVersion(String, String)} to make sure
+     * the latest version is returned when multiple valid version exist.
+     */
+    public void testGetRequiredImageVersion() throws Exception {
+        final String validInfoData =
+            "require product=alpha|beta|gamma\n" +
+            "require version-bootloader=1234|5678|3456\n" +
+            "require-for-product:beta " +
+                "version-bootloader=ABCD|CDEF|EFGH\n" +
+            "require-for-product:gamma " +
+                "version-bootloader=efgh|cdef|abcd\n";
+        BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
+        IFlashingResourcesParser parser = new FlashingResourcesParser(reader);
+        assertEquals("5678", parser.getRequiredImageVersion("version-bootloader"));
+        assertEquals("5678", parser.getRequiredImageVersion("version-bootloader", null));
+        assertEquals("5678", parser.getRequiredImageVersion("version-bootloader", "alpha"));
+        assertEquals("EFGH", parser.getRequiredImageVersion("version-bootloader", "beta"));
+        assertEquals("efgh", parser.getRequiredImageVersion("version-bootloader", "gamma"));
+        assertNull(parser.getRequiredImageVersion("version-baseband"));
     }
 }
