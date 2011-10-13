@@ -22,6 +22,7 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
@@ -66,6 +67,7 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
     private int mIdleTime = 60 * 60 * 1000;
 
     private static final String BUG_REPORT_LABEL = "bugreport";
+    private static final String DUMPSYS_REPORT_LABEL = "dumpsys";
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
@@ -111,6 +113,7 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
         }
         // Capture the bugreport.
         logBugReport(listener);
+        logNetStats(listener);
     }
 
     /**
@@ -121,6 +124,17 @@ public class DataIdleTest implements IDeviceTest, IRemoteTest {
         InputStreamSource bugreport = mTestDevice.getBugreport();
         listener.testLog(BUG_REPORT_LABEL, LogDataType.TEXT, bugreport);
         bugreport.cancel();
+    }
+
+    /**
+     * Fetch the whole netstats details.
+     * @param listener {@link ITestInvocationListener}
+     * @throws DeviceNotAvailableException
+     */
+    void logNetStats(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        String output = mTestDevice.executeShellCommand("dumpsys netstats detail full");
+        InputStreamSource is = new ByteArrayInputStreamSource(output.getBytes());
+        listener.testLog(DUMPSYS_REPORT_LABEL, LogDataType.TEXT, is);
     }
 
     /**
