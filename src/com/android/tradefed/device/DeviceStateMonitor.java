@@ -55,12 +55,14 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
 
     private List<DeviceStateListener> mStateListeners;
     private IDeviceManager mMgr;
+    private final boolean mFastbootEnabled;
 
-    DeviceStateMonitor(IDeviceManager mgr, IDevice device) {
+    DeviceStateMonitor(IDeviceManager mgr, IDevice device, boolean fastbootEnabled) {
         mMgr = mgr;
         mDevice = device;
         mStateListeners = new ArrayList<DeviceStateListener>();
         mDeviceState = TestDeviceState.getStateByDdms(device.getState());
+        mFastbootEnabled = fastbootEnabled;
     }
 
     /**
@@ -338,6 +340,9 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     }
 
     public void waitForDeviceBootloaderStateUpdate() {
+        if (!mFastbootEnabled) {
+            return;
+        }
         IFastbootListener listener = new NotifyFastbootListener();
         synchronized (listener) {
             mMgr.addFastbootListener(listener);
