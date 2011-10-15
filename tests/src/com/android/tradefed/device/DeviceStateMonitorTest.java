@@ -40,7 +40,7 @@ public class DeviceStateMonitorTest extends TestCase {
         EasyMock.expect(mMockDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.expect(mMockDevice.getSerialNumber()).andReturn(SERIAL_NUMBER).anyTimes();
         EasyMock.replay(mMockDevice);
-        mMonitor = new DeviceStateMonitor(mMockMgr, mMockDevice);
+        mMonitor = new DeviceStateMonitor(mMockMgr, mMockDevice, true);
     }
 
     /**
@@ -97,7 +97,7 @@ public class DeviceStateMonitorTest extends TestCase {
         EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("2345asdf");
         EasyMock.expect(mockDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.replay(mockDevice);
-        DeviceStateMonitor monitor = new DeviceStateMonitor(mMockMgr, mockDevice);
+        DeviceStateMonitor monitor = new DeviceStateMonitor(mMockMgr, mockDevice, true);
         assertFalse(monitor.isAdbTcp());
     }
 
@@ -109,7 +109,7 @@ public class DeviceStateMonitorTest extends TestCase {
         EasyMock.expect(mockDevice.getSerialNumber()).andStubReturn("192.168.1.1:5555");
         EasyMock.expect(mockDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.replay(mockDevice);
-        DeviceStateMonitor monitor = new DeviceStateMonitor(mMockMgr, mockDevice);
+        DeviceStateMonitor monitor = new DeviceStateMonitor(mMockMgr, mockDevice, true);
         assertTrue(monitor.isAdbTcp());
     }
 

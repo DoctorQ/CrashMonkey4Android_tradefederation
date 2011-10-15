@@ -287,7 +287,7 @@ public class DeviceManager implements IDeviceManager {
      * Exposed so unit tests can mock
      */
     IDeviceStateMonitor createStateMonitor(IDevice device) {
-        return new DeviceStateMonitor(this, device);
+        return new DeviceStateMonitor(this, device, mFastbootEnabled);
     }
 
     private void addAvailableDevice(IDevice device) {
@@ -840,6 +840,8 @@ public class DeviceManager implements IDeviceManager {
         checkInit();
         if (mFastbootEnabled) {
             mFastbootListeners.add(listener);
+        } else {
+            throw new UnsupportedOperationException("fastboot is not enabled");
         }
     }
 
