@@ -112,9 +112,13 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     public boolean waitForDeviceNotAvailable(long waitTime) {
         IFastbootListener listener = new StubFastbootListener();
-        mMgr.addFastbootListener(listener);
+        if (mFastbootEnabled) {
+            mMgr.addFastbootListener(listener);
+        }
         boolean result = waitForDeviceState(TestDeviceState.NOT_AVAILABLE, waitTime);
-        mMgr.removeFastbootListener(listener);
+        if (mFastbootEnabled) {
+            mMgr.removeFastbootListener(listener);
+        }
         return result;
     }
 
@@ -323,6 +327,9 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public boolean waitForDeviceBootloader(long time) {
+        if (!mFastbootEnabled) {
+            return false;
+        }
         long startTime = System.currentTimeMillis();
         // ensure fastboot state is updated at least once
         waitForDeviceBootloaderStateUpdate();
