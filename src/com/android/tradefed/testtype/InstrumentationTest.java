@@ -439,6 +439,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
                     mRunnerName, mRemainingTests);
             testRerunner.setDevice(getDevice());
             testRerunner.setTestTimeout(getTestTimeout());
+            testRerunner.setRunName(mRunName);
             CollectingTestListener testTracker = new CollectingTestListener();
             try {
                 testRerunner.run(new ResultForwarder(listener, testTracker));

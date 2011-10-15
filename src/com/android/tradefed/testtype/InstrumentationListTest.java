@@ -44,6 +44,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     /** Aborts the test run if any test takes longer than the specified number of milliseconds */
     private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
     private ITestDevice mDevice = null;
+    private String mRunName = null;
 
     /**
      * Creates a {@link InstrumentationListTest}.
@@ -72,6 +73,13 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
      */
     void setTestTimeout(int timeout) {
         mTestTimeout = timeout;
+    }
+
+    /**
+     * Optionally, set a custom run name.
+     */
+    public void setRunName(String runName) {
+        mRunName  = runName;
     }
 
     /**
@@ -107,6 +115,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             runner.setTestTimeout(mTestTimeout);
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
+            runner.setRunName(mRunName);
             runTest(runner, listener, testToRun);
         }
     }
