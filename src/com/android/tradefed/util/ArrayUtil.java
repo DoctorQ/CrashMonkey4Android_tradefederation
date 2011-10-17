@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -69,7 +70,7 @@ public class ArrayUtil {
         return retList;
     }
 
-    public static String join(String sep, List<String> pieces) {
+    public static String join(String sep, Collection<String> pieces) {
         StringBuilder sb = new StringBuilder();
         Iterator iter = pieces.iterator();
         if (iter.hasNext()) {
