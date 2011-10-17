@@ -27,7 +27,7 @@ public interface IFlashingResourcesParser {
 
     /**
      * Gets the required bootloader version specified in the device image zip.
-     * @return the bootloader versions or <code>null</code> if not specified
+     * @return the bootloader version or <code>null</code> if not specified
      */
     public String getRequiredBootloaderVersion();
 

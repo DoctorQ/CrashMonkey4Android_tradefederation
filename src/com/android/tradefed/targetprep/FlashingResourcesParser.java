@@ -25,7 +25,6 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -88,14 +87,19 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * If multiple versions are listed, get the latest with the assumption that versions sort from
+     * oldest to newest alphabetically.
      */
     public String getRequiredBootloaderVersion() {
-        // by convention, get the first version listed.
         return getRequiredImageVersion(BOOTLOADER_VERSION_KEY);
     }
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * If multiple versions are listed, get the latest with the assumption that versions sort from
+     * oldest to newest alphabetically.
      */
     public String getRequiredBasebandVersion() {
         return getRequiredImageVersion(BASEBAND_VERSION_KEY);
@@ -103,6 +107,9 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * If multiple versions are listed, get the latest with the assumption that versions sort from
+     * oldest to newest alphabetically.
      */
     public String getRequiredImageVersion(String imageVersionKey) {
         // Use null to designate the global product requirements
@@ -111,6 +118,9 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
 
     /**
      * {@inheritDoc}
+     * <p/>
+     * If multiple versions are listed, get the latest with the assumption that versions sort from
+     * oldest to newest alphabetically.
      */
     public String getRequiredImageVersion(String imageVersionKey, String productName) {
         MultiMap<String, String> productReqs = mReqs.get(productName);
@@ -121,8 +131,8 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
             return getRequiredImageVersion(imageVersionKey, null);
         }
 
-        // by convention, get the first version listed.
-        String result = getFirst(productReqs.get(imageVersionKey));
+        // Get the latest version assuming versions are sorted alphabetically.
+        String result = getNewest(productReqs.get(imageVersionKey));
 
         if (result != null) {
             // If there's a result, return it
@@ -164,13 +174,20 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     }
 
     /**
-     * Gets the first element in the given {@link List} or <code>null</code>
+     * Gets the newest element in the given {@link Collection} or <code>null</code> with the
+     * assumption that newer elements follow older elements when sorted alphabetically.
      */
-    private static String getFirst(List<String> values) {
-        if (values != null && !values.isEmpty()) {
-            return values.get(0);
+    private static String getNewest(Collection<String> values) {
+        if (values == null || values.isEmpty()) {
+            return null;
         }
-        return null;
+        String newest = null;
+        for (String element : values) {
+            if (newest == null || element.compareTo(newest) > 0) {
+                newest = element;
+            }
+        }
+        return newest;
     }
 
     /**
