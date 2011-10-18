@@ -267,9 +267,9 @@ public class TestInvocation implements ITestInvocation {
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
 
+        info.setDeviceSerial(device.getSerialNumber());
         startInvocation(config, device, info);
         try {
-            info.setDeviceSerial(device.getSerialNumber());
             device.setOptions(config.getDeviceOptions());
             for (ITargetPreparer preparer : config.getTargetPreparers()) {
                 preparer.setUp(device, info);
