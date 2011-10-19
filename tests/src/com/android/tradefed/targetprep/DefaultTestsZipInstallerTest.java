@@ -26,12 +26,11 @@ import com.android.tradefed.device.MockFileUtil;
 
 import junit.framework.TestCase;
 
+import org.easymock.EasyMock;
+
 import java.io.File;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
-import org.easymock.EasyMock;
 
 public class DefaultTestsZipInstallerTest extends TestCase {
     private static final String SKIP_THIS = "skipThis";
