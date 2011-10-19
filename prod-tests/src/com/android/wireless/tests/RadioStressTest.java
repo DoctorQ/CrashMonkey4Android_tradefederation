@@ -46,7 +46,7 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     /* Maxium time to wait for SETUP_DATA_CALL */
     private static int MAX_DATA_SETUP_TIME = 5 * 60 * 1000;
     /* Time to wait for framework to bootup */
-    private static final int BOOTING_TIME = 2 * 60 * 1000;
+    private static final int BOOTING_TIME = 5 * 60 * 1000;
 
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME = "com.android.phonetests";
@@ -72,8 +72,14 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     private String mPhoneNumber = null;
 
     @Option(name="voice",
-            description="to verify the voice call")
+            description="To verify the voice call")
     private boolean mVoiceVerificationFlag = true;
+
+    // From the past test, if there are too many failures, they are similar
+    // set the threshold so that the test won't drag too long
+    @Option(name="threshold",
+            description="Threshold to stop the test")
+    private int mThreshold = 10;
 
     /**
      * Run radio startup stress test, capture bugreport if the test failed.
@@ -94,6 +100,10 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
         for (int i = 0; i < mIteration; i++) {
             // reset device before rebooting
             CLog.d("Radio startup test iteration : %d, success runs: %d", i, mSuccessRun);
+            if ((i + 1) - mSuccessRun > mThreshold) {
+                CLog.d("Too many failures, stop the test");
+                break;
+            }
             mRadioHelper.resetBootComplete();
 
             // run-time reboot device
@@ -107,27 +117,29 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             mTestDevice.postBootSetup();
             mTestDevice.clearErrorDialogs();
 
-            // Wait 2 minutes for the device to fully booting up
+            // Wait for the device to fully booting up and connect to mobile network
             getRunUtil().sleep(BOOTING_TIME);
+
+            // verify data connection first
+            boolean dataFlag = false;
+            if (verifyDataConnection()) {
+                dataFlag = true;
+            } else {
+                getBugReport(listener, i);
+            }
 
             // verify voice connection
             if (mVoiceVerificationFlag) {
-                boolean voiceRes = verifyVoiceConnection(listener);
+                boolean voiceFlag = verifyVoiceConnection(listener);
                 getRunUtil().sleep(MAX_DATA_SETUP_TIME);
-                boolean dataRes = verifyDataConnection();
-                if (voiceRes && dataRes) {
+                // after the voice call, phone app is reset
+                dataFlag = verifyDataConnection();
+                if (voiceFlag && dataFlag) {
                     mSuccessRun++;
-                }
-                if (!dataRes) {
-                    // Take a bugreport if data verification failed. A bugreport should be captured
-                    // if voice verification failed in the instrumentation test.
-                    getBugReport(listener, i);
                 }
             } else {
-                if (verifyDataConnection()) {
+                if (dataFlag) {
                     mSuccessRun++;
-                } else {
-                    getBugReport(listener, i);
                 }
             }
         }
