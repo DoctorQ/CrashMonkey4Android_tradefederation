@@ -235,10 +235,14 @@ public class TestInvocation implements ITestInvocation {
      * @param device the {@link ITestDevice}
      */
     private void logStartInvocation(IBuildInfo info, ITestDevice device) {
-        StringBuilder msg = new StringBuilder("Starting invocation for target ");
+        StringBuilder msg = new StringBuilder("Starting invocation for '");
         msg.append(info.getTestTag());
-        msg.append(" on build ");
-        msg.append(info.getBuildId());
+        msg.append("'");
+        if (!info.getBuildId().equals(BuildInfo.UNKNOWN_BUILD_ID)) {
+            msg.append(" on build '");
+            msg.append(info.getBuildId());
+            msg.append("'");
+        }
         for (String buildAttr : info.getBuildAttributes().values()) {
             msg.append(" ");
             msg.append(buildAttr);
