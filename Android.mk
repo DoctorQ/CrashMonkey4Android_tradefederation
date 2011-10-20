@@ -40,6 +40,15 @@ $(DEST_JAR): $(LOCAL_BUILT_MODULE)
 # this dependency ensure the above rule will be executed if jar is built
 $(LOCAL_INSTALLED_MODULE) : $(DEST_JAR)
 
+#######################################################
+include $(CLEAR_VARS)
+
+# Create a simple alias to build all the TF-related targets
+# Note that this is incompatible with `make dist`.  If you want to make
+# the distribution, you must run `tapas` with the individual target names.
+.PHONY: tradefed-all
+tradefed-all: tradefed tradefed-tests tf-prod-tests
+
 # ====================================
 include $(CLEAR_VARS)
 # copy tradefed.sh script to host dir
