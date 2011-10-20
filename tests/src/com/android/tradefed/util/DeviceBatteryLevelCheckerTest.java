@@ -77,7 +77,7 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
 
     public void testLow() throws Exception {
         EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(15));
+                .andReturn(battLevelString(5));
         EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
                 .andReturn(battLevelString(20));
         EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))

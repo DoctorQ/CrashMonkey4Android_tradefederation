@@ -38,15 +38,17 @@ public class DeviceBatteryLevelChecker implements ITargetPreparer {
 
     @Option(name="min-level", description="Charge level below which we force the device to sit " +
             "and charge.  Range: 0-100.")
-    private int mMinChargeLevel = 20;
+    private int mMinChargeLevel = 10;
 
     @Option(name="resume-level", description="Charge level at which we release the device to " +
             "begin testing again. Range: 0-100.")
     private int mResumeLevel = 80;
 
+    @Option(name="poll-time", description="Time in minutes to wait between battery level polls. " +
+            "Decimal times accepted.")
+    private double mChargingPollTime = 5.0;
+
     private static final Pattern BATTERY_LEVEL = Pattern.compile("\\s*level: (\\d+)");
-    /** poll the battery level every 5 minutes while the device is charging */
-    private static final long CHARGING_POLL_TIME = 5 * 60 * 1000;
 
     private Integer checkBatteryLevel(ITestDevice device) throws DeviceNotAvailableException {
         // FIXME: scale the battery level by "scale" instead of assuming 100
@@ -93,9 +95,21 @@ public class DeviceBatteryLevelChecker implements ITargetPreparer {
         // If we're down here, it's time to hold the device until it reaches mResumeLevel
         while (batteryLevel != null && batteryLevel < mResumeLevel) {
             // FIXME show periodic status messages with "w" log level
-            getRunUtil().sleep(CHARGING_POLL_TIME);
+            getRunUtil().sleep((long) (mChargingPollTime * 60 * 1000));
             Integer newLevel = checkBatteryLevel(device);
-            CLog.d("Battery level for device %s is now %d", device.getSerialNumber(), newLevel);
+            if (newLevel == null) {
+                // weird
+                CLog.w("Breaking out of wait loop because battery level read failed for device %s",
+                        device.getSerialNumber());
+                break;
+            } else if (newLevel < batteryLevel) {
+                // also weird
+                CLog.w("Warning: battery discharged from %d to %d on device %s during the last " +
+                        "%d minutes.", batteryLevel, newLevel, device.getSerialNumber(),
+                        mChargingPollTime);
+            } else {
+                CLog.d("Battery level for device %s is now %d", device.getSerialNumber(), newLevel);
+            }
             batteryLevel = newLevel;
         }
         CLog.w("Device %s is now charged to battery level %d; releasing.", device.getSerialNumber(),
