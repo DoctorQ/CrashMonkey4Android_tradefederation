@@ -92,10 +92,10 @@ public interface ICommandScheduler {
     /**
      * Get a list of current invocations.
      *
-     * @return A list of currently-running {@link ITestInvocation}
+     * @return A list of {@link ITestInvocation} descriptions, or {@code null} if none
      * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
      */
-    public Collection<ITestInvocation> listInvocations() throws UnsupportedOperationException;
+    public Collection<String> listInvocations() throws UnsupportedOperationException;
 
     /**
      * Stop a running invocation.

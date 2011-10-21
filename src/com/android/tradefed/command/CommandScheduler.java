@@ -205,6 +205,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         private final ITestDevice mDevice;
         private final ExecutableCommand mCmd;
         private ITestInvocation mInvocation = null;
+        private long mStartTime = -1;
 
         public InvocationThread(String name, IDeviceManager manager, ITestDevice device,
                 ExecutableCommand command) {
@@ -220,10 +221,14 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             return mInvocation;
         }
 
+        public long getStartTime() {
+            return mStartTime;
+        }
+
         @Override
         public void run() {
             FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
-            long startTime = System.currentTimeMillis();
+            mStartTime = System.currentTimeMillis();
             ITestInvocation instance = createInvocation();
             IConfiguration config = mCmd.getConfiguration();
             try {
@@ -247,7 +252,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } catch (Throwable e) {
                 Log.e(LOG_TAG, e);
             } finally {
-                long elapsedTime = System.currentTimeMillis() - startTime;
+                long elapsedTime = System.currentTimeMillis() - mStartTime;
                 Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
                         getArgString(mCmd.getCommandTracker().getArgs()), elapsedTime));
                 mCmd.getCommandTracker().incrementExecTime(elapsedTime);
@@ -541,16 +546,27 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
-    public Collection<ITestInvocation> listInvocations() throws UnsupportedOperationException {
-        Collection<ITestInvocation> invs = new ArrayList<ITestInvocation>(
-                mInvocationThreads.size());
-
+    public Collection<String> listInvocations() throws UnsupportedOperationException {
         if (mInvocationThreads == null) {
             return null;
         }
 
+        Collection<String> invs = new ArrayList<String>(mInvocationThreads.size());
+        long curTime = System.currentTimeMillis();
+
         for (InvocationThread invThread : mInvocationThreads) {
-            invs.add(invThread.getInvocation());
+            long duration = (curTime - invThread.getStartTime()) / 1000;
+            long secs = duration % 60;
+            long mins = (duration / 60) % 60;
+            long hrs = duration / (60 * 60);
+            String time = "unknown";
+            if (hrs > 0) {
+                time = String.format("%dh:%02d:%02d", hrs, mins, secs);
+            } else {
+                time = String.format("%dm:%02d", mins, secs);
+            }
+
+            invs.add(String.format("[%s] %s", time, invThread.getInvocation()));
         }
 
         return invs;

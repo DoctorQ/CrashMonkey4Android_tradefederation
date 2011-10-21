@@ -334,10 +334,10 @@ public class Console extends Thread {
         trie.put(new Runnable() {
                     @Override
                     public void run() {
-                        Collection<ITestInvocation> invs = mScheduler.listInvocations();
+                        Collection<String> invs = mScheduler.listInvocations();
                         int counter = 1;
 
-                        for (ITestInvocation inv : invs) {
+                        for (String inv : invs) {
                             printLine(String.format("Invocation %d: %s", counter++, inv));
                         }
                     }
