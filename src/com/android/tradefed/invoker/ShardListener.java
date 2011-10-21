@@ -111,7 +111,9 @@ class ShardListener extends CollectingTestListener {
                 mMasterListener.testFailed(TestFailure.FAILURE, testEntry.getKey(),
                         testEntry.getValue().getStackTrace());
             }
-            mMasterListener.testEnded(testEntry.getKey(), testEntry.getValue().getMetrics());
+            if (!testEntry.getValue().getStatus().equals(TestStatus.INCOMPLETE)) {
+                mMasterListener.testEnded(testEntry.getKey(), testEntry.getValue().getMetrics());
+            }
         }
     }
 }
