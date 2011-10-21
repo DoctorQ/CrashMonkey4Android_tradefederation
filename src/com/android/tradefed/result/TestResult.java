@@ -96,8 +96,9 @@ public class TestResult {
     /**
      * Set the {@link TestStatus}.
      */
-    public void setStatus(TestStatus status) {
+    public TestResult setStatus(TestStatus status) {
        mStatus = status;
+       return this;
     }
 
     /**
