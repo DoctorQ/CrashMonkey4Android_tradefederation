@@ -881,6 +881,37 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
+    public boolean pushDir(File localFileDir, String deviceFilePath)
+            throws DeviceNotAvailableException {
+        if (!localFileDir.isDirectory()) {
+            CLog.e("file %s is not a directory", localFileDir.getAbsolutePath());
+            return false;
+        }
+        File[] childFiles = localFileDir.listFiles();
+        if (childFiles == null) {
+            CLog.e("Could not read files in %s", localFileDir.getAbsolutePath());
+            return false;
+        }
+        for (File childFile : childFiles) {
+            String remotePath = String.format("%s/%s", deviceFilePath, childFile.getName());
+            if (childFile.isDirectory()) {
+                executeShellCommand(String.format("mkdir %s", remotePath));
+                if (!pushDir(childFile, remotePath)) {
+                    return false;
+                }
+            } else if (childFile.isFile()) {
+                if (!pushFile(childFile, remotePath)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Syncing %s to %s on device %s",

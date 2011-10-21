@@ -297,6 +297,34 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Test pushing a directory
+     */
+    public void testPushDir() throws IOException, DeviceNotAvailableException {
+        String expectedDeviceFilePath = null;
+        String externalStorePath = null;
+        File rootDir = FileUtil.createTempDir("tmp");
+        // create temp dir with one temp file
+        try {
+            File tmpDir = FileUtil.createTempDir("tmp", rootDir);
+            File tmpFile = createTempTestFile(tmpDir);
+            externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            assertNotNull(externalStorePath);
+            expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
+                    tmpDir.getName(), tmpFile.getName());
+
+            assertTrue(mTestDevice.pushDir(rootDir, externalStorePath));
+            assertTrue(mTestDevice.doesFileExist(expectedDeviceFilePath));
+
+        } finally {
+            if (expectedDeviceFilePath != null && externalStorePath != null) {
+                mTestDevice.executeShellCommand(String.format("rm -r %s/%s", externalStorePath,
+                        expectedDeviceFilePath));
+            }
+            FileUtil.recursiveDelete(rootDir);
+        }
+    }
+
+    /**
      * Test {@link TestDevice#executeFastbootCommand(String...)} when device is in adb mode.
      * <p/>
      * Expect fastboot recovery to be invoked, which will boot device back to fastboot mode and

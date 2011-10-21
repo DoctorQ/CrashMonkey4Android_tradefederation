@@ -428,6 +428,18 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Recursively push directories contents to device.
+     *
+     * @param localFile the local directory to push
+     * @param deviceFilePath the remote destination absolute file path
+     * @return <code>true</code> if file was pushed successfully. <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean pushDir(File localDir, String deviceFilePath)
+            throws DeviceNotAvailableException;
+
+    /**
      * Incrementally syncs the contents of a local file directory to device.
      * <p/>
      * Decides which files to push by comparing timestamps of local files with their remote
@@ -436,14 +448,16 @@ public interface ITestDevice {
      * <p/>
      * Hidden files (with names starting with ".") will be ignored.
      * <p/>
-     * Example usage: syncFiles("/tmp/files", "/sdcard") will created a /sdcard/files directory
-     * if it doesn't already exist, and recursively push the /tmp/files contents to /sdcard/files.
+     * Example usage: syncFiles("/tmp/files", "/sdcard") will created a /sdcard/files directory if
+     * it doesn't already exist, and recursively push the /tmp/files contents to /sdcard/files.
      *
      * @param localFileDir the local file directory containing files to recursively push.
-     * @param deviceFilePath the remote destination absolute file path root.
+     * @param deviceFilePath the remote destination absolute file path root. All directories in thos
+     *            file path must be readable. ie pushing to /data/local/tmp when adb is not root
+     *            will fail
      * @return <code>true</code> if files were synced successfully. <code>false</code> otherwise.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
-     * recovered.
+     *             recovered.
      */
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException;
