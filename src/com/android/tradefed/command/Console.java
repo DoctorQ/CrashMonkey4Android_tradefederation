@@ -16,7 +16,6 @@
 
 package com.android.tradefed.command;
 
-import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
@@ -24,10 +23,10 @@ import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -120,7 +119,9 @@ public class Console extends Thread {
     private class QuitRunnable implements Runnable {
         @Override
         public void run() {
-            mShouldExit = true;
+            printLine("Signalling command scheduler for shutdown.");
+            printLine("TF will exit without warning when remaining invocations complete.");
+            mScheduler.shutdown();
         }
     }
 
@@ -439,6 +440,8 @@ public class Console extends Thread {
                         // ignore
                     }
                 }
+                mScheduler.shutdown();
+                // Intentionally kill the console before CommandScheduler finishes
                 mShouldExit = true;
             }
         };
@@ -569,7 +572,6 @@ public class Console extends Thread {
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
-        initLogging();
         List<String> arrrgs = new LinkedList<String>(Arrays.asList(mMainArgs));
 
         try {
@@ -586,10 +588,7 @@ public class Console extends Thread {
             if (mTerminal == null) {
                 // If we're running in non-interactive mode, just wait indefinitely for the
                 // scheduler to shut down
-                Log.logAndDisplay(LogLevel.INFO, LOG_TAG,
-                        "Running indefinitely in non-interactive mode.");
-                mScheduler.join();
-                cleanUp();
+                printLine("Running indefinitely in non-interactive mode.");
                 return;
             }
 
@@ -597,6 +596,8 @@ public class Console extends Thread {
             CaptureList groups = new CaptureList();
             String[] tokens;
 
+            // Note: since Console is a daemon thread, the JVM may exit without us actually leaving
+            // this read loop.  This is by design.
             while (!mShouldExit) {
                 if (arrrgs.isEmpty()) {
                     input = getConsoleInput();
@@ -605,7 +606,7 @@ public class Console extends Thread {
                         // Usually the result of getting EOF on the console
                         printLine("");
                         printLine("Received EOF; quitting...");
-                        mShouldExit = true;
+                        mScheduler.shutdown();
                         break;
                     }
 
@@ -637,37 +638,13 @@ public class Console extends Thread {
                             "Unable to handle command '%s'.  Enter 'help' for help.", tokens[0]));
                 }
 
-                Thread.sleep(100);
+                RunUtil.getDefault().sleep(100);
             }
-
-            mScheduler.shutdown();
-
-            mScheduler.join();
-        } catch (InterruptedException e) {
-            // ignore
         } catch (Exception e) {
+            printLine("Console received an unexpected exception (shown below); shutting down TF.");
             e.printStackTrace();
-        } finally {
-            cleanUp();
+            mScheduler.shutdown();
         }
-    }
-
-    /**
-     * Initializes the ddmlib log.
-     */
-    void initLogging() {
-        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
-        Log.setLogOutput(LogRegistry.getLogRegistry());
-    }
-
-    /**
-     * Closes the logs and does any other necessary cleanup before the returning from the main
-     * function.
-     * <p/>
-     * Exposed so unit tests can mock out.
-     */
-    void cleanUp() {
-        LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
     }
 
     /**

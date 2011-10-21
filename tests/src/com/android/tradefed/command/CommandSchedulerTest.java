@@ -83,6 +83,16 @@ public class CommandSchedulerTest extends TestCase {
             long getCommandPollTimeMs() {
                 return 20;
             }
+
+            @Override
+            void initLogging() {
+                // ignore
+            }
+
+            @Override
+            void cleanUp() {
+                // ignore
+            }
         };
     }
 

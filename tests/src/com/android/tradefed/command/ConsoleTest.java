@@ -39,17 +39,7 @@ public class ConsoleTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockScheduler = EasyMock.createStrictMock(ICommandScheduler.class);
-        mConsole = new Console(mMockScheduler) {
-            @Override
-            void initLogging() {
-                // do nothing
-            }
-
-            @Override
-            void cleanUp() {
-                // do nothing
-            }
-        };
+        mConsole = new Console(mMockScheduler);
      }
 
     /**
@@ -57,7 +47,6 @@ public class ConsoleTest extends TestCase {
      */
     public void testRun() throws InterruptedException {
         mMockScheduler.start();
-        mMockScheduler.join();
         EasyMock.replay(mMockScheduler);
         // This should force the console to drop into non-interactive mode
         mConsole.setTerminal(null);

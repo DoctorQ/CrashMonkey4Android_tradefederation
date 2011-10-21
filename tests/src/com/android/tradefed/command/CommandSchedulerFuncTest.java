@@ -81,6 +81,16 @@ public class CommandSchedulerFuncTest extends TestCase {
             IConfigurationFactory getConfigFactory() {
                 return mMockConfigFactory;
             }
+
+            @Override
+            void initLogging() {
+                // ignore
+            }
+
+            @Override
+            void cleanUp() {
+                // ignore
+            }
         };
     }
 
