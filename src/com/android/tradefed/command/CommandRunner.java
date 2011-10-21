@@ -16,11 +16,6 @@
 
 package com.android.tradefed.command;
 
-import com.android.ddmlib.DdmPreferences;
-import com.android.ddmlib.Log;
-import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.log.LogRegistry;
-
 /**
  * An alternate TradeFederation entry point that will run command specified in command
  * line arguments and then quit.
@@ -43,8 +38,6 @@ public class CommandRunner {
      */
     @SuppressWarnings("unchecked")
     public void run(String[] args) {
-        initLogging();
-
         try {
             mScheduler.start();
             NotifyingCommandListener cmdListener = new NotifyingCommandListener();
@@ -56,27 +49,7 @@ public class CommandRunner {
             mScheduler.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
-        } finally {
-            cleanUp();
         }
-    }
-
-    /**
-     * Initializes the ddmlib log.
-     */
-    void initLogging() {
-        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
-        Log.setLogOutput(LogRegistry.getLogRegistry());
-    }
-
-    /**
-     * Closes the logs and does any other necessary cleanup before the returning from the main
-     * function.
-     * <p/>
-     * Exposed so unit tests can mock out.
-     */
-    void cleanUp() {
-        LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
     }
 
     public static void main(final String[] mainArgs) {

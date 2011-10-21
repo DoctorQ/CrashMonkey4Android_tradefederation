@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.command;
 
+import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
@@ -30,6 +31,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
+import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 
 import java.util.ArrayList;
@@ -315,6 +317,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     @Override
     public void run() {
 
+        initLogging();
         IDeviceManager manager = getDeviceManager();
         manager.init();
         while (!isShutdown()) {
@@ -351,6 +354,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         }
         Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "All done");
         exit(manager);
+        cleanUp();
     }
 
     private void waitForThread(Thread thread) {
@@ -541,6 +545,26 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         Log.logAndDisplay(LogLevel.WARN, LOG_TAG, "Force killing adb connection");
         getDeviceManager().terminateHard();
     }
+
+    /**
+     * Initializes the ddmlib log.
+     * <p />
+     * Exposed so unit tests can mock.
+     */
+    void initLogging() {
+        DdmPreferences.setLogLevel(LogLevel.VERBOSE.getStringValue());
+        Log.setLogOutput(LogRegistry.getLogRegistry());
+    }
+
+    /**
+     * Closes the logs and does any other necessary cleanup before we quit.
+     * <p />
+     * Exposed so unit tests can mock.
+     */
+    void cleanUp() {
+        LogRegistry.getLogRegistry().closeAndRemoveAllLogs();
+    }
+
 
     // Implementations of the optional management interfaces
     /**
