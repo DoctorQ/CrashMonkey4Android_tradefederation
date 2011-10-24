@@ -273,8 +273,18 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
     /**
      * Creates a {@link CommandScheduler}.
+     * <p />
+     * Note: logging is initialized here.  We assume that {@link CommandScheduler#start} will be
+     * called, so that we can clean logs up at the end of the {@link CommandScheduler#run} method.
+     * In particular, this means that a leak will result if a {@link CommandScheduler} instance is
+     * instantiated but not started.
      */
     public CommandScheduler() {
+        initLogging();
+
+        // initialize the device manager
+        getDeviceManager().init();
+
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
                 new ConfigComparator());
         mAllCommands = Collections.synchronizedList(new LinkedList<CommandTracker>());
@@ -317,9 +327,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     @Override
     public void run() {
 
-        initLogging();
         IDeviceManager manager = getDeviceManager();
-        manager.init();
         while (!isShutdown()) {
             ExecutableCommand cmd = dequeueConfigCommand();
             if (cmd != null) {
