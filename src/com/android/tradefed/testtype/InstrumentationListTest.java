@@ -124,7 +124,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             TestIdentifier testToRun) throws DeviceNotAvailableException {
         // use a listener filter, to track if the test failed to run
         TestTrackingListener trackingListener = new TestTrackingListener(listener, testToRun);
-        for (int i=1; i <= 3; i++) {
+        for (int i=1; i <= 2; i++) {
             runner.run(trackingListener);
             if (trackingListener.didTestRun()) {
                 return;
