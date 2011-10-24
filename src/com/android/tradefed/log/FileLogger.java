@@ -49,7 +49,7 @@ public class FileLogger implements ILeveledLogOutput {
             + LogUtil.LOG_LEVEL_LIST + ".")
     private String mLogLevel = LogLevel.DEBUG.getStringValue();
 
-    @Option(name = "log-level-display", description =
+    @Option(name = "log-level-display", shortName = 'l', description =
         "the minimum log level to display on stdout. Must be one of " + LogUtil.LOG_LEVEL_LIST +
         ".", importance = Importance.ALWAYS)
     private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
