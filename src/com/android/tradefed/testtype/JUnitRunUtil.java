@@ -15,8 +15,10 @@
  */
 package com.android.tradefed.testtype;
 
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.JUnitToInvocationResultForwarder;
+import com.android.tradefed.testtype.DeviceTestResult.RuntimeDeviceNotAvailableException;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
@@ -30,17 +32,28 @@ import java.util.Map;
  */
 public class JUnitRunUtil {
 
-    public static void runTest(ITestInvocationListener listener, Test junitTest) {
+    public static void runTest(ITestInvocationListener listener, Test junitTest)
+            throws DeviceNotAvailableException {
+        runTest(listener, junitTest, junitTest.getClass().getName());
+    }
 
-        listener.testRunStarted(junitTest.getClass().getName(), junitTest.countTestCases());
+    public static void runTest(ITestInvocationListener listener, Test junitTest,
+            String runName) throws DeviceNotAvailableException {
+        listener.testRunStarted(runName, junitTest.countTestCases());
         long startTime = System.currentTimeMillis();
         // forward the JUnit results to the invocation listener
         JUnitToInvocationResultForwarder resultForwarder =
             new JUnitToInvocationResultForwarder(listener);
-        TestResult result = new TestResult();
+        DeviceTestResult result = new DeviceTestResult();
         result.addListener(resultForwarder);
-        junitTest.run(result);
-        Map<String, String> emptyMap = Collections.emptyMap();
-        listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
+        try {
+            junitTest.run(result);
+        } catch (RuntimeDeviceNotAvailableException e) {
+            listener.testRunFailed(e.getDeviceException().getMessage());
+            throw e.getDeviceException();
+        } finally {
+            Map<String, String> emptyMap = Collections.emptyMap();
+            listener.testRunEnded(System.currentTimeMillis() - startTime, emptyMap);
+        }
     }
 }

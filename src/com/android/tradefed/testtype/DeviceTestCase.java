@@ -17,6 +17,7 @@ package com.android.tradefed.testtype;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -44,6 +45,8 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
     @Option(name = "method", description = "run a specific test method.")
     private String mMethodName = null;
 
+    private Vector<String> mMethodNames = null;
+
     public DeviceTestCase() {
         super();
     }
@@ -68,13 +71,25 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
 
     /**
      * {@inheritDoc}
+     * @throws DeviceNotAvailableException
      */
     @Override
-    public void run(ITestInvocationListener listener) {
+    public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (getName() == null && mMethodName != null) {
             setName(mMethodName);
         }
         JUnitRunUtil.runTest(listener, this);
+    }
+
+    @Override
+    public int countTestCases() {
+        // the superclass implementation always returns 1 - add logic to handle case where all tests
+        // should be run
+        if (getName() != null || mMethodName != null) {
+            return 1;
+        } else {
+            return getTestMethodNames().size();
+        }
     }
 
     /**
@@ -89,7 +104,7 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
     public void run(TestResult result) {
         // check if test method to run aka name is null
         if (getName() == null) {
-            Collection<String> testMethodNames = getTestMethodNames(this.getClass());
+            Collection<String> testMethodNames = getTestMethodNames();
             for (String methodName : testMethodNames) {
                 setName(methodName);
                 CLog.d("Running %s#%s()", this.getClass().getName(), methodName);
@@ -99,8 +114,6 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
             CLog.d("Running %s#%s()", this.getClass().getName(), getName());
             super.run(result);
         }
-        // TODO: customize this method further to support aborting if DeviceNotAvailableException
-        // is thrown
     }
 
     /**
@@ -108,23 +121,26 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
      * @param class1
      * @return
      */
-    private Collection<String> getTestMethodNames(Class<? extends TestCase> theClass) {
-        // Unfortunately {@link TestSuite} doesn't expose the functionality to find all test*
-        // methods,
-        // so needed to copy and paste code from TestSuite
-        Class<?> superClass = theClass;
-        Vector<String> names = new Vector<String>();
-        while (Test.class.isAssignableFrom(superClass)) {
-            Method[] methods = superClass.getDeclaredMethods();
-            for (int i = 0; i < methods.length; i++) {
-                addTestMethod(methods[i], names, theClass);
+    private Collection<String> getTestMethodNames() {
+        if (mMethodNames == null) {
+            mMethodNames = new Vector<String>();
+            // Unfortunately {@link TestSuite} doesn't expose the functionality to find all test*
+            // methods,
+            // so needed to copy and paste code from TestSuite
+            Class<?> theClass = this.getClass();
+            Class<?> superClass = theClass;
+            while (Test.class.isAssignableFrom(superClass)) {
+                Method[] methods = superClass.getDeclaredMethods();
+                for (int i = 0; i < methods.length; i++) {
+                    addTestMethod(methods[i], mMethodNames, theClass);
+                }
+                superClass = superClass.getSuperclass();
             }
-            superClass = superClass.getSuperclass();
+            if (mMethodNames.size() == 0) {
+                Log.w(LOG_TAG, String.format("No tests found in %s", theClass.getName()));
+            }
         }
-        if (names.size() == 0) {
-            Log.w(LOG_TAG, String.format("No tests found in %s", theClass.getName()));
-        }
-        return names;
+        return mMethodNames;
     }
 
     private void addTestMethod(Method m, Vector<String> names, Class<?> theClass) {
