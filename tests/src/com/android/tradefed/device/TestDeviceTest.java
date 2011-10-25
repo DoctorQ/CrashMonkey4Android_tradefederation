@@ -738,7 +738,8 @@ public class TestDeviceTest extends TestCase {
         setEncryptedUnsupportedExpectations();
         setEncryptedUnsupportedExpectations();
         setEncryptedUnsupportedExpectations();
-        EasyMock.replay(mMockIDevice);
+        EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
+
         try {
             mTestDevice.encryptDevice(false);
             fail("encryptUserData() did not throw UnsupportedOperationException");
@@ -764,6 +765,7 @@ public class TestDeviceTest extends TestCase {
      * Configure EasyMock for a encryption check call, that returns that encryption is unsupported
      */
     private void setEncryptedUnsupportedExpectations() throws Exception {
+        setEnableAdbRootExpectations();
         injectShellResponse("vdc cryptfs enablecrypto", "\r\n");
     }
 
