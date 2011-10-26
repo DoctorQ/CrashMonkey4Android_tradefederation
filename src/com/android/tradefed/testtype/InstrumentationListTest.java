@@ -34,6 +34,9 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
 
     private static final String LOG_TAG = "InstrumentationListTest";
 
+    /** number of attempts to make if test fails to run */
+    static final int FAILED_RUN_TEST_ATTEMPTS = 2;
+
     /** the Android package name of test application */
     private final String mPackageName;
     /** the Android InstrumentationTestRunner class name to use */
@@ -124,13 +127,13 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             TestIdentifier testToRun) throws DeviceNotAvailableException {
         // use a listener filter, to track if the test failed to run
         TestTrackingListener trackingListener = new TestTrackingListener(listener, testToRun);
-        for (int i=1; i <= 2; i++) {
+        for (int i=1; i <= FAILED_RUN_TEST_ATTEMPTS; i++) {
             runner.run(trackingListener);
             if (trackingListener.didTestRun()) {
                 return;
             } else {
-                Log.w(LOG_TAG, String.format("Expected test %s did not run on attempt %d of 3",
-                        testToRun, i));
+                Log.w(LOG_TAG, String.format("Expected test %s did not run on attempt %d of %d",
+                        testToRun, i, FAILED_RUN_TEST_ATTEMPTS));
             }
         }
         trackingListener.markTestAsFailed();
