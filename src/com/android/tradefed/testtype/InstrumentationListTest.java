@@ -20,6 +20,7 @@ import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
 
@@ -137,6 +138,12 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             }
         }
         trackingListener.markTestAsFailed();
+        // TODO: temporary hack - reboot the device to attempt to clear its state. Ideally
+        // recovery should detect and attempt to remedy this condition
+        CLog.w("Device %s is unresponsive to command to run %s. Rebooting",
+                getDevice().getSerialNumber(), testToRun);
+        getDevice().reboot();
+
     }
 
     private static class TestTrackingListener extends ResultForwarder {

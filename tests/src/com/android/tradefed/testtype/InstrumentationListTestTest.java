@@ -48,6 +48,8 @@ public class InstrumentationListTestTest extends TestCase {
 
         mMockTestDevice = EasyMock.createMock(ITestDevice.class);
         mMockListener = EasyMock.createMock(ITestInvocationListener.class);
+
+        EasyMock.expect(mMockTestDevice.getSerialNumber()).andStubReturn("serial");
     }
 
     /**
@@ -121,6 +123,9 @@ public class InstrumentationListTestTest extends TestCase {
         EasyMock.expectLastCall().times(expectedAttempts);
         mMockListener.testRunEnded(0, Collections.EMPTY_MAP);
         EasyMock.expectLastCall().times(expectedAttempts);
+
+        // TODO: temp, expect a device reboot
+        mMockTestDevice.reboot();
 
         // now expect test to be marked as failed
         mMockListener.testStarted(test);
