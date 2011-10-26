@@ -113,13 +113,13 @@ public class InstrumentationListTestTest extends TestCase {
                 return mockITest;
             }
         };
-        // expect three attempts, plus 1 additional run to mark the test as failed
+        // expect two attempts, plus 1 additional run to mark the test as failed
         mMockListener.testRunStarted(packageName, 1);
-        EasyMock.expectLastCall().times(4);
+        EasyMock.expectLastCall().times(3);
         mMockListener.testRunFailed(runFailureMsg);
-        EasyMock.expectLastCall().times(4);
+        EasyMock.expectLastCall().times(3);
         mMockListener.testRunEnded(0, Collections.EMPTY_MAP);
-        EasyMock.expectLastCall().times(4);
+        EasyMock.expectLastCall().times(3);
 
         // now expect test to be marked as failed
         mMockListener.testStarted(test);
