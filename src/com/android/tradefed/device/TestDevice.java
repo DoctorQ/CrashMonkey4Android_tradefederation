@@ -2290,6 +2290,11 @@ class TestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     public boolean isEncryptionSupported() throws DeviceNotAvailableException {
+        if (!isEnableAdbRoot()) {
+            CLog.i("root is required for encryption");
+            return false;
+        }
+        enableAdbRoot();
         String output = executeShellCommand("vdc cryptfs enablecrypto").trim();
         return (output != null && output.startsWith(ENCRYPTION_SUPPORTED_OUTPUT));
     }
