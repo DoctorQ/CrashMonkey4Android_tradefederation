@@ -270,14 +270,6 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
     ITestDevice mTestDevice = null;
 
-    @Option(name="video-file-host-path",
-            description="The location of the file used for the video playback test on the host")
-    private String mVideoFileHostPath;
-
-    @Option(name="video-file-device-name",
-            description="The name of the file used for the video playback test.")
-    private String mVideoFileDeviceName;
-
     @Option(name="pull-file-size",
             description="The size in kB of the file used in the pull test")
     private int mPullFileSize = 256 * 1024;

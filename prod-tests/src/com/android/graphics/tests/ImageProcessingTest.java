@@ -31,7 +31,6 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
 import junit.framework.Assert;
-import junit.framework.AssertionFailedError;
 
 import java.io.BufferedReader;
 import java.io.File;
