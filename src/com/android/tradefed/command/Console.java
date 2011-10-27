@@ -16,7 +16,6 @@
 
 package com.android.tradefed.command;
 
-import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
@@ -55,7 +54,6 @@ import java.util.regex.Pattern;
  */
 public class Console extends Thread {
 
-    private static final String LOG_TAG = "Console";
     private static final String CONSOLE_PROMPT = "tf >";
 
     protected static final String HELP_PATTERN = "\\?|h|help";
@@ -196,7 +194,7 @@ public class Console extends Thread {
      */
     void generateHelpListings(RegexTrie<Runnable> trie, List<String> genericHelp,
             Map<String, String> commandHelp) {
-        final String genHelpString = join(genericHelp);
+        final String genHelpString = getGenericHelpString(genericHelp);
         final String helpPattern = "\\?|h|help";
 
         final ArgRunnable<CaptureList> genericHelpRunnable = new ArgRunnable<CaptureList>() {
@@ -260,6 +258,15 @@ public class Console extends Thread {
                         genericHelpRunnable.run(args);
                     }
                 }, (Pattern)null);
+    }
+
+    /**
+     * Return the generic help string to display
+     * @param genericHelp
+     * @return
+     */
+    protected String getGenericHelpString(List<String> genericHelp) {
+        return join(genericHelp);
     }
 
     /**
@@ -535,9 +542,16 @@ public class Console extends Thread {
      * @return A {@link String} containing the input to parse and run
      */
     private String getConsoleInput() throws IOException {
-        String line = mTerminal.readLine(CONSOLE_PROMPT);
+        String line = mTerminal.readLine(getConsolePrompt());
 
         return line;
+    }
+
+    /**
+     * @return the text {@link String} to display for the console prompt
+     */
+    protected String getConsolePrompt() {
+        return CONSOLE_PROMPT;
     }
 
     /**
