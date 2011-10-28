@@ -34,8 +34,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * A helper for {@link ITestInvocationListener}'s that will save log data to a file, in an unique
- * directory constructed from build id under test.
+ * A helper for {@link ITestInvocationListener}'s that will save log data to a file
  */
 public class LogFileSaver implements ILogFileSaver {
 
@@ -63,6 +62,16 @@ public class LogFileSaver implements ILogFileSaver {
             mRootDir = buildDir;
         }
         Log.i(LOG_TAG, String.format("Using log file directory %s", mRootDir.getAbsolutePath()));
+    }
+
+    /**
+     * An alternate {@link LogFileSaver} constructor that will just use given directory as the
+     * log storage directory.
+     *
+     * @param rootDir
+     */
+    public LogFileSaver(File rootDir) {
+        mRootDir = rootDir;
     }
 
     /**
