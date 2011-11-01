@@ -26,12 +26,17 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.TopHelper;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
 
 import junit.framework.Assert;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -61,6 +66,9 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
     private class CpuTest {
         public String mTestName = null;
         public String mKey = null;
+
+        private TopHelper mTopHelper = null;
+        private File mTopLogFile = null;
 
         private Map<String, String> mMetrics = new HashMap<String, String>();
 
@@ -113,6 +121,47 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
         public Map<String, String> getMetrics() {
             return mMetrics;
         }
+
+        /**
+         * Creates the {@link TopHelper} and sets up the logging to file.
+         */
+        protected void setupLogging() {
+            mTopHelper = new TopHelper(mTestDevice);
+            try {
+                mTopLogFile = FileUtil.createTempFile("top_", ".txt");
+                mTopHelper.logToFile(mTopLogFile);
+            } catch (IOException e) {
+                CLog.e("Error creating log file: %s", e.getMessage());
+            }
+        }
+
+        /**
+         * Starts the {@link TopHelper}.
+         */
+        protected void startLogging() {
+            mTopHelper.start();
+        }
+
+        /**
+         * Stops the {@link TopHelper} and adds the log file and metrics to the test results.
+         * @param listener
+         * @throws DeviceNotAvailableException
+         */
+        protected void stopLogging(ITestInvocationListener listener)
+                throws DeviceNotAvailableException {
+            mTopHelper.cancel();
+            if (mTopLogFile != null) {
+                try {
+                    listener.testLog(String.format("top_%s", mKey), LogDataType.TEXT,
+                            new SnapshotInputStreamSource(new FileInputStream(mTopLogFile)));
+                } catch (FileNotFoundException e) {
+                    CLog.e("Error saving log file: %s", e.getMessage());
+                }
+                mTopLogFile.delete();
+                mTopLogFile = null;
+            }
+            addTopStats(mTopHelper, mTestDevice.isDeviceEncrypted());
+        }
     }
 
     /**
@@ -142,10 +191,10 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 return;
             }
 
-            TopHelper top = new TopHelper(mTestDevice);
+            setupLogging();
             try {
                 CLog.d("Pushing file");
-                top.start();
+                startLogging();
                 long startTime = System.currentTimeMillis();
                 mTestDevice.pushFile(hostFile, mDeviceFilePath);
                 long elapsedTime = System.currentTimeMillis() - startTime;
@@ -155,8 +204,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 addMetric("push_bw" + getKeySuffix(mTestDevice.isDeviceEncrypted()),
                         new Double(1000.0 * mPushFileSize / elapsedTime).toString());
             } finally {
-                top.cancel();
-                addTopStats(top, mTestDevice.isDeviceEncrypted());
+                stopLogging(listener);
                 hostFile.delete();
                 mTestDevice.executeShellCommand(String.format("rm %s", mDeviceFilePath));
             }
@@ -185,10 +233,10 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 return;
             }
 
-            TopHelper top = new TopHelper(mTestDevice);
+            setupLogging();
             try {
                 CLog.d("Pulling file");
-                top.start();
+                startLogging();
                 long startTime = System.currentTimeMillis();
                 hostFile = mTestDevice.pullFile(mDeviceFilePath);
                 long elapsedTime = System.currentTimeMillis() - startTime;
@@ -198,8 +246,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 addMetric("pull_bw" + getKeySuffix(mTestDevice.isDeviceEncrypted()),
                         new Double(1000.0 * mPullFileSize / elapsedTime).toString());
             } finally {
-                top.cancel();
-                addTopStats(top, mTestDevice.isDeviceEncrypted());
+                stopLogging(listener);
                 if (hostFile != null) {
                     hostFile.delete();
                 }
@@ -217,7 +264,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          */
         @Override
         public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-            TopHelper top = new TopHelper(mTestDevice);
+            setupLogging();
             try {
                 IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                         "com.android.mediaframeworktest", ".MediaRecorderStressTestRunner",
@@ -225,11 +272,10 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 runner.setClassName("com.android.mediaframeworktest.stress.MediaPlayerStressTest");
 
                 CLog.d("Running video playback instrumentation");
-                top.start();
+                startLogging();
                 mTestDevice.runInstrumentationTests(runner);
             } finally {
-                top.cancel();
-                addTopStats(top, mTestDevice.isDeviceEncrypted());
+                stopLogging(listener);
             }
         }
     }
@@ -244,7 +290,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          */
         @Override
         public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-            TopHelper top = new TopHelper(mTestDevice);
+            setupLogging();
             try {
                 IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                         "com.google.android.camera.tests",
@@ -256,11 +302,10 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 runner.addInstrumentationArg("video_duration", Integer.toString(3 * 60 * 1000));
 
                 CLog.d("Running video capture instrumentation");
-                top.start();
+                startLogging();
                 mTestDevice.runInstrumentationTests(runner);
             } finally {
-                top.cancel();
-                addTopStats(top, mTestDevice.isDeviceEncrypted());
+                stopLogging(listener);
                 mTestDevice.executeShellCommand("rm -r /sdcard/DCIM/*");
             }
         }
