@@ -20,6 +20,10 @@ import com.android.ddmlib.MultiLineReceiver;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.SimpleStats;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -76,12 +80,47 @@ public class TopHelper extends Thread {
     static class TopReceiver extends MultiLineReceiver {
         private List<TopStats> mTopStats = new LinkedList<TopStats>();
         private boolean mIsCancelled = false;
+        private File mLogFile = null;
+        private BufferedWriter mLogWriter = null;
+
+        public TopReceiver() {
+            setTrimLine(false);
+        }
+
+        /**
+         * Specify a file to log the top output to.
+         *
+         * @param logFile the file to lot output to.
+         */
+        public synchronized void logToFile(File logFile) {
+            try {
+                mLogFile = logFile;
+                mLogWriter = new BufferedWriter(new FileWriter(mLogFile));
+            } catch (IOException e) {
+                CLog.e("Error creating file: %s", e.getMessage());
+                mLogWriter = null;
+            }
+        }
 
         /**
          * {@inheritDoc}
          */
         @Override
         public void processNewLines(String[] lines) {
+            if (mIsCancelled) {
+                return;
+            }
+            synchronized (this) {
+                if (mLogWriter != null) {
+                    try {
+                        for (String line : lines) {
+                            mLogWriter.write(line + "\n");
+                        }
+                    } catch (IOException e) {
+                        CLog.e("Error writing to file: %s", e.getMessage());
+                    }
+                }
+            }
             for (String line : lines) {
                 line = line.trim();
                 Matcher m = TOP_PERCENT_PATTERN.matcher(line);
@@ -106,7 +145,20 @@ public class TopHelper extends Thread {
          * Cancels the top command.
          */
         public synchronized void cancel() {
+            if (mIsCancelled) {
+                return;
+            }
             mIsCancelled = true;
+            if (mLogWriter != null) {
+                try {
+                    mLogWriter.flush();
+                    mLogWriter.close();
+                } catch (IOException e) {
+                    CLog.e("Error closing writer %s", e.getMessage());
+                } finally {
+                    mLogWriter = null;
+                }
+            }
         }
 
         /**
@@ -147,6 +199,15 @@ public class TopHelper extends Thread {
      */
     public TopHelper(ITestDevice testDevice) {
         this(testDevice, 1);
+    }
+
+    /**
+     * Specify a file to log the top output to.
+     *
+     * @param logFile the file to lot output to.
+     */
+    public void logToFile(File logFile) {
+        mReceiver.logToFile(logFile);
     }
 
     /**
