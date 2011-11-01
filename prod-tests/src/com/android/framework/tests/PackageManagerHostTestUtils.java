@@ -61,8 +61,8 @@ public class PackageManagerHostTestUtils extends Assert {
      * @param device the {@link ITestDevice} to use when performing operations
      */
     public PackageManagerHostTestUtils(ITestDevice device) throws DeviceNotAvailableException {
-        mDevice = device;
-        determineExternalStorageEmulation();
+          mDevice = device;
+          determineExternalStorageEmulation();
     }
 
     /**
@@ -108,7 +108,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     private CollectingTestListener doRunTests(String pkgName, String className,
             String methodName, String runnerName, Map<String, String> params)
-                    throws DeviceNotAvailableException  {
+            throws DeviceNotAvailableException  {
         IRemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(pkgName, runnerName,
                 mDevice.getIDevice());
 
@@ -141,7 +141,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public boolean runDeviceTestsDidAllTestsPass(String pkgName, String className,
             String methodName, String runnerName, Map<String, String> params)
-                    throws DeviceNotAvailableException  {
+            throws DeviceNotAvailableException  {
         CollectingTestListener listener = doRunTests(pkgName, className, methodName,
                 runnerName, params);
         return !listener.hasFailedTests();
@@ -259,8 +259,8 @@ public class PackageManagerHostTestUtils extends Assert {
      * @throws DeviceNotAvailableException
      */
     public void waitForPackageManager() throws DeviceNotAvailableException {
-        CLog.i("waiting for device");
-        mDevice.waitForDeviceAvailable(MAX_WAIT_FOR_DEVICE_TIME);
+       CLog.i("waiting for device");
+       mDevice.waitForDeviceAvailable(MAX_WAIT_FOR_DEVICE_TIME);
     }
 
     /**
@@ -448,29 +448,5 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public boolean getIsExternalStorageEmulated() {
         return mEmulatedExternalStorage;
-    }
-
-
-    /**
-     * Connect device to wifi.
-     * @param device
-     * @param wifiNetwork
-     * @param wifiPsk
-     * @param connectionAttempts
-     * @return true if able to connect to wifi.
-     * @throws DeviceNotAvailableException
-     */
-    public static boolean connectToWifi(ITestDevice device, String wifiNetwork, String wifiPsk,
-            int connectionAttempts) throws DeviceNotAvailableException {
-        if (wifiNetwork != null) {
-            for (int i = 0; i < connectionAttempts; i++) {
-                device.disconnectFromWifi();
-                if (device.connectToWifiNetwork(wifiNetwork, wifiPsk)) {
-                    CLog.i("Connected to wifi network %s", wifiNetwork);
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 }
