@@ -14,8 +14,29 @@
      limitations under the License.
 -->
 <configuration description="Runs download manager host-based tests">
-    <test class="com.android.framework.tests.DownloadManagerHostTests" />
+    <build_provider class="com.google.android.tradefed.build.DeviceLaunchControlProvider">
+        <option name="test-tag" value="download_manager" />
+    </build_provider>
+    <target_preparer class="com.google.android.tradefed.targetprep.GoogleDeviceFlashPreparer">
+        <option name="userdata-flash" value="WIPE" />
+    </target_preparer>
+    <target_preparer class="com.android.tradefed.targetprep.TestAppInstallSetup">
+        <option name="test-file-name" value="DownloadManagerTestApp.apk" />
+    </target_preparer>
+    <test class="com.android.framework.tests.DownloadManagerHostTests">
+        <option name="external-download-uri" value=" http://75.17.48.204:10090/dm_apps" />
+        <option name="wifi-network" value="WL-asl2" />
+        <option name="wifi-psk" value="place_holder_make_sure_to_use_the_right_one" />
+    </test>
     <logger class="com.android.tradefed.log.FileLogger">
         <option name="log-level-display" value="debug" />
     </logger>
+    <result_reporter class="com.google.android.tradefed.result.RdbSummaryResultReporter">
+        <option name="ru-key-test-summary" value="download_manager" />
+    </result_reporter>
+    <result_reporter class="com.android.tradefed.result.FailureEmailResultReporter" >
+        <option name="sender" value="tsu+tffail@google.com" />
+        <option name="destination" value="tsu@google.com" />
+        <option name="send-only-on-inv-failure" value="true" />
+    </result_reporter>
 </configuration>
