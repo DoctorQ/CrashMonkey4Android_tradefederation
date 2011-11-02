@@ -20,6 +20,7 @@ import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
@@ -97,10 +98,7 @@ public class DeviceFlashPreparerTest extends TestCase {
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
         EasyMock.expect(mMockDevice.isDeviceEncrypted()).andStubReturn(Boolean.FALSE);
         mMockDevice.clearLogcat();
-        // expect shell command to test if boot is complete
-        EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).andReturn(
-                "1");
-        mMockDevice.waitForDeviceAvailable();
+        mMockDevice.waitForDeviceAvailable(EasyMock.anyLong());
         mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
         mMockDevice.postBootSetup();
     }
@@ -128,9 +126,8 @@ public class DeviceFlashPreparerTest extends TestCase {
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
         EasyMock.expect(mMockDevice.isDeviceEncrypted()).andStubReturn(Boolean.FALSE);
         mMockDevice.clearLogcat();
-        EasyMock.expect(mMockDevice.executeShellCommand("getprop dev.bootcomplete")).andReturn("");
-        EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
-                andReturn("").anyTimes();
+        mMockDevice.waitForDeviceAvailable(EasyMock.anyLong());
+        EasyMock.expectLastCall().andThrow(new DeviceUnresponsiveException("foo"));
         mMockDevice.setRecoveryMode(RecoveryMode.AVAILABLE);
         EasyMock.replay(mMockFlasher, mMockDevice);
         try {

@@ -100,8 +100,6 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             mTestDevice.executeShellCommand("stop");
             mTestDevice.executeShellCommand("start");
 
-            Assert.assertTrue("Device failed to reboot",
-                    mRadioHelper.waitForBootComplete());
             mTestDevice.waitForDeviceAvailable();
 
             // Setup up device

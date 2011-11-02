@@ -105,13 +105,13 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         // only want logcat captured for current build, delete any accumulated log data
         device.clearLogcat();
         try {
-            waitForBootComplete(device, buildInfo.getBuildId());
             device.setRecoveryMode(RecoveryMode.AVAILABLE);
-            device.waitForDeviceAvailable();
+            device.waitForDeviceAvailable(mDeviceBootTime);
         } catch (DeviceUnresponsiveException e) {
             // assume this is a build problem
-            throw new BuildError(String.format("Device %s did not become available after flashing",
-                    device.getSerialNumber()));
+            throw new BuildError(String.format(
+                    "Device %s did not become available after flashing %s",
+                    device.getSerialNumber(), buildInfo.getBuildId()));
         }
         device.postBootSetup();
     }
@@ -122,28 +122,6 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
      */
     protected abstract IDeviceFlasher createFlasher(ITestDevice device)
             throws DeviceNotAvailableException;
-
-    /**
-     * Blocks until the device's boot complete flag is set
-     *
-     * @param device the {@link ITestDevice}
-     * @param buildId the build id of current build. Used for logging purposes
-     * @throws DeviceNotAvailableException, BuildError
-     */
-    private void waitForBootComplete(ITestDevice device, String buildId)
-            throws DeviceNotAvailableException, BuildError {
-        long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < mDeviceBootTime) {
-            String output = device.executeShellCommand("getprop dev.bootcomplete");
-            output = output.replace('#', ' ').trim();
-            if (output.equals("1")) {
-                return;
-            }
-            getRunUtil().sleep(getDeviceBootPollTimeMs());
-        }
-        throw new BuildError(String.format("Device %s running build %s did not boot after %d ms",
-                device.getSerialNumber(), buildId, mDeviceBootTime));
-    }
 
     /**
      * Handle encrypting or unencrypting of the device pre-flash.
