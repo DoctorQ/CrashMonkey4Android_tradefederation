@@ -26,6 +26,7 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.TopHelper;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
@@ -160,6 +161,8 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 mTopLogFile.delete();
                 mTopLogFile = null;
             }
+            InputStreamSource bugreport = mTestDevice.getBugreport();
+            listener.testLog(String.format("bugreport_%s", mKey), LogDataType.TEXT, bugreport);
             addTopStats(mTopHelper, mTestDevice.isDeviceEncrypted());
         }
     }
