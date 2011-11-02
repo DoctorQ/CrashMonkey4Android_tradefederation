@@ -44,51 +44,41 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
 
     // Large apps (>1mb) - filenames and their corresponding package names:
     private static enum APK {
-            FILENAME,
-            PACKAGENAME;
+        FILENAME,
+        PACKAGENAME;
     }
     private static final String[][] LARGE_APPS = {
-       {"External1mb.apk", "com.appsonsd.mytests.External1mb"},
-       {"External2mb.apk", "com.appsonsd.mytests.External2mb"},
-       {"External3mb.apk", "com.appsonsd.mytests.External3mb"},
-       {"External4mb.apk", "com.appsonsd.mytests.External4mb"},
-       {"External5mb.apk", "com.appsonsd.mytests.External5mb"},
-       {"External6mb.apk", "com.appsonsd.mytests.External6mb"},
-       {"External7mb.apk", "com.appsonsd.mytests.External7mb"},
-       {"External8mb.apk", "com.appsonsd.mytests.External8mb"},
-       {"External9mb.apk", "com.appsonsd.mytests.External9mb"},
-       {"External10mb.apk", "com.appsonsd.mytests.External10mb"},
-       {"External16mb.apk", "com.appsonsd.mytests.External16mb"},
-       {"External28mb.apk", "com.appsonsd.mytests.External28mb"},
-       {"External34mb.apk", "com.appsonsd.mytests.External34mb"},
-       {"External46mb.apk", "com.appsonsd.mytests.External46mb"},
-       {"External58mb.apk", "com.appsonsd.mytests.External58mb"},
-       {"External65mb.apk", "com.appsonsd.mytests.External65mb"},
-       {"External72mb.apk", "com.appsonsd.mytests.External72mb"},
-       {"External79mb.apk", "com.appsonsd.mytests.External79mb"},
-       {"External86mb.apk", "com.appsonsd.mytests.External86mb"},
-       {"External93mb.apk", "com.appsonsd.mytests.External93mb"}};
+        {"External1mb.apk", "com.appsonsd.mytests.External1mb"},
+        {"External2mb.apk", "com.appsonsd.mytests.External2mb"},
+        {"External3mb.apk", "com.appsonsd.mytests.External3mb"},
+        {"External4mb.apk", "com.appsonsd.mytests.External4mb"},
+        {"External5mb.apk", "com.appsonsd.mytests.External5mb"},
+        {"External6mb.apk", "com.appsonsd.mytests.External6mb"},
+        {"External7mb.apk", "com.appsonsd.mytests.External7mb"},
+        {"External8mb.apk", "com.appsonsd.mytests.External8mb"},
+        {"External9mb.apk", "com.appsonsd.mytests.External9mb"},
+        {"External10mb.apk", "com.appsonsd.mytests.External10mb"},
+        {"External16mb.apk", "com.appsonsd.mytests.External16mb"},
+        {"External28mb.apk", "com.appsonsd.mytests.External28mb"},
+        {"External34mb.apk", "com.appsonsd.mytests.External34mb"},
+        {"External46mb.apk", "com.appsonsd.mytests.External46mb"},
+        {"External58mb.apk", "com.appsonsd.mytests.External58mb"},
+        {"External65mb.apk", "com.appsonsd.mytests.External65mb"},
+        {"External72mb.apk", "com.appsonsd.mytests.External72mb"},
+        {"External79mb.apk", "com.appsonsd.mytests.External79mb"},
+        {"External86mb.apk", "com.appsonsd.mytests.External86mb"},
+        {"External93mb.apk", "com.appsonsd.mytests.External93mb"}};
 
     // Various test files and their corresponding package names
-    @SuppressWarnings("unused")
-    private static final String AUTO_LOC_APK = "Auto241kb.apk";
-    @SuppressWarnings("unused")
-    private static final String AUTO_LOC_PKG = "com.appsonsd.mytests.Auto241kb";
-    @SuppressWarnings("unused")
-    private static final String INTERNAL_LOC_APK = "Internal781kb.apk";
-    @SuppressWarnings("unused")
-    private static final String INTERNAL_LOC_PKG = "com.appsonsd.mytests.Internal781kb";
     private static final String EXTERNAL_LOC_APK = "External931kb.apk";
     private static final String EXTERNAL_LOC_PKG = "com.appsonsd.mytests.External931kb";
-    @SuppressWarnings("unused")
-    private static final String NO_LOC_APK = "Internal751kb_EclairSDK.apk";
-    @SuppressWarnings("unused")
-    private static final String NO_LOC_PKG = "com.appsonsd.mytests.Internal751kb_EclairSDK";
+
     // Versioned test apps
     private static final String VERSIONED_APPS_FILENAME_PREFIX = "External455kb_v";
     private static final String VERSIONED_APPS_PKG = "com.appsonsd.mytests.External455kb";
     private static final int VERSIONED_APPS_START_VERSION = 1;  // inclusive
     private static final int VERSIONED_APPS_END_VERSION = 250;  // inclusive
+
     // Large number of app installs
     // @TODO: increase the max when we can install more apps
     private static final int MANY_APPS_START = 1;
@@ -96,29 +86,16 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
     private static final String MANY_APPS_PKG_PREFIX = "com.appsonsd.mytests.External49kb_";
     private static final String MANY_APPS_APK_PREFIX = "External49kb_";
 
-    @Option(name = "test-app-path", description = "host file system path to test apps",
-            importance = Importance.IF_UNSET)
-    private File mTestAppPath = null;
-
     @Option(name = "app-repository-path", description =
             "path to the app repository containing large apks", importance = Importance.IF_UNSET)
     private File mAppRepositoryPath = null;
 
-    /**
-     * Get the host file to the package manager device-based test apps dir
-     */
-    private File getTestAppPath() {
-        return mTestAppPath;
-    }
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-
         // setup the PackageManager host tests utilities class, and get various paths we'll need...
         mPMHostUtils = new PackageManagerHostTestUtils(getDevice());
         // ensure apk path has been set before test is run
-        assertNotNull("Missing --test-app-path option", getTestAppPath());
         assertNotNull("Missing --app-repository-path option", mAppRepositoryPath);
     }
 
@@ -129,15 +106,6 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      */
     private File getRepositoryTestAppFilePath(String fileDirectory, String fileName) {
         return FileUtil.getFileForPath(mAppRepositoryPath, fileDirectory, fileName);
-    }
-
-    /**
-     * Get the {@link File} for test app with given filename
-     * @param fileName the file name of the test app apk
-     * @return {@link File}
-     */
-    public File getTestAppFilePath(String fileName) {
-        return FileUtil.getFileForPath(getTestAppPath(), fileName);
     }
 
     /**

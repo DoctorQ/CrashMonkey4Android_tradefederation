@@ -124,22 +124,16 @@ public class PackageManagerHostTests extends DeviceTestCase {
     private static final String SHARED_PERMS_DIFF_KEY_PKG
             = "com.android.framework.externalsharedpermsdiffkeytestapp";
 
-    @Option(name = "test-app-path", description = "host file system path to test apps",
-            importance = Importance.IF_UNSET)
-    private File mTestAppPath = null;
-
-    /**
-     * Get the host file system path to the package manager device-based test apps
-     */
-    private File getTestAppPath() {
-        return mTestAppPath;
-    }
+    // TODO: consider fetching these files from build server instead.
+    @Option(name = "app-repository-path", description =
+            "path to the app repository containing large apks", importance = Importance.IF_UNSET)
+    private File mAppRepositoryPath = null;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         // ensure apk path has been set before test is run
-        assertNotNull(getTestAppPath());
+        assertNotNull("Missing --app-repository-path option", mAppRepositoryPath);
 
         // setup the PackageManager host tests utilities class, and get various paths we'll need...
         mPMHostUtils = new PackageManagerHostTestUtils(getDevice());
@@ -157,7 +151,7 @@ public class PackageManagerHostTests extends DeviceTestCase {
      * @return {@link String} of absolute file path
      */
     public File getTestAppFilePath(String fileName) {
-        return FileUtil.getFileForPath(getTestAppPath(), fileName);
+        return FileUtil.getFileForPath(mAppRepositoryPath, fileName);
     }
 
     /**
