@@ -59,6 +59,7 @@ public class SdkAvdPreparerTest extends TestCase {
         EasyMock.expect(mMockBuildInfo.getEmulatorToolPath()).andStubReturn(EMULATOR_TOOL);
         EasyMock.expect(mMockBuildInfo.getSdkDir()).andStubReturn(new File("sdk"));
         EasyMock.expect(mMockDevice.getIDevice()).andStubReturn(mMockIDevice);
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial");
     }
 
     /**
@@ -88,6 +89,11 @@ public class SdkAvdPreparerTest extends TestCase {
         EasyMock.expect(mMockDevice.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         mMockDeviceManager.launchEmulator(EasyMock.eq(mMockDevice), EasyMock.anyLong(),
                 EasyMock.eq(mMockRunUtil), (List<String>)EasyMock.anyObject());
+        // expect the commands to test emulator-adb connectivity
+        EasyMock.expect(mMockDevice.executeShellCommand((String) EasyMock.anyObject()))
+                .andReturn("").times(3);
+        mMockRunUtil.sleep(EasyMock.anyLong());
+        EasyMock.expectLastCall().times(3);
         // expect an avd name == target name
         EasyMock.expect(mMockIDevice.getAvdName()).andReturn("target");
 
@@ -108,6 +114,11 @@ public class SdkAvdPreparerTest extends TestCase {
         EasyMock.expect(mMockDevice.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
         mMockDeviceManager.launchEmulator(EasyMock.eq(mMockDevice), EasyMock.anyLong(),
                 EasyMock.eq(mMockRunUtil), (List<String>)EasyMock.anyObject());
+        // expect the commands to test emulator-adb connectivity
+        EasyMock.expect(mMockDevice.executeShellCommand((String) EasyMock.anyObject()))
+                .andReturn("").times(3);
+        mMockRunUtil.sleep(EasyMock.anyLong());
+        EasyMock.expectLastCall().times(3);
         // expect an avd name == target name
         EasyMock.expect(mMockIDevice.getAvdName()).andReturn("").times(2);
 

@@ -31,6 +31,6 @@ public class EmulatorSmokeTest extends DeviceTestCase {
     public void testEmulatorBoot() throws DeviceNotAvailableException {
         assertTrue(getDevice().getIDevice().isEmulator());
         // emulator should already be available at this point, but double check
-        getDevice().waitForDeviceAvailable(1*1000);
+        getDevice().waitForDeviceAvailable(5*1000);
     }
 }
