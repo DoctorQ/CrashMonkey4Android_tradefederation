@@ -177,6 +177,13 @@ public class TestRunResult {
     }
 
     /**
+     * Gets the number of complete tests in this run ie with status != incomplete.
+     */
+    public int getNumCompleteTests() {
+        return getNumTests() - getNumIncompleteTests();
+    }
+
+    /**
      * Gets the number of failed tests in this run.
      */
     public int getNumFailedTests() {

@@ -157,7 +157,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     }
 
     /**
-     * Gets the total number of tests for all runs.
+     * Gets the total number of complete tests for all runs.
      */
     public int getNumTotalTests() {
         return getNumFailedTests() + getNumErrorTests() + getNumPassedTests();
