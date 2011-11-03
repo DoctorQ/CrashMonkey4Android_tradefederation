@@ -27,6 +27,7 @@ import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
+import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
@@ -250,7 +251,7 @@ public class DeviceManager implements IDeviceManager {
      */
     private void addNullDevices() {
         for (int i = 0; i < mNumNullDevicesSupported; i++) {
-            mAvailableDeviceQueue.add(new NullDevice(String.format("null-device-%d", i)));
+            addAvailableDevice(new NullDevice(String.format("null-device-%d", i)));
         }
     }
 
@@ -261,7 +262,7 @@ public class DeviceManager implements IDeviceManager {
         // TODO currently this means 'additional emulators not already running'
         int port = 5554;
         for (int i = 0; i < mNumEmulatorSupported; i++) {
-            mAvailableDeviceQueue.add(new StubDevice(String.format("emulator-%d", port), true));
+            addAvailableDevice(new StubDevice(String.format("emulator-%d", port), true));
             port += 2;
         }
     }
@@ -270,7 +271,7 @@ public class DeviceManager implements IDeviceManager {
         Set<String> serials = getDevicesOnFastboot();
         if (serials != null) {
             for (String serial: serials) {
-                mAvailableDeviceQueue.add(new FastbootDevice(serial));
+                addAvailableDevice(new FastbootDevice(serial));
             }
         }
     }
@@ -290,8 +291,31 @@ public class DeviceManager implements IDeviceManager {
         return new DeviceStateMonitor(this, device, mFastbootEnabled);
     }
 
-    private void addAvailableDevice(IDevice device) {
-        mAvailableDeviceQueue.add(device);
+    private void addAvailableDevice(final IDevice device) {
+        IMatcher<IDevice> deviceSerialMatcher = new IMatcher<IDevice>() {
+            @Override
+            public boolean matches(IDevice element) {
+                return element.getSerialNumber().equals(device.getSerialNumber());
+            }
+
+        };
+        // add IDevice to available queue, replacing any existing IDevice with same serial
+        IDevice existingObject = mAvailableDeviceQueue.addUnique(deviceSerialMatcher, device);
+        if (existingObject != null) {
+            // TODO: reduce severity level for this log. Leaving high for now to understand
+            // circumstances where this can happen
+            CLog.w("Found existing device for available device %s", device.getSerialNumber());
+        }
+    }
+
+    /**
+     * Get the available device queue.
+     * <p/>
+     * Exposed for unit testing
+     * @return
+     */
+    ConditionPriorityBlockingQueue<IDevice> getAvailableDeviceQueue() {
+        return mAvailableDeviceQueue;
     }
 
     /**
