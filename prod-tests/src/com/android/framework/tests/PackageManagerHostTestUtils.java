@@ -365,6 +365,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public void uninstallApp(String pkgName) throws DeviceNotAvailableException {
         mDevice.uninstallPackage(pkgName);
+        waitForPackageManager();
         // make sure its not installed anymore
         assertFalse(doesPackageExist(pkgName));
     }
