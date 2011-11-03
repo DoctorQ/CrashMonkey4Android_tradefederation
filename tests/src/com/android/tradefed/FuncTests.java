@@ -40,7 +40,8 @@ public class FuncTests extends DeviceTestSuite {
         this.addTestSuite(DeviceSetupFuncTest.class);
         this.addTestSuite(FileDownloadCacheFuncTest.class);
         this.addTestSuite(FileUtilFuncTest.class);
-        this.addTestSuite(GTestFuncTest.class);
+        // TODO: temporarily remove from suite until we figure out how to install gtest data
+        //this.addTestSuite(GTestFuncTest.class);
         this.addTestSuite(InstrumentationTestFuncTest.class);
         this.addTestSuite(RunUtilFuncTest.class);
         this.addTestSuite(TestDeviceFuncTest.class);

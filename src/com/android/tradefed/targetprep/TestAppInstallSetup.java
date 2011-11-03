@@ -79,7 +79,12 @@ public class TestAppInstallSetup implements ITargetPreparer {
                     String.format("Could not find test app %s directory in extracted tests.zip",
                             testAppFile));
             }
-            device.installPackage(testAppFile, true);
+            String result = device.installPackage(testAppFile, true);
+            if (result != null) {
+                throw new TargetSetupError(
+                        String.format("Failed to install %s on %s. Reason: '%s'", testAppName,
+                                device.getSerialNumber(), result));
+            }
         }
     }
 }

@@ -527,10 +527,14 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      * Test that the recovery mechanism works in {@link TestDevice#getFileEntry(String)}
      */
     public void testGetFileEntry_recovery() throws Exception {
-        getDevice().rebootIntoBootloader();
-        // expect recovery to kick in, and reboot device back to adb so the call works
-        IFileEntry entry = getDevice().getFileEntry("/data");
-        assertNotNull(entry);
+        try {
+            getDevice().rebootIntoBootloader();
+            // expect recovery to kick in, and reboot device back to adb so the call works
+            IFileEntry entry = getDevice().getFileEntry("/data");
+            assertNotNull(entry);
+        } finally {
+            getDevice().reboot();
+        }
     }
 
     /**
