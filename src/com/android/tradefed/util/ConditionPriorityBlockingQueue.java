@@ -345,4 +345,22 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
             mLock.unlock();
         }
     }
+
+    /**
+     * Adds a item to this queue, replacing any existing object that matches given condition
+     *
+     * @param matcher the matcher to evaluate existing objects
+     * @param object the object to add
+     * @return the replaced object or <code>null</code> if none exist
+     */
+    public T addUnique(IMatcher<T> matcher, T object) {
+        mLock.lock();
+        try {
+            T removedObj = poll(matcher);
+            add(object);
+            return removedObj;
+        } finally {
+            mLock.unlock();
+        }
+    }
 }

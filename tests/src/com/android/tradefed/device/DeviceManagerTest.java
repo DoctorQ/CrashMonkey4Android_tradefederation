@@ -646,6 +646,25 @@ public class DeviceManagerTest extends TestCase {
 
     }
 
+    /**
+     * Test that receiving two 'deviceConnected' events for the same device serial doesn't lead to
+     * duplicate available device entries
+     */
+    public void testConnectWithoutDisconnect() {
+        setCheckAvailableDeviceExpectations(mMockIDevice);
+        IDevice mockDevice2 = EasyMock.createMock(IDevice.class);
+        setCheckAvailableDeviceExpectations(mockDevice2);
+        EasyMock.expect(mockDevice2.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
+        EasyMock.expect(mockDevice2.isEmulator()).andStubReturn(Boolean.FALSE);
+        replayMocks(mockDevice2);
+        DeviceManager manager = createDeviceManager(mMockIDevice);
+        assertEquals(1, manager.getAvailableDevices().size());
+        mDeviceListener.deviceConnected(mockDevice2);
+        assertEquals(1, manager.getAvailableDevices().size());
+        assertTrue(manager.getAvailableDeviceQueue().contains(mockDevice2));
+        assertFalse(manager.getAvailableDeviceQueue().contains(mMockIDevice));
+    }
+
     // TODO: add test for fastboot state changes
 
     /**
@@ -851,7 +870,11 @@ public class DeviceManagerTest extends TestCase {
      * for an online device
      */
     private void setCheckAvailableDeviceExpectations() {
-        EasyMock.expect(mMockIDevice.getState()).andReturn(DeviceState.ONLINE);
+        setCheckAvailableDeviceExpectations(mMockIDevice);
+    }
+
+    private void setCheckAvailableDeviceExpectations(IDevice iDevice) {
+        EasyMock.expect(iDevice.getState()).andReturn(DeviceState.ONLINE);
         EasyMock.expect(mMockMonitor.waitForDeviceShell(EasyMock.anyLong())).andReturn(
                 Boolean.TRUE);
         EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
