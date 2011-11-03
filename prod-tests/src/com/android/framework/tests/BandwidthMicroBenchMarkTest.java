@@ -96,6 +96,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+
         Assert.assertNotNull("Need a test server, specify it using --bandwidth-test-server",
                 mTestServer);
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
@@ -105,6 +106,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
             runner.addInstrumentationArg("ssid", mSsid);
         }
         runner.addInstrumentationArg("server", mTestServer);
+
         CollectingTestListener collectingListener = new CollectingTestListener();
         Assert.assertTrue(
                 mTestDevice.runInstrumentationTests(runner, collectingListener, listener));
@@ -132,10 +134,14 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         } else {
             CLog.w("Missing server data");
         }
-        // Calculate additional network sanity stats
+        // Calculate additional network sanity stats - pre-framework logic network stats
         BandwidthUtils bw = new BandwidthUtils(mTestDevice);
         Map<String, String> stats = bw.calculateStats();
         bandwidthTestMetrics.putAll(stats);
+
+        // Calculate event log network stats - post-framework logic network stats
+        Map<String, String> eventLogStats = fetchEventLogStats();
+        bandwidthTestMetrics.putAll(eventLogStats);
 
         // Post everything to the dashboard.
         reportMetrics(listener, mTestLabel, bandwidthTestMetrics);
@@ -338,6 +344,65 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         CLog.d("About to report metrics: %s", metrics);
         listener.testRunStarted(runName, 0);
         listener.testRunEnded(0, metrics);
+    }
+
+    /**
+     * Fetch the last stats from event log and calculate the differences.
+     * @throws DeviceNotAvailableException
+     */
+    private Map<String, String> fetchEventLogStats() throws DeviceNotAvailableException {
+        // issue a force update of stats
+        Map<String, String> eventLogStats = new HashMap<String, String>();
+        String res = mTestDevice.executeShellCommand("dumpsys netstats poll");
+        if (!res.contains("Forced poll")) {
+            CLog.w("Failed to force a poll on the device.");
+        }
+        // fetch events log
+        String log = mTestDevice.executeShellCommand("logcat -d -b events");
+        if (log != null) {
+            parseForLatestStats("netstats_wifi_sample", log, eventLogStats);
+            parseForLatestStats("netstats_mobile_sample", log, eventLogStats);
+            return eventLogStats;
+        }
+        return null;
+    }
+
+    /**
+     * Parse a log output for a given key and calculate the network stats.
+     * @param key {@link String} to search for in the log
+     * @param log obtained from adb logcat -b events
+     * @param stats Map to write the stats to
+     */
+    private void parseForLatestStats(String key, String log, Map<String, String> stats) {
+        String[] parts = log.split("\n");
+        for (int i = parts.length - 1; i > 0; i--) {
+            String str = parts[i];
+            if (str.contains(key)) {
+                int start = str.lastIndexOf("[");
+                int end = str.lastIndexOf("]");
+                String subStr = str.substring(start + 1, end);
+                String[] statsStrArray = subStr.split(",");
+                if (statsStrArray.length != 8) {
+                    CLog.e("Failed to parse for %s in log.", key);
+                    return;
+                }
+                float ifaceRb = Float.parseFloat(statsStrArray[0].trim());
+                float ifaceRp = Float.parseFloat(statsStrArray[1].trim());
+                float ifaceTb = Float.parseFloat(statsStrArray[2].trim());
+                float ifaceTp = Float.parseFloat(statsStrArray[3].trim());
+                float uidRb = Float.parseFloat(statsStrArray[4].trim());
+                float uidRp = Float.parseFloat(statsStrArray[5].trim());
+                float uidTb = Float.parseFloat(statsStrArray[6].trim());
+                float uidTp = Float.parseFloat(statsStrArray[7].trim());
+                BandwidthStats ifaceStats = new BandwidthStats(ifaceRb, ifaceRp, ifaceTb, ifaceTp);
+                BandwidthStats uidStats = new BandwidthStats(uidRb, uidRp, uidTb, uidTp);
+                BandwidthStats diffStats = ifaceStats.calculatePercentDifference(uidStats);
+                stats.putAll(ifaceStats.formatToStringMap(key + "_IFACE_"));
+                stats.putAll(uidStats.formatToStringMap(key + "_UID_"));
+                stats.putAll(diffStats.formatToStringMap(key + "_%_"));
+                return;
+            }
+        }
     }
 
     /**

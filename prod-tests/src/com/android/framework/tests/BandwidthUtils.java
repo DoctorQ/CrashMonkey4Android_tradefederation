@@ -36,41 +36,17 @@ public class BandwidthUtils {
     private static final String TX_BYTES = "tx_bytes";
     private static final String RX_PACKETS = "rx_packets";
     private static final String TX_PACKETS = "tx_packets";
-    private Map<String, Stat> mIfaceStats = new HashMap<String, Stat>();
-    private Map<String, Stat> mUidStats = new HashMap<String, Stat>();
-    private Map<String, Stat> mIfaceSnapStats = new HashMap<String, Stat>();
-    private Map<String, Stat> mIfaceDevStats = new HashMap<String, Stat>();
-    private Map<String, Stat> mStatsDiff = new HashMap<String, Stat>();
+    private Map<String, BandwidthStats> mIfaceStats = new HashMap<String, BandwidthStats>();
+    private Map<String, BandwidthStats> mUidStats = new HashMap<String, BandwidthStats>();
+    private Map<String, BandwidthStats> mIfaceSnapStats = new HashMap<String, BandwidthStats>();
+    private Map<String, BandwidthStats> mIfaceDevStats = new HashMap<String, BandwidthStats>();
+    private Map<String, BandwidthStats> mStatsDiff = new HashMap<String, BandwidthStats>();
     private Set<String> mIfaceKnown = new HashSet<String>();
     private Set<String> mIfaceActive = new HashSet<String>();
     ITestDevice mTestDevice = null;
 
     BandwidthUtils(ITestDevice device) {
         mTestDevice = device;
-    }
-
-    /**
-     * Simple container class used to store network stats.
-     */
-    class Stat {
-        private float mRxBytes = 0;
-        private float mRxPackets = 0;
-        private float mTxBytes = 0;
-        private float mTxPackets = 0;
-
-        /**
-         * Append stats to current record.
-         * @param rxBytes
-         * @param rxPackets
-         * @param txBytes
-         * @param txPackets
-         */
-        void record(float rxBytes, float rxPackets, float txBytes, float txPackets) {
-            mRxBytes += rxBytes;
-            mRxPackets += rxPackets;
-            mTxBytes += txBytes;
-            mTxPackets += txPackets;
-        }
     }
 
     /**
@@ -103,9 +79,10 @@ public class BandwidthUtils {
                 CLog.w("Missing %s data in iface stats", iface);
                 continue;
             }
-            Stat ifaceStat = mIfaceStats.get(iface);
-            Stat uidStat = mUidStats.get(iface);
-            computeStatError(iface, ifaceStat, uidStat);
+            BandwidthStats ifaceStat = mIfaceStats.get(iface);
+            BandwidthStats uidStat = mUidStats.get(iface);
+            BandwidthStats diffStat = ifaceStat.calculatePercentDifference(uidStat);
+            recordStat(mStatsDiff, iface, diffStat);
         }
     }
 
@@ -132,7 +109,7 @@ public class BandwidthUtils {
                 int tb = Integer.parseInt(parts[7]);
                 int tp = Integer.parseInt(parts[8]);
                 if ("0x0".equals(tag)) {
-                    recordStat(mUidStats, iface, rb, rp, tb, tp);
+                    recordStat(mUidStats, iface, new BandwidthStats(rb, rp, tb, tp));
                 }
             }
         } catch (IOException e) {
@@ -163,9 +140,9 @@ public class BandwidthUtils {
                 int rp = Integer.parseInt(parts[2]);
                 int tb = Integer.parseInt(parts[9]);
                 int tp = Integer.parseInt(parts[10]);
-                recordStat(mIfaceDevStats, iface, rb, rp, tb, tp);
+                recordStat(mIfaceDevStats, iface, new BandwidthStats(rb, rp, tb, tp));
                 if (mIfaceActive.contains(iface) || !mIfaceKnown.contains(iface)) {
-                    recordStat(mIfaceStats, iface, rb, rp, tb, tp);
+                    recordStat(mIfaceStats, iface, new BandwidthStats(rb, rp, tb, tp));
                 }
             }
         } catch (IOException e) {
@@ -211,7 +188,7 @@ public class BandwidthUtils {
             float tb = readFloatFromFile(mTestDevice, txBytesFile);
             float rp = readFloatFromFile(mTestDevice, rxPacketsFile);
             float tp = readFloatFromFile(mTestDevice, txPacketsFile);
-            recordStat(mIfaceStats, iface, rb, rp, tb, tp);
+            recordStat(mIfaceStats, iface, new BandwidthStats(rb, rp, tb, tp));
         }
     }
 
@@ -222,68 +199,34 @@ public class BandwidthUtils {
      * @param filter the iface that we want to filter on, if null we output everything.
      * @param totalResult the final result map
      */
-    private void addToStringMap(String label, Map<String, Stat> statMap, Set<String> filter,
-            Map<String, String> totalResult) {
-        for (Entry<String, Stat> entry : statMap.entrySet()) {
+    private void addToStringMap(String label, Map<String, BandwidthStats> statMap,
+            Set<String> filter, Map<String, String> totalResult) {
+        for (Entry<String, BandwidthStats> entry : statMap.entrySet()) {
 
             String iface = entry.getKey();
-            Stat stat = entry.getValue();
+            BandwidthStats stat = entry.getValue();
             if (filter != null && !filter.contains(iface)) {
                 continue;
             }
-            totalResult.put(iface + label + RX_BYTES, Float.toString(stat.mRxBytes));
-            totalResult.put(iface + label + RX_PACKETS, Float.toString(stat.mRxPackets));
-            totalResult.put(iface + label + TX_BYTES, Float.toString(stat.mTxBytes));
-            totalResult.put(iface + label + TX_PACKETS, Float.toString(stat.mTxPackets));
+            totalResult.putAll(stat.formatToStringMap(iface + label));
         }
-    }
-
-    /**
-     * Compute percent difference between a and b.
-     * @param a
-     * @param b
-     * @return % difference of a and b.
-     */
-    private float computePercentDifference(float a, float b) {
-        if (a == 0) {
-            CLog.d("Invalid value for a: %f", a);
-            return Float.MIN_VALUE;
-        }
-        return ( a - b) / a * 100;
-    }
-
-    /**
-     * Compute percent difference for a given iface and record it into the difference map.
-     * @param iface {@link String} label of the iface to compute
-     * @param a {@link Stat}
-     * @param b {@link Stat}
-     */
-    private void computeStatError(String iface, Stat a, Stat b) {
-        float rbDiff = computePercentDifference(a.mRxBytes, b.mRxBytes);
-        float rpDiff = computePercentDifference(a.mRxPackets, b.mRxPackets);
-        float tbDiff = computePercentDifference(a.mTxBytes, b.mTxBytes);
-        float tpDiff = computePercentDifference(a.mTxPackets, b.mTxPackets);
-        recordStat(mStatsDiff, iface, rbDiff, rpDiff, tbDiff, tpDiff);
     }
 
     /**
      * Record/Append a given stat to a given stat map
      * @param statsMap to record to
      * @param iface {@link String} label of the iface
-     * @param rxBytes
-     * @param rxPackets
-     * @param txBytes
-     * @param txPackets
+     * @param bwStats {@link BandwidthStats}
      */
-    private void recordStat(Map<String, Stat> statsMap, String iface, float rxBytes,
-            float rxPackets, float txBytes, float txPackets) {
-        Stat stat = null;
+    private void recordStat(Map<String, BandwidthStats> statsMap, String iface,
+            BandwidthStats bwStats) {
+        BandwidthStats stat = null;
         if (statsMap.containsKey(iface)) {
             stat = statsMap.get(iface);
         } else {
-            stat = new Stat();
+            stat = new BandwidthStats();
         }
-        stat.record(rxBytes, rxPackets, txBytes, txPackets);
+        stat.record(bwStats);
         statsMap.put(iface, stat);
     }
 
