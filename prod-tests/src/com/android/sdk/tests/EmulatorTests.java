@@ -73,9 +73,6 @@ public class EmulatorTests implements IRemoteTest, IBuildReceiver, IDeviceTest {
         Assert.assertNotNull("missing emulator", mDevice);
         Assert.assertTrue("device is not a emulator", mDevice.getIDevice().isEmulator());
 
-        // wait for the device to become available for 1 minute
-        mDevice.waitForDeviceAvailable( 60 * 1000 );
-
         CLog.i("Running Emulator Test Apps in sdk %s", mSdkBuild.getSdkDir().getAbsolutePath());
 
         // get the path to the test-apps

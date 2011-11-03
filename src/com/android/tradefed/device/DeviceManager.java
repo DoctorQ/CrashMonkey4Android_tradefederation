@@ -490,6 +490,7 @@ public class DeviceManager implements IDeviceManager {
             checkProcessDied(p);
             IManagedTestDevice managedDevice = (IManagedTestDevice)device;
             managedDevice.setEmulatorProcess(p);
+            managedDevice.startLogcat();
         } catch (IOException e) {
             // TODO: is this the most appropriate exception to throw?
             throw new DeviceNotAvailableException("Failed to start emulator process", e);

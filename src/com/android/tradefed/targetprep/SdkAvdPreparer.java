@@ -49,7 +49,7 @@ public class SdkAvdPreparer implements ITargetPreparer {
 
     @Option(name = "boot-time", description =
         "the maximum time in minutes to wait for emulator to boot.")
-    private long mMaxBootTime = 10;
+    private long mMaxBootTime = 5;
 
     @Option(name = "window", description = "launch emulator with a graphical window display.")
     private boolean mWindow = false;
@@ -228,12 +228,20 @@ public class SdkAvdPreparer implements ITargetPreparer {
             try {
                 mDeviceManager.launchEmulator(device, mMaxBootTime * 60 * 1000, mRunUtil,
                         emulatorArgs);
+                // hack alert! adb to emulator communication on first boot is notoriously flaky
+                // b/4644136
+                // send it a few adb commands to ensure the communication channel is stable
+                CLog.d("Testing adb to %s communication", device.getSerialNumber());
+                for (int j = 0; j < 3; j++) {
+                    device.executeShellCommand("pm list instrumentation");
+                    mRunUtil.sleep(2 * 1000);
+                }
+
                 // hurray - launched!
                 return;
             } catch (DeviceNotAvailableException e) {
                 CLog.w("Emulator for avd '%s' failed to launch on attempt %d of %d. Cause: %s",
                         avd, i, mLaunchAttempts, e);
-
             }
             try {
                 // ensure process has been killed
