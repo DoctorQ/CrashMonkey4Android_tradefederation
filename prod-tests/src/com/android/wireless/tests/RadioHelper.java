@@ -93,21 +93,6 @@ public class RadioHelper {
         mDevice.executeShellCommand("setprop dev.bootcomplete 0");
     }
 
-    public boolean waitForBootComplete()
-        throws DeviceNotAvailableException {
-        long deviceBootTime = 5 * 60 * 1000;
-        long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < deviceBootTime) {
-            String output = mDevice.executeShellCommand("getprop dev.bootcomplete");
-            output = output.replace('#', ' ').trim();
-            if (output.equals("1")) {
-                return true;
-            }
-            getRunUtil().sleep(5*1000);
-        }
-        return false;
-    }
-
     public boolean pingTest() throws DeviceNotAvailableException {
         String failString = "ping: unknown host";
         // assume the chance that all servers are down is very small

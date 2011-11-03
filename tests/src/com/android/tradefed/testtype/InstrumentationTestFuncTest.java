@@ -226,7 +226,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
             public void run() {
                 // wait for test run to begin
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(2000);
                     Runtime.getRuntime().exec(
                             String.format("adb -s %s shell stop", getDevice().getIDevice()
                                     .getSerialNumber()));
@@ -297,7 +297,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     /**
      * Test a run that hangs when collecting tests.
      * <p/>
-     * Expect a {@link DeviceUnresponsiveException} to be thrown
+     * Expect a run failure to be reported
      */
     public void testRun_rerunHang() throws Exception {
         Log.i(LOG_TAG, "testRun_rerunHang");
@@ -307,16 +307,8 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         mInstrumentationTest.setTestTimeout(1000);
         mInstrumentationTest.setCollectsTestsShellTimeout(2 * 1000);
         CollectingTestListener listener = new CollectingTestListener();
-        try {
-            mInstrumentationTest.run(listener);
-            fail("DeviceUnresponsiveException not thrown");
-        } catch (DeviceUnresponsiveException e) {
-            // expected
-        }
+        mInstrumentationTest.run(listener);
         assertEquals(0, listener.getNumTotalTests());
-        // TODO: consider changing InstrumentationTest to report this as a run failure
-        // also consider what to do for resume. If this run always times out on collection phase,
-        // it might be resumed indefinitely
-        assertFalse(listener.getCurrentRunResults().isRunComplete());
+        assertTrue(listener.getCurrentRunResults().isRunFailure());
     }
 }
