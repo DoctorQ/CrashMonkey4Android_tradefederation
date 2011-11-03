@@ -165,10 +165,11 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * {@inheritDoc}
      */
     public IDevice waitForDeviceAvailable(final long waitTime) {
-        // A device is currently considered "available" if and only if three events are true:
+        // A device is currently considered "available" if and only if four events are true:
         // 1. Device is online aka visible via DDMS/adb
-        // 2. Device's package manager is responsive
-        // 3. Device's external storage is mounted
+        // 2. Device has dev.bootcomplete flag set
+        // 3. Device's package manager is responsive
+        // 4. Device's external storage is mounted
         //
         // The current implementation waits for each event to occur in sequence.
         //
@@ -181,6 +182,10 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
             return null;
         }
         long elapsedTime = System.currentTimeMillis() - startTime;
+        if (!waitForBootComplete(waitTime - elapsedTime)) {
+            return null;
+        }
+        elapsedTime = System.currentTimeMillis() - startTime;
         if (!waitForPmResponsive(waitTime - elapsedTime)) {
             return null;
         }
@@ -199,6 +204,36 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     }
 
     /**
+     * Blocks until the device's boot complete flag is set
+     *
+     * @param waitTime the amount in ms to wait
+     */
+    private boolean waitForBootComplete(final long waitTime) {
+        CLog.i("Waiting %d ms for device %s boot complete", waitTime, getSerialNumber());
+        long startTime = System.currentTimeMillis();
+        final String cmd = "getprop dev.bootcomplete";
+        while ((System.currentTimeMillis() - startTime) < waitTime) {
+            try {
+                String bootFlag = getIDevice().getPropertySync("dev.bootcomplete");
+                if ("1".equals(bootFlag)) {
+                    return true;
+                }
+            } catch (IOException e) {
+                CLog.i("%s failed %s", cmd, e.getMessage());
+            } catch (TimeoutException e) {
+                CLog.i("%s failed: timeout", cmd);
+            } catch (AdbCommandRejectedException e) {
+                CLog.i("%s failed: %s", cmd, e.getMessage());
+            } catch (ShellCommandUnresponsiveException e) {
+                CLog.i("%s failed: %s", cmd, e.getMessage());
+            }
+            getRunUtil().sleep(CHECK_POLL_TIME);
+        }
+        CLog.w("Device %s did not boot after %d ms", getSerialNumber(), waitTime);
+        return false;
+    }
+
+    /**
      * Waits for the device package manager to be responsive.
      *
      * @param waitTime time in ms to wait before giving up
@@ -206,8 +241,8 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * <code>false</code> otherwise
      */
     private boolean waitForPmResponsive(final long waitTime) {
-        Log.i(LOG_TAG, String.format("Waiting %d ms for device %s package manager",
-                waitTime, getSerialNumber()));
+        CLog.i("Waiting %d ms for device %s package manager",
+                waitTime, getSerialNumber());
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() - startTime < waitTime) {
             final CollectingOutputReceiver receiver = new CollectingOutputReceiver();
