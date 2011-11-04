@@ -354,14 +354,7 @@ public class Console extends Thread {
                     @Override
                     public void run() {
                         IDeviceManager manager = DeviceManager.getInstance();
-                        Collection<String> devices = null;
-
-                        devices = manager.getAvailableDevices();
-                        printLine(String.format("Available devices:   %s", devices));
-                        devices = manager.getUnavailableDevices();
-                        printLine(String.format("Unavailable devices: %s", devices));
-                        devices = manager.getAllocatedDevices();
-                        printLine(String.format("Allocated devices:   %s", devices));
+                        manager.displayDevicesInfo(mTerminal.writer());
                     }
                 }, LIST_PATTERN, "d(?:evices)?");
         trie.put(new Runnable() {

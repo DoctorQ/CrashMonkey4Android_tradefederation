@@ -21,7 +21,6 @@ import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 

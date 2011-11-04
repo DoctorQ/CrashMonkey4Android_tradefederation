@@ -19,6 +19,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AndroidDebugBridge;
 import com.android.tradefed.util.IRunUtil;
 
+import java.io.PrintWriter;
 import java.util.Collection;
 import java.util.List;
 
@@ -206,6 +207,14 @@ public interface IDeviceManager {
      * @return a {@link Collection} of device serials
      */
     public Collection<String> getUnavailableDevices();
+
+    /**
+     * Output a user-friendly description containing list of known devices, their state, and
+     * values for commonly used {@link IDeviceSelection} options.
+     *
+     * @param printWriter the {@link PrintWriter} to output the description to
+     */
+    public void displayDevicesInfo(PrintWriter printWriter);
 
     /**
      * Informs the manager that a listener is interested in fastboot state changes.

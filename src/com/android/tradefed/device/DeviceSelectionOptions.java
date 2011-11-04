@@ -15,10 +15,15 @@
  */
 package com.android.tradefed.device;
 
+import com.android.ddmlib.AdbCommandRejectedException;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.log.LogUtil.CLog;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -57,6 +62,11 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     @Option(name = "null-device", shortName = 'n', description =
         "do not allocate a device for this test.")
     private boolean mNullDeviceRequested = false;
+
+    @Option(name = "min-battery", description =
+        "only run this test on a device whose battery level is greater than given amount. " +
+        "Scale: 0-100")
+    private Integer mMinBattery = null;
 
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.
     private boolean mFetchedEnvVariable = false;
@@ -162,6 +172,20 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     }
 
     /**
+     * Sets the minimum battery level
+     */
+    public void setMinBatteryLevel(Integer minBattery) {
+        mMinBattery = minBattery;
+    }
+
+    /**
+     * Gets the requested minimum battery level
+     */
+    public Integer getMinBatteryLevel() {
+        return mMinBattery;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -241,6 +265,12 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         if (nullDeviceRequested() != (device instanceof NullDevice)) {
             return false;
         }
+        if (mMinBattery != null) {
+            Integer deviceBattery = getBatteryLevel(device);
+            if (deviceBattery == null || deviceBattery < mMinBattery) {
+                return false;
+            }
+        }
 
         return true;
     }
@@ -273,12 +303,34 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         return splitProducts;
     }
 
-    private String getDeviceProductType(IDevice device) {
+    @Override
+    public String getDeviceProductType(IDevice device) {
         // FIXME: merge this into the getProperties match
         return device.getProperty("ro.hardware");
     }
 
-    private String getDeviceProductVariant(IDevice device) {
+    @Override
+    public String getDeviceProductVariant(IDevice device) {
         return device.getProperty("ro.product.device");
+    }
+
+    @Override
+    public Integer getBatteryLevel(IDevice device) {
+        try {
+            return device.getBatteryLevel();
+        } catch (TimeoutException e) {
+            handleBatteryException(device, e);
+        } catch (AdbCommandRejectedException e) {
+            handleBatteryException(device, e);
+        } catch (IOException e) {
+            handleBatteryException(device, e);
+        } catch (ShellCommandUnresponsiveException e) {
+            handleBatteryException(device, e);
+        }
+        return null;
+    }
+
+    private void handleBatteryException(IDevice device, Exception e) {
+        CLog.w("Failed to query battery level for %s: %s", device.getSerialNumber(), e.toString());
     }
 }
