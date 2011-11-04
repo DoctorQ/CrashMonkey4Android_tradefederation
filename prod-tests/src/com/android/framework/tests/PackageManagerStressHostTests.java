@@ -16,7 +16,6 @@
 
 package com.android.framework.tests;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.log.LogUtil.CLog;
@@ -30,7 +29,6 @@ import java.io.File;
  */
 public class PackageManagerStressHostTests extends DeviceTestCase {
 
-    private static final String LOG_TAG = "PackageManagerStressHostTests";
     private PackageManagerHostTestUtils mPMHostUtils = null;
 
     // Path to the app repository and various subdirectories of it
@@ -114,19 +112,14 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testUpdateAppManyTimesOnSD() throws Exception {
-        Log.i(LOG_TAG, "Test updating an app on SD numerous times");
-
+        CLog.i("Test updating an app on SD numerous times");
         // cleanup test app just in case it already exists
         mPMHostUtils.uninstallApp(VERSIONED_APPS_PKG);
-        // grep for package to make sure its not installed
-        assertFalse(mPMHostUtils.doesPackageExist(VERSIONED_APPS_PKG));
-
         try {
             for (int i = VERSIONED_APPS_START_VERSION; i <= VERSIONED_APPS_END_VERSION; ++i) {
                 String currentApkName = String.format("%s%d.apk",
                         VERSIONED_APPS_FILENAME_PREFIX, i);
-
-                Log.i(LOG_TAG, "Installing app " + currentApkName);
+                CLog.i("Installing app " + currentApkName);
                 mPMHostUtils.installFile(getRepositoryTestAppFilePath(VERSIONED_APPS_DIRECTORY_NAME,
                         currentApkName), true);
                 mPMHostUtils.waitForPackageManager();
@@ -137,8 +130,6 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         finally {
             // cleanup test app
             mPMHostUtils.uninstallApp(VERSIONED_APPS_PKG);
-            // grep for package to make sure its not installed
-            assertFalse(mPMHostUtils.doesPackageExist(VERSIONED_APPS_PKG));
         }
     }
 
@@ -149,16 +140,11 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testUninstallReinstallAppOnSDManyTimes() throws Exception {
-        Log.i(LOG_TAG, "Test updating an app on the SD card stays on the SD card");
-
+        CLog.i("Test updating an app on the SD card stays on the SD card");
         // cleanup test app just in case it was already exists
         mPMHostUtils.uninstallApp(EXTERNAL_LOC_PKG);
-        // grep for package to make sure its not installed
-        assertFalse(mPMHostUtils.doesPackageExist(EXTERNAL_LOC_PKG));
-
-        for (int i = 0; i <= 500; ++i) {
-            CLog.i(LOG_TAG, "Installing app (%d)", i);
-
+        for (int i = 0; i < 500; ++i) {
+            CLog.i("Installing app %s (%d)", EXTERNAL_LOC_PKG, i);
             try {
                 // install the app
                 mPMHostUtils.installFile(getRepositoryTestAppFilePath(MISC_APPS_DIRECTORY_NAME,
@@ -169,11 +155,8 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
             }
             finally {
                 // now uninstall the app
-                Log.i(LOG_TAG, "Uninstalling app");
+                CLog.i("Uninstalling app %s (%d)", EXTERNAL_LOC_PKG, i);
                 mPMHostUtils.uninstallApp(EXTERNAL_LOC_PKG);
-                // TODO: is this needed
-                mPMHostUtils.waitForPackageManager();
-                assertFalse(mPMHostUtils.doesPackageExist(EXTERNAL_LOC_PKG));
             }
         }
     }
@@ -184,20 +167,15 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testInstallManyLargeAppsOnSD() throws Exception {
-        Log.i(LOG_TAG, "Test installing 20 large apps onto the sd card");
-
+        CLog.i("Test installing 20 large apps onto the sd card");
         try {
             // Install all the large apps
-            for (int i=0; i < LARGE_APPS.length; ++i) {
+            for (int i = 0; i < LARGE_APPS.length; ++i) {
                 String apkName = LARGE_APPS[i][APK.FILENAME.ordinal()];
                 String pkgName = LARGE_APPS[i][APK.PACKAGENAME.ordinal()];
-
                 // cleanup test app just in case it already exists
                 mPMHostUtils.uninstallApp(pkgName);
-                // grep for package to make sure its not installed
-                assertFalse(mPMHostUtils.doesPackageExist(pkgName));
-
-                Log.i(LOG_TAG, "Installing app " + apkName);
+                CLog.i("Installing app " + apkName);
                 // install the app
                 mPMHostUtils.installFile(getRepositoryTestAppFilePath(LARGE_APPS_DIRECTORY_NAME,
                         apkName), false);
@@ -208,15 +186,12 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         }
         finally {
             // Cleanup - ensure we uninstall all large apps if they were installed
-            for (int i=0; i < LARGE_APPS.length; ++i) {
+            for (int i = 0; i < LARGE_APPS.length; ++i) {
                 String apkName = LARGE_APPS[i][APK.FILENAME.ordinal()];
                 String pkgName = LARGE_APPS[i][APK.PACKAGENAME.ordinal()];
-
-                Log.i(LOG_TAG, "Uninstalling app " + apkName);
+                CLog.i("Uninstalling app " + apkName);
                 // cleanup test app just in case it was accidently installed
                 mPMHostUtils.uninstallApp(pkgName);
-                // grep for package to make sure its not installed anymore
-                assertFalse(mPMHostUtils.doesPackageExist(pkgName));
                 assertFalse(mPMHostUtils.doesAppExistOnSDCard(pkgName));
             }
         }
@@ -228,19 +203,14 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testInstallManyAppsOnSD() throws Exception {
-        Log.i(LOG_TAG, "Test installing 500 small apps onto SD");
-
+        CLog.i("Test installing 500 small apps onto SD");
         try {
             for (int i = MANY_APPS_START; i <= MANY_APPS_END; ++i) {
                 String currentPkgName = String.format("%s%d", MANY_APPS_PKG_PREFIX, i);
-
                 // cleanup test app just in case it already exists
                 mPMHostUtils.uninstallApp(currentPkgName);
-                // grep for package to make sure its not installed
-                assertFalse(mPMHostUtils.doesPackageExist(currentPkgName));
-
                 String currentApkName = String.format("%s%d.apk", MANY_APPS_APK_PREFIX, i);
-                Log.i(LOG_TAG, "Installing app " + currentApkName);
+                CLog.i("Installing app " + currentApkName);
                 mPMHostUtils.installFile(getRepositoryTestAppFilePath(MANY_APPS_DIRECTORY_NAME,
                         currentApkName), true);
                 mPMHostUtils.waitForPackageManager();
@@ -251,11 +221,8 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         finally {
             for (int i = MANY_APPS_START; i <= MANY_APPS_END; ++i) {
                 String currentPkgName = String.format("%s%d", MANY_APPS_PKG_PREFIX, i);
-
                 // cleanup test app
                 mPMHostUtils.uninstallApp(currentPkgName);
-                // grep for package to make sure its not installed
-                assertFalse(mPMHostUtils.doesPackageExist(currentPkgName));
             }
         }
     }
