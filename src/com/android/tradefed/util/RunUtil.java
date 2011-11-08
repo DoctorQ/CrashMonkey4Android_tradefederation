@@ -16,30 +16,30 @@
 
 package com.android.tradefed.util;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * A collection of helper methods for executing operations.
  */
 public class RunUtil implements IRunUtil {
 
-    private static final String LOG_TAG = "RunUtil";
     private static final int POLL_TIME_INCREASE_FACTOR = 4;
     private static IRunUtil sDefaultInstance = null;
-    private final ProcessBuilder mProcessBuilder;
+    private File mWorkingDir = null;
+    private Map<String, String> mEnvVariables = new HashMap<String, String>();
 
     /**
      * Create a new {@link RunUtil} object to use.
      */
     public RunUtil() {
-        mProcessBuilder = new ProcessBuilder();
     }
 
     /**
@@ -52,7 +52,7 @@ public class RunUtil implements IRunUtil {
      */
     public static IRunUtil getDefault() {
         if (sDefaultInstance == null) {
-            sDefaultInstance  = new RunUtil();
+            sDefaultInstance = new RunUtil();
         }
         return sDefaultInstance;
     }
@@ -61,16 +61,16 @@ public class RunUtil implements IRunUtil {
      * {@inheritDoc}
      */
     @Override
-    public void setWorkingDir(File dir) {
-        mProcessBuilder.directory(dir);
+    public synchronized void setWorkingDir(File dir) {
+        mWorkingDir = dir;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setEnvVariable(String name, String value) {
-        mProcessBuilder.environment().put(name, value);
+    public synchronized void setEnvVariable(String name, String value) {
+        mEnvVariables.put(name, value);
     }
 
     /**
@@ -79,10 +79,22 @@ public class RunUtil implements IRunUtil {
     @Override
     public CommandResult runTimedCmd(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null, command);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null,
+                createProcessBuilder(command));
         CommandStatus status = runTimed(timeout, osRunnable, true);
         result.setStatus(status);
         return result;
+    }
+
+    private synchronized ProcessBuilder createProcessBuilder(String... command) {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (mWorkingDir != null) {
+            processBuilder.directory(mWorkingDir);
+        }
+        if (!mEnvVariables.isEmpty()) {
+            processBuilder.environment().putAll(mEnvVariables);
+        }
+        return processBuilder.command(command);
     }
 
     /**
@@ -92,7 +104,8 @@ public class RunUtil implements IRunUtil {
     public CommandResult runTimedCmdWithInput(final long timeout, String input,
             final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, input, command);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, input,
+                createProcessBuilder(command));
         CommandStatus status = runTimed(timeout, osRunnable, true);
         result.setStatus(status);
         return result;
@@ -104,7 +117,8 @@ public class RunUtil implements IRunUtil {
     @Override
     public CommandResult runTimedCmdSilently(final long timeout, final String... command) {
         final CommandResult result = new CommandResult();
-        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null, command);
+        IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, null,
+                createProcessBuilder(command));
         CommandStatus status = runTimed(timeout, osRunnable, false);
         result.setStatus(status);
         return result;
@@ -117,7 +131,7 @@ public class RunUtil implements IRunUtil {
     public Process runCmdInBackground(final String... command) throws IOException  {
         final String fullCmd = Arrays.toString(command);
         CLog.v("Running %s", fullCmd);
-        return mProcessBuilder.command(command).start();
+        return createProcessBuilder(command).start();
     }
 
     /**
@@ -126,7 +140,7 @@ public class RunUtil implements IRunUtil {
     @Override
     public Process runCmdInBackground(final List<String> command) throws IOException  {
         CLog.v("Running %s", command);
-        return mProcessBuilder.command(command).start();
+        return createProcessBuilder((String[])command.toArray()).start();
     }
 
     /**
@@ -270,22 +284,22 @@ public class RunUtil implements IRunUtil {
     }
 
     private class RunnableResult implements IRunUtil.IRunnableResult {
-        private final String[] mCommand;
+        private final ProcessBuilder mProcessBuilder;
         private final CommandResult mCommandResult;
         private final String mInput;
         private Process mProcess = null;
 
-        RunnableResult(final CommandResult result, final String input, final String... command) {
-            mCommand = command;
+        RunnableResult(final CommandResult result, final String input,
+                final ProcessBuilder processBuilder) {
+            mProcessBuilder = processBuilder;
             mInput = input;
             mCommandResult = result;
         }
 
         @Override
         public boolean run() throws Exception {
-            final String fullCmd = Arrays.toString(mCommand);
-            Log.d(LOG_TAG, String.format("Running %s", fullCmd));
-            mProcess = mProcessBuilder.command(mCommand).start();
+            CLog.d("Running %s", mProcessBuilder.command());
+            mProcess = mProcessBuilder.start();
             if (mInput != null) {
                 BufferedOutputStream processStdin = new BufferedOutputStream(
                         mProcess.getOutputStream());
@@ -306,7 +320,7 @@ public class RunUtil implements IRunUtil {
             if (rc == 0) {
                 return true;
             } else {
-                Log.i(LOG_TAG, String.format("%s command failed. return code %d", fullCmd, rc));
+                CLog.i("%s command failed. return code %d", mProcessBuilder.command(), rc);
             }
             return false;
         }
