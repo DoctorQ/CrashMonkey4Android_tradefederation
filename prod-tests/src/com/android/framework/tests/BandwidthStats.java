@@ -64,7 +64,7 @@ public class BandwidthStats {
         float rxBytesDiff = computePercentDifference(this.mRxBytes, bwStats.getRxBytes());
         float rxPacketsDiff = computePercentDifference(this.mRxPackets, bwStats.getRxPackets());
         float txBytesDiff = computePercentDifference(this.mTxBytes, bwStats.getTxBytes());
-        float txPacketsDiff = computePercentDifference(this.mTxBytes, bwStats.getTxPackets());
+        float txPacketsDiff = computePercentDifference(this.mTxPackets, bwStats.getTxPackets());
         return new BandwidthStats(rxBytesDiff, rxPacketsDiff, txBytesDiff, txPacketsDiff);
     }
 
