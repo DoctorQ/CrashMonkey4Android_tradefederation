@@ -347,6 +347,27 @@ public class DeviceManager implements IDeviceManager {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice forceAllocateDevice(String serial) {
+        checkInit();
+        if (mAllocatedDeviceMap.containsKey(serial)) {
+            CLog.w("Device %s is already allocated", serial);
+            return null;
+        }
+        // first try to allocate that device as normal
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.addSerial(serial);
+        IDevice allocatedDevice = pollAvailableDevice(1, options);
+        if (allocatedDevice == null) {
+            // not there? allocate a stub device
+            allocatedDevice = new StubDevice(serial, false);
+        }
+        return createAllocatedDevice(allocatedDevice);
+    }
+
+    /**
      * Retrieves and removes a IDevice from the available device queue, waiting indefinitely if
      * necessary until an IDevice becomes available.
      *

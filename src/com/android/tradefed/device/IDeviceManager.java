@@ -99,6 +99,16 @@ public interface IDeviceManager {
     public ITestDevice allocateDevice(long timeout, IDeviceSelection options);
 
     /**
+     * Rudely allocate a device, even if its not currently available.
+     * <p/>
+     * Will have no effect if device is already allocated.
+     *
+     * @param serial the device serial to allocate
+     * @return the {@link ITestDevice}, or <code>null</code> if it could not be allocated
+     */
+    public ITestDevice forceAllocateDevice(String serial);
+
+    /**
      * Return a device to the pool
      * <p/>
      * Attempts to return a device that hasn't been previously allocated will be ignored.
@@ -233,4 +243,5 @@ public interface IDeviceManager {
      * @param listener
      */
     public void removeFastbootListener(IFastbootListener listener);
+
 }

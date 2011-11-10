@@ -53,6 +53,19 @@ public interface ICommandScheduler {
     public boolean addCommand(String[] args, ICommandListener listener);
 
     /**
+     * An alternate {@link #addCommand(String[], ICommandListener)} that accepts an initial total
+     * execution time for the command.
+     * <p/>
+     * Useful when transitioning pre-existing commands from another tradefed process
+     *
+     * @param args the config arguments.
+     * @param listener the {@link ICommandListener}
+     * @param totalExecTime the accumulated elapsed execution time of the command
+     * @return <code>true</code> if command was added successfully
+     */
+    public boolean addCommand(String[] args, ICommandListener listener, long totalExecTime);
+
+    /**
      * Attempt to gracefully shutdown the command scheduler.
      * <p/>
      * Clears commands waiting to be tested, and requests that all invocations in progress
@@ -62,6 +75,17 @@ public interface ICommandScheduler {
      * to complete before exiting completely.
      */
     public void shutdown();
+
+    /**
+     * Initiates a {@link #shutdown()} and handover to another tradefed process on this same host.
+     * <p/>
+     * The scheduler will inform the remote tradefed process listening on that port of freed devices
+     * as they become available.
+     *
+     * @return <code>true</code> if handover initiation was successful, <code>false</code>
+     * otherwise
+     */
+    public boolean handoverShutdown(int handoverPort);
 
     /**
      * Attempt to forcefully shutdown the command scheduler.
@@ -112,4 +136,19 @@ public interface ICommandScheduler {
      * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
      */
     public Collection<String> listCommands() throws UnsupportedOperationException;
+
+    /**
+     * Starts a socket to listen to remote commands.
+     * <p/>
+     * Used to handle handover communication. @see {@link #handoverShutdown(int)}.
+     *
+     * @return the TCP port of the socket or -1 if it failed to start.
+     */
+    public int startRemoteManager();
+
+    /**
+     * Cancels the currently running remote manager.
+     */
+    public void stopRemoteManager();
+
 }
