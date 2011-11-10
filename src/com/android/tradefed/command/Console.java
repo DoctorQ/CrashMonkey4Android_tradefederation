@@ -27,10 +27,14 @@ import com.android.tradefed.util.QuotationAwareTokenizer;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.RunUtil;
 
+import jline.ConsoleReader;
+
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -81,7 +85,7 @@ public class Console extends Thread {
      */
 
     protected ICommandScheduler mScheduler;
-    protected java.io.Console mTerminal;
+    protected ConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
     private boolean mShouldExit = false;
     private String[] mMainArgs = new String[] {};
@@ -154,7 +158,12 @@ public class Console extends Thread {
     Console(ICommandScheduler scheduler) {
         super();
         mScheduler = scheduler;
-        mTerminal = System.console();
+        try {
+            mConsoleReader = new ConsoleReader();
+        } catch (IOException e) {
+            System.err.println("Unable to initialize ConsoleReader: " + e.getMessage());
+            mConsoleReader = null;
+        }
 
         List<String> genericHelp = new LinkedList<String>();
         Map<String, String> commandHelp = new LinkedHashMap<String, String>();
@@ -200,7 +209,7 @@ public class Console extends Thread {
         final ArgRunnable<CaptureList> genericHelpRunnable = new ArgRunnable<CaptureList>() {
             @Override
             public void run(CaptureList args) {
-                mTerminal.printf(genHelpString);
+                printLine(genHelpString);
             }
         };
         trie.put(genericHelpRunnable, helpPattern);
@@ -215,7 +224,7 @@ public class Console extends Thread {
             trie.put(new Runnable() {
                     @Override
                     public void run() {
-                        mTerminal.printf(helpText);
+                        printLine(helpText);
                     }
                 }, helpPattern, key);
 
@@ -227,7 +236,7 @@ public class Console extends Thread {
         trie.put(new Runnable() {
                 @Override
                 public void run() {
-                    mTerminal.printf(allHelpText);
+                    printLine(allHelpText);
                 }
             }, helpPattern, "all");
 
@@ -354,7 +363,7 @@ public class Console extends Thread {
                     @Override
                     public void run() {
                         IDeviceManager manager = DeviceManager.getInstance();
-                        manager.displayDevicesInfo(mTerminal.writer());
+                        manager.displayDevicesInfo(new PrintWriter(System.out));
                     }
                 }, LIST_PATTERN, "d(?:evices)?");
         trie.put(new Runnable() {
@@ -521,23 +530,27 @@ public class Console extends Thread {
     }
 
     /**
-     * Sets the terminal instance to use
+     * Sets the ConsoleReader instance to use
      * <p/>
      * Exposed for unit testing
      */
-    void setTerminal(java.io.Console terminal) {
-        mTerminal = terminal;
+    void setConsoleReader(ConsoleReader reader) {
+        mConsoleReader = reader;
     }
 
     /**
      * Get input from the console
      *
-     * @return A {@link String} containing the input to parse and run
+     * @return A {@link String} containing the input to parse and run.  Will return {@code null} if
+     *         console is not available or user entered EOF ({@code ^D}).
      */
     private String getConsoleInput() throws IOException {
-        String line = mTerminal.readLine(getConsolePrompt());
-
-        return line;
+        if (mConsoleReader == null) {
+            // non-interactive mode
+            return null;
+        } else {
+            return mConsoleReader.readLine(getConsolePrompt());
+        }
     }
 
     /**
@@ -552,7 +565,18 @@ public class Console extends Thread {
      * @param output
      */
     protected void printLine(String output) {
-        mTerminal.printf("%s%s", output, LINE_SEPARATOR);
+        if (mConsoleReader != null) {
+            try {
+                mConsoleReader.printString(output);
+                mConsoleReader.printNewline();
+            } catch (IOException e) {
+                // not guaranteed to work, but worth a try
+                System.err.println("Console failed to print a message to stdout: "
+                        + e.getMessage());
+            }
+        } else {
+            System.out.println(output);
+        }
     }
 
     /**
@@ -579,9 +603,22 @@ public class Console extends Thread {
     @Override
     @SuppressWarnings("unchecked")
     public void run() {
-        List<String> arrrgs = new LinkedList<String>(Arrays.asList(mMainArgs));
+        List<String> arrrgs = Arrays.asList(mMainArgs);
 
         try {
+            // Check System.console() since jline doesn't seem to consistently know whether or not
+            // the console is functional.
+            if (System.console() == null) {
+                mConsoleReader = null;
+                if (arrrgs.isEmpty()) {
+                    printLine("No commands for non-interactive mode; exiting.");
+                    return;
+                } else {
+                    printLine("Running indefinitely in non-interactive mode.");
+                    mShouldExit = true;
+                }
+            }
+
             mScheduler.start();
 
             // Notify the main thread that the scheduler is started, and will hold the JVM open.
@@ -592,20 +629,13 @@ public class Console extends Thread {
                 notify();
             }
 
-            if (mTerminal == null) {
-                // If we're running in non-interactive mode, just wait indefinitely for the
-                // scheduler to shut down
-                printLine("Running indefinitely in non-interactive mode.");
-                return;
-            }
-
             String input = "";
             CaptureList groups = new CaptureList();
             String[] tokens;
 
             // Note: since Console is a daemon thread, the JVM may exit without us actually leaving
             // this read loop.  This is by design.
-            while (!mShouldExit) {
+            do {
                 if (arrrgs.isEmpty()) {
                     input = getConsoleInput();
 
@@ -632,7 +662,7 @@ public class Console extends Thread {
                     printLine(String.format("Using commandline arguments as starting command: %s",
                             arrrgs));
                     tokens = arrrgs.toArray(new String[0]);
-                    arrrgs.clear();
+                    arrrgs = Collections.emptyList();
                 }
 
                 // TODO: think about having the modules themselves advertise their management
@@ -646,7 +676,7 @@ public class Console extends Thread {
                 }
 
                 RunUtil.getDefault().sleep(100);
-            }
+            } while (!mShouldExit);
         } catch (Exception e) {
             printLine("Console received an unexpected exception (shown below); shutting down TF.");
             e.printStackTrace();
