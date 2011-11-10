@@ -31,13 +31,17 @@ import com.android.tradefed.util.ConditionPriorityBlockingQueue.IMatcher;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
+import com.android.tradefed.util.TableFormatter;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -760,7 +764,6 @@ public class DeviceManager implements IDeviceManager {
             }
         }
         return availableDeviceSerials;
-
     }
 
     /**
@@ -781,6 +784,73 @@ public class DeviceManager implements IDeviceManager {
             }
         }
         return unavailableSerials;
+    }
+
+    @Override
+    public void displayDevicesInfo(PrintWriter stream) {
+        Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
+        ArrayList<List<String>> displayRows = new ArrayList<List<String>>();
+        displayRows.add(Arrays.asList("Serial", "State", "Product", "Variant", "Build",
+                "Battery"));
+        synchronized (this) {
+            checkInit();
+            Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
+            Collections.addAll(visibleDeviceSet, mAdbBridge.getDevices());
+
+            for (ITestDevice device : mAllocatedDeviceMap.values()) {
+                deviceMap.put(device.getIDevice(), "Allocated");
+                visibleDeviceSet.remove(device.getIDevice());
+            }
+
+            for (IDevice device : mAvailableDeviceQueue) {
+                // don't add placeholder devices to available devices display
+                if (!(device instanceof StubDevice)) {
+                    deviceMap.put(device, "Available");
+                    visibleDeviceSet.remove(device);
+                }
+            }
+
+            for (IDevice device : visibleDeviceSet) {
+                deviceMap.put(device, "Unavailable");
+            }
+        }
+        IDeviceSelection selector = getDeviceSelectionOptions();
+        addDevicesInfo(selector, displayRows, deviceMap);
+        new TableFormatter().displayTable(displayRows, stream);
+    }
+
+    /**
+     * Get the {@link IDeviceSelection} to use to display device info
+     * <p/>
+     * Exposed for unit testing.
+     */
+    IDeviceSelection getDeviceSelectionOptions() {
+        return new DeviceSelectionOptions();
+    }
+
+    private void addDevicesInfo(IDeviceSelection selector, List<List<String>> displayRows,
+            Map<IDevice, String> deviceStateMap) {
+        for (Map.Entry<IDevice, String> deviceEntry : deviceStateMap.entrySet()) {
+            IDevice device = deviceEntry.getKey();
+            String deviceState = deviceEntry.getValue();
+            displayRows.add(Arrays.asList(
+                    device.getSerialNumber(),
+                    deviceState,
+                    getDisplay(selector.getDeviceProductType(device)),
+                    getDisplay(selector.getDeviceProductVariant(device)),
+                    getDisplay(device.getProperty("ro.build.id")),
+                    getDisplay(selector.getBatteryLevel(device)))
+            );
+        }
+    }
+
+    /**
+     * Gets a displayable string for given object
+     * @param o
+     * @return
+     */
+    private String getDisplay(Object o) {
+        return o == null ? "unknown" : o.toString();
     }
 
     /**

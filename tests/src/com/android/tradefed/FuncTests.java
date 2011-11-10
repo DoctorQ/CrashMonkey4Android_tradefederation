@@ -20,7 +20,6 @@ import com.android.tradefed.command.CommandSchedulerFuncTest;
 import com.android.tradefed.device.TestDeviceFuncTest;
 import com.android.tradefed.targetprep.DeviceSetupFuncTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
-import com.android.tradefed.testtype.GTestFuncTest;
 import com.android.tradefed.testtype.InstrumentationTestFuncTest;
 import com.android.tradefed.util.FileUtilFuncTest;
 import com.android.tradefed.util.RunUtilFuncTest;

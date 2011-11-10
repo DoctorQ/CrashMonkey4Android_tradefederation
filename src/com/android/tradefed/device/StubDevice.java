@@ -348,4 +348,24 @@ class StubDevice implements IDevice {
         // TODO implement this
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getBatteryLevel() throws TimeoutException, AdbCommandRejectedException,
+            IOException, ShellCommandUnresponsiveException {
+        // TODO implement this
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
+            AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
+        // TODO implement this
+        return null;
+    }
 }

@@ -24,6 +24,7 @@ import junit.framework.Assert;
 
 import org.easymock.EasyMock;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -232,6 +233,14 @@ public class MockDeviceManager implements IDeviceManager {
      */
     @Override
     public void killEmulator(ITestDevice device) throws DeviceNotAvailableException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void displayDevicesInfo(PrintWriter stream) {
         // ignore
     }
 }

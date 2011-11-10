@@ -64,4 +64,28 @@ public interface IDeviceSelection extends IMatcher<IDevice> {
      * @return <code>true</code> if a null device (aka no device required) has been requested
      */
     public boolean nullDeviceRequested();
+
+    /**
+     * Gets the given devices product type
+     *
+     * @param device the {@link IDevice}
+     * @return the device product type or <code>null</code> if unknown
+     */
+    public String getDeviceProductType(IDevice device);
+
+    /**
+     * Gets the given devices product variant
+     *
+     * @param device the {@link IDevice}
+     * @return the device product variant or <code>null</code> if unknown
+     */
+    public String getDeviceProductVariant(IDevice device);
+
+    /**
+     * Gets the given devices battery level
+     *
+     * @param device the {@link IDevice}
+     * @return the device battery level or <code>null</code> if unknown
+     */
+    Integer getBatteryLevel(IDevice device);
 }
