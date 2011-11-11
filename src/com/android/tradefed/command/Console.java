@@ -397,7 +397,7 @@ public class Console extends Thread {
                     @Override
                     public void run() {
                         IDeviceManager manager = DeviceManager.getInstance();
-                        manager.displayDevicesInfo(new PrintWriter(System.out));
+                        manager.displayDevicesInfo(new PrintWriter(System.out, true));
                     }
                 }, LIST_PATTERN, "d(?:evices)?");
         trie.put(new Runnable() {
