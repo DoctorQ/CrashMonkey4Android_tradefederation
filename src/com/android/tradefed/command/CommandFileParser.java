@@ -25,6 +25,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -296,6 +297,22 @@ class CommandFileParser {
      */
     public void parseFile(File file, ICommandScheduler scheduler) throws IOException,
             ConfigurationException {
+        List<String> empty = Collections.emptyList();
+        parseFile(file, scheduler, empty);
+    }
+
+    /**
+     * Parses the commands contained in {@code file}, doing macro expansions as necessary, and adds
+     * them to {@code scheduler}.
+     *
+     * @param file the {@link File} to parse
+     * @param scheduler the {@link ICommandScheduler} to add commands to
+     * @param args A {@link List} of {@link String} arguments to append to each command
+     * @throws IOException if failed to read file
+     * @throws ConfigurationException if content of file could not be parsed
+     */
+    public void parseFile(File file, ICommandScheduler scheduler, List<String> args)
+            throws IOException, ConfigurationException {
         scanFile(file);
 
         // Now perform macro expansion
@@ -360,9 +377,17 @@ class CommandFileParser {
         }
 
         for (CommandLine commandLine : mLines) {
-            CLog.d("Adding line: %s", commandLine.toString());
-            String[] aryCmdLine = new String[commandLine.size()];
-            scheduler.addCommand(commandLine.toArray(aryCmdLine));
+            CLog.v("Adding line with parts: %s + %s", commandLine.toString(), args.toString());
+            String[] aryCmdLine = new String[commandLine.size() + args.size()];
+            int outIdx = 0;
+            for (;outIdx < commandLine.size(); ++outIdx) {
+                aryCmdLine[outIdx] = commandLine.get(outIdx);
+            }
+            for (int i = 0; i < args.size(); ++outIdx, ++i) {
+                aryCmdLine[outIdx] = args.get(i);
+            }
+            CLog.d("Adding line: %s", Arrays.toString(aryCmdLine));
+            scheduler.addCommand(aryCmdLine);
         }
     }
 

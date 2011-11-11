@@ -27,6 +27,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -106,6 +107,24 @@ public class CommandFileParserTest extends TestCase {
         } catch (ConfigurationException e) {
             // expected
         }
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Test parsing a command file while passing in extra arguments.
+     */
+    public void testParseArgs() throws Exception {
+        // inject mock file data
+        mMockFileData = "--foo config\n--foo config2\n";
+        List<String> args = Arrays.asList("--arg", "cowabunga");
+        String[] exp1 = new String[] {"--foo", "config", "--arg", "cowabunga"};
+        String[] exp2 = new String[] {"--foo", "config2", "--arg", "cowabunga"};
+
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(exp1))).andReturn(Boolean.TRUE);
+        EasyMock.expect(mMockScheduler.addCommand(EasyMock.aryEq(exp2))).andReturn(Boolean.TRUE);
+
+        EasyMock.replay(mMockScheduler);
+        mCommandFile.parseFile(mMockFile, mMockScheduler, args);
         EasyMock.verify(mMockScheduler);
     }
 

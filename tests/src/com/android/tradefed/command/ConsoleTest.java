@@ -23,6 +23,7 @@ import junit.framework.TestCase;
 import org.easymock.EasyMock;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Unit tests for {@link Console}.
@@ -115,6 +116,53 @@ public class ConsoleTest extends TestCase {
                 runnable);
         mConsole.executeCmdRunnable(runnable, captures);
         EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Make sure that {@link Console#getFlatArgs} works as expected.
+     */
+    public void testFlatten() throws Exception {
+        CaptureList cl = new CaptureList();
+        cl.add(Arrays.asList("run", null));
+        cl.add(Arrays.asList("alpha"));
+        cl.add(Arrays.asList("beta"));
+        List<String> flat = Console.getFlatArgs(1, cl);
+        assertEquals(2, flat.size());
+        assertEquals("alpha", flat.get(0));
+        assertEquals("beta", flat.get(1));
+    }
+
+    /**
+     * Make sure that {@link Console#getFlatArgs} throws an exception when argIdx is wrong.
+     */
+    public void testFlatten_wrongArgIdx() throws Exception {
+        CaptureList cl = new CaptureList();
+        cl.add(Arrays.asList("run", null));
+        cl.add(Arrays.asList("alpha"));
+        cl.add(Arrays.asList("beta"));
+        // argIdx is 0, and element 0 has size 2
+        try {
+            Console.getFlatArgs(0, cl);
+            fail("IllegalArgumentException not thrown!");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Make sure that {@link Console#getFlatArgs} throws an exception when argIdx is OOB.
+     */
+    public void testFlatten_argIdxOOB() throws Exception {
+        CaptureList cl = new CaptureList();
+        cl.add(Arrays.asList("run", null));
+        cl.add(Arrays.asList("alpha"));
+        cl.add(Arrays.asList("beta"));
+        try {
+            Console.getFlatArgs(1 + cl.size(), cl);
+            fail("IndexOutOfBoundsException not thrown!");
+        } catch (IndexOutOfBoundsException e) {
+            // expected
+        }
     }
 }
 

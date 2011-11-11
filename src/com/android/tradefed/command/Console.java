@@ -32,16 +32,16 @@ import jline.ConsoleReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-// not importing java.io.Console because of class name conflict
 
 /**
  * Main TradeFederation console providing user with the interface to interact
@@ -279,6 +279,40 @@ public class Console extends Thread {
     }
 
     /**
+     * A utility function to return the arguments that were passed to an {@link ArgRunnable}.  In
+     * particular, it expects all first-level elements of {@code cl} after {@code argIdx} to be
+     * singleton {@link List}s.  It will then coalesce the first element of each of those singleton
+     * {@link List}s as a single {@link List}.
+     *
+     * @param argIdx The zero-based index of the first argument.
+     * @param cl The {@link CaptureList} of arguments that was passed to the {@link ArgRunnable}
+     * @return A flattened {@link List} of arguments that were passed to the {@link ArgRunnable}
+     * @throws IllegalArgumentException if the data isn't formatted as expected
+     * @throws IndexOutOfBoundsException if {@code argIdx} isn't consistent with {@code cl}
+     */
+    static List<String> getFlatArgs(int argIdx, CaptureList cl) {
+        if (argIdx < 0 || argIdx >= cl.size()) {
+            throw new IndexOutOfBoundsException(String.format("argIdx is %d, cl size is %d",
+                    argIdx, cl.size()));
+        }
+
+        List<String> flat = new ArrayList<String>(cl.size() - argIdx);
+        ListIterator<List<String>> iter = cl.listIterator(argIdx);
+        while (iter.hasNext()) {
+            List<String> single = iter.next();
+            int len = single.size();
+            if (len != 1) {
+                throw new IllegalArgumentException(String.format(
+                        "Expected a singleton List, but got a List with %d elements: %s",
+                        len, single.toString()));
+            }
+            flat.add(single.get(0));
+        }
+
+        return flat;
+    }
+
+    /**
      * Add commands to create the default Console experience
      * <p />
      * Adds relevant documentation to {@code genericHelp} and {@code commandHelp}.
@@ -463,9 +497,14 @@ public class Console extends Thread {
         ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
             @Override
             public void run(CaptureList args) {
-                // Skip 2 tokens to get past runPattern and "cmdfile"
-                String file = args.get(2).get(0);
-                printLine(String.format("Attempting to run cmdfile %s", file));
+                // Skip 2 tokens to get past runPattern and "cmdfile".  We're guaranteed to have at
+                // least 3 tokens if we got #run.
+                int startIdx = 2;
+                List<String> flatArgs = getFlatArgs(startIdx, args);
+                String file = flatArgs.get(0);
+                List<String> extraArgs = flatArgs.subList(1, flatArgs.size());
+                printLine(String.format("Attempting to run cmdfile %s with args %s", file,
+                        extraArgs.toString()));
                 try {
                     createCommandFileParser().parseFile(new File(file), mScheduler);
                 } catch (IOException e) {
@@ -476,6 +515,7 @@ public class Console extends Thread {
             }
         };
         trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)");
+        trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)", null);
         // Missing required argument: show help
         // FIXME: fix this functionality
         //trie.put(runHelpRun, runPattern, "cmdfile");
