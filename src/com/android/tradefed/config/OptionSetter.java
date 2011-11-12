@@ -17,6 +17,7 @@
 package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.ArrayUtil;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -458,6 +459,25 @@ public class OptionSetter {
                     optionObject.getClass().getName(), e));
             return null;
         }
+    }
+
+    /**
+     * Returns the help text describing the valid values for the Enum field.
+     *
+     * @param field the {@link Field} to get values for
+     * @return the appropriate help text, or an empty {@link String} if the field is not an Enum.
+     */
+    static String getEnumFieldValuesAsString(Field field) {
+        Class<?> type = field.getType();
+        Object[] vals = type.getEnumConstants();
+        if (vals == null) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder(" Valid values: [");
+        sb.append(ArrayUtil.join(", ", vals));
+        sb.append("]");
+        return sb.toString();
     }
 
     public boolean isBooleanOption(String name) throws ConfigurationException {

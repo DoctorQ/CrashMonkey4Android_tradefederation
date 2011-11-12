@@ -22,6 +22,7 @@ import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -174,7 +175,7 @@ public class OptionSetterTest extends TestCase {
     }
 
     private static enum DefaultEnumClass {
-        VAL1;
+        VAL1, VAL3, VAL2;
     }
 
     private static enum CustomEnumClass {
@@ -655,6 +656,18 @@ public class OptionSetterTest extends TestCase {
         } catch (ConfigurationException e) {
             // expected
         }
+    }
+
+    /**
+     * Make sure that Enum documentation shows the defaults properly
+     */
+    public void testEnumDocs() throws Exception {
+        // We assume here that the fields are returned in declaration order, as documented in the
+        // {@link Enum} javadoc.
+        String expectedValues = " Valid values: [VAL1, VAL3, VAL2]";
+        Field field = AllTypesOptionSource.class.getDeclaredField("mEnum");
+        String actualValues = OptionSetter.getEnumFieldValuesAsString(field);
+        assertEquals(expectedValues, actualValues);
     }
 
     /**

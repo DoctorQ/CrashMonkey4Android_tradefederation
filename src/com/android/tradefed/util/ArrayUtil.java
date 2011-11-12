@@ -70,20 +70,26 @@ public class ArrayUtil {
         return retList;
     }
 
-    public static String join(String sep, Collection<String> pieces) {
+    public static String join(String sep, Collection<Object> pieces) {
         StringBuilder sb = new StringBuilder();
+        boolean skipSep = true;
         Iterator iter = pieces.iterator();
-        if (iter.hasNext()) {
-            sb.append(iter.next());
-        }
         while (iter.hasNext()) {
-            sb.append(sep);
-            sb.append(iter.next());
+            if (skipSep) {
+                skipSep = false;
+            } else {
+                sb.append(sep);
+            }
+            try {
+                sb.append(iter.next().toString());
+            } catch (NullPointerException e) {
+                sb.append("(null)");
+            }
         }
         return sb.toString();
     }
 
-    public static String join(String sep, String... pieces) {
+    public static String join(String sep, Object... pieces) {
         return join(sep, Arrays.asList(pieces));
     }
 }

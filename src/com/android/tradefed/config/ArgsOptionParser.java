@@ -321,7 +321,7 @@ public class ArgsOptionParser extends OptionSetter {
         String eol = System.getProperty("line.separator");
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
-            String defaultValue =  OptionSetter.getFieldValueAsString(field, optionObject);
+            String defaultValue = OptionSetter.getFieldValueAsString(field, optionObject);
             String optionNameHelp = buildOptionNameHelp(field, option);
             if (shouldOutputHelpForOption(importantOnly, option, defaultValue)) {
                 out.append(optionNameHelp);
@@ -337,11 +337,12 @@ public class ArgsOptionParser extends OptionSetter {
                     // OPTION_DESCRIPTION_INDENT
                     wsChars = OPTION_DESCRIPTION_INDENT - optionNameHelp.length();
                 }
-                for (int i=0; i < wsChars; i++) {
+                for (int i = 0; i < wsChars; ++i) {
                     out.append(' ');
                 }
                 out.append(option.description());
                 out.append(getDefaultValueHelp(defaultValue));
+                out.append(OptionSetter.getEnumFieldValuesAsString(field));
                 out.append(eol);
             }
         }
