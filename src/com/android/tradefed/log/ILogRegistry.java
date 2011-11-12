@@ -30,9 +30,9 @@ public interface ILogRegistry extends ILogOutput {
     /**
      * Set the log level display for the global log
      *
-     * @param logLevel the {@link String} form of the {@link LogLevel} to use
+     * @param logLevel the {@link LogLevel} to use
      */
-    public void setGlobalLogDisplayLevel(String logLevel);
+    public void setGlobalLogDisplayLevel(LogLevel logLevel);
 
     /**
      * Set the log tags to display for the global log
@@ -42,9 +42,9 @@ public interface ILogRegistry extends ILogOutput {
     /**
      * Returns current log level display for the global log
      *
-     * @return logLevel the {@link String} form of the {@link LogLevel} to use
+     * @return logLevel the {@link LogLevel} to use
      */
-    public String getGlobalLogDisplayLevel();
+    public LogLevel getGlobalLogDisplayLevel();
 
     /**
      * Registers the logger as the instance to use for the current thread.

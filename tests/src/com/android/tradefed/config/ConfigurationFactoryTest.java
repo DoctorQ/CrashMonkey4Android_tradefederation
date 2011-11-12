@@ -126,7 +126,7 @@ public class ConfigurationFactoryTest extends TestCase {
         IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {TEST_CONFIG,
                 "--log-level", LogLevel.VERBOSE.getStringValue()});
         ILeveledLogOutput logger = config.getLogOutput();
-        assertEquals(LogLevel.VERBOSE.getStringValue(), logger.getLogLevel());
+        assertEquals(LogLevel.VERBOSE, logger.getLogLevel());
     }
 
     /**

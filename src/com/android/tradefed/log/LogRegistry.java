@@ -78,7 +78,7 @@ public class LogRegistry implements ILogRegistry {
      * {@inheritDoc}
      */
     @Override
-    public void setGlobalLogDisplayLevel(String logLevel) {
+    public void setGlobalLogDisplayLevel(LogLevel logLevel) {
         mGlobalLogger.setLogLevelDisplay(logLevel);
     }
 
@@ -94,7 +94,7 @@ public class LogRegistry implements ILogRegistry {
      * {@inheritDoc}
      */
     @Override
-    public String getGlobalLogDisplayLevel() {
+    public LogLevel getGlobalLogDisplayLevel() {
         return mGlobalLogger.getLogLevelDisplay();
     }
 
@@ -159,7 +159,7 @@ public class LogRegistry implements ILogRegistry {
     @Override
     public void printLog(LogLevel logLevel, String tag, String message) {
         ILeveledLogOutput log = getLogger();
-        LogLevel currentLogLevel = LogLevel.getByString(log.getLogLevel());
+        LogLevel currentLogLevel = log.getLogLevel();
         if (logLevel.getPriority() >= currentLogLevel.getPriority()) {
             log.printLog(logLevel, tag, message);
         }

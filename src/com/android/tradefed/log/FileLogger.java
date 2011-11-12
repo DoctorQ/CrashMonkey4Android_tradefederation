@@ -45,38 +45,19 @@ public class FileLogger implements ILeveledLogOutput {
     private File mTempLogFile = null;
     private BufferedWriter mLogWriter = null;
 
-    @Option(name = "log-level", description = "the minimum log level to log. Must be one of "
-            + LogUtil.LOG_LEVEL_LIST + ".")
-    private String mLogLevel = LogLevel.DEBUG.getStringValue();
+    @Option(name = "log-level", description = "the minimum log level to log.")
+    private LogLevel mLogLevel = LogLevel.DEBUG;
 
-    @Option(name = "log-level-display", shortName = 'l', description =
-        "the minimum log level to display on stdout. Must be one of " + LogUtil.LOG_LEVEL_LIST +
-        ".", importance = Importance.ALWAYS)
-    private String mLogLevelStringDisplay = LogLevel.ERROR.getStringValue();
+    @Option(name = "log-level-display", shortName = 'l',
+            description = "the minimum log level to display on stdout.",
+            importance = Importance.ALWAYS)
+    private LogLevel mLogLevelDisplay = LogLevel.ERROR;
 
     @Option(name = "log-tag-display", description = "Always display given tags logs on stdout")
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
     // temp: track where this log was closed
     private StackTraceElement[] mCloseStackFrames = null;
-
-    /**
-     * Sets the log level filtering for stdout.
-     *
-     * @param logLevel the {@link LogLevel#getStringValue()} log level to display
-     */
-    void setLogLevelDisplay(String logLevel) {
-        mLogLevelStringDisplay = logLevel;
-    }
-
-    /**
-     * Gets the log level filtering for stdout.
-     *
-     * @return the {@link String} form of the {@link LogLevel}
-     */
-    String getLogLevelDisplay() {
-        return mLogLevelStringDisplay;
-    }
 
     /**
      * Adds tags to the log-tag-display list
@@ -116,7 +97,7 @@ public class FileLogger implements ILeveledLogOutput {
     @Override
     public ILeveledLogOutput clone()  {
         FileLogger logger = new FileLogger();
-        logger.setLogLevelDisplay(mLogLevelStringDisplay);
+        logger.setLogLevelDisplay(mLogLevelDisplay);
         logger.setLogLevel(mLogLevel);
         logger.addLogTagsDisplay(mLogTagsDisplay);
         return logger;
@@ -145,9 +126,8 @@ public class FileLogger implements ILeveledLogOutput {
     private void internalPrintLog(LogLevel logLevel, String tag, String message,
             boolean forceStdout) {
         String outMessage = LogUtil.getLogFormatString(logLevel, tag, message);
-        LogLevel displayLevel = LogLevel.getByString(mLogLevelStringDisplay);
         if (forceStdout
-                || logLevel.getPriority() >= displayLevel.getPriority()
+                || logLevel.getPriority() >= mLogLevelDisplay.getPriority()
                 || mLogTagsDisplay.contains(tag)) {
             System.out.print(outMessage);
         }
@@ -176,7 +156,7 @@ public class FileLogger implements ILeveledLogOutput {
      * {@inheritDoc}
      */
     @Override
-    public String getLogLevel() {
+    public LogLevel getLogLevel() {
         return mLogLevel;
     }
 
@@ -184,8 +164,26 @@ public class FileLogger implements ILeveledLogOutput {
      * {@inheritDoc}
      */
     @Override
-    public void setLogLevel(String logLevel) {
+    public void setLogLevel(LogLevel logLevel) {
         mLogLevel = logLevel;
+    }
+
+    /**
+     * Sets the log level filtering for stdout.
+     *
+     * @param logLevel the minimum {@link LogLevel} to display
+     */
+    void setLogLevelDisplay(LogLevel logLevel) {
+        mLogLevelDisplay = logLevel;
+    }
+
+    /**
+     * Gets the log level filtering for stdout.
+     *
+     * @return the current {@link LogLevel}
+     */
+    LogLevel getLogLevelDisplay() {
+        return mLogLevelDisplay;
     }
 
     /**

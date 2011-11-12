@@ -32,7 +32,7 @@ public class StdoutLogger implements ILeveledLogOutput {
 
     @Option(name="log-level", description="minimum log level to display. Must be one of " +
             LogUtil.LOG_LEVEL_LIST +".", importance = Importance.ALWAYS)
-    private String mLogLevel = LogLevel.INFO.getStringValue();
+    private LogLevel mLogLevel = LogLevel.INFO;
 
     /**
      * {@inheritDoc}
@@ -52,14 +52,14 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
-    public void setLogLevel(String logLevel) {
+    public void setLogLevel(LogLevel logLevel) {
         mLogLevel = logLevel;
     }
 
     /**
      * {@inheritDoc}
      */
-    public String getLogLevel() {
+    public LogLevel getLogLevel() {
         return mLogLevel;
     }
 

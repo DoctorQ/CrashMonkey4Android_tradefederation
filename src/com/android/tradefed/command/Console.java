@@ -525,22 +525,23 @@ public class Console extends Thread {
             @Override
             public void run(CaptureList args) {
                 // Skip 2 tokens to get past "set" and "log-level-display"
-                String logLevel = args.get(2).get(0);
-                String currentLogLevel = LogRegistry.getLogRegistry().getGlobalLogDisplayLevel();
-                if (LogLevel.getByString(logLevel) != null) {
-                    LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(logLevel);
+                String logLevelStr = args.get(2).get(0);
+                LogLevel newLogLevel = LogLevel.getByString(logLevelStr);
+                LogLevel currentLogLevel = LogRegistry.getLogRegistry().getGlobalLogDisplayLevel();
+                if (newLogLevel != null) {
+                    LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(newLogLevel);
                     // Make sure that the level was set.
                     currentLogLevel = LogRegistry.getLogRegistry().getGlobalLogDisplayLevel();
                     if (currentLogLevel != null) {
-                        printLine(String.format("Current logging set to '%s'.", currentLogLevel));
+                        printLine(String.format("Log level now set to '%s'.", currentLogLevel));
                     }
                 } else {
                     if (currentLogLevel == null) {
-                        printLine(String.format("Invalid log level '%s'.", logLevel));
+                        printLine(String.format("Invalid log level '%s'.", newLogLevel));
                     } else{
                         printLine(String.format(
                                 "Invalid log level '%s'; log level remains at '%s'.",
-                                logLevel, currentLogLevel));
+                                newLogLevel, currentLogLevel));
                     }
                 }
             }

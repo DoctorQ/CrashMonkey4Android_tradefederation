@@ -36,16 +36,16 @@ public interface ILeveledLogOutput extends ILogOutput {
     /**
      * Gets the minimum log level to display.
      *
-     * @return the {@link String} form of the {@link LogLevel}
+     * @return the current {@link LogLevel}
      */
-    public String getLogLevel();
+    public LogLevel getLogLevel();
 
     /**
      * Sets the minimum log level to display.
      *
-     * @param logLevel to display; must be recognized by {@link LogLevel#getStringValue()}
+     * @param logLevel the {@link LogLevel} to display
      */
-    public void setLogLevel(String logLevel);
+    public void setLogLevel(LogLevel logLevel);
 
     /**
      * Grabs a snapshot stream of the log data.

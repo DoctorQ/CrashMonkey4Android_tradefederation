@@ -73,7 +73,7 @@ public class LogRegistryTest extends TestCase {
         ILeveledLogOutput mockLogger = EasyMock.createMock(ILeveledLogOutput.class);
         mLogRegistry.registerLogger(mockLogger);
 
-        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
+        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE);
         mockLogger.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
 
         EasyMock.replay(mockLogger);
@@ -91,7 +91,7 @@ public class LogRegistryTest extends TestCase {
         mLogRegistry.registerLogger(mockLogger);
 
         // Setting LogLevel == ERROR will let everything print
-        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.ERROR.getStringValue());
+        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.ERROR);
 
         EasyMock.replay(mockLogger);
         mLogRegistry.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
@@ -132,10 +132,10 @@ public class LogRegistryTest extends TestCase {
         }
 
         // first thread calls
-        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE.getStringValue());
+        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.VERBOSE);
         mockLogger.printLog(LogLevel.VERBOSE, LOG_TAG, testMessage);
         // second thread should inherit same logger
-        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.ERROR.getStringValue());
+        EasyMock.expect(mockLogger.getLogLevel()).andReturn(LogLevel.ERROR);
         mockLogger.printLog(LogLevel.ERROR, LOG_TAG, testMessage);
 
         EasyMock.replay(mockLogger);
