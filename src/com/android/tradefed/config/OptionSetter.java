@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -705,13 +706,24 @@ public class OptionSetter {
             mEnumType = enumType;
         }
 
+
         @Override
         Object translate(String valueText) {
+            return translate(valueText, true);
+        }
+
+        Object translate(String valueText, boolean shouldTryUpperCase) {
             try {
                 return Enum.valueOf(mEnumType, valueText);
             } catch (IllegalArgumentException e) {
                 // Will be thrown if the value can't be mapped back to the enum
-                return null;
+                if (shouldTryUpperCase) {
+                    // Try to automatically map variable-case strings to uppercase.  This is
+                    // reasonable since most Enum constants tend to be uppercase by convention.
+                    return translate(valueText.toUpperCase(Locale.ENGLISH), false);
+                } else {
+                    return null;
+                }
             }
         }
     }

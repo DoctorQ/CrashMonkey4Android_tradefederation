@@ -636,6 +636,17 @@ public class OptionSetterTest extends TestCase {
     }
 
     /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum.  Specifically make sure
+     * that we fall back properly, so that a mixed-case value will be silently mapped to an
+     * uppercase version, since Enum constants tend to be uppercase by convention.
+     */
+    public void testSetOptionValue_enumMixedCase() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+        assertSetOptionValue(optionSource, "enum", "Val1");
+        assertEquals(DefaultEnumClass.VAL1, optionSource.mEnum);
+    }
+
+    /**
      * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum with custom values.
      */
     public void testSetOptionValue_customEnum() throws ConfigurationException {
