@@ -70,27 +70,43 @@ public class ArrayUtil {
         return retList;
     }
 
-    public static String join(String sep, Collection<Object> pieces) {
+    private static String internalJoin(String sep, Collection<Object> pieces) {
         StringBuilder sb = new StringBuilder();
         boolean skipSep = true;
-        Iterator iter = pieces.iterator();
+        Iterator<Object> iter = pieces.iterator();
         while (iter.hasNext()) {
             if (skipSep) {
                 skipSep = false;
             } else {
                 sb.append(sep);
             }
-            try {
-                sb.append(iter.next().toString());
-            } catch (NullPointerException e) {
-                sb.append("(null)");
+
+            Object obj = iter.next();
+            if (obj == null) {
+                sb.append("null");
+            } else {
+                sb.append(obj.toString());
             }
         }
         return sb.toString();
     }
 
+    /**
+     * Turns a sequence of objects into a string, delimited by {@code sep}.  If a single
+     * {@code Collection} is passed, it is assumed that the elements of that Collection are to be
+     * joined.  Otherwise, wraps the passed {@link Object}(s) in a {@link List} and joins the
+     * generated list.
+     *
+     * @param sep the string separator to delimit the different output segments.
+     * @param pieces A {@link Collection} or a varargs {@code Array} of objects.
+     */
     public static String join(String sep, Object... pieces) {
-        return join(sep, Arrays.asList(pieces));
+        if ((pieces.length == 1) && (pieces[0] instanceof Collection)) {
+            // Don't re-wrap the Collection
+            return internalJoin(sep, (Collection<Object>) pieces[0]);
+        } else {
+            return internalJoin(sep, Arrays.asList(pieces));
+        }
     }
 }
 

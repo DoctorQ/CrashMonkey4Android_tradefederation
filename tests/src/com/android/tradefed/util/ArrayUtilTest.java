@@ -17,6 +17,9 @@ package com.android.tradefed.util;
 
 import junit.framework.TestCase;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * Unit tests for {@link ArrayUtil}
  */
@@ -32,5 +35,34 @@ public class ArrayUtilTest extends TestCase {
         for (int i = 0; i < 4; i++) {
             assertEquals(Integer.toString(i+1), newArray[i]);
         }
+    }
+
+    /**
+     * Make sure that Collections aren't double-wrapped
+     */
+    public void testJoinCollection() {
+        List<String> list = Arrays.asList("alpha", "beta", "gamma");
+        final String expected = "alpha, beta, gamma";
+        String str = ArrayUtil.join(", ", list);
+        assertEquals(expected, str);
+    }
+
+    /**
+     * Make sure that Arrays aren't double-wrapped
+     */
+    public void testJoinArray() {
+        String[] ary = new String[] {"alpha", "beta", "gamma"};
+        final String expected = "alpha, beta, gamma";
+        String str = ArrayUtil.join(", ", (Object[]) ary);
+        assertEquals(expected, str);
+    }
+
+    /**
+     * Make sure that join on varargs arrays work as expected
+     */
+    public void testJoinNormal() {
+        final String expected = "alpha, beta, gamma";
+        String str = ArrayUtil.join(", ", "alpha", "beta", "gamma");
+        assertEquals(expected, str);
     }
 }
