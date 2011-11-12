@@ -457,7 +457,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      */
     private void calculateRemainingTests(Collection<TestIdentifier> expectedTests,
             CollectingTestListener testTracker) {
-        expectedTests.removeAll(testTracker.getCurrentRunResults().getTests());
+        expectedTests.removeAll(testTracker.getCurrentRunResults().getCompletedTests());
     }
 
     /**
@@ -523,7 +523,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
                 return null;
             } else {
                 // success!
-                return runResults.getTests();
+                return runResults.getCompletedTests();
             }
         }
         if (communicationFailure) {

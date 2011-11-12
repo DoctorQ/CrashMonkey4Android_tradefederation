@@ -22,6 +22,7 @@ import com.android.tradefed.result.TestResult.TestStatus;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -130,10 +131,16 @@ public class TestRunResult {
     }
 
     /**
-     * Gets the set of tests executed.
+     * Gets the set of completed tests.
      */
-    public Set<TestIdentifier> getTests() {
-        return mTestResults.keySet();
+    public Set<TestIdentifier> getCompletedTests() {
+        Set<TestIdentifier> completedTests = new LinkedHashSet<TestIdentifier>();
+        for (Map.Entry<TestIdentifier, TestResult> testEntry : getTestResults().entrySet()) {
+            if (!testEntry.getValue().getStatus().equals(TestStatus.INCOMPLETE)) {
+                completedTests.add(testEntry.getKey());
+            }
+        }
+        return completedTests;
     }
 
     /**

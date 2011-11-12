@@ -118,8 +118,8 @@ public class CollectingTestListenerTest extends TestCase {
         assertEquals(1, mCollectingTestListener.getRunResults().size());
         TestRunResult runResult = mCollectingTestListener.getCurrentRunResults();
         assertEquals(2, runResult.getNumPassedTests());
-        assertTrue(runResult.getTests().contains(test1));
-        assertTrue(runResult.getTests().contains(test2));
+        assertTrue(runResult.getCompletedTests().contains(test1));
+        assertTrue(runResult.getCompletedTests().contains(test2));
     }
 
     /**
