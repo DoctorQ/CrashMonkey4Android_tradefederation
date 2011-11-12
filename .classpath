@@ -8,5 +8,6 @@
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/junit"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/guava"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/jsr305"/>
+	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/jline"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
