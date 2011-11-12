@@ -142,6 +142,12 @@ public class OptionSetterTest extends TestCase {
 
         @Option(name = "file")
         private File mFile = null;
+
+        @Option(name = "enum")
+        private DefaultEnumClass mEnum = null;
+
+        @Option(name = "customEnum")
+        private CustomEnumClass mCustomEnum = null;
     }
 
     private static class ParentOptionSource {
@@ -165,6 +171,24 @@ public class OptionSetterTest extends TestCase {
         @SuppressWarnings("unused")
         @Option(name = "bad:string", shortName = 's')
         private int mMyOption;
+    }
+
+    private static enum DefaultEnumClass {
+        VAL1;
+    }
+
+    private static enum CustomEnumClass {
+        VAL1(42);
+
+        private int mVal;
+
+        CustomEnumClass(int val) {
+            mVal = val;
+        }
+
+        public int getVal() {
+            return mVal;
+        }
     }
 
     /**
@@ -598,6 +622,38 @@ public class OptionSetterTest extends TestCase {
             assertEquals(tmpFile.getAbsolutePath(), optionSource.mFile.getAbsolutePath());
         } finally {
             tmpFile.delete();
+        }
+    }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum.
+     */
+    public void testSetOptionValue_enum() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+        assertSetOptionValue(optionSource, "enum", "VAL1");
+        assertEquals(DefaultEnumClass.VAL1, optionSource.mEnum);
+    }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum with custom values.
+     */
+    public void testSetOptionValue_customEnum() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+        assertSetOptionValue(optionSource, "customEnum", "VAL1");
+        assertEquals(CustomEnumClass.VAL1, optionSource.mCustomEnum);
+        assertEquals(42, optionSource.mCustomEnum.getVal());
+    }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum.
+     */
+    public void testSetOptionValue_enumBadValue() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+        try {
+            assertSetOptionValue(optionSource, "enum", "noexist");
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
         }
     }
 
