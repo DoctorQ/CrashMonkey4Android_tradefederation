@@ -112,15 +112,18 @@ public class OptionSetter {
             }
         }
         if (type instanceof Class) {
-            if (Collection.class.isAssignableFrom((Class) type)) {
+            Class<?> cType = (Class<?>) type;
+            if (Collection.class.isAssignableFrom(cType)) {
                 // could handle by just having a default of treating
                 // contents as String but consciously decided this
                 // should be an error
                 throw new ConfigurationException(
                         String.format("Cannot handle non-parameterized collection %s. %s", type,
                                 "use a generic Collection to specify a desired element type"));
+            } else if (cType.isEnum()) {
+                return new EnumHandler(cType);
             }
-            return handlers.get((Class<?>) type);
+            return handlers.get(cType);
         }
         throw new ConfigurationException(String.format("cannot handle unknown field type %s",
                 type));
@@ -236,7 +239,7 @@ public class OptionSetter {
             Handler handler = getHandler(field.getGenericType());
             Object value = handler.translate(valueText);
             if (value == null) {
-                final String type = field.getType().getSimpleName().toLowerCase();
+                final String type = field.getType().getSimpleName();
                 throw new ConfigurationException(
                         String.format("Couldn't convert '%s' to a %s for option '%s'", valueText,
                                 type, optionName));
@@ -669,6 +672,27 @@ public class OptionSetter {
             }
 
             return new MapEntry(key, value);
+        }
+    }
+
+    /**
+     * @ {@link Handler} to handle values for {@link Enum} fields.
+     */
+    private static class EnumHandler extends Handler {
+        private final Class/*<?>*/ mEnumType;
+
+        EnumHandler(Class<?> enumType) {
+            mEnumType = enumType;
+        }
+
+        @Override
+        Object translate(String valueText) {
+            try {
+                return Enum.valueOf(mEnumType, valueText);
+            } catch (IllegalArgumentException e) {
+                // Will be thrown if the value can't be mapped back to the enum
+                return null;
+            }
         }
     }
 }
