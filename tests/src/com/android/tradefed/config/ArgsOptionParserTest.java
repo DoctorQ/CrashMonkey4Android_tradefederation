@@ -150,241 +150,241 @@ public class ArgsOptionParserTest extends TestCase {
    /**
     * Test passing an single argument for an object that has one option specified.
     */
-   public void testParse_oneMapArg() throws ConfigurationException {
-       MapOptionSource object = new MapOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final int expectedKey = 13;
-       final boolean expectedValue = true;
-       parser.parse(new String[] {"--my_option", Integer.toString(expectedKey),
-               Boolean.toString(expectedValue)});
-       assertNotNull(object.mMyOption);
-       assertEquals(1, object.mMyOption.size());
-       assertEquals(expectedValue, (boolean) object.mMyOption.get(expectedKey));
-   }
+    public void testParse_oneMapArg() throws ConfigurationException {
+        MapOptionSource object = new MapOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final int expectedKey = 13;
+        final boolean expectedValue = true;
+        parser.parse(new String[] {"--my_option", Integer.toString(expectedKey),
+                Boolean.toString(expectedValue)});
+        assertNotNull(object.mMyOption);
+        assertEquals(1, object.mMyOption.size());
+        assertEquals(expectedValue, (boolean) object.mMyOption.get(expectedKey));
+    }
 
-   /**
-    * Test passing an single argument for an object that has one option specified.
-    */
-   public void testParseMapArg_mismatchKeyType() throws ConfigurationException {
-       MapOptionSource object = new MapOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedKey = "istanbul";
-       final boolean expectedValue = true;
-       try {
-           parser.parse(new String[] {"--my_option", expectedKey, Boolean.toString(expectedValue)});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expect an exception that explicitly mentions that the "key" is incorrect
-           assertTrue(String.format("Expected exception message to contain 'key': %s",
-                   e.getMessage()), e.getMessage().contains("key"));
-           assertTrue(String.format("Expected exception message to contain '%s': %s",
-                   expectedKey, e.getMessage()), e.getMessage().contains(expectedKey));
-       }
-   }
+    /**
+     * Test passing an single argument for an object that has one option specified.
+     */
+    public void testParseMapArg_mismatchKeyType() throws ConfigurationException {
+        MapOptionSource object = new MapOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedKey = "istanbul";
+        final boolean expectedValue = true;
+        try {
+            parser.parse(new String[] {"--my_option", expectedKey, Boolean.toString(expectedValue)});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expect an exception that explicitly mentions that the "key" is incorrect
+            assertTrue(String.format("Expected exception message to contain 'key': %s",
+                    e.getMessage()), e.getMessage().contains("key"));
+            assertTrue(String.format("Expected exception message to contain '%s': %s",
+                    expectedKey, e.getMessage()), e.getMessage().contains(expectedKey));
+        }
+    }
 
-   /**
-    * Test passing an single argument for an object that has one option specified.
-    */
-   public void testParseMapArg_mismatchValueType() throws ConfigurationException {
-       MapOptionSource object = new MapOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final int expectedKey = 13;
-       final String expectedValue = "notconstantinople";
-       try {
-           parser.parse(new String[] {"--my_option", Integer.toString(expectedKey), expectedValue});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expect an exception that explicitly mentions that the "value" is incorrect
-           assertTrue(String.format("Expected exception message to contain 'value': '%s'",
-                   e.getMessage()), e.getMessage().contains("value"));
-           assertTrue(String.format("Expected exception message to contain '%s': %s",
-                   expectedValue, e.getMessage()), e.getMessage().contains(expectedValue));
-       }
-   }
+    /**
+     * Test passing an single argument for an object that has one option specified.
+     */
+    public void testParseMapArg_mismatchValueType() throws ConfigurationException {
+        MapOptionSource object = new MapOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final int expectedKey = 13;
+        final String expectedValue = "notconstantinople";
+        try {
+            parser.parse(new String[] {"--my_option", Integer.toString(expectedKey), expectedValue});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expect an exception that explicitly mentions that the "value" is incorrect
+            assertTrue(String.format("Expected exception message to contain 'value': '%s'",
+                    e.getMessage()), e.getMessage().contains("value"));
+            assertTrue(String.format("Expected exception message to contain '%s': %s",
+                    expectedValue, e.getMessage()), e.getMessage().contains(expectedValue));
+        }
+    }
 
-   /**
-    * Test passing an single argument for an object that has one option specified.
-    */
-   public void testParseMapArg_missingKey() throws ConfigurationException {
-       MapOptionSource object = new MapOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       try {
-           parser.parse(new String[] {"--my_option"});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expect an exception that explicitly mentions that the "key" is incorrect
-           assertTrue(String.format("Expected exception message to contain 'key': '%s'",
-                   e.getMessage()), e.getMessage().contains("key"));
-       }
-   }
+    /**
+     * Test passing an single argument for an object that has one option specified.
+     */
+    public void testParseMapArg_missingKey() throws ConfigurationException {
+        MapOptionSource object = new MapOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {"--my_option"});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expect an exception that explicitly mentions that the "key" is incorrect
+            assertTrue(String.format("Expected exception message to contain 'key': '%s'",
+                    e.getMessage()), e.getMessage().contains("key"));
+        }
+    }
 
-   /**
-    * Test passing an single argument for an object that has one option specified.
-    */
-   public void testParseMapArg_missingValue() throws ConfigurationException {
-       MapOptionSource object = new MapOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final int expectedKey = 13;
-       try {
-           parser.parse(new String[] {"--my_option", Integer.toString(expectedKey)});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expect an exception that explicitly mentions that the "value" is incorrect
-           assertTrue(String.format("Expected exception message to contain 'value': '%s'",
-                   e.getMessage()), e.getMessage().contains("value"));
-       }
-   }
+    /**
+     * Test passing an single argument for an object that has one option specified.
+     */
+    public void testParseMapArg_missingValue() throws ConfigurationException {
+        MapOptionSource object = new MapOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final int expectedKey = 13;
+        try {
+            parser.parse(new String[] {"--my_option", Integer.toString(expectedKey)});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expect an exception that explicitly mentions that the "value" is incorrect
+            assertTrue(String.format("Expected exception message to contain 'value': '%s'",
+                    e.getMessage()), e.getMessage().contains("value"));
+        }
+    }
 
-   /**
-    * Test passing an single argument for an object that has one option specified, using the
-    * option=value notation.
-    */
-   public void testParse_oneArgEquals() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {String.format("--my_option=%s", expectedValue)});
-       assertEquals(expectedValue, object.mMyOption);
-   }
+    /**
+     * Test passing an single argument for an object that has one option specified, using the
+     * option=value notation.
+     */
+    public void testParse_oneArgEquals() throws ConfigurationException {
+        OneOptionSource object = new OneOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedValue = "set";
+        parser.parse(new String[] {String.format("--my_option=%s", expectedValue)});
+        assertEquals(expectedValue, object.mMyOption);
+    }
 
-   /**
-    * Test passing a single argument for an object that has one option specified, using the
-    * short option notation.
-    */
-   public void testParse_oneShortArg() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {"-o", expectedValue});
-       assertEquals(expectedValue, object.mMyOption);
-   }
+    /**
+     * Test passing a single argument for an object that has one option specified, using the
+     * short option notation.
+     */
+    public void testParse_oneShortArg() throws ConfigurationException {
+        OneOptionSource object = new OneOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedValue = "set";
+        parser.parse(new String[] {"-o", expectedValue});
+        assertEquals(expectedValue, object.mMyOption);
+    }
 
-   /**
-    * Test that "--" marks the beginning of positional arguments
-    */
-   public void testParse_posArgs() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       // have a position argument with a long option prefix, to try to confuse the parser
-       final String posArg = "--unused";
-       List<String> leftOver = parser.parse(new String[] {"-o", expectedValue, "--", posArg});
-       assertEquals(expectedValue, object.mMyOption);
-       assertTrue(leftOver.contains(posArg));
-   }
+    /**
+     * Test that "--" marks the beginning of positional arguments
+     */
+    public void testParse_posArgs() throws ConfigurationException {
+        OneOptionSource object = new OneOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedValue = "set";
+        // have a position argument with a long option prefix, to try to confuse the parser
+        final String posArg = "--unused";
+        List<String> leftOver = parser.parse(new String[] {"-o", expectedValue, "--", posArg});
+        assertEquals(expectedValue, object.mMyOption);
+        assertTrue(leftOver.contains(posArg));
+    }
 
-   /**
-    * Test passing a single boolean argument.
-    */
-   public void testParse_boolArg() throws ConfigurationException {
-       BooleanOptionSource object = new BooleanOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       parser.parse(new String[] {"-b"});
-       assertTrue(object.mMyBool);
-   }
+    /**
+     * Test passing a single boolean argument.
+     */
+    public void testParse_boolArg() throws ConfigurationException {
+        BooleanOptionSource object = new BooleanOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {"-b"});
+        assertTrue(object.mMyBool);
+    }
 
-   /**
-    * Test passing a boolean argument with another short argument.
-    */
-   public void testParse_boolTwoArg() throws ConfigurationException {
-       BooleanOptionSource object = new BooleanOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {"-bo", expectedValue});
-       assertTrue(object.mMyBool);
-       assertEquals(expectedValue, object.mMyOption);
-   }
+    /**
+     * Test passing a boolean argument with another short argument.
+     */
+    public void testParse_boolTwoArg() throws ConfigurationException {
+        BooleanOptionSource object = new BooleanOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedValue = "set";
+        parser.parse(new String[] {"-bo", expectedValue});
+        assertTrue(object.mMyBool);
+        assertEquals(expectedValue, object.mMyOption);
+    }
 
-   /**
-    * Test passing a boolean argument with another short argument, with value concatenated.
-    * e.g -bovalue
-    */
-   public void testParse_boolTwoArgValue() throws ConfigurationException {
-       BooleanOptionSource object = new BooleanOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       final String expectedValue = "set";
-       parser.parse(new String[] {String.format("-bo%s", expectedValue)});
-       assertTrue(object.mMyBool);
-       assertEquals(expectedValue, object.mMyOption);
-   }
+    /**
+     * Test passing a boolean argument with another short argument, with value concatenated.
+     * e.g -bovalue
+     */
+    public void testParse_boolTwoArgValue() throws ConfigurationException {
+        BooleanOptionSource object = new BooleanOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String expectedValue = "set";
+        parser.parse(new String[] {String.format("-bo%s", expectedValue)});
+        assertTrue(object.mMyBool);
+        assertEquals(expectedValue, object.mMyOption);
+    }
 
-   /**
-    * Test the "--no-<bool option>" syntax
-    */
-   public void testParse_boolFalse() throws ConfigurationException {
-       BooleanTrueOptionSource object = new BooleanTrueOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       parser.parse(new String[] {"--no-my_boolean"});
-       assertFalse(object.mMyBool);
-   }
+    /**
+     * Test the "--no-<bool option>" syntax
+     */
+    public void testParse_boolFalse() throws ConfigurationException {
+        BooleanTrueOptionSource object = new BooleanTrueOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {"--no-my_boolean"});
+        assertFalse(object.mMyBool);
+    }
 
-   /**
-    * Test the boolean long option syntax
-    */
-   public void testParse_boolLong() throws ConfigurationException {
-       BooleanOptionSource object = new BooleanOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       parser.parse(new String[] {"--my_boolean"});
-       assertTrue(object.mMyBool);
-   }
+    /**
+     * Test the boolean long option syntax
+     */
+    public void testParse_boolLong() throws ConfigurationException {
+        BooleanOptionSource object = new BooleanOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {"--my_boolean"});
+        assertTrue(object.mMyBool);
+    }
 
-   /**
-    * Test passing arg string where value is missing
-    */
-   public void testParse_missingValue() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       try {
-           parser.parse(new String[] {"--my_option"});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expected
-       }
-   }
+    /**
+     * Test passing arg string where value is missing
+     */
+    public void testParse_missingValue() throws ConfigurationException {
+        OneOptionSource object = new OneOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {"--my_option"});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
 
-   /**
-    * Test parsing args for an option that does not exist.
-    */
-   public void testParse_optionNotPresent() throws ConfigurationException {
-       OneOptionSource object = new OneOptionSource();
-       ArgsOptionParser parser = new ArgsOptionParser(object);
-       try {
-           parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
-           fail("ConfigurationException not thrown");
-       } catch (ConfigurationException e) {
-           // expected
-       }
-   }
+    /**
+     * Test parsing args for an option that does not exist.
+     */
+    public void testParse_optionNotPresent() throws ConfigurationException {
+        OneOptionSource object = new OneOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {"--my_option", "set", "--not_here", "value"});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
 
-   /**
-    * Test that help text is displayed for all fields
-    */
-   public void testGetOptionHelp() {
-       String help = ArgsOptionParser.getOptionHelp(false, new InheritedOptionSource());
-       assertTrue(help.contains(InheritedOptionSource.OPTION_NAME));
-       assertTrue(help.contains(InheritedOptionSource.OPTION_DESC));
-       assertTrue(help.contains(OneOptionSource.OPTION_NAME));
-       assertTrue(help.contains(OneOptionSource.OPTION_DESC));
-       assertTrue(help.contains(OneOptionSource.DEFAULT_VALUE));
-   }
+    /**
+     * Test that help text is displayed for all fields
+     */
+    public void testGetOptionHelp() {
+        String help = ArgsOptionParser.getOptionHelp(false, new InheritedOptionSource());
+        assertTrue(help.contains(InheritedOptionSource.OPTION_NAME));
+        assertTrue(help.contains(InheritedOptionSource.OPTION_DESC));
+        assertTrue(help.contains(OneOptionSource.OPTION_NAME));
+        assertTrue(help.contains(OneOptionSource.OPTION_DESC));
+        assertTrue(help.contains(OneOptionSource.DEFAULT_VALUE));
+    }
 
-   /**
-    * Test displaying important only help text
-    */
-   public void testGetOptionHelp_important() {
-       String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource());
-       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
-       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
-       assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
-   }
+    /**
+     * Test displaying important only help text
+     */
+    public void testGetOptionHelp_important() {
+        String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource());
+        assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
+        assertTrue(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
+        assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
+    }
 
-   /**
-    * Test that {@link Importance#IF_UNSET} {@link Option}s are hidden from help if set.
-    */
-   public void testGetOptionHelp_importantUnset() {
-       String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource("foo"));
-       assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
-       assertFalse(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
-       assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
-   }
+    /**
+     * Test that {@link Importance#IF_UNSET} {@link Option}s are hidden from help if set.
+     */
+    public void testGetOptionHelp_importantUnset() {
+        String help = ArgsOptionParser.getOptionHelp(true, new ImportantOptionSource("foo"));
+        assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
+        assertFalse(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
+        assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
+    }
 }
