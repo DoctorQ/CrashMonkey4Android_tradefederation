@@ -19,6 +19,8 @@ import com.android.tradefed.config.Option.Importance;
 
 import junit.framework.TestCase;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -122,6 +124,38 @@ public class ArgsOptionParserTest extends TestCase {
 
         ImportantOptionSource() {
         }
+    }
+
+    /**
+     * Option source with mandatory options
+     */
+    private static class MandatoryOptionSourceNoDefault {
+        @Option(name = "no-default", mandatory = true)
+        private String mNoDefaultOption;
+    }
+
+    /**
+     * Option source with mandatory options
+     */
+    private static class MandatoryOptionSourceNull {
+        @Option(name = "null", mandatory = true)
+        private String mNullOption = null;
+    }
+
+    /**
+     * Option source with mandatory options
+     */
+    private static class MandatoryOptionSourceEmptyCollection {
+        @Option(name = "empty-collection", mandatory = true)
+        private Collection<String> mEmptyCollection = new ArrayList<String>(0);
+    }
+
+    /**
+     * Option source with mandatory options
+     */
+    private static class MandatoryOptionSourceEmptyMap {
+        @Option(name = "empty-map", mandatory = true)
+        private Map<String, String> mEmptyMap = new HashMap<String, String>();
     }
 
     /**
@@ -386,5 +420,49 @@ public class ArgsOptionParserTest extends TestCase {
         assertTrue(help.contains(ImportantOptionSource.IMPORTANT_OPTION_NAME));
         assertFalse(help.contains(ImportantOptionSource.IMPORTANT_UNSET_OPTION_NAME));
         assertFalse(help.contains(ImportantOptionSource.UNIMPORTANT_OPTION_NAME));
+    }
+
+    public void testMandatoryOption_noDefault() throws Exception {
+        MandatoryOptionSourceNoDefault object = new MandatoryOptionSourceNoDefault();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    public void testMandatoryOption_null() throws Exception {
+        MandatoryOptionSourceNull object = new MandatoryOptionSourceNull();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    public void testMandatoryOption_emptyCollection() throws Exception {
+        MandatoryOptionSourceEmptyCollection object = new MandatoryOptionSourceEmptyCollection();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    public void testMandatoryOption_emptyMap() throws Exception {
+        MandatoryOptionSourceEmptyMap object = new MandatoryOptionSourceEmptyMap();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        try {
+            parser.parse(new String[] {});
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 }

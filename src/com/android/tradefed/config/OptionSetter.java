@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -388,6 +389,63 @@ public class OptionSetter {
                         field);
             }
         }
+    }
+
+    /**
+     * Returns the names of all of the {@link Option}s that are marked as {@code mandatory} but
+     * remain unset.
+     *
+     * @return A {@link Collection} of {@link String}s containing the (unqualified) names of unset
+     *         mandatory options.
+     * @throws ConfigurationException if a field to be checked is inaccessible
+     */
+    protected Collection<String> getUnsetMandatoryOptions() throws ConfigurationException {
+        Collection<String> unsetOptions = new HashSet<String>();
+        for (Map.Entry<String, OptionFieldsForName> optionPair : mOptionMap.entrySet()) {
+            final String optName = optionPair.getKey();
+            final OptionFieldsForName optionFields = optionPair.getValue();
+            if (optName.indexOf(NAMESPACE_SEPARATOR) >= 0) {
+                // Only return unqualified option names
+                continue;
+            }
+
+            for (Map.Entry<Object, Field> fieldEntry : optionFields) {
+                final Object obj = fieldEntry.getKey();
+                final Field field = fieldEntry.getValue();
+                final Option option = field.getAnnotation(Option.class);
+                if (option == null) {
+                    continue;
+                } else if (!option.mandatory()) {
+                    continue;
+                }
+
+                // At this point, we know this is a mandatory field; make sure it's set
+                field.setAccessible(true);
+                final Object value;
+                try {
+                    value = field.get(obj);
+                } catch (IllegalAccessException e) {
+                    throw new ConfigurationException(String.format("internal error: %s",
+                            e.getMessage()));
+                }
+
+                final String realOptName = String.format("--%s", option.name());
+                if (value == null) {
+                    unsetOptions.add(realOptName);
+                } else if (value instanceof Collection) {
+                    Collection c = (Collection) value;
+                    if (c.isEmpty()) {
+                        unsetOptions.add(realOptName);
+                    }
+                } else if (value instanceof Map) {
+                    Map m = (Map) value;
+                    if (m.isEmpty()) {
+                        unsetOptions.add(realOptName);
+                    }
+                }
+            }
+        }
+        return unsetOptions;
     }
 
     /**

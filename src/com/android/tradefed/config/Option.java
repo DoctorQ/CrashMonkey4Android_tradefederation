@@ -46,7 +46,7 @@ public @interface Option {
      * For example, an {@link Option} with name 'help' would be specified with '--help' on the
      * command line.
      * <p/>
-     * Names cannot contain a colon eg ':'.
+     * Names may not contain a colon eg ':'.
      */
     String name();
 
@@ -71,4 +71,16 @@ public @interface Option {
      * unimportant option will only be displayed in the full help text.
      */
     Importance importance() default Importance.NEVER;
+
+    /**
+     * Whether the option is mandatory or optional.
+     * <p />
+     * The configuration framework will throw a {@code ConfigurationException} if either of the
+     * following is true of a mandatory field after options have been parsed from all sources:
+     * <ul>
+     *   <li>The field is {@code null}.</li>
+     *   <li>The field is an empty {@link java.util.Collection}.</li>
+     * </ul>
+     */
+     boolean mandatory() default false;
 }

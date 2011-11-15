@@ -16,6 +16,7 @@
 package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
+import com.android.tradefed.util.ArrayUtil;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -197,6 +198,13 @@ public class ArgsOptionParser extends OptionSetter {
                 leftovers.add(arg);
                 break;
             }
+        }
+
+        // Make sure that all mandatory options have been specified
+        List<String> missingOptions = new ArrayList(getUnsetMandatoryOptions());
+        if (!missingOptions.isEmpty()) {
+            throw new ConfigurationException(String.format("Found missing mandatory options: %s",
+                    ArrayUtil.join(", ", missingOptions)));
         }
 
         // Package up the leftovers.
