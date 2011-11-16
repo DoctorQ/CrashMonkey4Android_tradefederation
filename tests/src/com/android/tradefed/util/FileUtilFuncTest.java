@@ -257,6 +257,76 @@ public class FileUtilFuncTest extends TestCase {
         }
     }
 
+    /**
+     * Test method for {@link FileUtil#createTempFileForRemote(String, File)}.
+     */
+    public void testCreateTempFileForRemote() throws IOException {
+        String remoteFilePath = "path/userdata.img";
+        File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+        try {
+            assertTrue(tmpFile.getAbsolutePath().contains("userdata"));
+            assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+    /**
+     * Test method for {@link FileUtil#createTempFileForRemote(String, File)} for a nested path.
+     */
+    public void testCreateTempFileForRemote_nested() throws IOException {
+        String remoteFilePath = "path/2path/userdata.img";
+        File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+        try {
+            assertTrue(tmpFile.getAbsolutePath().contains("userdata"));
+            assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+    /**
+     * Test {@link FileUtil#createTempFileForRemote(String, File)} for file with no extension
+     */
+    public void testCreateTempFileForRemote_noext() throws IOException {
+        String remoteFilePath = "path/2path/userddddmg";
+        File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+        try {
+            assertTrue(tmpFile.getAbsolutePath().contains("userddddmg"));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+    /**
+     * Test {@link FileUtil#createTempFileForRemote(String, File)} for a too small prefix.
+     */
+    public void testCreateTempFileForRemote_short() throws IOException {
+        String remoteFilePath = "path/2path/us.img";
+        File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+        try {
+            assertTrue(tmpFile.getAbsolutePath().contains("usXXX"));
+            assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+    /**
+     * Test {@link FileUtil#createTempFileForRemote(String, File)} for remoteFile in root path.
+     */
+    public void testCreateTempFileForRemote_singleFile() throws IOException {
+        String remoteFilePath = "userdata.img";
+        File tmpFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
+        try {
+            assertTrue(tmpFile.getAbsolutePath().contains("userdata"));
+            assertTrue(tmpFile.getAbsolutePath().endsWith(".img"));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+
     // Assertions
     private String assertUnixPerms(File file, String expPerms) {
         String perms = ls(file.getPath());
