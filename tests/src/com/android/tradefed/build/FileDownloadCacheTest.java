@@ -37,18 +37,21 @@ public class FileDownloadCacheTest extends TestCase {
 
     private IFileDownloader mMockDownloader;
 
+    private File mCacheDir;
     private FileDownloadCache mCache;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mMockDownloader = EasyMock.createMock(IFileDownloader.class);
-        mCache = new FileDownloadCache(FileUtil.createTempDir("unittest"));
+        mCacheDir = FileUtil.createTempDir("unittest");
+        mCache = new FileDownloadCache(mCacheDir);
     }
 
     @Override
     protected void tearDown() throws Exception {
         mCache.empty();
+        FileUtil.recursiveDelete(mCacheDir);
         super.tearDown();
     }
 

@@ -24,6 +24,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.TestDevice.LogCatReceiver;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
@@ -358,8 +359,13 @@ public class TestDeviceTest extends TestCase {
             synchronized (notifier) {
                 notifier.wait();
             }
-            String actualString = StreamUtil.getStringFromStream(
-                    receiver.getLogcatData().createInputStream());
+            InputStreamSource iss = receiver.getLogcatData();
+            String actualString = "";
+            try {
+                actualString = StreamUtil.getStringFromStream(iss.createInputStream());
+            } finally {
+                iss.cancel();
+            }
             // verify that data from both the backup log file (input2) and current log file
             // (input3) is retrieved
             assertFalse(actualString.contains(input));
