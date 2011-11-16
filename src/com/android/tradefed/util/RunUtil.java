@@ -97,6 +97,17 @@ public class RunUtil implements IRunUtil {
         return processBuilder.command(command);
     }
 
+    private synchronized ProcessBuilder createProcessBuilder(List<String> commandList) {
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        if (mWorkingDir != null) {
+            processBuilder.directory(mWorkingDir);
+        }
+        if (!mEnvVariables.isEmpty()) {
+            processBuilder.environment().putAll(mEnvVariables);
+        }
+        return processBuilder.command(commandList);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -140,7 +151,7 @@ public class RunUtil implements IRunUtil {
     @Override
     public Process runCmdInBackground(final List<String> command) throws IOException  {
         CLog.v("Running %s", command);
-        return createProcessBuilder((String[])command.toArray()).start();
+        return createProcessBuilder(command).start();
     }
 
     /**
