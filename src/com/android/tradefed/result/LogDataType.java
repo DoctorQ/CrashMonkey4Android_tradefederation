@@ -24,7 +24,8 @@ public enum LogDataType {
     XML("xml", false, true),
     PNG("png", true, false),
     ZIP("zip", true, false),
-    GZIP("gz", true, false);
+    GZIP("gz", true, false),
+    UNKNOWN("dat", false, false);
 
     private final String mFileExt;
     private final boolean mIsCompressed;
