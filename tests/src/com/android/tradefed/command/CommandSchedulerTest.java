@@ -133,21 +133,6 @@ public class CommandSchedulerTest extends TestCase {
     }
 
     /**
-     * Test {@link CommandScheduler#addCommand(String[])} when passed invalid arguments.
-     */
-    public void testAddConfig_invalidConfig() throws ConfigurationException {
-        String[] args = new String[] {"arg"};
-        EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(args))).andThrow(
-                new ConfigurationException(""));
-        mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(true),
-                EasyMock.eq(System.out));
-        replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
-        verifyMocks();
-    }
-
-    /**
      * Test {@link CommandScheduler#addCommand(String[])} when help mode is specified
      */
     public void testAddConfig_configHelp() throws ConfigurationException {
