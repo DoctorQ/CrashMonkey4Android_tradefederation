@@ -506,7 +506,7 @@ public class Console extends Thread {
                 printLine(String.format("Attempting to run cmdfile %s with args %s", file,
                         extraArgs.toString()));
                 try {
-                    createCommandFileParser().parseFile(new File(file), mScheduler);
+                    createCommandFileParser().parseFile(new File(file), mScheduler, extraArgs);
                 } catch (IOException e) {
                     printLine(String.format("Failed to run %s: %s", file, e));
                 } catch (ConfigurationException e) {
