@@ -30,8 +30,8 @@ import java.io.IOException;
 @OptionClass(alias = "stdout")
 public class StdoutLogger implements ILeveledLogOutput {
 
-    @Option(name="log-level", description="minimum log level to display. Must be one of " +
-            LogUtil.LOG_LEVEL_LIST +".", importance = Importance.ALWAYS)
+    @Option(name="log-level", description="minimum log level to display.",
+            importance = Importance.ALWAYS)
     private LogLevel mLogLevel = LogLevel.INFO;
 
     /**
