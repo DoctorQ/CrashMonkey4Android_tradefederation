@@ -16,6 +16,7 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.command.Console.CaptureList;
+import com.android.tradefed.command.Console.IConsoleReader;
 import com.android.tradefed.util.RegexTrie;
 
 import junit.framework.TestCase;
@@ -31,6 +32,7 @@ import java.util.List;
 public class ConsoleTest extends TestCase {
 
     private ICommandScheduler mMockScheduler;
+    private IConsoleReader mMockConsoleReader;
     private Console mConsole;
 
     /**
@@ -40,7 +42,8 @@ public class ConsoleTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockScheduler = EasyMock.createStrictMock(ICommandScheduler.class);
-        mConsole = new Console(mMockScheduler);
+        mMockConsoleReader = EasyMock.createNiceMock(IConsoleReader.class);
+        mConsole = new Console(mMockScheduler, mMockConsoleReader);
      }
 
     /**
@@ -49,10 +52,8 @@ public class ConsoleTest extends TestCase {
     public void testRun() throws InterruptedException {
         mMockScheduler.start();
         EasyMock.replay(mMockScheduler);
-        // This should force the console to drop into non-interactive mode
-        mConsole.setConsoleReader(null);
         // non interactive mode needs some args to start
-        mConsole.setArgs(new String[] {"do", "foo"});
+        mConsole.setArgs(new String[] {"help"});
         mConsole.start();
         mConsole.join();
         EasyMock.verify(mMockScheduler);

@@ -100,6 +100,7 @@ public class ArrayUtil {
      * @param sep the string separator to delimit the different output segments.
      * @param pieces A {@link Collection} or a varargs {@code Array} of objects.
      */
+    @SuppressWarnings("unchecked")
     public static String join(String sep, Object... pieces) {
         if ((pieces.length == 1) && (pieces[0] instanceof Collection)) {
             // Don't re-wrap the Collection

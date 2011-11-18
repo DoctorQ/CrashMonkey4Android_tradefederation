@@ -201,7 +201,7 @@ public class ArgsOptionParser extends OptionSetter {
         }
 
         // Make sure that all mandatory options have been specified
-        List<String> missingOptions = new ArrayList(getUnsetMandatoryOptions());
+        List<String> missingOptions = new ArrayList<String>(getUnsetMandatoryOptions());
         if (!missingOptions.isEmpty()) {
             throw new ConfigurationException(String.format("Found missing mandatory options: %s",
                     ArrayUtil.join(", ", missingOptions)));

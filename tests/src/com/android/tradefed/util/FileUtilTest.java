@@ -17,9 +17,6 @@ package com.android.tradefed.util;
 
 import junit.framework.TestCase;
 
-import java.io.File;
-import java.io.IOException;
-
 /**
  * Unit tests for {@link FileUtil}
  */
