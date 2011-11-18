@@ -93,12 +93,24 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
      * Set up the configurations for the test cases we want to run
      */
     public CameraLatencyTest() {
-        // Latency tests
+        // Startup tests
         TestInfo t = new TestInfo();
+        t.mTestName = "startup";
+        t.mClassName = "com.android.camera.stress.CameraStartUp";
+        t.mTestMetricsName = "CameraVideoRecorderStartup";
+        RegexTrie<String> map = t.mPatternMap;
+        map = t.mPatternMap;
+        map.put("FirstCameraStartup", "^First Camera Startup: (\\d+)");
+        map.put("CameraStartup", "^Camera average startup time: (\\d+) ms");
+        map.put("FirstVideoStartup", "^First Video Startup: (\\d+)");
+        map.put("VideoStartup", "^Video average startup time: (\\d+) ms");
+        mTestCases.add(t);
+
+        // Latency tests
+        t = new TestInfo();
         t.mTestName = "latency";
         t.mClassName = "com.android.camera.stress.CameraLatency";
         t.mTestMetricsName = "CameraLatency";
-        RegexTrie<String> map = t.mPatternMap;
         map.put("AutoFocus", "^Avg AutoFocus = (\\d+)");
         map.put("ShutterLag", "^Avg mShutterLag = (\\d+)");
         map.put("Preview", "^Avg mShutterToPictureDisplayedTime = (\\d+)");
@@ -106,17 +118,6 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         map.put("GenTimeDiffOverJPEGAndRaw", "^Avg mJpegCallbackFinishTime = (\\d+)");
         mTestCases.add(t);
 
-        // Startup tests
-        t = new TestInfo();
-        t.mTestName = "startup";
-        t.mClassName = "com.android.camera.stress.CameraStartUp";
-        t.mTestMetricsName = "CameraVideoRecorderStartup";
-        map = t.mPatternMap;
-        map.put("FirstCameraStartup", "^First Camera Startup: (\\d+)");
-        map.put("CameraStartup", "^Camera average startup time: (\\d+) ms");
-        map.put("FirstVideoStartup", "^First Video Startup: (\\d+)");
-        map.put("VideoStartup", "^Video average startup time: (\\d+) ms");
-        mTestCases.add(t);
     }
 
     @Override
