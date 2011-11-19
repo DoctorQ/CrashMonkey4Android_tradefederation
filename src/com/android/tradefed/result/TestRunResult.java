@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class TestRunResult {
     private final String mTestRunName;
-    // Uses a synchronized map to make thread safe. 7
+    // Uses a synchronized map to make thread safe.
     // Uses a LinkedHashmap to have predictable iteration order
     private Map<TestIdentifier, TestResult> mTestResults =
         Collections.synchronizedMap(new LinkedHashMap<TestIdentifier, TestResult>());

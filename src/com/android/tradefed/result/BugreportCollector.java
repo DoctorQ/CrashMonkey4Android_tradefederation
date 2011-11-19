@@ -15,10 +15,10 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -182,9 +182,21 @@ public class BugreportCollector implements ITestInvocationListener {
         }
     }
 
+    private Noun getNounFromPredicate(Predicate p) {
+        // FIXME: This is totally a hack, since it assumes knowledge about the structure of a
+        // FIXME: Predicate.  In particular, the Predicate class is probably more general than it
+        // FIXME: needs to be.
+        List<SubPredicate> spList = p.getPredicate();
+        for (SubPredicate sp : spList) {
+            if (sp != null && sp instanceof Noun) {
+                return (Noun) sp;
+            }
+        }
+        return null;
+    }
+
 
     // Now that the Predicate framework is done, actually start on the BugreportCollector class
-    private static final String LOG_TAG = "BugreportCollector";
     /**
      * We keep an internal {@link CollectingTestListener} instead of subclassing to make sure that
      * we @Override all of the applicable interface methods (instead of having them fall through to
@@ -252,13 +264,12 @@ public class BugreportCollector implements ITestInvocationListener {
      * Actually capture a bugreport and pass it to our child listener.
      */
     void grabBugreport(String logDesc) {
-        Log.v(LOG_TAG, String.format("About to grab bugreport for %s; custom name is %s.", logDesc,
-                mDescriptiveName));
+        CLog.v("About to grab bugreport for %s; custom name is %s.", logDesc, mDescriptiveName);
         if (mDescriptiveName != null) {
             logDesc = mDescriptiveName;
         }
         String logName = String.format("bug-%s.%d.txt", logDesc, System.currentTimeMillis());
-        Log.v(LOG_TAG, String.format("Log name is %s", logName));
+        CLog.v("Log name is %s", logName);
         InputStreamSource bugreport = mTestDevice.getBugreport();
         try {
             mListener.testLog(logName, LogDataType.TEXT, bugreport);
@@ -279,8 +290,7 @@ public class BugreportCollector implements ITestInvocationListener {
     Predicate search(Relation relation, Collection<Freq> freqs, Noun noun) {
         for (Predicate pred : mPredicates) {
             for (Freq freq : freqs) {
-                Log.v(LOG_TAG, String.format("Search checking predicate %s",
-                        p(relation, freq, noun)));
+                CLog.v("Search checking predicate %s", p(relation, freq, noun));
                 if (pred.partialMatch(p(relation, freq, noun))) {
                     return pred;
                 }
@@ -290,6 +300,10 @@ public class BugreportCollector implements ITestInvocationListener {
     }
 
     boolean check(Relation relation, Noun noun) {
+        return check(relation, noun, null);
+    }
+
+    boolean check(Relation relation, Noun noun, TestIdentifier test) {
         // Expect to get something like "AFTER", "TESTCASE"
 
         // All freqs that could match _right now_.  Should be added in decreasing order of
@@ -302,6 +316,7 @@ public class BugreportCollector implements ITestInvocationListener {
             case AFTER:
                 switch (noun) {
                     case TESTCASE:
+                        // FIXME: grab the name of the testcase that just finished
                         if (curResult.getNumTests() == 1) {
                             applicableFreqs.add(Freq.FIRST);
                         }
@@ -346,10 +361,27 @@ public class BugreportCollector implements ITestInvocationListener {
 
         Predicate storedP = search(relation, applicableFreqs, noun);
         if (storedP != null) {
-            Log.v(LOG_TAG, String.format("Found storedP %s for relation %s and noun %s", storedP,
-                    relation, noun));
-            Log.v(LOG_TAG, "Grabbing bugreport.");
-            grabBugreport(storedP.toString());
+            CLog.v("Found storedP %s for relation %s and noun %s", storedP, relation, noun);
+            String desc = storedP.toString();
+            // Try to generate a useful description
+            if (test != null) {
+                final String testName = String.format("%s#%s", test.getClassName(),
+                        test.getTestName());
+                switch (noun) {
+                    case TESTCASE:
+                        // bug-FooBarTest#testMethodName
+                        desc = testName;
+                        break;
+
+                    case FAILED_TESTCASE:
+                        // bug-FAILED-FooBarTest#testMethodName
+                        desc = String.format("FAILED-%s", testName);
+                        break;
+                }
+            }
+
+            CLog.v("Grabbing bugreport.");
+            grabBugreport(desc);
             mCapturedBugreport = true;
             return true;
         } else {
@@ -386,7 +418,7 @@ public class BugreportCollector implements ITestInvocationListener {
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         mListener.testEnded(test, testMetrics);
         mCollector.testEnded(test, testMetrics);
-        check(Relation.AFTER, Noun.TESTCASE);
+        check(Relation.AFTER, Noun.TESTCASE, test);
         reset();
     }
 
@@ -397,7 +429,7 @@ public class BugreportCollector implements ITestInvocationListener {
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
         mListener.testFailed(status, test, trace);
         mCollector.testFailed(status, test, trace);
-        check(Relation.AFTER, Noun.FAILED_TESTCASE);
+        check(Relation.AFTER, Noun.FAILED_TESTCASE, test);
         reset();
     }
 
@@ -448,7 +480,7 @@ public class BugreportCollector implements ITestInvocationListener {
     public void testStarted(TestIdentifier test) {
         mListener.testStarted(test);
         mCollector.testStarted(test);
-        check(Relation.AT_START_OF, Noun.TESTCASE);
+        check(Relation.AT_START_OF, Noun.TESTCASE, test);
     }
 
 

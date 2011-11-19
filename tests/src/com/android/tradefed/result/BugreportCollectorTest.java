@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.BugreportCollector.Filter;
 import com.android.tradefed.result.BugreportCollector.Freq;
@@ -42,6 +43,7 @@ public class BugreportCollectorTest extends TestCase {
     private static final String TEST_KEY = "key";
     private static final String RUN_KEY = "key2";
     private static final String BUGREPORT_STRING = "This is a bugreport\nYeah!\n";
+    private static final String STACK_TRACE = "boo-hoo";
 
     private static class BugreportISS implements InputStreamSource {
         @Override
@@ -152,17 +154,34 @@ public class BugreportCollectorTest extends TestCase {
         verifyMocks();
     }
 
+    public void testTestFailed() throws Exception {
+        Predicate pred = new Predicate(Relation.AFTER, Freq.EACH, Noun.FAILED_TESTCASE);
+        mCollector.addPredicate(pred);
+        setListenerTestRunExpectations(mMockListener, "runName1", "testName1", "value",
+                true /*failed*/);
+        mMockListener.testLog(EasyMock.contains("bug-FAILED-FooTest#testName1."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
+        setListenerTestRunExpectations(mMockListener, "runName2", "testName2", "value",
+                true /*failed*/);
+        mMockListener.testLog(EasyMock.contains("bug-FAILED-FooTest#testName2."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
+        replayMocks();
+        injectTestRun("runName1", "testName1", "value", true /*failed*/);
+        injectTestRun("runName2", "testName2", "value", true /*failed*/);
+        verifyMocks();
+    }
+
     public void testTestEnded() throws Exception {
         Predicate pred = new Predicate(Relation.AFTER, Freq.EACH, Noun.TESTCASE);
         mCollector.addPredicate(pred);
-        setListenerTestRunExpectations(mMockListener, "runName", "testName", "value");
-        mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
-                EasyMock.eq(mBugreportISS));
+        setListenerTestRunExpectations(mMockListener, "runName1", "testName1", "value");
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName1."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
         setListenerTestRunExpectations(mMockListener, "runName2", "testName2", "value");
-        mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
-                EasyMock.eq(mBugreportISS));
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName2."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
         replayMocks();
-        injectTestRun("runName", "testName", "value");
+        injectTestRun("runName1", "testName1", "value");
         injectTestRun("runName2", "testName2", "value");
         verifyMocks();
     }
@@ -170,14 +189,14 @@ public class BugreportCollectorTest extends TestCase {
     public void testTestEnded_firstCase() throws Exception {
         Predicate pred = new Predicate(Relation.AFTER, Freq.FIRST, Noun.TESTCASE);
         mCollector.addPredicate(pred);
-        setListenerTestRunExpectations(mMockListener, "runName", "testName", "value");
-        mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
-                EasyMock.eq(mBugreportISS));
+        setListenerTestRunExpectations(mMockListener, "runName1", "testName1", "value");
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName1."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
         setListenerTestRunExpectations(mMockListener, "runName2", "testName2", "value");
-        mMockListener.testLog(EasyMock.contains(pred.toString()), EasyMock.eq(LogDataType.TEXT),
-                EasyMock.eq(mBugreportISS));
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName2."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
         replayMocks();
-        injectTestRun("runName", "testName", "value");
+        injectTestRun("runName1", "testName1", "value");
         injectTestRun("runName2", "testName2", "value");
         verifyMocks();
     }
@@ -227,6 +246,16 @@ public class BugreportCollectorTest extends TestCase {
      * @return the {@link TestIdentifier} of added test
      */
     private TestIdentifier injectTestRun(String runName, String testName, String metricValue) {
+        return injectTestRun(runName, testName, metricValue, false);
+    }
+
+    /**
+     * Injects a single test run with 1 passed test into the {@link CollectingTestListener} under
+     * test
+     * @return the {@link TestIdentifier} of added test
+     */
+    private TestIdentifier injectTestRun(String runName, String testName, String metricValue,
+            boolean shouldFail) {
         Map<String, String> runMetrics = new HashMap<String, String>(1);
         runMetrics.put(RUN_KEY, metricValue);
         Map<String, String> testMetrics = new HashMap<String, String>(1);
@@ -235,18 +264,30 @@ public class BugreportCollectorTest extends TestCase {
         mCollector.testRunStarted(runName, 1);
         final TestIdentifier test = new TestIdentifier("FooTest", testName);
         mCollector.testStarted(test);
+        if (shouldFail) {
+            mCollector.testFailed(TestFailure.FAILURE, test, STACK_TRACE);
+        }
         mCollector.testEnded(test, testMetrics);
         mCollector.testRunEnded(0, runMetrics);
         return test;
     }
 
-    @SuppressWarnings("unchecked")
     private void setListenerTestRunExpectations(ITestInvocationListener listener, String runName,
             String testName, String metricValue) {
+        setListenerTestRunExpectations(listener, runName, testName, metricValue, false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void setListenerTestRunExpectations(ITestInvocationListener listener, String runName,
+            String testName, String metricValue, boolean shouldFail) {
         // FIXME: verify metrics
         listener.testRunStarted(EasyMock.eq(runName), EasyMock.eq(1));
         final TestIdentifier test = new TestIdentifier("FooTest", testName);
         listener.testStarted(EasyMock.eq(test));
+        if (shouldFail) {
+            listener.testFailed((TestFailure)EasyMock.anyObject(), EasyMock.eq(test),
+                    EasyMock.eq(STACK_TRACE));
+        }
         listener.testEnded(EasyMock.eq(test), (Map<String, String>)EasyMock.anyObject());
         listener.testRunEnded(EasyMock.anyInt(), (Map<String, String>)EasyMock.anyObject());
     }
