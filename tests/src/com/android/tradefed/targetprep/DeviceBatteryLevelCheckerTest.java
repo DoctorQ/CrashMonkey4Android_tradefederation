@@ -16,6 +16,7 @@
 
 package com.android.tradefed.targetprep;
 
+import com.android.ddmlib.IDevice;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.util.IRunUtil;
 
@@ -25,23 +26,8 @@ import org.easymock.EasyMock;
 
 public class DeviceBatteryLevelCheckerTest extends TestCase {
     private DeviceBatteryLevelChecker mChecker = null;
-    ITestDevice mFakeDevice = null;
-
-    private static final String BATTERY_TEMPLATE = "Current Battery Service state:\n" +
-            "  AC powered: false\n" +
-            "  USB powered: true\n" +
-            "  status: 2\n" +
-            "  health: 2\n" +
-            "  present: true\n" +
-            "  level: %d\n" +
-            "  scale: 100\n" +
-            "  voltage:3400\n" +
-            "  temperature: 250\n" +
-            "  technology: Li-ion\n";
-
-    private String battLevelString(int level) {
-        return String.format(BATTERY_TEMPLATE, level);
-    }
+    ITestDevice mFakeTestDevice = null;
+    IDevice mFakeDevice = null;
 
     @Override
     protected void setUp() throws Exception {
@@ -52,42 +38,51 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
                 return EasyMock.createNiceMock(IRunUtil.class);
             }
         };
-        mFakeDevice = EasyMock.createStrictMock(ITestDevice.class);
-        EasyMock.expect(mFakeDevice.getSerialNumber()).andStubReturn("SERIAL");
+        mFakeTestDevice = EasyMock.createStrictMock(ITestDevice.class);
+        mFakeDevice = EasyMock.createStrictMock(IDevice.class);
+
+        EasyMock.expect(mFakeTestDevice.getSerialNumber()).andStubReturn("SERIAL");
+        EasyMock.expect(mFakeTestDevice.getIDevice()).andStubReturn(mFakeDevice);
     }
 
     public void testNull() throws Exception {
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(null);
-        EasyMock.replay(mFakeDevice);
+        expectBattLevel(null);
+        replayDevices();
 
-        mChecker.setUp(mFakeDevice, null);
+        mChecker.setUp(mFakeTestDevice, null);
         // expect this to return immediately without throwing an exception.  Should log a warning.
-        EasyMock.verify(mFakeDevice);
+        verifyDevices();
     }
 
     public void testNormal() throws Exception {
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(45));
-        EasyMock.replay(mFakeDevice);
+        expectBattLevel(45);
+        replayDevices();
 
-        mChecker.setUp(mFakeDevice, null);
-        EasyMock.verify(mFakeDevice);
+        mChecker.setUp(mFakeTestDevice, null);
+        verifyDevices();
     }
 
     public void testLow() throws Exception {
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(5));
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(20));
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(50));
-        EasyMock.expect(mFakeDevice.executeShellCommand("dumpsys battery"))
-                .andReturn(battLevelString(90));
-        EasyMock.replay(mFakeDevice);
+        expectBattLevel(5);
+        expectBattLevel(20);
+        expectBattLevel(50);
+        expectBattLevel(90);
+        replayDevices();
 
-        mChecker.setUp(mFakeDevice, null);
-        EasyMock.verify(mFakeDevice);
+        mChecker.setUp(mFakeTestDevice, null);
+        verifyDevices();
+    }
+
+    private void expectBattLevel(Integer level) throws Exception {
+        EasyMock.expect(mFakeDevice.getBatteryLevel()).andReturn(level);
+    }
+
+    private void replayDevices() {
+        EasyMock.replay(mFakeTestDevice, mFakeDevice);
+    }
+
+    private void verifyDevices() {
+        EasyMock.verify(mFakeTestDevice, mFakeDevice);
     }
 }
 
