@@ -221,6 +221,10 @@ public class FileUtil {
      * @throws IOException if failed to hardlink file
      */
     public static void hardlinkFile(File origFile, File destFile) throws IOException {
+        if (!origFile.exists()) {
+            throw new IOException(String.format("Cannot hardlink %s. File does not exist",
+                    origFile.getAbsolutePath()));
+        }
         // `ln src dest` will create a hardlink (note: not `ln -s src dest`, which creates symlink)
         // note that this will fail across filesystem boundaries
         // FIXME: should probably just fall back to normal copy if this fails
