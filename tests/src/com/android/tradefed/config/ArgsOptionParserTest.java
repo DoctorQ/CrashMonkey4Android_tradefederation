@@ -28,6 +28,7 @@ import java.util.Map;
 /**
  * Unit tests for {@link ArgsOptionParser}.
  */
+@SuppressWarnings("unused")
 public class ArgsOptionParserTest extends TestCase {
 
     /**
@@ -103,17 +104,14 @@ public class ArgsOptionParserTest extends TestCase {
         private static final String IMPORTANT_UNSET_OPTION_NAME = "unset_important_option";
         private static final String UNIMPORTANT_OPTION_NAME = "unimportant_option";
 
-        @SuppressWarnings("unused")
         @Option(name = IMPORTANT_OPTION_NAME, description = IMPORTANT_OPTION_NAME,
                 importance = Importance.ALWAYS)
         private String mImportantOption = "foo";
 
-        @SuppressWarnings("unused")
         @Option(name = IMPORTANT_UNSET_OPTION_NAME, description = IMPORTANT_UNSET_OPTION_NAME,
                 importance = Importance.IF_UNSET)
         private String mImportantUnsetOption = null;
 
-        @SuppressWarnings("unused")
         @Option(name = UNIMPORTANT_OPTION_NAME, description = UNIMPORTANT_OPTION_NAME,
                 importance = Importance.NEVER)
         private String mUnimportantOption = null;

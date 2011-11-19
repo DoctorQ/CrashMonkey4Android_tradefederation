@@ -85,7 +85,7 @@ public class Console extends Thread {
      */
 
     protected ICommandScheduler mScheduler;
-    protected ConsoleReader mConsoleReader;
+    protected IConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
     private boolean mShouldExit = false;
     private String[] mMainArgs = new String[] {};
@@ -140,6 +140,91 @@ public class Console extends Thread {
     }
 
     /**
+     * Interface for interacting with underlying console.
+     * <p/>
+     * Exposed for unit testing.
+     */
+    static interface IConsoleReader {
+
+        /**
+         * Wrapper for {@link ConsoleReader#printString(String)}.
+         */
+        void printString(String output) throws IOException;
+
+        /**
+         * Wrapper for {@link ConsoleReader#printNewLine()}.
+         */
+        void printNewline() throws IOException;
+
+        /**
+         * Wrapper for {@link ConsoleReader#printNewLine()}.
+         */
+        String readLine(String consolePrompt) throws IOException;
+
+        /**
+         * Configure the console for non interactive mode
+         */
+        void setNonInteractiveMode();
+
+    }
+
+    /**
+     * Wrapper class for directing {@link IConsoleReader} calls to jline
+     */
+    static class JLineConsoleWrapper implements IConsoleReader {
+
+        private ConsoleReader mJLineReader;
+
+        JLineConsoleWrapper() {
+            try {
+                mJLineReader = new ConsoleReader();
+            } catch (IOException e) {
+                System.err.println("Unable to initialize ConsoleReader: " + e.getMessage());
+                mJLineReader = null;
+            }
+        }
+
+        @Override
+        public void printString(String output) throws IOException {
+            if (mJLineReader != null) {
+                mJLineReader.printString(output);
+                mJLineReader.printNewline();
+            } else {
+                System.out.println(output);
+            }
+        }
+
+        @Override
+        public void printNewline() throws IOException {
+            if (mJLineReader != null) {
+                mJLineReader.printNewline();
+            } else {
+                System.out.println();
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String readLine(String consolePrompt) throws IOException {
+            if (mJLineReader != null) {
+                return mJLineReader.readLine(consolePrompt);
+            } else {
+                return null;
+            }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public void setNonInteractiveMode() {
+            mJLineReader = null;
+        }
+    }
+
+    /**
      * Retrieve the {@link RegexTrie} that defines the console behavior.  Exposed for unit testing.
      */
     RegexTrie<Runnable> getCommandTrie() {
@@ -147,23 +232,19 @@ public class Console extends Thread {
     }
 
     protected Console() {
-        this(new CommandScheduler());
+        this(new CommandScheduler(), new JLineConsoleWrapper());
     }
 
     /**
-     * Create a {@link Console} with given scheduler.  Also, set up console command handling
+     * Create a {@link Console} with given scheduler and console reader.
+     * Also, set up console command handling.
      * <p/>
      * Exposed for unit testing
      */
-    Console(ICommandScheduler scheduler) {
+    Console(ICommandScheduler scheduler, IConsoleReader reader) {
         super();
         mScheduler = scheduler;
-        try {
-            mConsoleReader = new ConsoleReader();
-        } catch (IOException e) {
-            System.err.println("Unable to initialize ConsoleReader: " + e.getMessage());
-            mConsoleReader = null;
-        }
+        mConsoleReader = reader;
 
         List<String> genericHelp = new LinkedList<String>();
         Map<String, String> commandHelp = new LinkedHashMap<String, String>();
@@ -571,27 +652,13 @@ public class Console extends Thread {
     }
 
     /**
-     * Sets the ConsoleReader instance to use
-     * <p/>
-     * Exposed for unit testing
-     */
-    void setConsoleReader(ConsoleReader reader) {
-        mConsoleReader = reader;
-    }
-
-    /**
      * Get input from the console
      *
      * @return A {@link String} containing the input to parse and run.  Will return {@code null} if
      *         console is not available or user entered EOF ({@code ^D}).
      */
     private String getConsoleInput() throws IOException {
-        if (mConsoleReader == null) {
-            // non-interactive mode
-            return null;
-        } else {
-            return mConsoleReader.readLine(getConsolePrompt());
-        }
+        return mConsoleReader.readLine(getConsolePrompt());
     }
 
     /**
@@ -606,17 +673,13 @@ public class Console extends Thread {
      * @param output
      */
     protected void printLine(String output) {
-        if (mConsoleReader != null) {
-            try {
-                mConsoleReader.printString(output);
-                mConsoleReader.printNewline();
-            } catch (IOException e) {
-                // not guaranteed to work, but worth a try
-                System.err.println("Console failed to print a message to stdout: "
-                        + e.getMessage());
-            }
-        } else {
-            System.out.println(output);
+        try {
+            mConsoleReader.printString(output);
+            mConsoleReader.printNewline();
+        } catch (IOException e) {
+            // not guaranteed to work, but worth a try
+            System.err.println("Console failed to print a message to stdout: "
+                    + e.getMessage());
         }
     }
 
@@ -650,7 +713,7 @@ public class Console extends Thread {
             // Check System.console() since jline doesn't seem to consistently know whether or not
             // the console is functional.
             if (System.console() == null) {
-                mConsoleReader = null;
+                mConsoleReader.setNonInteractiveMode();
                 if (arrrgs.isEmpty()) {
                     printLine("No commands for non-interactive mode; exiting.");
                     return;

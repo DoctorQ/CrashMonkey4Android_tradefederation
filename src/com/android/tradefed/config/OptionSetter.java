@@ -770,6 +770,7 @@ public class OptionSetter {
             return translate(valueText, true);
         }
 
+        @SuppressWarnings("unchecked")
         Object translate(String valueText, boolean shouldTryUpperCase) {
             try {
                 return Enum.valueOf(mEnumType, valueText);
