@@ -27,20 +27,11 @@ import java.io.File;
  * local path.
  */
 @OptionClass(alias = "local-build")
-public class LocalBuildProvider implements IBuildProvider {
+public class LocalBuildProvider extends StubBuildProvider {
 
     private static final String IMAGE_FILE_OPTION_NAME = "device-image-file";
     private static final String TEST_DIR_OPTION_NAME = "test-dir";
     private static final String DATA_FILE_OPTION_NAME = "user-data-file";
-
-    @Option(name = "device-build-id", description = "the id of device build.")
-    private String mBuildId = null;
-
-    @Option(name = "test-target", description = "the test target name.")
-    private String mTestTarget = null;
-
-    @Option(name = "build-name", description = "the build name.")
-    private String mBuildName = null;
 
     @Option(name = IMAGE_FILE_OPTION_NAME, description = "the device image file to use.",
             importance = Importance.IF_UNSET)
@@ -66,13 +57,10 @@ public class LocalBuildProvider implements IBuildProvider {
                     "Please provide a valid path via --%s", mDeviceImageFile.getAbsolutePath(),
                     IMAGE_FILE_OPTION_NAME));
         }
-        DeviceBuildInfo buildInfo = null;
-
-        if (mBuildId != null && mTestTarget != null && mBuildName != null) {
-            buildInfo = new DeviceBuildInfo(mBuildId, mTestTarget, mBuildName);
-        } else {
-            buildInfo = new DeviceBuildInfo();
-        }
+        BuildInfo stubBuild = (BuildInfo)super.getBuild();
+        DeviceBuildInfo buildInfo = new DeviceBuildInfo(stubBuild.getBuildId(),
+                stubBuild.getTestTag(), stubBuild.getBuildTargetName());
+        buildInfo.addAllBuildAttributes(stubBuild);
 
         try {
             buildInfo.setDeviceImageFile(mDeviceImageFile);

@@ -65,6 +65,12 @@ public interface IDeviceFlasher {
     public UserDataFlashOption getUserDataFlashOption();
 
     /**
+     * Sets if system should always be flashed even if running current build
+     * @param forceSystemFlash
+     */
+    public void setForceSystemFlash(boolean forceSystemFlash);
+
+    /**
      * Flashes build on device.
      * <p/>
      * Returns immediately after flashing is complete. Callers should wait for device to be

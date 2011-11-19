@@ -40,6 +40,8 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     @SuppressWarnings("unused")
     private UserDataFlashOption mFlashOption = UserDataFlashOption.TESTS_ZIP;
 
+    private boolean mForceSystemFlash;
+
     /**
      * {@inheritDoc}
      */
@@ -80,7 +82,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
             throws DeviceNotAvailableException, TargetSetupError {
         // FIXME same high level logic as in
         // FastbootDeviceFlasher#checkAndFlashSystem, could be de-duped
-        if (device.getBuildId() == deviceBuild.getBuildId()) {
+        if (!mForceSystemFlash && deviceBuild.getBuildId().equals(device.getBuildId())) {
             Log.i(LOG_TAG, String.format("System is already version %s, skipping install",
                     device.getBuildId()));
             // reboot
@@ -135,5 +137,13 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     @Override
     public UserDataFlashOption getUserDataFlashOption() {
         return mFlashOption;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setForceSystemFlash(boolean forceSystemFlash) {
+        mForceSystemFlash = forceSystemFlash;
     }
 }

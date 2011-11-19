@@ -115,7 +115,7 @@ public class BuildInfo implements IBuildInfo {
     /**
      * Helper method to copy build attributes, branch, and flavor from other build.
      */
-    protected void addAllBuildAttributes(BuildInfo build) {
+    public void addAllBuildAttributes(BuildInfo build) {
         mBuildAttributes.putAll(build.getAttributesMultiMap());
         setBuildFlavor(build.getBuildFlavor());
         setBuildBranch(build.getBuildBranch());

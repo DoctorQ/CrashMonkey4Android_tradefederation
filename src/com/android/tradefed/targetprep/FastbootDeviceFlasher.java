@@ -39,6 +39,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     // TODO: make this list configurable
     private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller("media");
 
+    private boolean mForceSystemFlash;
+
     /**
      * {@inheritDoc}
      */
@@ -409,7 +411,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      */
     protected boolean checkAndFlashSystem(ITestDevice device, String systemBuildId,
             IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
-        if (systemBuildId != null && ! systemBuildId.equals(deviceBuild.getBuildId())) {
+        if (mForceSystemFlash ||
+                (systemBuildId != null && ! systemBuildId.equals(deviceBuild.getBuildId()))) {
             CLog.i("Flashing system %s", deviceBuild.getBuildId());
             flashSystem(device, deviceBuild);
             return true;
@@ -522,5 +525,13 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         } else {
             return result.getStdout();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setForceSystemFlash(boolean forceSystemFlash) {
+        mForceSystemFlash = forceSystemFlash;
     }
 }

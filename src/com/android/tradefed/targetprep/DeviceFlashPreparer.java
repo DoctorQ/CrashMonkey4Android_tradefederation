@@ -49,6 +49,11 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         "specify if userdata partition should be encrypted")
     private boolean mEncryptUserData = false;
 
+    @Option(name="force-system-flash", description=
+        "specify if system should always be flashed even if already running desired build.")
+    private boolean mForceSystemFlash = false;
+
+
     /**
      * Sets the device boot time
      * <p/>
@@ -98,6 +103,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
         flasher.setUserDataFlashOption(mUserDataFlashOption);
+        flasher.setForceSystemFlash(mForceSystemFlash);
         preEncryptDevice(device, flasher);
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();
