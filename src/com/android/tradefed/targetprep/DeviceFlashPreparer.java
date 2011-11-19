@@ -42,8 +42,8 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
     private long mDeviceBootTime = 5 * 60 * 1000;
 
     @Option(name="userdata-flash", description=
-        "specify handling of userdata partition. One of FLASH, TESTS_ZIP, WIPE, WIPE_RM, SKIP.")
-    private String mUserDataFlashString = UserDataFlashOption.FLASH.toString();
+        "specify handling of userdata partition.")
+    private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
 
     @Option(name="encrypt-userdata", description=
         "specify if userdata partition should be encrypted")
@@ -81,8 +81,8 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
      *
      * @param flashOption
      */
-    public void setUserDataFlashOption(String flashOption) {
-        mUserDataFlashString = flashOption;
+    public void setUserDataFlashOption(UserDataFlashOption flashOption) {
+        mUserDataFlashOption = flashOption;
     }
 
     /**
@@ -97,7 +97,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         IDeviceBuildInfo deviceBuild = (IDeviceBuildInfo)buildInfo;
         device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
-        flasher.setUserDataFlashOption(UserDataFlashOption.valueOf(mUserDataFlashString));
+        flasher.setUserDataFlashOption(mUserDataFlashOption);
         preEncryptDevice(device, flasher);
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();
