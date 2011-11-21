@@ -188,9 +188,8 @@ public class Console extends Thread {
         public void printString(String output) throws IOException {
             if (mJLineReader != null) {
                 mJLineReader.printString(output);
-                mJLineReader.printNewline();
             } else {
-                System.out.println(output);
+                System.out.print(output);
             }
         }
 
