@@ -20,8 +20,10 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.device.BackgroundDeviceAction;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.LargeOutputReceiver;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -64,6 +66,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
     // Constants for running the tests
     private static final String TEST_RUNNER_NAME = "android.bluetooth.BluetoothTestRunner";
+    private static final String HCIDUMP_CMD = "hcidump -Xt";
+    private static final String HCIDUMP_DESC = "hcidump";
+    private static final long HCIDUMP_LOG_SIZE = 4 * 1024 * 1024; // 4 MB.
 
     /**
      * Generic string for running the instrumentation on the second device. Completed with:
@@ -135,6 +140,33 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                     mIterCount, perfMetrics);
         }
     }
+
+    private class HcidumpCommand {
+        LargeOutputReceiver mReceiver = null;
+        BackgroundDeviceAction mDeviceAction = null;
+
+        public HcidumpCommand() {
+            mReceiver = new  LargeOutputReceiver(HCIDUMP_DESC, mTestDevice.getSerialNumber(),
+                    HCIDUMP_LOG_SIZE);
+            mDeviceAction = new BackgroundDeviceAction(HCIDUMP_CMD, HCIDUMP_DESC, mTestDevice,
+                    mReceiver, 0);
+        }
+
+        public void startHcidump() {
+            mDeviceAction.start();
+        }
+
+        public void stopHcidump() {
+            mDeviceAction.cancel();
+            mReceiver.cancel();
+            mReceiver.delete();
+        }
+
+        public InputStreamSource getHcidump() {
+            return mReceiver.getData();
+        }
+    }
+    private HcidumpCommand mHcidumpCommand = null;
 
     @Option(name="test-class-name",
             description="The test class name of the Bluetooth stress tests")
@@ -247,6 +279,9 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     @Option(name="input-pair-passkey",
             description="Pair passkey for the input device.")
     private String mInputPairPasskey = null;
+
+    @Option(name="log-hcidump", description="Record the hcidump data. Works on ICS and after.")
+    private boolean mLogHcidump = true;
 
     private void setupTests() {
         if (mTestCases != null) {
@@ -433,7 +468,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             TestInfo t = test;
 
             if (t.mIterCount != null && t.mIterCount <= 0) {
-                CLog.e("Cancelled '%s' test case with iter count %s", testName, t.mIterCount);
+                CLog.i("Cancelled '%s' test case with iter count %s", testName, t.mIterCount);
                 continue;
             }
 
@@ -453,6 +488,11 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
             // Run the test
             cleanOutputFile();
+            if (mLogHcidump) {
+                mHcidumpCommand = new HcidumpCommand();
+                mHcidumpCommand.startHcidump();
+            }
+
             if (t.mIterKey != null && t.mIterCount != null) {
                 runner.addInstrumentationArg(t.mIterKey, t.mIterCount.toString());
             }
@@ -483,6 +523,12 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
             // Log the output file
             logOutputFile(t, listener);
+            if (mLogHcidump) {
+                listener.testLog(String.format("%s_hcidump", t.mTestName), LogDataType.TEXT,
+                        mHcidumpCommand.getHcidump());
+                mHcidumpCommand.stopHcidump();
+                mHcidumpCommand = null;
+            }
             cleanOutputFile();
         }
     }
@@ -510,7 +556,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
                 CLog.d("Sending %d byte file %s into the logosphere!",
                         outputFile.length(), outputFile);
                 outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-                listener.testLog(String.format("output-%s.txt", testInfo.mTestName),
+                listener.testLog(String.format("%s_output", testInfo.mTestName),
                         LogDataType.TEXT, outputSource);
                 parseOutputFile(testInfo, new FileInputStream(outputFile), listener);
             }
