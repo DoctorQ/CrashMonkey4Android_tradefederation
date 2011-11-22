@@ -413,7 +413,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         } catch (ConfigurationException e) {
             // FIXME: do this with jline somehow for ANSI support
-            System.out.println();
+            // note: make sure not to log (aka record) this line, as (args) may contain passwords.
+            System.out.println(String.format("Error while processing args: %s",
+                    Arrays.toString(args)));
             System.out.println(e.getMessage());
             System.out.println();
         }
