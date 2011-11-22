@@ -82,7 +82,7 @@ public interface IDeviceSelection extends IMatcher<IDevice> {
     public String getDeviceProductVariant(IDevice device);
 
     /**
-     * Gets the given devices battery level
+     * Retrieves the battery level for the given device
      *
      * @param device the {@link IDevice}
      * @return the device battery level or <code>null</code> if unknown

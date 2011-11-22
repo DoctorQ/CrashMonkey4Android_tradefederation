@@ -64,9 +64,14 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     private boolean mNullDeviceRequested = false;
 
     @Option(name = "min-battery", description =
-        "only run this test on a device whose battery level is greater than given amount. " +
+        "only run this test on a device whose battery level is at least the given amount. " +
         "Scale: 0-100")
     private Integer mMinBattery = null;
+
+    @Option(name = "max-battery", description =
+        "only run this test on a device whose battery level is strictly less than the given " +
+        "amount. Scale: 0-100")
+    private Integer mMaxBattery = null;
 
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.
     private boolean mFetchedEnvVariable = false;
@@ -186,6 +191,20 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     }
 
     /**
+     * Sets the maximum battery level
+     */
+    public void setMaxBatteryLevel(Integer maxBattery) {
+        mMaxBattery = maxBattery;
+    }
+
+    /**
+     * Gets the requested maximum battery level
+     */
+    public Integer getMaxBatteryLevel() {
+        return mMaxBattery;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -268,6 +287,12 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         if (mMinBattery != null) {
             Integer deviceBattery = getBatteryLevel(device);
             if (deviceBattery == null || deviceBattery < mMinBattery) {
+                return false;
+            }
+        }
+        if (mMaxBattery != null) {
+            Integer deviceBattery = getBatteryLevel(device);
+            if (deviceBattery == null || deviceBattery >= mMaxBattery) {
                 return false;
             }
         }

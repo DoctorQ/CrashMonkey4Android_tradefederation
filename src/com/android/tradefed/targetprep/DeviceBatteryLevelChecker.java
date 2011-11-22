@@ -16,6 +16,10 @@
 
 package com.android.tradefed.targetprep;
 
+import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.TimeoutException;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
@@ -25,9 +29,7 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import java.io.IOException;
 
 /**
  * An {@link ITargetPreparer} that checks for a minimum battery charge, and waits for the battery
@@ -36,39 +38,35 @@ import java.util.regex.Pattern;
 @OptionClass(alias = "battery-checker")
 public class DeviceBatteryLevelChecker implements ITargetPreparer {
 
-    @Option(name="min-level", description="Charge level below which we force the device to sit " +
-            "and charge.  Range: 0-100.")
-    private int mMinChargeLevel = 10;
+    // FIXME: get rid of this once we're sure nothing is using it
+    @Option(name = "min-level", description = "Obsolete.  Use --max-battery.")
+    private Integer mMinChargeLevel = null;
 
-    @Option(name="resume-level", description="Charge level at which we release the device to " +
+    @Option(name = "max-battery", description = "Charge level below which we force the device to " +
+            "sit and charge.  Range: 0-100.")
+    private Integer mMaxBattery = 10;
+
+    @Option(name = "resume-level", description = "Charge level at which we release the device to " +
             "begin testing again. Range: 0-100.")
     private int mResumeLevel = 80;
 
-    @Option(name="poll-time", description="Time in minutes to wait between battery level polls. " +
-            "Decimal times accepted.")
-    private double mChargingPollTime = 5.0;
+    @Option(name = "poll-time", description = "Time in minutes to wait between battery level " +
+            "polls. Decimal times accepted.")
+    private double mChargingPollTime = 1.0;
 
-    private static final Pattern BATTERY_LEVEL = Pattern.compile("\\s*level: (\\d+)");
-
-    private Integer checkBatteryLevel(ITestDevice device) throws DeviceNotAvailableException {
-        // FIXME: scale the battery level by "scale" instead of assuming 100
-        String dumpsys = device.executeShellCommand("dumpsys battery");
-        if (dumpsys != null) {
-            String[] lines = dumpsys.split("\r?\n");
-            for (String line : lines) {
-                Matcher m = BATTERY_LEVEL.matcher(line);
-                if (m.matches()) {
-                    try {
-                        return Integer.parseInt(m.group(1));
-                    } catch (NumberFormatException e) {
-                        CLog.w("Failed to parse %s as an integer", m.group(1));
-                    }
-                }
-            }
+    Integer checkBatteryLevel(ITestDevice device) throws DeviceNotAvailableException {
+        try {
+            IDevice idevice = device.getIDevice();
+            return idevice.getBatteryLevel();
+        } catch (AdbCommandRejectedException e) {
+            return null;
+        } catch (IOException e) {
+            return null;
+        } catch (TimeoutException e) {
+            return null;
+        } catch (ShellCommandUnresponsiveException e) {
+            return null;
         }
-        CLog.w("Failed to determine battery level for device %s.  `dumpsys battery` was: %s",
-                device.getSerialNumber(), dumpsys);
-        return null;
     }
 
     /**
@@ -76,19 +74,24 @@ public class DeviceBatteryLevelChecker implements ITargetPreparer {
      */
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError, BuildError,
             DeviceNotAvailableException {
+        if (mMinChargeLevel != null) {
+            CLog.w("The obsolete --min-level was specified.  Please use --min-battery instead.");
+            mMaxBattery = mMinChargeLevel;
+        }
+
         Integer batteryLevel = checkBatteryLevel(device);
         if (batteryLevel == null) {
-            // we already logged a warning
+            CLog.w("Failed to determine battery level for device %s.", device.getSerialNumber());
             return;
-        } else if (batteryLevel < mMinChargeLevel) {
+        } else if (batteryLevel < mMaxBattery) {
             // Time-out.  Send the device to the corner
             CLog.w("Battery level %d is below the min level %d; holding for device %s to charge " +
-                    "to level %d", batteryLevel, mMinChargeLevel, device.getSerialNumber(),
+                    "to level %d", batteryLevel, mMaxBattery, device.getSerialNumber(),
                     mResumeLevel);
         } else {
             // Good to go
             CLog.d("Battery level %d is above the minimum of %d; %s is good to go.", batteryLevel,
-                    mMinChargeLevel, device.getSerialNumber());
+                    mMaxBattery, device.getSerialNumber());
             return;
         }
 
