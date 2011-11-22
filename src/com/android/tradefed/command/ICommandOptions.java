@@ -32,6 +32,11 @@ public interface ICommandOptions {
     public boolean isFullHelpMode();
 
     /**
+     * Return <code>true</code> if we should <emph>skip</emph> adding this command to the queue.
+     */
+    public boolean isDryRunMode();
+
+    /**
      * Return the loop mode for the config.
      */
     public boolean isLoopMode();

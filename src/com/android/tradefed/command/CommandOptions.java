@@ -32,11 +32,17 @@ public class CommandOptions implements ICommandOptions {
             importance = Importance.ALWAYS)
     private boolean mFullHelpMode = false;
 
+    @Option(name = "dry-run",
+            description = "build but don't actually run the command; for debugging",
+            importance = Importance.ALWAYS)
+    private boolean mDryRunMode = false;
+
     @Option(name = "min-loop-time", description =
-        "the minimum invocation time in ms when in loop mode.")
+            "the minimum invocation time in ms when in loop mode.")
     private long mMinLoopTime = 60 * 1000;
 
-    @Option(name="loop", description="keep running continuously.", importance = Importance.ALWAYS)
+    @Option(name = "loop", description = "keep running continuously.",
+            importance = Importance.ALWAYS)
     private boolean mLoopMode = false;
 
     /**
@@ -60,6 +66,22 @@ public class CommandOptions implements ICommandOptions {
      */
     public boolean isFullHelpMode() {
         return mFullHelpMode;
+    }
+
+    /**
+     * Set the dry run mode for the config.
+     * <p/>
+     * Exposed for testing.
+     */
+    void setDryRunMode(boolean dryRunMode) {
+        mDryRunMode = dryRunMode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public boolean isDryRunMode() {
+        return mDryRunMode;
     }
 
     /**

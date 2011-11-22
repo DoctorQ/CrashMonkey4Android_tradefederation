@@ -166,6 +166,25 @@ public class CommandSchedulerTest extends TestCase {
     }
 
     /**
+     * Test {@link CommandScheduler#run()} when one config has been added in dry-run mode
+     */
+    public void testRun_dryRun() throws Exception {
+        String[] args = new String[] {"--dry-run"};
+        mCommandOptions.setDryRunMode(true);
+        mMockManager.setNumDevices(2);
+        setCreateConfigExpectations(args, 1);
+        mCmdListener.setExpectedCalls(0);
+
+        replayMocks();
+        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.start();
+        waitForCommandStartedCalls();
+        mScheduler.shutdown();
+        mScheduler.join();
+        verifyMocks();
+    }
+
+    /**
      * Sets the number of expected
      * {@link ITestInvocation#invoke(ITestDevice, IConfiguration, IRescheduler)} calls
      *

@@ -32,8 +32,10 @@ import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
 import com.android.tradefed.invoker.TestInvocation;
 import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -399,6 +401,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 getConfigFactory().printHelpForConfig(args, true, System.out);
             } else if (config.getCommandOptions().isFullHelpMode()) {
                 getConfigFactory().printHelpForConfig(args, false, System.out);
+            } else if (config.getCommandOptions().isDryRunMode()) {
+                CLog.v("Dry run mode; not adding command: %s", Arrays.toString(args));
             } else {
                 CommandTracker cmdTracker = new CommandTracker(args, config.getCommandOptions(),
                         listener);
