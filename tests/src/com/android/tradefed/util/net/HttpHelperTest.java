@@ -16,6 +16,7 @@
 
 package com.android.tradefed.util.net;
 
+import com.android.tradefed.util.MultiMap;
 import com.android.tradefed.util.net.IHttpHelper.DataSizeException;
 
 import junit.framework.TestCase;
@@ -24,8 +25,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 /**
  * Unit tests for {@link HttpHelper}.
@@ -45,72 +44,78 @@ public class HttpHelperTest extends TestCase {
     }
 
     /**
-     * Test {@link HttpHelper#buildUrl(String, Map)} with a simple parameter.
+     * Test {@link HttpHelper#buildParameters(MultiMap)}.
+     */
+    public void testBuildParams() {
+        MultiMap<String, String> paramMap = new MultiMap<String, String>();
+        paramMap.put("key", "value");
+        assertEquals("key=value", mHelper.buildParameters(paramMap));
+
+        paramMap.clear();
+        paramMap.put("key1", "value1");
+        paramMap.put("key2", "value2");
+        String params = mHelper.buildParameters(paramMap);
+        assertTrue(params.contains("key1=value1"));
+        assertTrue(params.contains("key2=value2"));
+        assertTrue(params.contains("&"));
+
+        paramMap.clear();
+        paramMap.put("key", "value1");
+        paramMap.put("key", "value2");
+        assertEquals("key=value1&key=value2", mHelper.buildParameters(paramMap));
+
+        paramMap.clear();
+        paramMap.put("key+f?o=o;", "value");
+        assertEquals("key%2Bf%3Fo%3Do%3B=value", mHelper.buildParameters(paramMap));
+    }
+
+    /**
+     * Test {@link HttpHelper#buildUrl(String, MultiMap)} with simple parameters.
      */
     public void testBuildUrl() {
-        String actualUrl = mHelper.buildUrl(TEST_URL_STRING, buildParamMap("key", "value"));
-        assertEquals("http://foo?key=value", actualUrl);
+        assertEquals("http://foo", mHelper.buildUrl(TEST_URL_STRING, null));
+
+        MultiMap<String, String> paramMap = new MultiMap<String, String>();
+        assertEquals("http://foo", mHelper.buildUrl(TEST_URL_STRING, paramMap));
+
+        paramMap.put("key", "value");
+        assertEquals("http://foo?key=value", mHelper.buildUrl(TEST_URL_STRING, paramMap));
     }
 
     /**
-     * Test {@link HttpHelper#buildUrl(String, Map)} with a two parameters.
+     * Normal case test for {@link HttpHelper#doGet(String)}
      */
-    public void testBuildUrl_twoPairs() {
-        String actualUrl = mHelper.buildUrl(TEST_URL_STRING, buildParamMap("key", "value", "key2",
-                "value2"));
-        assertEquals("http://foo?key=value&key2=value2", actualUrl);
-    }
-
-    /**
-     * Test {@link HttpHelper#buildUrl(String, Map)} with a parameter that needs encoding.
-     */
-    public void testBuildUrl_encode() {
-        String actualUrl = mHelper.buildUrl(TEST_URL_STRING, buildParamMap("key+f?o=o;", "value"));
-        assertEquals("http://foo?key%2Bf%3Fo%3Do%3B=value", actualUrl);
-    }
-
-    /**
-     * Normal case test for {@link HttpHelper#fetchUrl(String)}
-     */
-    public void testFetchUrl() throws IOException, DataSizeException {
+    public void testDoGet() throws IOException, DataSizeException {
         final String testString = "this is some data";
         final ByteArrayInputStream mockStream = new ByteArrayInputStream(testString.getBytes());
         HttpHelper helper = new HttpHelper() {
             @Override
-            InputStream getRemoteUrlStream(URL url) throws IOException {
+            InputStream getRemoteUrlStream(URL url) {
                 return mockStream;
             }
         };
-        assertEquals(testString, helper.fetchUrl(TEST_URL_STRING));
+        assertEquals(testString, helper.doGet(TEST_URL_STRING));
     }
 
     /**
-     * Test that {@link HttpHelper#fetchUrl(String)} throws {@link DataSizeException} when the
+     * Test that {@link HttpHelper#doGet(String)} throws {@link DataSizeException} when the
      * remote stream returns too much data.
      */
-    public void testFetchUrl_datasize() throws IOException {
+    public void testDoGet_datasize() throws IOException {
         // test with 64K + 1
         final byte[] bigData = new byte[IHttpHelper.MAX_DATA_SIZE + 1];
         final ByteArrayInputStream mockStream = new ByteArrayInputStream(bigData);
         HttpHelper helper = new HttpHelper() {
             @Override
-            InputStream getRemoteUrlStream(URL url) throws IOException {
+            InputStream getRemoteUrlStream(URL url) {
                 return mockStream;
             }
         };
         try {
-            helper.fetchUrl(TEST_URL_STRING);
+            helper.doGet(TEST_URL_STRING);
             fail("DataSizeException not thrown");
         } catch (DataSizeException e) {
             // expected
         }
-    }
-
-    private Map<String, String> buildParamMap(String... values) {
-        Map<String, String> paramMap = new LinkedHashMap<String, String>();
-        for (int i=1; i < values.length; i+=2) {
-            paramMap.put(values[i-1], values[i]);
-        }
-        return paramMap;
     }
 }

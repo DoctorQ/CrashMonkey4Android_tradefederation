@@ -28,6 +28,7 @@ import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.IRunUtil.IRunnableResult;
+import com.android.tradefed.util.MultiMap;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.net.HttpHelper;
 import com.android.tradefed.util.net.IHttpHelper;
@@ -156,7 +157,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
      */
     private Map<String, String> fetchDataFromTestServer(String deviceId, String timestamp) {
         IHttpHelper httphelper = new HttpHelper();
-        Map<String, String> params = new HashMap<String, String>();
+        MultiMap<String,String> params = new MultiMap<String,String> ();
         params.put("device_id", deviceId);
         params.put("timestamp", timestamp);
         String queryUrl = mTestServer;
@@ -177,11 +178,12 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
     private static class QueryRunnable implements IRunnableResult {
         private final IHttpHelper mHttpHelper;
         private final String mBaseUrl;
-        private final Map<String, String> mParams;
+        private final MultiMap<String,String> mParams;
         private Map<String, String> mServerResponse = null;
         private Exception mException = null;
 
-        public QueryRunnable(IHttpHelper helper, String testServerUrl, Map<String, String> params) {
+        public QueryRunnable(IHttpHelper helper, String testServerUrl,
+                MultiMap<String,String> params) {
             mHttpHelper = helper;
             mBaseUrl = testServerUrl;
             mParams = params;
@@ -194,7 +196,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         @Override
         public boolean run() {
             try {
-                String serverResponse = mHttpHelper.fetchUrl(mBaseUrl, mParams);
+                String serverResponse = mHttpHelper.doGet(mHttpHelper.buildUrl(mBaseUrl, mParams));
                 mServerResponse = parseServerResponse(serverResponse);
                 return true;
             } catch (IOException e) {
