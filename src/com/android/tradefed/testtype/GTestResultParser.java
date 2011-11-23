@@ -72,6 +72,7 @@ import java.util.regex.Pattern;
  * </pre>
  *
  * <p>where the following tags are used to signal certain events:
+ * <pre>
  * [==========]: the first occurrence indicates a new run started, including the number of tests
  *                  to be expected in this run
  * [ RUN      ]: indicates a new test has started to run; a series of zero or more lines may
@@ -81,6 +82,7 @@ import java.util.regex.Pattern;
  * [  FAILED  ]: the preceding test has failed, optionally including the time it took to run (in ms)
  * [==========]: the preceding test run has completed, optionally including the time it took to run
  *                  (in ms)
+ * </pre>
  *
  * All other lines are ignored.
  */

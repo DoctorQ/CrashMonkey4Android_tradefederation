@@ -30,8 +30,8 @@ public interface IBuildInfo {
     public final static String UNKNOWN_BUILD_ID = "-1";
 
     /**
-     * @return the unique identifier of build under test. Should never be null.
-     *         Defaults to {@link #UNKOWN_BUILD_ID}
+     * Returns the unique identifier of build under test. Should never be null. Defaults to
+     * {@link #UNKNOWN_BUILD_ID}.
      */
     public String getBuildId();
 
@@ -83,7 +83,7 @@ public interface IBuildInfo {
     /**
      * Set the build branch
      *
-     * @param branch
+     * @param branch the branch name
      */
     public void setBuildBranch(String branch);
 

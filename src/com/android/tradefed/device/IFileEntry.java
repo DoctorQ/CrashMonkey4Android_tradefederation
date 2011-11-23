@@ -22,31 +22,31 @@ import java.util.Collection;
 
 /**
 * Interface definition that provides simpler, mockable contract to
-* {@link com.android.ddmlib.FileEntry} methods.
+* {@link FileEntry} methods.
 * <p/>
 * TODO: move this into ddmlib
 */
 public interface IFileEntry {
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#getFullEscapedPath()}.
+     * Wrapper for {@link FileEntry#getFullEscapedPath()}.
      */
     public String getFullEscapedPath();
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#getFullPath()}.
+     * Wrapper for {@link FileEntry#getFullPath()}.
      */
     public String getFullPath();
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#isDirectory()}.
+     * Wrapper for {@link FileEntry#isDirectory()}.
      */
     public boolean isDirectory();
 
     /**
      * Finds a child {@link IFileEntry} with given name.
      * <p/>
-     * Basically a wrapper for {@link FileListingService.FileEntry#findChild(String)} that
+     * Basically a wrapper for {@link FileEntry#findChild(String)} that
      * will also first search the cached children for file with given name, and if not found,
      * refresh the cached child file list and attempt again.
      *
@@ -55,22 +55,22 @@ public interface IFileEntry {
     public IFileEntry findChild(String name) throws DeviceNotAvailableException;
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#isAppFileName()}.
+     * Wrapper for {@link FileEntry#isAppFileName()}.
      */
     public boolean isAppFileName();
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#getName()}.
+     * Wrapper for {@link FileEntry#getName()}.
      */
     public String getName();
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#getTime()}.
+     * Wrapper for {@link FileEntry#getTime()}.
      */
     public String getTime();
 
     /**
-     * Wrapper for {@link FileListingService.FileEntry#getDate()}.
+     * Wrapper for {@link FileEntry#getDate()}.
      */
     public String getDate();
 

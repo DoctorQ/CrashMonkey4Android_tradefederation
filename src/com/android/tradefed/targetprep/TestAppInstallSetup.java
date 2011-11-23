@@ -31,7 +31,7 @@ import java.util.Collection;
 
 /**
  * A {@link ITargetPreparer} that installs one or more apps from a
- * {@link IDeviceBuildInfo#getTestsZipFile()} file onto device.
+ * {@link IDeviceBuildInfo#getTestsDir()} folder onto device.
  */
 @OptionClass(alias = "tests-zip-app")
 public class TestAppInstallSetup implements ITargetPreparer {

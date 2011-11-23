@@ -19,7 +19,7 @@ import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 
 /**
- * Container for execution options for commands.
+ * Implementation of {@link ICommandOptions}.
  */
 public class CommandOptions implements ICommandOptions {
 

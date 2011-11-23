@@ -17,10 +17,13 @@ package com.android.tradefed.config;
 
 /**
  * Simple interface to represent object that accepts an {@link IConfiguration}.
- *
- * TODO: can {@link Option} be used for this instead
+ * <p/>
+ * Tests or other configuration objects should implement this interface if they need access to a
+ * {@link IConfiguration} they are included in.
  */
 public interface IConfigurationReceiver {
+
+    // TODO: look into using @Options to implement this behavior instead
 
     /**
      * Injects the {@link IConfiguration} in use.

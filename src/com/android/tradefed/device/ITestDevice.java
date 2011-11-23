@@ -316,10 +316,10 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
-     * Install an Android package and its corresponding distribution cert on device.
+     * Install an Android package and its corresponding cert file on device.
      *
      * @param packageFile the apk file to install
-     * @param certFile the distribution certificate file associated with the apk
+     * @param certFile the certificate file associated with the apk
      * @param reinstall <code>true</code> if a reinstall should be performed
      * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
      *            available options.
