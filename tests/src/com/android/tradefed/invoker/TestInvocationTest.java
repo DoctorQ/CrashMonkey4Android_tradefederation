@@ -308,6 +308,8 @@ public class TestInvocationTest extends TestCase {
         EasyMock.expectLastCall().andThrow(exception);
         setupMockFailureListeners(exception);
 
+        EasyMock.expect(mMockDevice.getBugreport())
+                .andReturn(new ByteArrayInputStreamSource(new byte[0]));
         EasyMock.expect(mMockDevice.getLogcat())
                 .andReturn(new ByteArrayInputStreamSource(new byte[0]));
         EasyMock.expect(mMockLogger.getLog()).andReturn(new ByteArrayInputStreamSource(
@@ -439,6 +441,13 @@ public class TestInvocationTest extends TestCase {
         // invocationStarted
         mMockTestListener.invocationStarted(mMockBuildInfo);
         mMockSummaryListener.invocationStarted(mMockBuildInfo);
+
+        if (exception instanceof BuildError) {
+            mMockTestListener.testLog(EasyMock.eq(TestInvocation.BUILD_ERROR_BUGREPORT_NAME),
+                    EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
+            mMockSummaryListener.testLog(EasyMock.eq(TestInvocation.BUILD_ERROR_BUGREPORT_NAME),
+                    EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
+        }
 
         // invocationFailed
         if (!status.equals(InvocationStatus.SUCCESS)) {

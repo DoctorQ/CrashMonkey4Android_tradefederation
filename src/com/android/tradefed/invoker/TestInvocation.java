@@ -63,6 +63,7 @@ public class TestInvocation implements ITestInvocation {
 
     static final String TRADEFED_LOG_NAME = "host_log";
     static final String DEVICE_LOG_NAME = "device_logcat";
+    static final String BUILD_ERROR_BUGREPORT_NAME = "build_error_bugreport";
 
     private ITestDevice mDevice = null;
     private String mStatus = "(not invoked)";
@@ -281,6 +282,7 @@ public class TestInvocation implements ITestInvocation {
         } catch (BuildError e) {
             CLog.w("Build %s failed on device %s. Reason: %s", info.getBuildId(),
                     device.getSerialNumber(), e.toString());
+            takeBugreport(device, config.getTestInvocationListeners());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");
@@ -414,6 +416,21 @@ public class TestInvocation implements ITestInvocation {
         // unregister logger so future log calls get directed to the tradefed global log
         getLogRegistry().unregisterLogger();
         logger.closeLog();
+    }
+
+    private void takeBugreport(ITestDevice device, List<ITestInvocationListener> listeners) {
+        if (device == null) {
+            return;
+        }
+
+        InputStreamSource bugreport = device.getBugreport();
+        try {
+            for (ITestInvocationListener listener : listeners) {
+                listener.testLog(BUILD_ERROR_BUGREPORT_NAME, LogDataType.TEXT, bugreport);
+            }
+        } finally {
+            bugreport.cancel();
+        }
     }
 
     /**
