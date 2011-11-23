@@ -23,6 +23,7 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.log.LogRegistry;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.RunUtil;
@@ -69,20 +70,6 @@ public class Console extends Thread {
     protected static final String DEBUG_PATTERN = "debug";
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
-
-    /* FIXME: reimplement these somewhere
-     * @Option(name = "log-level-display", description =
-     *         "minimum log level to display on stdout for global log")
-     * private String mLogLevelDisplay = null;
-     *
-     * @Option(name = "log-tag-display", description =
-     *     "Log tag filter for global log. Always display logs with this tag on stdout")
-     * private Collection<String> mLogTagsDisplay = new HashSet<String>();
-     * if (mLogLevelDisplay != null) {
-     *     LogRegistry.getLogRegistry().setGlobalLogDisplayLevel(mLogLevelDisplay);
-     * }
-     * LogRegistry.getLogRegistry().setGlobalLogTagDisplay(mLogTagsDisplay);
-     */
 
     protected ICommandScheduler mScheduler;
     protected IConsoleReader mConsoleReader;
@@ -355,7 +342,7 @@ public class Console extends Thread {
      * @return
      */
     protected String getGenericHelpString(List<String> genericHelp) {
-        return join(genericHelp);
+        return ArrayUtil.join(LINE_SEPARATOR, genericHelp);
     }
 
     /**
@@ -635,19 +622,6 @@ public class Console extends Thread {
                         System.gc();
                     }
                 }, DEBUG_PATTERN, "gc");
-    }
-
-    /**
-     * Convenience method to join string pieces into a single string, with newlines after each piece
-     * FIXME: add a join implementation to Util
-     */
-    private static String join(List<String> pieces) {
-        StringBuilder sb = new StringBuilder();
-        for (String piece : pieces) {
-            sb.append(piece);
-            sb.append(LINE_SEPARATOR);
-        }
-        return sb.toString();
     }
 
     /**
