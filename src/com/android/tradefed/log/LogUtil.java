@@ -184,6 +184,18 @@ public class LogUtil {
         }
 
         /**
+         * The shim version of {@link Log#logAndDisplay(LogLevel, String, String)}.
+         *
+         * @param logLevel the {@link LogLevel}
+         * @param format A format string for the message to log
+         * @param args The format string arguments
+         */
+        public static void logAndDisplay(LogLevel logLevel, String format, Object... args) {
+            // frame 2: skip frames 0 (#getClassName) and 1 (this method)
+            Log.logAndDisplay(logLevel, getClassName(2), String.format(format, args));
+        }
+
+        /**
          * Return the simple classname from the {@code frame}th stack frame in the call path.
          * Note: this method does <emph>not</emph> check array bounds for the stack trace length.
          *
