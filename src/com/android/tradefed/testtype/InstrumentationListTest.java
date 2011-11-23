@@ -133,17 +133,11 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             if (trackingListener.didTestRun()) {
                 return;
             } else {
-                Log.w(LOG_TAG, String.format("Expected test %s did not run on attempt %d of %d",
-                        testToRun, i, FAILED_RUN_TEST_ATTEMPTS));
+                CLog.w("Expected test %s did not run on attempt %d of %d", testToRun, i,
+                        FAILED_RUN_TEST_ATTEMPTS);
             }
         }
         trackingListener.markTestAsFailed();
-        // TODO: temporary hack - reboot the device to attempt to clear its state. Ideally
-        // recovery should detect and attempt to remedy this condition
-        CLog.w("Device %s is unresponsive to command to run %s. Rebooting",
-                getDevice().getSerialNumber(), testToRun);
-        getDevice().reboot();
-
     }
 
     private static class TestTrackingListener extends ResultForwarder {
