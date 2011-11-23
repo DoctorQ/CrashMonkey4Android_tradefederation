@@ -31,7 +31,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
 
     private static final String LOG_TAG = "DeviceBuildInfo";
 
-    private Map<String, ImageFile> mImageFileMap;
+    private Map<String, VersionedFile> mVersionedFileMap;
 
     private static final String DEVICE_IMAGE_NAME = "device";
     private static final String USERDATA_IMAGE_NAME = "userdata";
@@ -43,17 +43,17 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     /**
      * Data structure containing the image file and related metadata
      */
-    private static class ImageFile {
-        private final File mImageFile;
+    private static class VersionedFile {
+        private final File mFile;
         private final String mVersion;
 
-        ImageFile(File imageFile, String version) {
-            mImageFile = imageFile;
+        VersionedFile(File file, String version) {
+            mFile = file;
             mVersion = version;
         }
 
-        File getImageFile() {
-            return mImageFile;
+        File getFile() {
+            return mFile;
         }
 
         String getVersion() {
@@ -62,7 +62,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
     }
 
     public DeviceBuildInfo() {
-        mImageFileMap = new Hashtable<String, ImageFile>();
+        mVersionedFileMap = new Hashtable<String, VersionedFile>();
     }
 
     /**
@@ -74,17 +74,17 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     public DeviceBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
-        mImageFileMap = new Hashtable<String, ImageFile>();
+        mVersionedFileMap = new Hashtable<String, VersionedFile>();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public File getImageFile(String imageName) {
-        ImageFile imgFileRecord = mImageFileMap.get(imageName);
-        if (imgFileRecord != null) {
-            return imgFileRecord.getImageFile();
+    public File getFile(String name) {
+        VersionedFile fileRecord = mVersionedFileMap.get(name);
+        if (fileRecord != null) {
+            return fileRecord.getFile();
         }
         return null;
     }
@@ -93,10 +93,10 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      * {@inheritDoc}
      */
     @Override
-    public String getImageVersion(String imageName) {
-        ImageFile imgFileRecord = mImageFileMap.get(imageName);
-        if (imgFileRecord != null) {
-            return imgFileRecord.getVersion();
+    public String getVersion(String name) {
+        VersionedFile fileRecord = mVersionedFileMap.get(name);
+        if (fileRecord != null) {
+            return fileRecord.getVersion();
         }
         return null;
     }
@@ -105,23 +105,22 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      * {@inheritDoc}
      */
     @Override
-    public void setImageFile(String imageName, File file, String version) {
-        if (mImageFileMap.containsKey(imageName)) {
+    public void setFile(String name, File file, String version) {
+        if (mVersionedFileMap.containsKey(name)) {
             Log.e(LOG_TAG, String.format(
-                    "Device build already contains an image for %s in thread %s", imageName,
+                    "Device build already contains a file for %s in thread %s", name,
                     Thread.currentThread().getName()));
             return;
         }
-        mImageFileMap.put(imageName, new ImageFile(file, version));
+        mVersionedFileMap.put(name, new VersionedFile(file, version));
     }
-
 
     /**
      * {@inheritDoc}
      */
     @Override
     public File getDeviceImageFile() {
-        return getImageFile(DEVICE_IMAGE_NAME);
+        return getFile(DEVICE_IMAGE_NAME);
     }
 
     /**
@@ -129,7 +128,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setDeviceImageFile(File deviceImageFile) {
-        setImageFile(DEVICE_IMAGE_NAME, deviceImageFile, getBuildId());
+        setFile(DEVICE_IMAGE_NAME, deviceImageFile, getBuildId());
     }
 
     /**
@@ -137,7 +136,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public File getUserDataImageFile() {
-        return getImageFile(USERDATA_IMAGE_NAME);
+        return getFile(USERDATA_IMAGE_NAME);
     }
 
     /**
@@ -145,7 +144,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setUserDataImageFile(File userDataFile) {
-        setImageFile(USERDATA_IMAGE_NAME, userDataFile, getBuildId());
+        setFile(USERDATA_IMAGE_NAME, userDataFile, getBuildId());
     }
 
     /**
@@ -153,7 +152,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public File getTestsDir() {
-        return getImageFile(TESTDIR_IMAGE_NAME);
+        return getFile(TESTDIR_IMAGE_NAME);
     }
 
     /**
@@ -161,7 +160,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setTestsDir(File testsDir) {
-        setImageFile(TESTDIR_IMAGE_NAME, testsDir, getBuildId());
+        setFile(TESTDIR_IMAGE_NAME, testsDir, getBuildId());
     }
 
     /**
@@ -169,7 +168,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public File getBasebandImageFile() {
-        return getImageFile(BASEBAND_IMAGE_NAME);
+        return getFile(BASEBAND_IMAGE_NAME);
     }
 
     /**
@@ -177,7 +176,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public String getBasebandVersion() {
-        return getImageVersion(BASEBAND_IMAGE_NAME);
+        return getVersion(BASEBAND_IMAGE_NAME);
     }
 
     /**
@@ -185,7 +184,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setBasebandImage(File basebandFile, String version) {
-        setImageFile(BASEBAND_IMAGE_NAME, basebandFile, version);
+        setFile(BASEBAND_IMAGE_NAME, basebandFile, version);
     }
 
     /**
@@ -193,7 +192,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public File getBootloaderImageFile() {
-        return getImageFile(BOOTLOADER_IMAGE_NAME);
+        return getFile(BOOTLOADER_IMAGE_NAME);
     }
 
     /**
@@ -201,7 +200,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public String getBootloaderVersion() {
-        return getImageVersion(BOOTLOADER_IMAGE_NAME);
+        return getVersion(BOOTLOADER_IMAGE_NAME);
     }
 
     /**
@@ -209,7 +208,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
-        setImageFile(BOOTLOADER_IMAGE_NAME, bootloaderImgFile, version);
+        setFile(BOOTLOADER_IMAGE_NAME, bootloaderImgFile, version);
     }
 
     /**
@@ -217,7 +216,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public File getOtaPackageFile() {
-        return getImageFile(OTA_IMAGE_NAME);
+        return getFile(OTA_IMAGE_NAME);
     }
 
     /**
@@ -225,7 +224,7 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void setOtaPackageFile(File otaFile) {
-        setImageFile(OTA_IMAGE_NAME, otaFile, getBuildId());
+        setFile(OTA_IMAGE_NAME, otaFile, getBuildId());
     }
 
     /**
@@ -233,10 +232,10 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
      */
     @Override
     public void cleanUp() {
-        for (ImageFile fileRecord : mImageFileMap.values()) {
-            FileUtil.recursiveDelete(fileRecord.getImageFile());
+        for (VersionedFile fileRecord : mVersionedFileMap.values()) {
+            FileUtil.recursiveDelete(fileRecord.getFile());
         }
-        mImageFileMap.clear();
+        mVersionedFileMap.clear();
     }
 
     /**
@@ -248,20 +247,20 @@ public class DeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo {
             DeviceBuildInfo copy = new DeviceBuildInfo(getBuildId(), getTestTag(),
                     getBuildTargetName());
             copy.addAllBuildAttributes(this);
-            for (Map.Entry<String, ImageFile> fileEntry : mImageFileMap.entrySet()) {
-                File origImageFile = fileEntry.getValue().getImageFile();
+            for (Map.Entry<String, VersionedFile> fileEntry : mVersionedFileMap.entrySet()) {
+                File origFile = fileEntry.getValue().getFile();
                 File hardlinkFile;
-                if (origImageFile.isDirectory()) {
+                if (origFile.isDirectory()) {
                     hardlinkFile = FileUtil.createTempDir(fileEntry.getKey());
-                    FileUtil.recursiveHardlink(origImageFile, hardlinkFile);
+                    FileUtil.recursiveHardlink(origFile, hardlinkFile);
                 } else {
                     // Only using createTempFile to create a unique dest filename
                     hardlinkFile = FileUtil.createTempFile(fileEntry.getKey(),
-                            FileUtil.getExtension(origImageFile.getName()));
+                            FileUtil.getExtension(origFile.getName()));
                     hardlinkFile.delete();
-                    FileUtil.hardlinkFile(origImageFile, hardlinkFile);
+                    FileUtil.hardlinkFile(origFile, hardlinkFile);
                 }
-                copy.mImageFileMap.put(fileEntry.getKey(), new ImageFile(hardlinkFile,
+                copy.mVersionedFileMap.put(fileEntry.getKey(), new VersionedFile(hardlinkFile,
                              fileEntry.getValue().getVersion()));
             }
             return copy;
