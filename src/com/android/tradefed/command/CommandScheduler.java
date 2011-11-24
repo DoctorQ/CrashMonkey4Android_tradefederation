@@ -35,8 +35,8 @@ import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ConditionPriorityBlockingQueue;
 
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -58,7 +58,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommandScheduler extends Thread implements ICommandScheduler {
 
-    private static final String LOG_TAG = "CommandScheduler";
     /** the queue of commands ready to be executed. */
     private ConditionPriorityBlockingQueue<ExecutableCommand> mCommandQueue;
     /**
@@ -239,26 +238,26 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 mCmd.commandStarted();
                 instance.invoke(mDevice, config, new Rescheduler(mCmd.getCommandTracker()));
             } catch (DeviceUnresponsiveException e) {
-                Log.w(LOG_TAG, String.format("Device %s is unresponsive",
-                        mDevice.getSerialNumber()));
+                CLog.w("Device %s is unresponsive. Reason: %s", mDevice.getSerialNumber(),
+                        e.getMessage());
                 deviceState = FreeDeviceState.UNRESPONSIVE;
             } catch (DeviceNotAvailableException e) {
-                Log.w(LOG_TAG, String.format("Device %s is not available",
-                        mDevice.getSerialNumber()));
+                CLog.w("Device %s is not available. Reason: %s", mDevice.getSerialNumber(),
+                        e.getMessage());
                 deviceState = FreeDeviceState.UNAVAILABLE;
             } catch (FatalHostError e) {
-                Log.logAndDisplay(LogLevel.ERROR, LOG_TAG, String.format(
-                        "Fatal error occurred: %s, shutting down", e.getMessage()));
+                CLog.logAndDisplay(LogLevel.ERROR, "Fatal error occurred: %s, shutting down",
+                        e.getMessage());
                 if (e.getCause() != null) {
-                    Log.e(LOG_TAG, e.getCause());
+                    CLog.e(e.getCause());
                 }
                 shutdown();
             } catch (Throwable e) {
-                Log.e(LOG_TAG, e);
+                CLog.e(e);
             } finally {
                 long elapsedTime = System.currentTimeMillis() - mStartTime;
-                Log.i(LOG_TAG, String.format("Updating command '%s' with elapsed time %d ms",
-                        getArgString(mCmd.getCommandTracker().getArgs()), elapsedTime));
+                CLog.i("Updating command '%s' with elapsed time %d ms",
+                        getArgString(mCmd.getCommandTracker().getArgs()), elapsedTime);
                 mCmd.getCommandTracker().incrementExecTime(elapsedTime);
                 if (!mCmd.getCommandTracker().getCommandOptions().isLoopMode()) {
                     mAllCommands.remove(mCmd.getCommandTracker());
@@ -352,7 +351,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 }
             }
         }
-        Log.i(LOG_TAG, "Waiting for invocation threads to complete");
+        CLog.i("Waiting for invocation threads to complete");
         List<InvocationThread> threadListCopy;
         synchronized (this) {
             threadListCopy = new ArrayList<InvocationThread>(
@@ -362,7 +361,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         for (Thread thread : threadListCopy) {
             waitForThread(thread);
         }
-        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, "All done");
+        CLog.logAndDisplay(LogLevel.INFO, "All done");
         exit(manager);
         cleanUp();
     }
@@ -432,7 +431,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             // poll for a command, rather than block indefinitely, to handle shutdown case
             return mCommandQueue.poll(getCommandPollTimeMs(), TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            Log.i(LOG_TAG, "Waiting for command interrupted");
+            CLog.i("Waiting for command interrupted");
         }
         return null;
     }
@@ -458,7 +457,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             ExecutableCommand execCmd = new ExecutableCommand(commandTracker, config);
             addExecCommandToQueue(execCmd, commandTracker.getCommandOptions().getMinLoopTime());
         } catch (ConfigurationException e) {
-            Log.e(LOG_TAG, e);
+            CLog.e(e);
         }
     }
 
@@ -558,7 +557,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     public synchronized void shutdownHard() {
         shutdown();
-        Log.logAndDisplay(LogLevel.WARN, LOG_TAG, "Force killing adb connection");
+        CLog.logAndDisplay(LogLevel.WARN, "Force killing adb connection");
         getDeviceManager().terminateHard();
     }
 

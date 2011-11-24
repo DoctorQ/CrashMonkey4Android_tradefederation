@@ -15,7 +15,6 @@
  */
 package com.android.tradefed.invoker;
 
-import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.BuildRetrievalError;
@@ -62,7 +61,6 @@ import java.util.List;
  */
 public class TestInvocation implements ITestInvocation {
 
-    private static final String LOG_TAG = "TestInvocation";
     static final String TRADEFED_LOG_NAME = "host_log";
     static final String DEVICE_LOG_NAME = "device_logcat";
 
@@ -249,7 +247,7 @@ public class TestInvocation implements ITestInvocation {
         }
         msg.append(" on device ");
         msg.append(device.getSerialNumber());
-        Log.logAndDisplay(LogLevel.INFO, LOG_TAG, msg.toString());
+        CLog.logAndDisplay(LogLevel.INFO, msg.toString());
         mStatus = String.format("running %s on build %s", info.getTestTag(), info.getBuildId());
     }
 
@@ -288,7 +286,9 @@ public class TestInvocation implements ITestInvocation {
             CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
         } catch (DeviceNotAvailableException e) {
-            // rely on caller to log thrown exceptions
+            // log a warning here so its captured before reportLogs is called
+            CLog.w("Invocation did not complete due to device %s becoming not available. " +
+                    "Reason: %s", device.getSerialNumber(), e.getMessage());
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
                 reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
@@ -298,7 +298,8 @@ public class TestInvocation implements ITestInvocation {
             }
             throw e;
         } catch (RuntimeException e) {
-            // rely on caller to log thrown exceptions
+            // log a warning here so its captured before reportLogs is called
+            CLog.w("Unexpected exception when running invocation: %s", e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
             throw e;
         } finally {
