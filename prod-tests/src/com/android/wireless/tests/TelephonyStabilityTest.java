@@ -29,6 +29,8 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -120,6 +122,7 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         mRunMetrics.put(VOICE_CONNECTION_KEY, value);
         mRunMetrics.put(DATA_REGISTRATION_KEY, value);
         mRunMetrics.put(DATA_CONNECTION_KEY, value);
+        getRunUtil().sleep(3*60*1000);  // wait for 3 minutes for device to set up data connection
     }
 
     /**
@@ -174,7 +177,12 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         resFile = mTestDevice.pullFile(OUTPUT_FILE);
         int testRun = 0;
         try {
-            Assert.assertNotNull("no output file", resFile);
+            if (resFile == null) {
+                // If the result file is empty, either system crash or there are other fails
+                // (e.g. failed to connect to mobile network after bootup), count as a failed
+                // iteration
+                return 1;
+            }
             // Save a copy of the output file
             CLog.d("Sending %d byte file %s into the logosphere!",
                    resFile.length(), resFile);
@@ -240,5 +248,12 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
+    }
+
+    /**
+     * Gets the {@link IRunUtil} instance to use.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 }

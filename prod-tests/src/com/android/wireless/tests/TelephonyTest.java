@@ -26,6 +26,8 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -86,6 +88,8 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
 
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mPhoneNumber);
+        // wait for 3 minutes for fully booting up and data connection
+        getRunUtil().sleep(3*60*1000);
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -132,7 +136,11 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
         int calls = 0;
         resFile = mTestDevice.pullFile(mOutputFile);
         try {
-            Assert.assertNotNull("no output file", resFile);
+            if (resFile == null) {
+                // test failed without writing any results
+                // either system crash, or other fails, treat as one failed iteration
+                return 1;
+            }
             BufferedReader br= new BufferedReader(new FileReader(resFile));
             String line = br.readLine();
 
@@ -191,5 +199,12 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
+    }
+
+    /**
+     * Gets the {@link IRunUtil} instance to use.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 }
