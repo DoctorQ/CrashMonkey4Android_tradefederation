@@ -33,6 +33,9 @@ import java.util.zip.ZipOutputStream;
  */
 public class StreamUtil {
 
+    private StreamUtil() {
+    }
+
     /**
      * Retrieves a {@link String} from a character stream.
      *

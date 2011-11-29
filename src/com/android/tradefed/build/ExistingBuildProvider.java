@@ -25,6 +25,13 @@ public class ExistingBuildProvider implements IBuildProvider {
     private final IBuildProvider mParentProvider;
     private boolean mBuildMarkedNotTested = false;
 
+    /**
+     * Creates a {@link ExistingBuildProvider}.
+     *
+     * @param buildInfo the existing build to provide
+     * @param parentProvider the original {@link IBuildProvider} that created the {@link IBuildInfo}
+     *            Needed to pass along {@link IBuildProvider#buildNotTested(IBuildInfo)} events.
+     */
     public ExistingBuildProvider(IBuildInfo buildInfo, IBuildProvider parentProvider) {
         mBuildInfo = buildInfo;
         mParentProvider = parentProvider;

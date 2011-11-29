@@ -26,7 +26,8 @@ public interface IConfigurationFactory {
     /**
      * Create the {@link IConfiguration} from command line arguments.
      * <p/>
-     * Expected format is [options] <configuration name OR file path>.
+     * Expected format is "CONFIG [options]", where CONFIG is the built-in configuration name or
+     * a file path to a configuration xml file.
      *
      * @param args the command line arguments
      * @return the loaded {@link IConfiguration}. The delegate object {@link Option} fields have

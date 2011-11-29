@@ -32,9 +32,9 @@ public class CommandRunner {
     }
 
     /**
-     * The main method to launch the console. Will keep running until shutdown command is issued.
+     * The main method to run the command.
      *
-     * @param args
+     * @param args the config name to run and its options
      */
     @SuppressWarnings("unchecked")
     public void run(String[] args) {

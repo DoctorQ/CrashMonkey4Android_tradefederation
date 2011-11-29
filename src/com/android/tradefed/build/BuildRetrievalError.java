@@ -24,7 +24,7 @@ public class BuildRetrievalError extends Exception {
     private IBuildInfo mBuildInfo = new BuildInfo();
 
     /**
-     * Constructs a new (@link BuildRetrievalError} with a meaningful error message.
+     * Constructs a new {@link BuildRetrievalError} with a meaningful error message.
      *
      * @param reason a error message describing the cause of the error
      */
@@ -33,7 +33,7 @@ public class BuildRetrievalError extends Exception {
     }
 
     /**
-     * Constructs a new (@link BuildRetrievalError} with a meaningful error message, and a
+     * Constructs a new {@link BuildRetrievalError} with a meaningful error message, and a
      * cause.
      *
      * @param reason a detailed error message.
@@ -44,7 +44,7 @@ public class BuildRetrievalError extends Exception {
     }
 
     /**
-     * Constructs a new (@link BuildRetrievalError} with a meaningful error message, a
+     * Constructs a new {@link BuildRetrievalError} with a meaningful error message, a
      * cause, and build details.
      *
      * @param reason a detailed error message.
@@ -59,7 +59,7 @@ public class BuildRetrievalError extends Exception {
     /**
      * Return details about the build that was attempted to be retrieved.
      * <p/>
-     * The returned {@link IBuildInfo} will never be null but may not have complete data such as a
+     * The returned {@link IBuildInfo} will never be null but it may be missing data such as
      * build_id, etc
      *
      * @return the {@link IBuildInfo}
@@ -71,7 +71,7 @@ public class BuildRetrievalError extends Exception {
     /**
      * Set the build info.
      *
-     * @param build
+     * @param build the {@link IBuildInfo}
      */
     public void setBuildInfo(IBuildInfo build) {
         mBuildInfo = build;

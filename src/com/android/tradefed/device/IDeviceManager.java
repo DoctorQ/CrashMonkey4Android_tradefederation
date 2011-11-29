@@ -136,7 +136,7 @@ public interface IDeviceManager {
      * Connect to a device with adb-over-tcp
      * <p/>
      * This method allocates a new device, which should eventually be freed via
-     * {@link #disconnectFromTcpDevice()}
+     * {@link #disconnectFromTcpDevice(ITestDevice))}
      * <p/>
      * The returned {@link ITestDevice} will be online, but may not be responsive.
      * <p/>

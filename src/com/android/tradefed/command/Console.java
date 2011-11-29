@@ -47,12 +47,12 @@ import java.util.regex.Pattern;
 /**
  * Main TradeFederation console providing user with the interface to interact
  * <p/>
- * Current has empty implementation, but future support will include commands such as
+ * Currently supports operations such as
  * <ul>
- * <li>add a configuration to test
+ * <li>add a command to test
  * <li>list devices and their state
  * <li>list invocations in progress
- * <li>list configs in queue
+ * <li>list commands in queue
  * <li>dump invocation log to file/stdout
  * <li>shutdown
  * </ul>
@@ -798,6 +798,11 @@ public class Console extends Thread {
         LogRegistry.getLogRegistry().dumpLogs();
     }
 
+    /**
+     * Sets the console starting arguments.
+     *
+     * @param mainArgs the arguments
+     */
     public void setArgs(String[] mainArgs) {
         mMainArgs = mainArgs;
     }

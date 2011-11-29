@@ -20,7 +20,7 @@ import com.android.tradefed.device.ITestDevice;
 import java.util.Collection;
 
 /**
- * A interface for a {@link IRemoteTest} that can be split into separately executable sub-tests.
+ * A {@link IRemoteTest} that can be split into separately executable sub-tests.
  */
 public interface IShardableTest extends IRemoteTest {
 

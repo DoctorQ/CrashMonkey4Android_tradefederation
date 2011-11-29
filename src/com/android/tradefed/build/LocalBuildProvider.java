@@ -23,7 +23,7 @@ import com.android.tradefed.log.LogUtil.CLog;
 import java.io.File;
 
 /**
- * A {@link IBuildProvider} that constructs a {@link DeviceFolderBuildInfo} based on a provided
+ * A {@link IBuildProvider} that constructs a {@link IDeviceBuildInfo} based on a provided
  * local path.
  */
 @OptionClass(alias = "local-build")
