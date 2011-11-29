@@ -124,9 +124,6 @@ public class InstrumentationListTestTest extends TestCase {
         mMockListener.testRunEnded(0, Collections.EMPTY_MAP);
         EasyMock.expectLastCall().times(expectedAttempts);
 
-        // TODO: temp, expect a device reboot
-        mMockTestDevice.reboot();
-
         // now expect test to be marked as failed
         mMockListener.testStarted(test);
         mMockListener.testFailed(EasyMock.eq(TestFailure.ERROR), EasyMock.eq(test),
