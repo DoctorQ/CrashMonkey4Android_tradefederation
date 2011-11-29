@@ -111,6 +111,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         t.mTestName = "latency";
         t.mClassName = "com.android.camera.stress.CameraLatency";
         t.mTestMetricsName = "CameraLatency";
+        map = t.mPatternMap;
         map.put("AutoFocus", "^Avg AutoFocus = (\\d+)");
         map.put("ShutterLag", "^Avg mShutterLag = (\\d+)");
         map.put("Preview", "^Avg mShutterToPictureDisplayedTime = (\\d+)");
