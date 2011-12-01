@@ -76,6 +76,20 @@ public class OptionSetterTest extends TestCase {
         @SuppressWarnings("unused")
         @Option(name = "string", shortName = 's')
         private String mMyOption;
+
+        @Option(name = "enum")
+        private DefaultEnumClass mEnum = null;
+
+        @Option(name = "string_collection")
+        private Collection<String> mStringCollection = new ArrayList<String>();
+
+        @Option(name = "enumMap")
+        private Map<DefaultEnumClass, CustomEnumClass> mEnumMap =
+                new HashMap<DefaultEnumClass, CustomEnumClass>();
+
+        @Option(name = "enumCollection")
+        private Collection<DefaultEnumClass> mEnumCollection =
+                new ArrayList<DefaultEnumClass>();
     }
 
     /**
@@ -149,6 +163,14 @@ public class OptionSetterTest extends TestCase {
 
         @Option(name = "customEnum")
         private CustomEnumClass mCustomEnum = null;
+
+        @Option(name = "enumMap")
+        private Map<DefaultEnumClass, CustomEnumClass> mEnumMap =
+                new HashMap<DefaultEnumClass, CustomEnumClass>();
+
+        @Option(name = "enumCollection")
+        private Collection<DefaultEnumClass> mEnumCollection =
+                new ArrayList<DefaultEnumClass>();
     }
 
     private static class ParentOptionSource {
@@ -227,6 +249,60 @@ public class OptionSetterTest extends TestCase {
         assertEquals("test", object1.mString);
         assertEquals("test", object2.mMyOption);
     }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for Enums used as the key and value
+     * of a {@link Map}.
+     */
+    public void testOptionSetter_sharedEnumMap() throws ConfigurationException {
+        AllTypesOptionSource object1 = new AllTypesOptionSource();
+        SharedOptionSource object2 = new SharedOptionSource();
+
+        final String key = "VAL1";
+        final String value = "VAL1";
+        final DefaultEnumClass expectedKey = DefaultEnumClass.VAL1;
+        final CustomEnumClass expectedValue = CustomEnumClass.VAL1;
+
+        // Actually set the key/value pair
+        OptionSetter parser = new OptionSetter(object1, object2);
+        parser.setOptionMapValue("enumMap", key, value);
+
+        // verify object1
+        assertEquals(1, object1.mEnumMap.size());
+        assertNotNull(object1.mEnumMap.get(expectedKey));
+        assertEquals(expectedValue, object1.mEnumMap.get(expectedKey));
+
+        // verify object2
+        assertEquals(1, object2.mEnumMap.size());
+        assertNotNull(object2.mEnumMap.get(expectedKey));
+        assertEquals(expectedValue, object2.mEnumMap.get(expectedKey));
+    }
+
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for Enums used as the key and value
+     * of a {@link Map}.
+     */
+    public void testOptionSetter_sharedEnumCollection() throws ConfigurationException {
+        AllTypesOptionSource object1 = new AllTypesOptionSource();
+        SharedOptionSource object2 = new SharedOptionSource();
+
+        final String value = "VAL1";
+        final DefaultEnumClass expectedValue = DefaultEnumClass.VAL1;
+
+        // Actually add the element
+        OptionSetter parser = new OptionSetter(object1, object2);
+        parser.setOptionValue("enumCollection", value);
+
+        // verify object1
+        assertEquals(1, object1.mEnumCollection.size());
+        assertTrue(object1.mEnumCollection.contains(expectedValue));
+
+        // verify object2
+        assertEquals(1, object2.mEnumCollection.size());
+        assertTrue(object2.mEnumCollection.contains(expectedValue));
+    }
+
 
     /**
      * Test that multiple options with same name must have the same type.
@@ -655,6 +731,45 @@ public class OptionSetterTest extends TestCase {
         assertEquals(CustomEnumClass.VAL1, optionSource.mCustomEnum);
         assertEquals(42, optionSource.mCustomEnum.getVal());
     }
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for Enums used as the key and value
+     * of a {@link Map}.
+     */
+    public void testSetOptionValue_enumMap() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+
+        final String key = "VAL1";
+        final String value = "VAL1";
+        final DefaultEnumClass expectedKey = DefaultEnumClass.VAL1;
+        final CustomEnumClass expectedValue = CustomEnumClass.VAL1;
+
+        // Actually set the key/value pair
+        OptionSetter parser = new OptionSetter(optionSource);
+        parser.setOptionMapValue("enumMap", key, value);
+
+        assertEquals(1, optionSource.mEnumMap.size());
+        assertNotNull(optionSource.mEnumMap.get(expectedKey));
+        assertEquals(expectedValue, optionSource.mEnumMap.get(expectedKey));
+    }
+
+
+    /**
+     * Test {@link OptionSetter#setOptionValue(String, String)} for Enums used as the key and value
+     * of a {@link Map}.
+     */
+    public void testSetOptionValue_enumCollection() throws ConfigurationException {
+        AllTypesOptionSource optionSource = new AllTypesOptionSource();
+
+        final String value = "VAL1";
+        final DefaultEnumClass expectedValue = DefaultEnumClass.VAL1;
+
+        assertSetOptionValue(optionSource, "enumCollection", value);
+
+        assertEquals(1, optionSource.mEnumCollection.size());
+        assertTrue(optionSource.mEnumCollection.contains(expectedValue));
+    }
+
 
     /**
      * Test {@link OptionSetter#setOptionValue(String, String)} for an Enum.
