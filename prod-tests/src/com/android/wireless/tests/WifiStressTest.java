@@ -108,7 +108,10 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             description="The device idle time after screen off")
     private String mIdleTime = "30"; // 30 seconds
 
-    private void setupTests() {
+    private void setupTests() throws DeviceNotAvailableException {
+        // get RadioHelper
+        mRadioHelper = new RadioHelper(mTestDevice);
+
         if (mTestList != null) {
             return;
         }
@@ -122,7 +125,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestMetricsName = "wifi_stress";
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_ap_stress", ITERATION_PATTERN);
-        mTestList.add(t);
+        if (!mRadioHelper.isWifiOnlyDevice()) {
+            mTestList.add(t);
+        }
 
         // Add WiFi scanning test
         t = new TestInfo();
@@ -144,9 +149,6 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_reconnection_stress", ITERATION_PATTERN);
         mTestList.add(t);
-
-        // get RadioHelper
-        mRadioHelper = new RadioHelper(mTestDevice);
     }
 
     /**
