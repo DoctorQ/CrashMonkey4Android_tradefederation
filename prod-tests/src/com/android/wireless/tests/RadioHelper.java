@@ -29,6 +29,7 @@ public class RadioHelper {
         "www.bing.com", "www.ask.com", "www.yahoo.com"};
     private final int RETRY_ATTEMPTS = 3;
     private final int ACTIVATION_WAITING_TIME =  5 * 60 * 1000; // 5 minutes;
+    private final String WIFI_ONLY = "wifi-only";
     private ITestDevice mDevice;
 
     RadioHelper(ITestDevice device) {
@@ -89,6 +90,13 @@ public class RadioHelper {
         return false;
     }
 
+    /**
+     * Verify whether a device is a Wi-Fi only device (e.g. Wingray)
+     */
+    public boolean isWifiOnlyDevice() throws DeviceNotAvailableException {
+        return mDevice.getProperty("ro.carrier").contains(WIFI_ONLY);
+    }
+
     public void resetBootComplete() throws DeviceNotAvailableException {
         mDevice.executeShellCommand("setprop dev.bootcomplete 0");
     }
@@ -114,6 +122,9 @@ public class RadioHelper {
      * @throws DeviceNotAvailableException
      */
     public boolean radioActivation() throws DeviceNotAvailableException {
+        if (isWifiOnlyDevice()) {
+            return true;
+        }
         if (!isCdmaDevice()) {
             // for GSM device and LTE device
             CLog.d("not a CDMA device, no need to activiate the device");
