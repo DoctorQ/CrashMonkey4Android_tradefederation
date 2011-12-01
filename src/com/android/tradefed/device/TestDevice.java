@@ -38,7 +38,6 @@ import com.android.tradefed.device.WifiHelper.WifiState;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.result.StubTestRunListener;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
@@ -49,17 +48,11 @@ import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import java.awt.image.BufferedImage;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -81,9 +74,8 @@ class TestDevice implements IManagedTestDevice {
     private static final String LOG_TAG = "TestDevice";
     /** the default number of command retry attempts to perform */
     static final int MAX_RETRY_ATTEMPTS = 2;
-    /** the max number of bytes to store in logcat tmp buffer */
-    private static final int LOGCAT_BUFF_SIZE = 32 * 1024;
     private static final String LOGCAT_CMD = "logcat -v threadtime";
+    private static final String LOGCAT_DESC = "logcat";
     private static final String BUGREPORT_CMD = "bugreport";
     /**
      * Allow pauses of up to 2 minutes while receiving bugreport.  Note that dumpsys may pause up to
@@ -241,6 +233,9 @@ class TestDevice implements IManagedTestDevice {
         return RunUtil.getDefault();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setOptions(TestDeviceOptions options) {
         mOptions = options;
@@ -1411,7 +1406,7 @@ class TestDevice implements IManagedTestDevice {
      */
     public void stopLogcat() {
         if (mLogcatReceiver != null) {
-            mLogcatReceiver.cancel();
+            mLogcatReceiver.stop();
             mLogcatReceiver = null;
         } else {
             Log.w(LOG_TAG, String.format("Attempting to stop logcat when not capturing for %s",
@@ -1426,6 +1421,41 @@ class TestDevice implements IManagedTestDevice {
      */
     LogCatReceiver createLogcatReceiver() {
         return new LogCatReceiver();
+    }
+
+    /**
+     * A class used to capture the logcat. Will repeat the command as long as it is not canceled.
+     */
+    class LogCatReceiver {
+        private BackgroundDeviceAction mDeviceAction;
+        private LargeOutputReceiver mReceiver;
+
+        public LogCatReceiver() {
+            mReceiver = new LargeOutputReceiver(LOGCAT_DESC, getSerialNumber(),
+                    mOptions.getMaxLogcatFileSize());
+            // FIXME: remove mLogStartDelay. Currently delay starting logcat, as starting
+            // immediately after a device comes online has caused adb instability
+            mDeviceAction = new BackgroundDeviceAction(LOGCAT_CMD, LOGCAT_DESC, TestDevice.this,
+                    mReceiver, mLogStartDelay);
+        }
+
+        public void start() {
+            mDeviceAction.start();
+        }
+
+        public void stop() {
+            mDeviceAction.cancel();
+            mReceiver.cancel();
+            mReceiver.delete();
+        }
+
+        public InputStreamSource getLogcatData() {
+            return mReceiver.getData();
+        }
+
+        public void clear() {
+            mReceiver.clear();
+        }
     }
 
     /**
@@ -1444,255 +1474,6 @@ class TestDevice implements IManagedTestDevice {
         }
 
         return new ByteArrayInputStreamSource(receiver.getOutput());
-    }
-
-    /**
-     * A background thread that captures logcat data into a temporary host file.
-     * <p/>
-     * This is done so:
-     * <li>if device goes permanently offline during a test, the log data is retained.
-     * <li>to capture more data than may fit in device's circular log.
-     * <p/>
-     * The maximum size of the tmp file is limited to approximately mMaxLogcatFileSize.
-     * To prevent data loss when the limit has been reached, this file keeps two tmp host
-     * files.
-     */
-    class LogCatReceiver extends Thread implements IShellOutputReceiver {
-
-        private boolean mIsCancelled = false;
-        private OutputStream mOutStream;
-        /** the archived previous tmp file */
-        private File mPreviousTmpFile = null;
-        /** the current temp file which logcat data will be streamed into */
-        private File mTmpFile = null;
-        private long mTmpBytesStored = 0;
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public synchronized void addOutput(byte[] data, int offset, int length) {
-            if (mIsCancelled || mOutStream == null) {
-                return;
-            }
-            try {
-                mOutStream.write(data, offset, length);
-                mTmpBytesStored += length;
-                if (mTmpBytesStored > mOptions.getMaxLogcatFileSize()) {
-                    Log.i(LOG_TAG, String.format(
-                            "Max tmp logcat file size reached for %s, swapping",
-                            getSerialNumber()));
-                    createTmpFile();
-                    mTmpBytesStored = 0;
-                }
-            } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
-                        getSerialNumber()));
-            }
-        }
-
-        public synchronized InputStreamSource getLogcatData() {
-            if (mTmpFile != null) {
-                flush();
-                try {
-                    FileInputStream fileStream = new FileInputStream(mTmpFile);
-                    if (mPreviousTmpFile != null) {
-                        // return an input stream that first reads from mPreviousTmpFile, then reads
-                        // from mTmpFile
-                        InputStream stream = new SequenceInputStream(
-                                new FileInputStream(mPreviousTmpFile), fileStream);
-                        return new SnapshotInputStreamSource(stream);
-                    } else {
-                        // no previous file, just return a wrapper around mTmpFile's stream
-                        return new SnapshotInputStreamSource(fileStream);
-                    }
-                } catch (IOException e) {
-                    Log.e(LOG_TAG,
-                            String.format("failed to get logcat data for %s.", getSerialNumber()));
-                    Log.e(LOG_TAG, e);
-                }
-            }
-
-            // return an empty InputStreamSource
-            return new ByteArrayInputStreamSource(new byte[0]);
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public synchronized void flush() {
-            if (mOutStream == null) {
-                return;
-            }
-            try {
-                mOutStream.flush();
-            } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("failed to flush logcat data for %s.",
-                        getSerialNumber()));
-            }
-        }
-
-        /**
-         * Delete currently accumulated logcat data, and then re-create a new log file.
-         */
-        public synchronized void clear() {
-            delete();
-
-            try {
-                createTmpFile();
-            }  catch (IOException e) {
-                CLog.w("failed to create logcat file for %s.",
-                        getSerialNumber());
-            }
-        }
-
-        /**
-         * Delete all accumulated logcat data.
-         */
-        private void delete() {
-            flush();
-            closeLogStream();
-
-            FileUtil.deleteFile(mTmpFile);
-            mTmpFile = null;
-            FileUtil.deleteFile(mPreviousTmpFile);
-            mPreviousTmpFile = null;
-            mTmpBytesStored = 0;
-        }
-
-        public synchronized void cancel() {
-            mIsCancelled = true;
-            interrupt();
-            delete();
-        }
-
-        /**
-         * Closes the stream to tmp log file
-         */
-        private void closeLogStream() {
-            try {
-                if (mOutStream != null) {
-                    mOutStream.flush();
-                    mOutStream.close();
-                    mOutStream = null;
-                }
-
-            } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("failed to close logcat stream for %s.",
-                        getSerialNumber()));
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        public synchronized boolean isCancelled() {
-            return mIsCancelled;
-        }
-
-        @Override
-        public void run() {
-            try {
-                createTmpFile();
-            } catch (IOException e) {
-                Log.e(LOG_TAG, String.format("failed to create tmp logcat file for %s.",
-                        getSerialNumber()));
-                Log.e(LOG_TAG, e);
-                return;
-            }
-
-            // continually run in a loop attempting to grab logcat data, skipping recovery
-            // this is done so logcat data can continue to be captured even if device goes away and
-            // then comes back online
-            while (!isCancelled()) {
-                try {
-                    // FIXME: Disgusting hack alert! Sleep for a small amount before starting
-                    // logcat, as starting logcat immediately after a device comes online has caused
-                    // adb instability
-                    if (mLogStartDelay > 0) {
-                        Log.d(LOG_TAG, String.format("Sleep for %d before starting logcat for %s.",
-                                mLogStartDelay, getSerialNumber()));
-                        getRunUtil().sleep(mLogStartDelay);
-                    }
-                    Log.d(LOG_TAG, String.format("Starting logcat for %s.", getSerialNumber()));
-                    getIDevice().executeShellCommand(LOGCAT_CMD, this, 0);
-                } catch (Exception e) {
-                    final String msg = String.format("logcat capture interrupted for %s. Waiting"
-                            + " for device to be back online. May see duplicate content in log.",
-                            getSerialNumber());
-                    Log.d(LOG_TAG, msg);
-                    appendDeviceLogMsg(msg);
-                    // sleep a small amount for device to settle
-                    getRunUtil().sleep(5 * 1000);
-
-                    // Make sure we haven't been cancelled before we sleep for a long time
-                    if (isCancelled()) {
-                        break;
-                    }
-
-                    // wait a long time for device to be online
-                    mMonitor.waitForDeviceOnline(10 * 60 * 1000);
-                }
-            }
-        }
-
-        /**
-         * Creates a new tmp file, closing the old one as necessary
-         * @throws IOException
-         * @throws FileNotFoundException
-         */
-        private synchronized void createTmpFile() throws IOException, FileNotFoundException {
-            if (mIsCancelled) {
-                Log.w(LOG_TAG, String.format(
-                        "Attempted to createTmpFile() after cancel() for device %s, ignoring.",
-                        getSerialNumber()));
-                return;
-            }
-
-            closeLogStream();
-            if (mPreviousTmpFile != null) {
-                mPreviousTmpFile.delete();
-            }
-            mPreviousTmpFile = mTmpFile;
-            mTmpFile = FileUtil.createTempFile(String.format("logcat_%s_", getSerialNumber()),
-                    ".txt");
-            Log.i(LOG_TAG, String.format("Created tmp logcat file %s",
-                    mTmpFile.getAbsolutePath()));
-            mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
-                    LOGCAT_BUFF_SIZE);
-            // add an initial message to log, to give info to viewer
-            if (mPreviousTmpFile == null) {
-                // first log!
-                appendDeviceLogMsg(String.format("Logcat for device %s running system build %s",
-                        getSerialNumber(), getBuildId()));
-            } else {
-                appendDeviceLogMsg(String.format(
-                        "Continuing logcat capture for device %s running system build %s. " +
-                        "Previous content may have been truncated.", getSerialNumber(),
-                        getBuildId()));
-            }
-        }
-
-        /**
-         * Adds a message to the captured device log.
-         *
-         * @param msg
-         */
-        private synchronized void appendDeviceLogMsg(String msg) {
-            if (mOutStream == null) {
-                return;
-            }
-            // add the msg to device tmp log, so readers will know logcat was interrupted
-            try {
-                mOutStream.write("\n*******************\n".getBytes());
-                mOutStream.write(msg.getBytes());
-                mOutStream.write("\n*******************\n".getBytes());
-            } catch (IOException e) {
-                Log.w(LOG_TAG, String.format("failed to write logcat data for %s.",
-                        getSerialNumber()));
-            }
-        }
     }
 
     /**

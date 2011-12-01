@@ -621,11 +621,17 @@ public class StubTestDevice implements IManagedTestDevice {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void setOptions(TestDeviceOptions options) {
         // ignore
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean pushDir(File localDir, String deviceFilePath)
             throws DeviceNotAvailableException {

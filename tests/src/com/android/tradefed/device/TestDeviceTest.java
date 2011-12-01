@@ -313,14 +313,14 @@ public class TestDeviceTest extends TestCase {
         final String input = "this is the output of greater than 10 bytes.";
         final String input2 = "this is the second output of greater than 10 bytes.";
         final String input3 = "<10bytes";
-        LogCatReceiver receiver = mTestDevice.createLogcatReceiver();
         final Object notifier = new Object();
+        LogCatReceiver receiver = null;
 
         // mock the call to get system build id
         EasyMock.expect(mMockIDevice.getProperty((String)EasyMock.anyObject())).andStubReturn("1");
 
         try {
-            IAnswer shellAnswer = new IAnswer() {
+            IAnswer<Object> shellAnswer = new IAnswer<Object>() {
                 @Override
                 public Object answer() throws Throwable {
                     IShellOutputReceiver receiver =
@@ -345,7 +345,7 @@ public class TestDeviceTest extends TestCase {
                           // block until interrupted
                           notifier.wait();
                         } catch (InterruptedException e) {
-                      }
+                        }
                     }
                     return null;
                 }
@@ -355,6 +355,7 @@ public class TestDeviceTest extends TestCase {
                     EasyMock.anyObject(), EasyMock.eq(0));
             EasyMock.expectLastCall().andAnswer(shellAnswer);
             EasyMock.replay(mMockIDevice);
+            receiver = mTestDevice.createLogcatReceiver();
             receiver.start();
             synchronized (notifier) {
                 notifier.wait();
@@ -372,7 +373,9 @@ public class TestDeviceTest extends TestCase {
             assertTrue(actualString.contains(input2));
             assertTrue(actualString.contains(input3));
         } finally {
-            receiver.cancel();
+            if (receiver != null) {
+                receiver.stop();
+            }
         }
     }
 
