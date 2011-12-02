@@ -14,7 +14,7 @@
      limitations under the License.
 -->
 <configuration description="Creates an avd, and launches emulator from a local sdk">
-    <option name="emulator" value="true" />
+    <option name="new-emulator" value="true" />
     <build_provider class="com.android.tradefed.build.LocalSdkBuildProvider" />
     <target_preparer class="com.android.tradefed.targetprep.SdkAvdPreparer" />
     <test class="com.android.sdk.tests.EmulatorSmokeTest" />

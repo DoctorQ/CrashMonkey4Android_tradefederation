@@ -61,6 +61,17 @@ public interface IDeviceSelection extends IMatcher<IDevice> {
     public boolean emulatorRequested();
 
     /**
+     * @return <code>true</code> if a device has been requested
+     */
+    public boolean deviceRequested();
+
+    /**
+     * @return <code>true</code> if an stub emulator has been requested. A stub emulator is a
+     *         placeholder to be used when config has to launch an emulator.
+     */
+    public boolean stubEmulatorRequested();
+
+    /**
      * @return <code>true</code> if a null device (aka no device required) has been requested
      */
     public boolean nullDeviceRequested();
@@ -87,5 +98,6 @@ public interface IDeviceSelection extends IMatcher<IDevice> {
      * @param device the {@link IDevice}
      * @return the device battery level or <code>null</code> if unknown
      */
-    Integer getBatteryLevel(IDevice device);
+    public Integer getBatteryLevel(IDevice device);
+
 }

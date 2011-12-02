@@ -56,8 +56,16 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     private Collection<String> mPropertyStrings = new ArrayList<String>();
 
     @Option(name = "emulator", shortName = 'e', description =
-        "run this test on emulator.")
+        "force this test to run on emulator.")
     private boolean mEmulatorRequested = false;
+
+    @Option(name = "device", shortName = 'd', description =
+        "force this test to run on a physical device, not an emulator.")
+    private boolean mDeviceRequested = false;
+
+    @Option(name = "new-emulator", description =
+        "allocate a placeholder emulator. Should be used when config intends to launch an emulator")
+    private boolean mStubEmulatorRequested = false;
 
     @Option(name = "null-device", shortName = 'n', description =
         "do not allocate a device for this test.")
@@ -150,8 +158,24 @@ public class DeviceSelectionOptions implements IDeviceSelection {
      * {@inheritDoc}
      */
     @Override
+    public boolean deviceRequested() {
+        return mDeviceRequested;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean emulatorRequested() {
         return mEmulatorRequested;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean stubEmulatorRequested() {
+        return mStubEmulatorRequested;
     }
 
     /**
@@ -167,6 +191,20 @@ public class DeviceSelectionOptions implements IDeviceSelection {
      */
     public void setEmulatorRequested(boolean emulatorRequested) {
         mEmulatorRequested = emulatorRequested;
+    }
+
+    /**
+     * Sets the stub emulator requested flag
+     */
+    public void setStubEmulatorRequested(boolean stubEmulatorRequested) {
+        mStubEmulatorRequested = stubEmulatorRequested;
+    }
+
+    /**
+     * Sets the emulator requested flag
+     */
+    public void setDeviceRequested(boolean deviceRequested) {
+        mDeviceRequested = deviceRequested;
     }
 
     /**
@@ -277,8 +315,14 @@ public class DeviceSelectionOptions implements IDeviceSelection {
                 return false;
             }
         }
-        if (emulatorRequested() != device.isEmulator()) {
-            // only match with emulator if explicitly requested
+        if (emulatorRequested() && !device.isEmulator()) {
+            return false;
+        }
+        if (deviceRequested() && device.isEmulator()) {
+            return false;
+        }
+        if (device.isEmulator() && (device instanceof StubDevice) && !stubEmulatorRequested()) {
+            // only allocate the stub emulator if requested
             return false;
         }
         if (nullDeviceRequested() != (device instanceof NullDevice)) {

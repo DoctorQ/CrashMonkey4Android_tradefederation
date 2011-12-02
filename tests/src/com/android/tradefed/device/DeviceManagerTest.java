@@ -287,12 +287,12 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when emulator is
+     * Test {@link DeviceManager#allocateDevice(long, DeviceSelectionOptions))} when stub emulator is
      * requested
      */
-    public void testAllocateDevice_emulator() throws DeviceNotAvailableException {
+    public void testAllocateDevice_stubEmulator() throws DeviceNotAvailableException {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.setEmulatorRequested(true);
+        options.setStubEmulatorRequested(true);
         EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
         replayMocks();
         DeviceManager manager = createDeviceManager();
@@ -304,7 +304,7 @@ public class DeviceManagerTest extends TestCase {
      */
     public void testFreeDevice_emulator() throws DeviceNotAvailableException {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.setEmulatorRequested(true);
+        options.setStubEmulatorRequested(true);
         IManagedTestDevice mockEmulator = EasyMock.createMock(IManagedTestDevice.class);
         EasyMock.expect(mockEmulator.getSerialNumber()).andStubReturn("emulator-5554");
         // allocate call
