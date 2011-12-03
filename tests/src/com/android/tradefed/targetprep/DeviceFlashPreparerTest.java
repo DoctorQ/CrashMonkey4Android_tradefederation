@@ -93,6 +93,7 @@ public class DeviceFlashPreparerTest extends TestCase {
      */
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        mMockFlasher.setForceSystemFlash(false);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
@@ -121,6 +122,7 @@ public class DeviceFlashPreparerTest extends TestCase {
      */
     public void testSetup_buildError() throws Exception {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        mMockFlasher.setForceSystemFlash(false);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
