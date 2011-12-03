@@ -19,6 +19,8 @@ package com.android.tradefed.config;
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.ArrayUtil;
 
+import com.google.common.base.Objects;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -116,15 +118,23 @@ public class OptionSetter {
         }
         if (type instanceof Class) {
             Class<?> cType = (Class<?>) type;
-            if (Collection.class.isAssignableFrom(cType)) {
+
+            if (cType.isEnum()) {
+                return new EnumHandler(cType);
+            } else if (Collection.class.isAssignableFrom(cType)) {
                 // could handle by just having a default of treating
                 // contents as String but consciously decided this
                 // should be an error
-                throw new ConfigurationException(
-                        String.format("Cannot handle non-parameterized collection %s. %s", type,
-                                "use a generic Collection to specify a desired element type"));
-            } else if (cType.isEnum()) {
-                return new EnumHandler(cType);
+                throw new ConfigurationException(String.format(
+                        "Cannot handle non-parameterized collection %s.  Use a generic Collection "
+                        + "to specify a desired element type.", type));
+            } else if (Map.class.isAssignableFrom(cType)) {
+                // could handle by just having a default of treating
+                // contents as String but consciously decided this
+                // should be an error
+                throw new ConfigurationException(String.format(
+                        "Cannot handle non-parameterized map %s.  Use a generic Map to specify "
+                        + "desired element types.", type));
             }
             return handlers.get(cType);
         }
@@ -147,8 +157,8 @@ public class OptionSetter {
 
         void addField(String name, Object source, Field field) throws ConfigurationException {
             if (size() > 0) {
-                Handler existingFieldHandler = getHandler(getFirstField().getType());
-                Handler newFieldHandler = getHandler(field.getType());
+                Handler existingFieldHandler = getHandler(getFirstField().getGenericType());
+                Handler newFieldHandler = getHandler(field.getGenericType());
                 if (!existingFieldHandler.equals(newFieldHandler)) {
                     throw new ConfigurationException(String.format(
                             "@Option field with name '%s' in class '%s' is defined with a " +
@@ -564,6 +574,7 @@ public class OptionSetter {
             fields = new OptionFieldsForName();
             optionMap.put(name, fields);
         }
+
         fields.addField(name, optionSource, field);
         if (getHandler(field.getGenericType()) == null) {
             throw new ConfigurationException(String.format(
@@ -731,11 +742,53 @@ public class OptionSetter {
             mValueHandler = valueHandler;
         }
 
+        Handler getKeyHandler() {
+            return mKeyHandler;
+        }
+
+        Handler getValueHandler() {
+            return mValueHandler;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Override
         boolean isMap() {
             return true;
         }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(MapHandler.class, mKeyHandler, mValueHandler);
+        }
+
+        /**
+         * Define two {@link MapHandler}s as equivalent if their key and value Handlers are
+         * respectively equivalent.
+         * <p />
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(Object otherObj) {
+            if ((otherObj != null) && (otherObj instanceof MapHandler)) {
+                MapHandler other = (MapHandler) otherObj;
+                Handler otherKeyHandler = other.getKeyHandler();
+                Handler otherValueHandler = other.getValueHandler();
+
+                return mKeyHandler.equals(otherKeyHandler)
+                        && mValueHandler.equals(otherValueHandler);
+            }
+
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Override
         Object translate(String valueText) {
             return null;
@@ -755,16 +808,48 @@ public class OptionSetter {
     }
 
     /**
-     * @ {@link Handler} to handle values for {@link Enum} fields.
+     * A {@link Handler} to handle values for {@link Enum} fields.
      */
     private static class EnumHandler extends Handler {
-        private final Class/*<?>*/ mEnumType;
+        private final Class mEnumType;
 
         EnumHandler(Class<?> enumType) {
             mEnumType = enumType;
         }
 
+        Class getEnumType() {
+            return mEnumType;
+        }
 
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(EnumHandler.class, mEnumType);
+        }
+
+        /**
+         * Define two EnumHandlers as equivalent if their EnumTypes are mutually assignable
+         * <p />
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean equals(Object otherObj) {
+            if ((otherObj != null) && (otherObj instanceof EnumHandler)) {
+                EnumHandler other = (EnumHandler) otherObj;
+                Class otherType = other.getEnumType();
+
+                return mEnumType.isAssignableFrom(otherType)
+                        && otherType.isAssignableFrom(mEnumType);
+            }
+
+            return false;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
         @Override
         Object translate(String valueText) {
             return translate(valueText, true);
