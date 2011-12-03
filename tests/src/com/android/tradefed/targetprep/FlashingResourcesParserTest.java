@@ -17,6 +17,7 @@
 package com.android.tradefed.targetprep;
 
 import com.android.tradefed.targetprep.FlashingResourcesParser.AndroidInfo;
+import com.android.tradefed.targetprep.FlashingResourcesParser.Constraint;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.MultiMap;
 
@@ -27,12 +28,20 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Unit tests for {@link FlashingResourcesParser}.
  */
 public class FlashingResourcesParserTest extends TestCase {
+
+    private static class Under3Chars implements Constraint {
+        public boolean shouldAccept(String item) {
+            return item.length() < 3;
+        }
+    }
 
     /**
      * Test that {@link FlashingResourcesParser#parseAndroidInfo(BufferedReader)} parses valid data
@@ -44,7 +53,7 @@ public class FlashingResourcesParserTest extends TestCase {
                 "cylon=blah\n" + // valid
                 "blah"; // not valid
         BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
-        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader);
+        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader, null);
         MultiMap<String, String> result = fullInfo.get(null);
 
         assertEquals(3, result.size());
@@ -54,6 +63,34 @@ public class FlashingResourcesParserTest extends TestCase {
         assertEquals("board2", boards.get(1));
         List<String> bootloaders = result.get(FlashingResourcesParser.BOOTLOADER_VERSION_KEY);
         assertEquals("1.0.1", bootloaders.get(0));
+    }
+
+    /**
+     * Test that {@link FlashingResourcesParser#parseAndroidInfo(BufferedReader)} parses valid data
+     * correctly.
+     */
+    public void testParseAndroidInfo_withConstraint() throws IOException {
+        final String validInfoData = "require board=board1|board2\n" +
+                "require version-bootloader=1.0.1\n" +
+                "require version-baseband=abcde|fg|hijkl|m\n";
+        BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
+        Map<String, Constraint> constraintMap = new HashMap<String, Constraint>(1);
+        constraintMap.put(FlashingResourcesParser.BASEBAND_VERSION_KEY, new Under3Chars());
+
+        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader, constraintMap);
+        MultiMap<String, String> result = fullInfo.get(null);
+
+        assertEquals(3, result.size());
+        List<String> boards = result.get(FlashingResourcesParser.BOARD_KEY);
+        assertEquals(2, boards.size());
+        assertEquals("board1", boards.get(0));
+        assertEquals("board2", boards.get(1));
+        List<String> bootloaders = result.get(FlashingResourcesParser.BOOTLOADER_VERSION_KEY);
+        assertEquals("1.0.1", bootloaders.get(0));
+        List<String> radios = result.get(FlashingResourcesParser.BASEBAND_VERSION_KEY);
+        assertEquals(2, radios.size());
+        assertEquals("fg", radios.get(0));
+        assertEquals("m", radios.get(1));
     }
 
     /**
@@ -124,7 +161,7 @@ public class FlashingResourcesParserTest extends TestCase {
         BufferedReader reader = new BufferedReader(new StringReader(validInfoData));
 
         // Verify parsing for the first line
-        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader);
+        AndroidInfo fullInfo = FlashingResourcesParser.parseAndroidInfo(reader, null);
         // 1 for global reqs, 1 for gamma-specific reqs
         assertEquals(2, fullInfo.size());
 

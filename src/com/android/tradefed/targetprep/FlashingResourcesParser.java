@@ -37,6 +37,17 @@ import java.util.zip.ZipFile;
  * (e.g. bootloader, baseband, etc)
  */
 public class FlashingResourcesParser implements IFlashingResourcesParser {
+    /**
+     * A filtering interface, intended to allow {@link FlashingResourcesParser} to ignore some
+     * resources that it otherwise might use
+     */
+    public static interface Constraint {
+        /**
+         * Check if the provided {@code item} passes the constraint.
+         * @return {@code true} for accept, {@code false} for reject
+         */
+        public boolean shouldAccept(String item);
+    }
 
     private static final String ANDROID_INFO_FILE_NAME = "android-info.txt";
     /**
@@ -53,10 +64,10 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
             Pattern.compile("require-for-product:(\\S+) +(.*?)=(.*)");
 
     // expected keys
-    static final String PRODUCT_KEY = "product";
-    static final String BOARD_KEY = "board";
-    static final String BOOTLOADER_VERSION_KEY = "version-bootloader";
-    static final String BASEBAND_VERSION_KEY = "version-baseband";
+    public static final String PRODUCT_KEY = "product";
+    public static final String BOARD_KEY = "board";
+    public static final String BOOTLOADER_VERSION_KEY = "version-bootloader";
+    public static final String BASEBAND_VERSION_KEY = "version-baseband";
 
     // key-value pairs of build requirements
     private AndroidInfo mReqs;
@@ -68,8 +79,45 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     @SuppressWarnings("serial")
     public static class AndroidInfo extends HashMap<String, MultiMap<String, String>> {}
 
+    /**
+     * Create a {@link FlashingResourcesParser} and have it parse the specified device image for
+     * flashing requirements.  Flashing requirements must pass the appropriate constraint (if one
+     * exists) before being added.  Rejected requirements will be dropped silently.
+     *
+     * @param deviceImgZipFile The {@code updater.zip} file to be flashed
+     * @param c A map from key name to {@link Constraint}.  Image names will be checked against
+     *        the appropriate constraint (if any) as a prereq for being added.  May be null to
+     *        disable filtering.
+     */
+    public FlashingResourcesParser(File deviceImgZipFile, Map<String, Constraint> c)
+            throws TargetSetupError {
+        mReqs = getBuildRequirements(deviceImgZipFile, c);
+    }
+
+    /**
+     * Create a {@link FlashingResourcesParser} and have it parse the specified device image for
+     * flashing requirements.
+     *
+     * @param deviceImgZipFile The {@code updater.zip} file to be flashed
+     */
     public FlashingResourcesParser(File deviceImgZipFile) throws TargetSetupError {
-        mReqs = getBuildRequirements(deviceImgZipFile);
+        this(deviceImgZipFile, null);
+    }
+
+    /**
+     * Constructs a FlashingResourcesParser with the supplied AndroidInfo Reader
+     * <p/>
+     * Exposed for unit testing
+     *
+     * @param infoReader a {@link BufferedReader} containing the equivalent of android-info.txt to
+     *        parse
+     * @param c A map from key name to {@link Constraint}.  Image names will be checked against
+     *        the appropriate constraint (if any) as a prereq for being added.  May be null to
+     *        disable filtering.
+     */
+    public FlashingResourcesParser(BufferedReader infoReader, Map<String, Constraint> c)
+            throws TargetSetupError, IOException {
+        mReqs = parseAndroidInfo(infoReader, c);
     }
 
     /**
@@ -82,7 +130,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      */
     public FlashingResourcesParser(BufferedReader infoReader) throws TargetSetupError,
             IOException {
-        mReqs = parseAndroidInfo(infoReader);
+        this(infoReader, null);
     }
 
     /**
@@ -201,7 +249,8 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * @returns a {@link Map} of parsed key value pairs, or <code>null</code> if data could not be
      * parsed
      */
-    static AndroidInfo getBuildRequirements(File deviceImgZipFile) throws TargetSetupError {
+    static AndroidInfo getBuildRequirements(File deviceImgZipFile,
+            Map<String, Constraint> constraints) throws TargetSetupError {
         ZipFile deviceZip = null;
         BufferedReader infoReader = null;
         try {
@@ -214,7 +263,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
             infoReader = new BufferedReader(new InputStreamReader(
                     deviceZip.getInputStream(androidInfoEntry)));
 
-            return parseAndroidInfo(infoReader);
+            return parseAndroidInfo(infoReader, constraints);
         } catch (ZipException e) {
             throw new TargetSetupError(String.format("Could not read device image zip %s",
                     deviceImgZipFile.getName()), e);
@@ -262,8 +311,8 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * @return a Map of parsed attribute name-value pairs
      * @throws IOException
      */
-    static AndroidInfo parseAndroidInfo(BufferedReader infoReader)
-            throws IOException {
+    static AndroidInfo parseAndroidInfo(BufferedReader infoReader,
+            Map<String, Constraint> constraints) throws IOException {
         AndroidInfo requiredImageMap = new AndroidInfo();
 
         boolean eof = false;
@@ -285,10 +334,17 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
                     if (matcher.matches()) {
                         String key = matcher.group(1);
                         String values = matcher.group(2);
+                        Constraint c = null;
+                        if (constraints != null) {
+                            c = constraints.get(key);
+                        }
+
                         // Use a null product identifier to designate requirements for all products
                         MultiMap<String, String> reqs = getOrCreateEntry(requiredImageMap, null);
                         for (String value : values.split("\\|")) {
-                            reqs.put(key, value);
+                            if ((c == null) || c.shouldAccept(value)) {
+                                reqs.put(key, value);
+                            }
                         }
                     }
                 }
