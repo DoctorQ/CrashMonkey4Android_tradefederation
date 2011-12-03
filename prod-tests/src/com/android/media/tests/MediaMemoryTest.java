@@ -17,12 +17,12 @@
 package com.android.media.tests;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.BugreportCollector.Freq;
 import com.android.tradefed.result.BugreportCollector.Noun;
@@ -58,7 +58,6 @@ import java.util.regex.Pattern;
  * writable.
  */
 public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
-    private static final String LOG_TAG = "MediaMemoryTest";
 
     ITestDevice mTestDevice = null;
 
@@ -70,7 +69,7 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_PACKAGE_NAME = "com.android.mediaframeworktest";
     private static final String TEST_RUNNER_NAME = ".MediaFrameworkPerfTestRunner";
 
-    private final String mOutputPath = "mediaMemOutput.txt";
+    private final String mOutputPaths[] = {"mediaMemOutput.txt","mediaProcmemOutput.txt"};
 
     //Max test timeout - 4 hrs
     private static final int MAX_TEST_TIMEOUT = 4 * 60 * 60 * 1000;
@@ -122,7 +121,9 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
      */
     private void cleanResultFile() throws DeviceNotAvailableException {
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, mOutputPath));
+        for(String outputPath : mOutputPaths){
+            mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, outputPath));
+        }
         if (mGetHeapDump) {
             mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, "*.dump"));
         }
@@ -151,9 +152,8 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
                 listener.testLog(heapFile, LogDataType.TEXT,
                         outputSource);
             } catch (IOException e) {
-                Log.e(LOG_TAG, String.format(
-                        "IOException while reading or parsing output file: %s",
-                        e));
+                CLog.e("IOException while reading or parsing output file: %s",
+                        e.getMessage());
             } finally {
                 if (outputFile != null) {
                     outputFile.delete();
@@ -173,34 +173,37 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
             throws DeviceNotAvailableException {
         File outputFile = null;
         InputStreamSource outputSource = null;
-        try {
-            outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
 
-            if (outputFile == null) {
-                return;
-            }
-            if (mGetHeapDump) {
-                // Upload all the heap dump files.
-                uploadHeapDumpFiles(listener);
-            }
+        if (mGetHeapDump) {
+            // Upload all the heap dump files.
+            uploadHeapDumpFiles(listener);
+        }
+        for(String outputPath : mOutputPaths){
+            try {
+                outputFile = mTestDevice.pullFileFromExternal(outputPath);
 
-            // Upload a verbatim copy of the output file
-            Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
-                    outputFile.length(), outputFile));
-            outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(mOutputPath, LogDataType.TEXT, outputSource);
+                if (outputFile == null) {
+                    return;
+                }
 
-            // Parse the output file to upload aggregated metrics
-            parseOutputFile(new FileInputStream(outputFile), listener);
-        } catch (IOException e) {
-            Log.e(LOG_TAG, String.format(
-                            "IOException while reading or parsing output file: %s", e));
-        } finally {
-            if (outputFile != null) {
-                outputFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
+                // Upload a verbatim copy of the output file
+                CLog.d("Sending %d byte file %s into the logosphere!",
+                        outputFile.length(), outputFile);
+                outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
+                listener.testLog(outputPath, LogDataType.TEXT, outputSource);
+
+                // Parse the output file to upload aggregated metrics
+                parseOutputFile(new FileInputStream(outputFile), listener);
+            } catch (IOException e) {
+                CLog.e("IOException while reading or parsing output file: %s",
+                       e.getMessage());
+            } finally {
+                if (outputFile != null) {
+                    outputFile.delete();
+                }
+                if (outputSource != null) {
+                    outputSource.cancel();
+                }
             }
         }
     }
@@ -218,8 +221,8 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
         try {
             contents = StreamUtil.getStringFromStream(dataStream);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format(
-                    "Got IOException during test processing: %s", e));
+            CLog.e("Got IOException during test processing: %s",
+                   e.getMessage());
             return;
         }
 
@@ -242,7 +245,7 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
                     }
                 }
             } else {
-                Log.e(LOG_TAG, String.format("Got unmatched line: %s", line));
+                CLog.e("Got unmatched line: %s", line);
                 continue;
             }
         }
@@ -255,7 +258,7 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
      * Exposed for unit testing
      */
     void reportMetrics(ITestInvocationListener listener, Map<String, String> metrics) {
-        Log.d(LOG_TAG, String.format("About to report metrics: %s", metrics));
+        CLog.d("About to report metrics: %s", metrics);
         listener.testRunStarted(METRICS_RUN_NAME, 0);
         listener.testRunEnded(0, metrics);
     }
