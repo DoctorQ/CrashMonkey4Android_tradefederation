@@ -31,6 +31,7 @@ public class DeviceSelectionOptionsTest extends TestCase {
     private static final String DEVICE_ENV_SERIAL = "6789";
 
     private IDevice mMockDevice;
+    private IDevice mMockEmulatorDevice;
 
     // DEVICE_TYPE and OTHER_DEVICE_TYPE should be different
     private static final String DEVICE_TYPE = "charm";
@@ -44,6 +45,9 @@ public class DeviceSelectionOptionsTest extends TestCase {
         mMockDevice = EasyMock.createMock(IDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockDevice.isEmulator()).andStubReturn(Boolean.FALSE);
+        mMockEmulatorDevice = EasyMock.createMock(IDevice.class);
+        EasyMock.expect(mMockEmulatorDevice.getSerialNumber()).andStubReturn("emulator");
+        EasyMock.expect(mMockEmulatorDevice.isEmulator()).andStubReturn(Boolean.TRUE);
     }
 
     /**
@@ -215,41 +219,63 @@ public class DeviceSelectionOptionsTest extends TestCase {
     }
 
     /**
-     * Test for matching with an emulator
+     * Test for matching with an srtub emulator
      */
-    public void testMatches_emulator() {
+    public void testMatches_stubEmulator() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
-        options.setEmulatorRequested(true);
+        options.setStubEmulatorRequested(true);
         IDevice emulatorDevice = new StubDevice("emulator", true);
         assertTrue(options.matches(emulatorDevice));
     }
 
     /**
-     * Test that an emulator is not matched by default
+     * Test that an stub emulator is not matched by default
      */
-    public void testMatches_emulatorNotDefault() {
+    public void testMatches_stubEmulatorNotDefault() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         IDevice emulatorDevice = new StubDevice("emulator", true);
         assertFalse(options.matches(emulatorDevice));
     }
 
     /**
-     * Test for matching with no device requested flag
+     * Test for matching with null device requested flag
      */
-    public void testMatches_noDevice() {
+    public void testMatches_nullDevice() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.setNullDeviceRequested(true);
-        IDevice stubDevice = new NullDevice("no device");
+        IDevice stubDevice = new NullDevice("null device");
         assertTrue(options.matches(stubDevice));
     }
 
     /**
-     * Test that a real device is not matched if the 'no device requested' flag is set
+     * Test that a real device is not matched if the 'null device requested' flag is set
      */
-    public void testMatches_emulatorNot() {
+    public void testMatches_notNullDevice() {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.setNullDeviceRequested(true);
-        EasyMock.replay(mMockDevice);
+        EasyMock.replay(mMockDevice, mMockEmulatorDevice);
         assertFalse(options.matches(mMockDevice));
+    }
+
+    /**
+     * Test that a real device is matched when requested
+     */
+    public void testMatches_device() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setDeviceRequested(true);
+        EasyMock.replay(mMockDevice, mMockEmulatorDevice);
+        assertTrue(options.matches(mMockDevice));
+        assertFalse(options.matches(mMockEmulatorDevice));
+    }
+
+    /**
+     * Test that a emulator is matched when requested
+     */
+    public void testMatches_emulator() {
+        DeviceSelectionOptions options = new DeviceSelectionOptions();
+        options.setEmulatorRequested(true);
+        EasyMock.replay(mMockDevice, mMockEmulatorDevice);
+        assertFalse(options.matches(mMockDevice));
+        assertTrue(options.matches(mMockEmulatorDevice));
     }
 }
