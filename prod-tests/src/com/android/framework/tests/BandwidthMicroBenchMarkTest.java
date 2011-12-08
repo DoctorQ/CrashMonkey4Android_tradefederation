@@ -191,6 +191,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
          * Perform a single bandwidth test server query, storing the response or
          * the associated exception in case of error.
          */
+        @Override
         public boolean run() {
             try {
                 String serverResponse = mHttpHelper.fetchUrl(mBaseUrl, mParams);
@@ -228,6 +229,7 @@ public class BandwidthMicroBenchMarkTest implements IDeviceTest, IRemoteTest {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void cancel() {
             // ignore
         }

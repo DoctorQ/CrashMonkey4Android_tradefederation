@@ -36,6 +36,7 @@ public class HttpHelper implements IHttpHelper {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String buildUrl(String baseUrl, Map<String, String> paramMap) {
         StringBuilder urlBuilder = new StringBuilder(baseUrl);
         if (!paramMap.isEmpty()) {
@@ -62,6 +63,7 @@ public class HttpHelper implements IHttpHelper {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String fetchUrl(String urlString, Map<String, String> params) throws IOException,
             DataSizeException {
         return fetchUrl(buildUrl(urlString, params));
@@ -74,6 +76,7 @@ public class HttpHelper implements IHttpHelper {
      * @param params
      * @throws IOException
      */
+    @Override
     public void doPost(String baseUrlString, Map<String, String> params) throws IOException {
         String urlString = buildUrl(baseUrlString, params);
         URL url = new URL(urlString);
@@ -137,6 +140,7 @@ public class HttpHelper implements IHttpHelper {
     /**
      * {@inheritDoc}
      */
+    @Override
     public HttpURLConnection createXmlConnection(URL url, String method) throws IOException {
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestMethod(method);

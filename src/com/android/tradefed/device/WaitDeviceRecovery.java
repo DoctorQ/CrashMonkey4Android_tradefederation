@@ -149,6 +149,7 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void recoverDeviceBootloader(final IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
         // device may have just gone offline

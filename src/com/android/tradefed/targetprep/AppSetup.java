@@ -45,6 +45,7 @@ public class AppSetup implements ITargetPreparer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException {
         if (!(buildInfo instanceof IAppBuildInfo)) {

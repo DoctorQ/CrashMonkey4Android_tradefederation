@@ -41,6 +41,7 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest, IRemoteTe
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice getDevice() {
         return mDevice;
     }
@@ -48,6 +49,7 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest, IRemoteTe
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDevice(ITestDevice device) {
         mDevice = device;
     }
@@ -63,7 +65,7 @@ public class DeviceTestSuite extends TestSuite implements IDeviceTest, IRemoteTe
     /**
      * Adds the tests from the given class to the suite
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings("rawtypes")
     @Override
     public void addTestSuite(Class testClass) {
         addTest(new DeviceTestSuite(testClass));

@@ -77,7 +77,6 @@ public class InstrumentationTestTest extends TestCase {
      */
     private static abstract class RunTestAnswer implements IAnswer<Boolean> {
 
-        @SuppressWarnings("unchecked")
         @Override
         public Boolean answer() throws Throwable {
             Object[] args = EasyMock.getCurrentArguments();
@@ -121,7 +120,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test normal run scenario.
      */
-    @SuppressWarnings("unchecked")
     public void testRun() throws Exception {
         // verify the mock listener is passed through to the runner
         RunTestAnswer runTestResponse = new RunTestAnswer() {
@@ -141,7 +139,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test normal run scenario with a test class specified.
      */
-    @SuppressWarnings("unchecked")
     public void testRun_class() throws Exception {
         final String className = "FooTest";
         mMockRemoteRunner.setClassName(className);
@@ -155,7 +152,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test normal run scenario with a test class and method specified.
      */
-    @SuppressWarnings("unchecked")
     public void testRun_classMethod() throws Exception {
         final String className = "FooTest";
         final String methodName = "testFoo";
@@ -171,7 +167,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test normal run scenario with a test package specified.
      */
-    @SuppressWarnings("unchecked")
     public void testRun_testPackage() throws Exception {
         final String testPackageName = "com.foo";
         // expect this call
@@ -186,7 +181,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Verify test package name is not passed to the runner if class name is set
      */
-    @SuppressWarnings("unchecked")
     public void testRun_testPackageAndClass() throws Exception {
         final String testClassName = "FooTest";
         // expect this call
@@ -230,7 +224,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test the rerun mode when test run has no tests.
      */
-    @SuppressWarnings("unchecked")
     public void testRun_rerunEmpty() throws Exception {
         mInstrumentationTest.setRerunMode(true);
         // expect log only mode run first to collect tests
@@ -263,7 +256,6 @@ public class InstrumentationTestTest extends TestCase {
     /**
      * Test the rerun mode when first test run fails.
      */
-    @SuppressWarnings("unchecked")
     public void testRun_rerun() throws Exception {
         RunTestAnswer firstRunAnswer = new RunTestAnswer() {
             @Override
@@ -289,7 +281,6 @@ public class InstrumentationTestTest extends TestCase {
      * Test resuming a test run when first run is aborted due to
      * {@link DeviceNotAvailableException}
      */
-    @SuppressWarnings("unchecked")
     public void testRun_resume() throws Exception {
         RunTestAnswer firstRunResponse = new RunTestAnswer() {
             @Override
@@ -404,7 +395,6 @@ public class InstrumentationTestTest extends TestCase {
                         (ITestRunListener)EasyMock.anyObject())).andAnswer(collectTestAnswer);
     }
 
-    @SuppressWarnings("unchecked")
     private void setRunTestExpectations(RunTestAnswer secondRunAnswer)
             throws DeviceNotAvailableException {
         EasyMock.expect(
@@ -414,7 +404,6 @@ public class InstrumentationTestTest extends TestCase {
                 secondRunAnswer);
     }
 
-    @SuppressWarnings("unchecked")
     private void setRunTestExpectations() throws DeviceNotAvailableException {
         EasyMock.expect(
                 mMockTestDevice.runInstrumentationTests(EasyMock.eq(mMockRemoteRunner),

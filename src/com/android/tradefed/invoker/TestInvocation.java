@@ -100,6 +100,7 @@ public class TestInvocation implements ITestInvocation {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
             throws DeviceNotAvailableException {
         try {
@@ -236,7 +237,7 @@ public class TestInvocation implements ITestInvocation {
         StringBuilder msg = new StringBuilder("Starting invocation for '");
         msg.append(info.getTestTag());
         msg.append("'");
-        if (!info.getBuildId().equals(BuildInfo.UNKNOWN_BUILD_ID)) {
+        if (!info.getBuildId().equals(IBuildInfo.UNKNOWN_BUILD_ID)) {
             msg.append(" on build '");
             msg.append(info.getBuildId());
             msg.append("'");

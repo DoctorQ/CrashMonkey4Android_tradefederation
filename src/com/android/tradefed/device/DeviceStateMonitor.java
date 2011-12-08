@@ -77,6 +77,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice waitForDeviceOnline(long waitTime) {
         if (waitForDeviceState(TestDeviceState.ONLINE, waitTime)) {
             return getIDevice();
@@ -96,6 +97,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getSerialNumber() {
         return getIDevice().getSerialNumber();
     }
@@ -103,6 +105,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice waitForDeviceOnline() {
         return waitForDeviceOnline(DEFAULT_ONLINE_TIMEOUT);
     }
@@ -110,6 +113,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceNotAvailable(long waitTime) {
         IFastbootListener listener = new StubFastbootListener();
         if (mFastbootEnabled) {
@@ -125,6 +129,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceInRecovery(long waitTime) {
         return waitForDeviceState(TestDeviceState.RECOVERY, waitTime);
     }
@@ -164,6 +169,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice waitForDeviceAvailable(final long waitTime) {
         // A device is currently considered "available" if and only if four events are true:
         // 1. Device is online aka visible via DDMS/adb
@@ -199,6 +205,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice waitForDeviceAvailable() {
         return waitForDeviceAvailable(DEFAULT_AVAILABLE_TIMEOUT);
     }
@@ -330,6 +337,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getMountPoint(String mountName) {
         String mountPoint = getIDevice().getMountPoint(mountName);
         if (mountPoint != null) {
@@ -354,6 +362,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public TestDeviceState getDeviceState() {
         return mDeviceState;
     }
@@ -361,6 +370,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceBootloader(long time) {
         if (!mFastbootEnabled) {
             return false;
@@ -381,6 +391,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         return result;
     }
 
+    @Override
     public void waitForDeviceBootloaderStateUpdate() {
         if (!mFastbootEnabled) {
             return;
@@ -439,6 +450,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setState(TestDeviceState deviceState) {
         mDeviceState = deviceState;
         // create a copy of listeners to prevent holding mStateListeners lock when notifying
@@ -453,6 +465,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
         }
     }
 
+    @Override
     public void setIDevice(IDevice newDevice) {
         IDevice currentDevice = mDevice;
         if (!getIDevice().equals(newDevice)) {
@@ -482,6 +495,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * An empty implementation of {@link IFastbootListener}
      */
     private static class StubFastbootListener implements IFastbootListener {
+        @Override
         public void stateUpdated() {
             // ignore
         }
@@ -491,6 +505,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      * A {@link IFastbootListener} that notifies when a status update has been received.
      */
     private static class NotifyFastbootListener implements IFastbootListener {
+        @Override
         public void stateUpdated() {
             synchronized (this) {
                 notify();

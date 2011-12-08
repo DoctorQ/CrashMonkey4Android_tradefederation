@@ -18,7 +18,6 @@ package com.android.tradefed.config;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.util.ArrayUtil;
-
 import com.google.common.base.Objects;
 
 import java.io.File;
@@ -84,11 +83,10 @@ public class OptionSetter {
         handlers.put(File.class, new FileHandler());
     }
 
-    @SuppressWarnings("unchecked")
     private static Handler getHandler(Type type) throws ConfigurationException {
         if (type instanceof ParameterizedType) {
             ParameterizedType parameterizedType = (ParameterizedType) type;
-            Class rawClass = (Class<?>) parameterizedType.getRawType();
+            Class<?> rawClass = (Class<?>) parameterizedType.getRawType();
             if (Collection.class.isAssignableFrom(rawClass)) {
                 // handle Collection
                 Type actualType = parameterizedType.getActualTypeArguments()[0];
@@ -194,6 +192,7 @@ public class OptionSetter {
             return mSourceFieldMap.keySet().iterator().next();
         }
 
+        @Override
         public Iterator<Map.Entry<Object, Field>> iterator() {
             return mSourceFieldMap.entrySet().iterator();
         }
@@ -310,8 +309,8 @@ public class OptionSetter {
                 Type keyType = pType.getActualTypeArguments()[0];
                 Type valueType = pType.getActualTypeArguments()[1];
 
-                String keyTypeName = ((Class)keyType).getSimpleName().toLowerCase();
-                String valueTypeName = ((Class)valueType).getSimpleName().toLowerCase();
+                String keyTypeName = ((Class<?>)keyType).getSimpleName().toLowerCase();
+                String valueTypeName = ((Class<?>)valueType).getSimpleName().toLowerCase();
 
                 String message = "";
                 if (e.getMessage().contains("key")) {
@@ -817,7 +816,7 @@ public class OptionSetter {
             mEnumType = enumType;
         }
 
-        Class getEnumType() {
+        Class<?> getEnumType() {
             return mEnumType;
         }
 
@@ -834,11 +833,12 @@ public class OptionSetter {
          * <p />
          * {@inheritDoc}
          */
+        @SuppressWarnings("unchecked")
         @Override
         public boolean equals(Object otherObj) {
             if ((otherObj != null) && (otherObj instanceof EnumHandler)) {
                 EnumHandler other = (EnumHandler) otherObj;
-                Class otherType = other.getEnumType();
+                Class<?> otherType = other.getEnumType();
 
                 return mEnumType.isAssignableFrom(otherType)
                         && otherType.isAssignableFrom(mEnumType);

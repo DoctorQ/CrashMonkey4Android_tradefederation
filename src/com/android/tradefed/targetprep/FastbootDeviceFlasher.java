@@ -44,6 +44,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setFlashingResourcesRetriever(IFlashingResourcesRetriever retriever) {
         mResourceRetriever = retriever;
     }

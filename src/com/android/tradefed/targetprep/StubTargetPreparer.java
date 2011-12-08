@@ -27,6 +27,7 @@ public class StubTargetPreparer implements ITargetPreparer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError {
         Log.d("TargetPreparer", "skipping target prepare step");
     }

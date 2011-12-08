@@ -89,6 +89,7 @@ public class PushFilePreparer implements ITargetPreparer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError, BuildError,
             DeviceNotAvailableException {
         for (String pushspec : mPushSpecs) {

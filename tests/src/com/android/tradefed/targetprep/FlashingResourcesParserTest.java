@@ -38,6 +38,7 @@ import java.util.Map;
 public class FlashingResourcesParserTest extends TestCase {
 
     private static class Under3Chars implements Constraint {
+        @Override
         public boolean shouldAccept(String item) {
             return item.length() < 3;
         }

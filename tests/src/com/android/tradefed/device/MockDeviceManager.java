@@ -82,6 +82,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addFastbootListener(IFastbootListener listener) {
         // ignore
     }
@@ -89,6 +90,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice() {
         try {
             return mDeviceQueue.take();
@@ -100,6 +102,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice(long timeout) {
         throw new UnsupportedOperationException();
     }
@@ -107,6 +110,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void freeDevice(ITestDevice device, FreeDeviceState state) {
         if (!state.equals(FreeDeviceState.UNAVAILABLE)) {
             mDeviceQueue.add(device);
@@ -116,6 +120,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void removeFastbootListener(IFastbootListener listener) {
         // ignore
     }
@@ -123,6 +128,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void terminate() {
         // ignore
     }
@@ -130,6 +136,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getAllocatedDevices() {
         throw new UnsupportedOperationException();
     }
@@ -137,6 +144,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getAvailableDevices() {
         Collection<String> deviceSerials = new ArrayList<String>(mDeviceQueue.size());
         for (ITestDevice dev : mDeviceQueue) {
@@ -148,6 +156,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getUnavailableDevices() {
         throw new UnsupportedOperationException();
     }
@@ -155,6 +164,7 @@ public class MockDeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice allocateDevice(long timeout, IDeviceSelection options) {
         try {
             return mDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS,

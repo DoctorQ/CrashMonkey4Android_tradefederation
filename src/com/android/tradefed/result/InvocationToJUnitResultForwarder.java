@@ -131,6 +131,7 @@ import java.util.Map;
         /**
          * {@inheritDoc}
          */
+        @Override
         public int countTestCases() {
             return 1;
         }
@@ -138,6 +139,7 @@ import java.util.Map;
         /**
          * {@inheritDoc}
          */
+        @Override
         public void run(TestResult result) {
             // this class for reporting purposes only, ignore
             throw new UnsupportedOperationException();

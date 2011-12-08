@@ -42,9 +42,7 @@ public class OptionSetterTest extends TestCase {
 
     /** Option source with unparameterized type. */
     private static class CollectionTypeOptionSource {
-        @SuppressWarnings( {
-                "unused", "unchecked"
-        })
+        @SuppressWarnings("unused")
         @Option(name = "my_option", shortName = 'o')
         private Collection mMyOption;
     }
@@ -73,13 +71,14 @@ public class OptionSetterTest extends TestCase {
     /** Option source with an option with same name as AllTypesOptionSource. */
     @OptionClass(alias = "shared")
     private static class SharedOptionSource {
-        @SuppressWarnings("unused")
         @Option(name = "string", shortName = 's')
         private String mMyOption;
 
+        @SuppressWarnings("unused")
         @Option(name = "enum")
         private DefaultEnumClass mEnum = null;
 
+        @SuppressWarnings("unused")
         @Option(name = "string_collection")
         private Collection<String> mStringCollection = new ArrayList<String>();
 

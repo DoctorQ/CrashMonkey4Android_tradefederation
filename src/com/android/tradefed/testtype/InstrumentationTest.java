@@ -124,6 +124,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDevice(ITestDevice device) {
         mDevice = device;
     }
@@ -320,6 +321,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice getDevice() {
         return mDevice;
     }
@@ -367,7 +369,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
-        mRunner.setMaxtimeToOutputResponse((int)mTestTimeout);
+        mRunner.setMaxtimeToOutputResponse(mTestTimeout);
         if (mRunName != null) {
             mRunner.setRunName(mRunName);
         }

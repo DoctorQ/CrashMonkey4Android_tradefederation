@@ -36,6 +36,7 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice[] getDevices() {
         if (mAdbBridge == null) {
             throw new IllegalStateException("getDevices called before init");
@@ -46,6 +47,7 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addDeviceChangeListener(IDeviceChangeListener listener) {
         AndroidDebugBridge.addDeviceChangeListener(listener);
     }
@@ -53,6 +55,7 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void removeDeviceChangeListener(IDeviceChangeListener listener) {
         AndroidDebugBridge.removeDeviceChangeListener(listener);
     }
@@ -60,6 +63,7 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void init(boolean clientSupport, String adbOsLocation) {
         AndroidDebugBridge.init(clientSupport);
         mAdbBridge = AndroidDebugBridge.createBridge(adbOsLocation, false);
@@ -68,6 +72,7 @@ class AndroidDebugBridgeWrapper implements IAndroidDebugBridge {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void terminate() {
         AndroidDebugBridge.terminate();
     }

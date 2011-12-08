@@ -678,7 +678,6 @@ public class Console extends Thread {
      * @param args
      */
     @Override
-    @SuppressWarnings("unchecked")
     public void run() {
         List<String> arrrgs = Arrays.asList(mMainArgs);
 

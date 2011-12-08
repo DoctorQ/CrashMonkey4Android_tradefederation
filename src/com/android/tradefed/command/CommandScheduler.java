@@ -190,6 +190,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         /**
          * {@inheritDoc}
          */
+        @Override
         public int compare(ExecutableCommand c1, ExecutableCommand c2) {
             if (c1.getCommandTracker().getTotalExecTime() == c2.getCommandTracker()
                     .getTotalExecTime()) {
@@ -542,6 +543,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void shutdown() {
         if (!isShutdown()) {
             mCommandQueue.clear();
@@ -555,6 +557,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void shutdownHard() {
         shutdown();
         CLog.logAndDisplay(LogLevel.WARN, "Force killing adb connection");
@@ -585,6 +588,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> listInvocations() throws UnsupportedOperationException {
         if (mInvocationThreads == null) {
             return null;
@@ -614,6 +618,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException {
         throw new UnsupportedOperationException();
     }
@@ -621,6 +626,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> listCommands() throws UnsupportedOperationException {
         Collection<String> stringCommands = new ArrayList<String>();
         synchronized (mAllCommands) {

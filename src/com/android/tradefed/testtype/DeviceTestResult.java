@@ -76,6 +76,7 @@ public class DeviceTestResult extends TestResult {
         // to ensure endTest is called when RuntimeDeviceNotAvailableException occurs
         startTest(test);
         Protectable p = new Protectable() {
+            @Override
             public void protect() throws Throwable {
                 test.runBare();
             }

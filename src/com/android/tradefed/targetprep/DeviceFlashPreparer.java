@@ -93,6 +93,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException, BuildError {
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));

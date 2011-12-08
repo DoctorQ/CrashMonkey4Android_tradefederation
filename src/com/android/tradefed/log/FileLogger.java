@@ -200,6 +200,7 @@ public class FileLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public InputStreamSource getLog() {
         if (mLogWriter == null) {
             // TODO: change this back to throw new IllegalStateException(

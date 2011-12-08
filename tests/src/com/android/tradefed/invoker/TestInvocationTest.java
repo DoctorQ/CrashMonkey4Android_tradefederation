@@ -56,7 +56,6 @@ import java.util.Map;
 /**
  * Unit tests for {@link TestInvocation}.
  */
-@SuppressWarnings("unchecked")
 public class TestInvocationTest extends TestCase {
 
     private static final String SERIAL = "serial";

@@ -54,7 +54,7 @@ public class GenericMapItem<K, V> extends HashMap<K,V> implements IItem {
     @Override
     public IItem merge(IItem other) throws ConflictingItemException {
         // FIXME
-        return (IItem)this;
+        return this;
     }
 
     @Override
