@@ -41,7 +41,7 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
     private boolean mShouldFlashBaseband = false;
 
     /** Time to allow for baseband to flash (in recovery mode), in ms */
-    protected static final int BASEBAND_FLASH_TIMEOUT = 1000*60*10;
+    protected static final int BASEBAND_FLASH_TIMEOUT = 10*60*1000;
 
     /**
      * {@inheritDoc}
@@ -84,14 +84,17 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         checkAndFlashBootloader(device, deviceBuild);
         if (checkShouldFlashBaseband(device, deviceBuild)) {
             Log.i(LOG_TAG, "Performing special CDMA baseband update flash procedure");
-            // Flash baseband; userdata and system are out-of-date now
-            mShouldFlashBaseband = true;
-            checkAndFlashBaseband(device, deviceBuild);
-            // Flash userdata and erase cache; system is out-of-date now
+            // We need to flash these partitions: userdata, system, boot, radio, recovery
+            // Flash userdata. system, boot, radio, recovery remain
             flashUserData(device, deviceBuild);
             eraseCache(device);
-            // Flash system, which will cause a reboot.  After system is flashed, all partitions are
-            // up-to-date
+
+            // Flash baseband. system, boot, recovery remain
+            mShouldFlashBaseband = true;
+            checkAndFlashBaseband(device, deviceBuild);
+
+            // Flash system, boot, recovery.  Will reboot the device before returning.  After these
+            // are flashed, all partitions are up-to-date.
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
             // flashSystem will leave the device in fastboot; reboot into userspace
             device.reboot();
