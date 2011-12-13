@@ -103,6 +103,7 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
             flashUserData(device, deviceBuild);
             eraseCache(device);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            device.reboot();
         }
     }
 
