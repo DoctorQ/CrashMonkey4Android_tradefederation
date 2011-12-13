@@ -40,7 +40,7 @@ public class NativeBenchmarkTestParserTest extends TestCase {
     public void testParse_allInts() {
         mParser.processNewLines(new String[] {"Time per iteration min: 5 avg: 55 max: 35"});
         mParser.done();
-        verifyAvgTime((double)55);
+        verifyAvgTime(55);
     }
 
     /**
@@ -52,7 +52,7 @@ public class NativeBenchmarkTestParserTest extends TestCase {
         mParser.processNewLines(new String[] {
                 "Time per iteration min: 0.5 avg: 0.000272995 max: 0.000435"});
         mParser.done();
-        verifyAvgTime((double)0.000272995);
+        verifyAvgTime(0.000272995);
     }
 
     /**
@@ -64,8 +64,8 @@ public class NativeBenchmarkTestParserTest extends TestCase {
         mParser.processNewLines(new String[] {
                 "Time per iteration min: 5.9e-05 avg: 5.9e-05 max: 0.000435"});
         mParser.done();
-        verifyAvgTime((double)0.000059);
-        System.out.printf("%12f\n", (double)0.00000059);
+        verifyAvgTime(0.000059);
+        System.out.printf("%12f\n", 0.00000059);
         System.out.printf("%s\n", new Double(0.00000059).toString());
     }
 

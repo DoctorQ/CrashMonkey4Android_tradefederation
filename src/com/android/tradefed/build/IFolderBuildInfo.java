@@ -38,5 +38,6 @@ public interface IFolderBuildInfo extends IBuildInfo {
     /**
      * Deletes root directory and all its contents.
      */
+    @Override
     public void cleanUp();
 }

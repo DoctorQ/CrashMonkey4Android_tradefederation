@@ -76,6 +76,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDevice(ITestDevice device) {
         mDevice = device;
     }
@@ -83,6 +84,7 @@ public class NativeStressTest implements IDeviceTest, IRemoteTest {
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice getDevice() {
         return mDevice;
     }

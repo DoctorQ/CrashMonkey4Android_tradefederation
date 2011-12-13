@@ -275,6 +275,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
      */
     private static class IntCompare implements Comparator<Integer> {
 
+        @Override
         public int compare(Integer o1, Integer o2) {
             if (o1 == o2) {
                 return 0;
@@ -289,6 +290,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
 
     private static class OneMatcher implements IMatcher<Integer> {
 
+        @Override
         public boolean matches(Integer element) {
             return element == 1;
         }

@@ -37,7 +37,6 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
 
     private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller();
 
-    @SuppressWarnings("unused")
     private UserDataFlashOption mFlashOption = UserDataFlashOption.TESTS_ZIP;
 
     private boolean mForceSystemFlash;
@@ -45,6 +44,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setFlashingResourcesRetriever(IFlashingResourcesRetriever retriever) {
         // ignore
     }
@@ -60,6 +60,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
      * @throws DeviceNotAvailableException
      * @throws TargetSetupError
      */
+    @Override
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
         Log.i(LOG_TAG, String.format("Flashing device %s with build %s", device.getSerialNumber(),
@@ -119,6 +120,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
      * This implementation only supports {@link IDeviceFlasher.UserDataFlashOption#TESTS_ZIP}
      * and {@link UserDataFlashOption.RETAIN} as a valid options
      */
+    @Override
     public void setUserDataFlashOption(UserDataFlashOption flashOption) {
         List<UserDataFlashOption> supported = Arrays.asList(
                 UserDataFlashOption.TESTS_ZIP, UserDataFlashOption.RETAIN);

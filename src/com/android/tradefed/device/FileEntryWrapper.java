@@ -46,6 +46,7 @@ class FileEntryWrapper implements IFileEntry {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getFullEscapedPath() {
         return mFileEntry.getFullEscapedPath();
     }
@@ -53,6 +54,7 @@ class FileEntryWrapper implements IFileEntry {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getFullPath() {
         return mFileEntry.getFullPath();
     }
@@ -71,6 +73,7 @@ class FileEntryWrapper implements IFileEntry {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isDirectory() {
         return mFileEntry.isDirectory();
     }
@@ -78,6 +81,7 @@ class FileEntryWrapper implements IFileEntry {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isAppFileName() {
         return mFileEntry.isAppFileName();
     }
@@ -85,6 +89,7 @@ class FileEntryWrapper implements IFileEntry {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getName() {
         return mFileEntry.getName();
     }

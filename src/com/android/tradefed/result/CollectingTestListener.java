@@ -58,6 +58,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationStarted(IBuildInfo buildInfo) {
         mBuildInfo = buildInfo;
     }
@@ -72,6 +73,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStarted(String name, int numTests) {
         if (mRunResultsMap.containsKey(name)) {
             // rerun of previous run. Add test results to it
@@ -104,6 +106,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testFailed(TestFailure testFailure, TestIdentifier test, String trace) {
         if (testFailure.equals(TestFailure.ERROR)) {
             mCurrentResults.reportTestFailure(test, TestStatus.ERROR, trace);
@@ -115,6 +118,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
         mCurrentResults.setRunComplete(true);
         mCurrentResults.addMetrics(runMetrics, mIsAggregateMetrics);
@@ -124,6 +128,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunFailed(String errorMessage) {
         mCurrentResults.setRunFailureError(errorMessage);
     }
@@ -131,6 +136,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStopped(long elapsedTime) {
         mCurrentResults.setRunComplete(true);
         mCurrentResults.addElapsedTime(elapsedTime);
@@ -217,6 +223,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationEnded(long elapsedTime) {
         // ignore
     }
@@ -224,6 +231,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void invocationFailed(Throwable cause) {
         // ignore
     }
@@ -231,6 +239,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public TestSummary getSummary() {
         // ignore
         return null;
@@ -239,6 +248,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
         // ignore
     }

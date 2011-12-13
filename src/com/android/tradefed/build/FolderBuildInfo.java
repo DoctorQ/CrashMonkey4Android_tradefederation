@@ -44,6 +44,7 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getRootDir() {
         return mRootDir;
     }
@@ -51,6 +52,7 @@ public class FolderBuildInfo extends BuildInfo implements IFolderBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setRootDir(File rootDir) {
         mRootDir = rootDir;
     }

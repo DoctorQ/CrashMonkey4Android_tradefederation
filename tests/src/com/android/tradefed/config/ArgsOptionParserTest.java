@@ -90,7 +90,6 @@ public class ArgsOptionParserTest extends TestCase {
         private static final String OPTION_NAME = "my_sub_option";
         private static final String OPTION_DESC = "sub description";
 
-        @SuppressWarnings("unused")
         @Option(name=OPTION_NAME, description=OPTION_DESC)
         private String mMySubOption = "";
     }

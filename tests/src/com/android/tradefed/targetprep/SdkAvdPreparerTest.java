@@ -160,7 +160,6 @@ public class SdkAvdPreparerTest extends TestCase {
     /**
      * Test {@link SdkAvdPreparer#setUp(ISdkBuildInfo)} when avd creation fails
      */
-    @SuppressWarnings("unchecked")
     public void testSetUp_failedCreateAvd() throws Exception {
         mMockRunUtil.setEnvVariable(EasyMock.eq("ANDROID_SDK_HOME"),
                 (String)EasyMock.anyObject());

@@ -197,6 +197,7 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized boolean isCancelled() {
         return mIsCancelled;
     }

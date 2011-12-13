@@ -306,7 +306,6 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test the log file size limiting.
      */
-    @SuppressWarnings("unchecked")
     public void testLogCatReceiver() throws IOException, InterruptedException, TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException {
         mTestDevice.setTmpLogcatSize(10);

@@ -106,6 +106,7 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice getDevice() {
         return mDevice;
     }
@@ -113,6 +114,7 @@ public class XmlDefsTest implements IDeviceTest, IResumableTest,
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDevice(ITestDevice device) {
         mDevice = device;
     }

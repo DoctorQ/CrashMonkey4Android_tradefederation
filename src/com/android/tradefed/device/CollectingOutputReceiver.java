@@ -35,6 +35,7 @@ public class CollectingOutputReceiver implements IShellOutputReceiver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isCancelled() {
         return mIsCanceled;
     }
@@ -49,6 +50,7 @@ public class CollectingOutputReceiver implements IShellOutputReceiver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addOutput(byte[] data, int offset, int length) {
         if (!isCancelled()) {
             String s = null;
@@ -65,6 +67,7 @@ public class CollectingOutputReceiver implements IShellOutputReceiver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void flush() {
         // ignore
     }

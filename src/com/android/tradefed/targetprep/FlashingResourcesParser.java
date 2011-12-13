@@ -139,6 +139,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * If multiple versions are listed, get the latest with the assumption that versions sort from
      * oldest to newest alphabetically.
      */
+    @Override
     public String getRequiredBootloaderVersion() {
         return getRequiredImageVersion(BOOTLOADER_VERSION_KEY);
     }
@@ -149,6 +150,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * If multiple versions are listed, get the latest with the assumption that versions sort from
      * oldest to newest alphabetically.
      */
+    @Override
     public String getRequiredBasebandVersion() {
         return getRequiredImageVersion(BASEBAND_VERSION_KEY);
     }
@@ -159,6 +161,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * If multiple versions are listed, get the latest with the assumption that versions sort from
      * oldest to newest alphabetically.
      */
+    @Override
     public String getRequiredImageVersion(String imageVersionKey) {
         // Use null to designate the global product requirements
         return getRequiredImageVersion(imageVersionKey, null);
@@ -170,6 +173,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
      * If multiple versions are listed, get the latest with the assumption that versions sort from
      * oldest to newest alphabetically.
      */
+    @Override
     public String getRequiredImageVersion(String imageVersionKey, String productName) {
         MultiMap<String, String> productReqs = mReqs.get(productName);
 
@@ -199,6 +203,7 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Collection<String> getRequiredBoards() {
         Collection<String> all = new ArrayList<String>();
         MultiMap<String, String> boardReqs = mReqs.get(null);

@@ -28,6 +28,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
         // ignore
     }
@@ -35,6 +36,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testFailed(TestFailure status, TestIdentifier test, String trace) {
         // ignore
     }
@@ -42,6 +44,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
         // ignore
     }
@@ -49,6 +52,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunFailed(String errorMessage) {
         // ignore
     }
@@ -56,6 +60,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStarted(String runName, int testCount) {
         // ignore
     }
@@ -63,6 +68,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testRunStopped(long elapsedTime) {
         // ignore
     }
@@ -70,6 +76,7 @@ public class StubTestRunListener implements ITestRunListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void testStarted(TestIdentifier test) {
         // ignore
     }

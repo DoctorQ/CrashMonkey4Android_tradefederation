@@ -77,6 +77,7 @@ public class LogFileSaver implements ILogFileSaver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File getFileDir() {
         return mRootDir;
     }
@@ -118,6 +119,7 @@ public class LogFileSaver implements ILogFileSaver {
     /**
      * {@inheritDoc}
      */
+    @Override
     public File saveLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException {
         // add underscore to end of data name to make generated name more readable

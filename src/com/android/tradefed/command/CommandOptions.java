@@ -57,6 +57,7 @@ public class CommandOptions implements ICommandOptions {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isHelpMode() {
         return mHelpMode;
     }
@@ -64,6 +65,7 @@ public class CommandOptions implements ICommandOptions {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isFullHelpMode() {
         return mFullHelpMode;
     }
@@ -80,6 +82,7 @@ public class CommandOptions implements ICommandOptions {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isDryRunMode() {
         return mDryRunMode;
     }
@@ -95,6 +98,7 @@ public class CommandOptions implements ICommandOptions {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isLoopMode() {
         return mLoopMode;
     }
@@ -111,6 +115,7 @@ public class CommandOptions implements ICommandOptions {
     /**
      * {@inheritDoc}
      */
+    @Override
     public long getMinLoopTime() {
         return mMinLoopTime;
     }

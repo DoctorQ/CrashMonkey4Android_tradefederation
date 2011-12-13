@@ -68,6 +68,7 @@ public class ConfigurationTest extends TestCase {
         @Option(name = ALT_OPTION_NAME, description = OPTION_DESCRIPTION)
         private Map<String, Boolean> mBoolMap = new HashMap<String, Boolean>();
 
+        @Override
         public boolean getBool() {
             return mBool;
         }

@@ -27,6 +27,7 @@ public class RunUtilFuncTest extends TestCase {
     private abstract class MyRunnable implements IRunUtil.IRunnableResult {
         boolean mCanceled = false;
 
+        @Override
         public void cancel() {
             mCanceled = true;
         }
@@ -38,6 +39,7 @@ public class RunUtilFuncTest extends TestCase {
     public void testRunTimed_timeout() {
         final long timeout = 200;
         MyRunnable mockRunnable = new MyRunnable() {
+            @Override
             public boolean run() {
                 try {
                     Thread.sleep(timeout*5);
@@ -61,10 +63,12 @@ public class RunUtilFuncTest extends TestCase {
         final long pollTime = 200;
         IRunUtil.IRunnableResult mockRunnable = new IRunUtil.IRunnableResult() {
             int attempts = 0;
+            @Override
             public boolean run() {
                 attempts++;
                 return attempts == maxAttempts;
             }
+            @Override
             public void cancel() {
                 // ignore
             }

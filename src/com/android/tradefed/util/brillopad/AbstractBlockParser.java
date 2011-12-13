@@ -46,5 +46,6 @@ public abstract class AbstractBlockParser implements IBlockParser, ILineParser {
      *
      * @param line
      */
+    @Override
     abstract public void parseLine(String line, ItemList itemlist);
 }

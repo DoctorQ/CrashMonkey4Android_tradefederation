@@ -131,6 +131,7 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     /**
      * Removes all temporary files
      */
+    @Override
     public void cleanUp();
 
 }

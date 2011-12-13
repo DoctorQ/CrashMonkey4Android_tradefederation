@@ -41,6 +41,7 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public List<File> getAppPackageFiles() {
         List<File> listCopy = new ArrayList<File>(mAppPackageFiles.size());
         listCopy.addAll(mAppPackageFiles);
@@ -50,6 +51,7 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addAppPackageFile(File appPackageFile) {
         mAppPackageFiles.add(appPackageFile);
     }

@@ -51,6 +51,7 @@ public class StubBuildProvider implements IBuildProvider {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IBuildInfo getBuild() throws BuildRetrievalError {
         Log.d("BuildProvider", "skipping build provider step");
         BuildInfo stubBuild = new BuildInfo(mBuildId, mTestTag, mBuildTargetName);
@@ -65,6 +66,7 @@ public class StubBuildProvider implements IBuildProvider {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void buildNotTested(IBuildInfo info) {
         // ignore
     }

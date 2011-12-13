@@ -58,6 +58,7 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean matches(T element) {
             return true;
         }
@@ -308,6 +309,7 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Iterator<T> iterator() {
         return mList.iterator();
     }

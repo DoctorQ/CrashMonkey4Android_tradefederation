@@ -97,6 +97,7 @@ public class DeviceManager implements IDeviceManager {
     DeviceManager() {
     }
 
+    @Override
     public void init() {
         init(ANY_DEVICE_OPTIONS);
     }
@@ -694,6 +695,7 @@ public class DeviceManager implements IDeviceManager {
     /**
      * {@inheritDoc}
      */
+    @Override
     public synchronized void terminateHard() {
         checkInit();
         if (!mIsTerminated ) {
@@ -861,6 +863,7 @@ public class DeviceManager implements IDeviceManager {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void deviceChanged(IDevice device, int changeMask) {
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
             if ((changeMask & IDevice.CHANGE_STATE) != 0) {
@@ -880,6 +883,7 @@ public class DeviceManager implements IDeviceManager {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void deviceConnected(IDevice device) {
             Log.d(LOG_TAG, String.format("Detected device connect %s, id %d",
                     device.getSerialNumber(), device.hashCode()));
@@ -910,6 +914,7 @@ public class DeviceManager implements IDeviceManager {
         /**
          * {@inheritDoc}
          */
+        @Override
         public void deviceDisconnected(IDevice disconnectedDevice) {
             if (mAvailableDeviceQueue.remove(disconnectedDevice)) {
                 Log.i(LOG_TAG, String.format("Removed disconnected device %s from available queue",

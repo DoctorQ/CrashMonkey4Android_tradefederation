@@ -58,6 +58,7 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
     /**
      * {@inheritDoc}
      */
+    @Override
     public ITestDevice getDevice() {
         return mDevice;
     }
@@ -65,6 +66,7 @@ public class DeviceTestCase extends TestCase implements IDeviceTest, IRemoteTest
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDevice(ITestDevice device) {
         mDevice = device;
     }

@@ -399,6 +399,7 @@ public class WifiHelper implements IWifiHelper {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean isCancelled() {
             return false;
         }
@@ -447,6 +448,7 @@ public class WifiHelper implements IWifiHelper {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean isCancelled() {
             return false;
         }

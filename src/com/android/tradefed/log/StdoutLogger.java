@@ -37,6 +37,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printAndPromptLog(LogLevel logLevel, String tag, String message) {
         printLog(logLevel, tag, message);
 
@@ -45,6 +46,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void printLog(LogLevel logLevel, String tag, String message) {
         LogUtil.printLog(logLevel, tag, message);
     }
@@ -52,6 +54,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setLogLevel(LogLevel logLevel) {
         mLogLevel = logLevel;
     }
@@ -59,6 +62,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public LogLevel getLogLevel() {
         return mLogLevel;
     }
@@ -66,6 +70,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void closeLog() {
         // ignore
     }
@@ -73,6 +78,7 @@ public class StdoutLogger implements ILeveledLogOutput {
     /**
      * {@inheritDoc}
      */
+    @Override
     public InputStreamSource getLog() {
         // not supported - return empty stream
         return new ByteArrayInputStreamSource(new byte[0]);

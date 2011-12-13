@@ -53,6 +53,7 @@ public class JUnitToInvocationResultForwarder implements TestListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addError(Test test, Throwable t) {
         for (ITestInvocationListener listener : mInvocationListeners) {
             listener.testFailed(TestFailure.ERROR, getTestId(test), getStackTrace(t));
@@ -62,6 +63,7 @@ public class JUnitToInvocationResultForwarder implements TestListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void addFailure(Test test, AssertionFailedError t) {
         for (ITestInvocationListener listener : mInvocationListeners) {
             listener.testFailed(TestFailure.FAILURE, getTestId(test), getStackTrace(t));
@@ -71,6 +73,7 @@ public class JUnitToInvocationResultForwarder implements TestListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void endTest(Test test) {
         Map<String, String> emptyMap = Collections.emptyMap();
         for (ITestInvocationListener listener : mInvocationListeners) {
@@ -81,6 +84,7 @@ public class JUnitToInvocationResultForwarder implements TestListener {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void startTest(Test test) {
         for (ITestInvocationListener listener : mInvocationListeners) {
             listener.testStarted(getTestId(test));

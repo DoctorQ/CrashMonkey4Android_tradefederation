@@ -36,7 +36,6 @@ public class CommandRunner {
      *
      * @param args the config name to run and its options
      */
-    @SuppressWarnings("unchecked")
     public void run(String[] args) {
         try {
             mScheduler.start();

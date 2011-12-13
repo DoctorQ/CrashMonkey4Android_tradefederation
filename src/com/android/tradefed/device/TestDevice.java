@@ -159,6 +159,7 @@ class TestDevice implements IManagedTestDevice {
             mCmd = cmd;
         }
 
+        @Override
         public boolean run() throws TimeoutException, IOException {
             CommandResult result = getRunUtil().runTimedCmd(getCommandTimeout(), mCmd);
             // TODO: how to determine device not present with command failing for other reasons
@@ -262,6 +263,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public IDevice getIDevice() {
         synchronized (mIDevice) {
             return mIDevice;
@@ -271,6 +273,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setIDevice(IDevice newDevice) {
         IDevice currentDevice = mIDevice;
         if (!getIDevice().equals(newDevice)) {
@@ -284,6 +287,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getSerialNumber() {
         return getIDevice().getSerialNumber();
     }
@@ -371,6 +375,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getProductType() throws DeviceNotAvailableException {
         return internalGetProductType(MAX_RETRY_ATTEMPTS);
     }
@@ -413,6 +418,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getProductVariant() throws DeviceNotAvailableException {
         return internalGetProperty("ro.product.device", "variant", "Product variant");
     }
@@ -447,6 +453,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getBuildId() {
         String bid = getIDevice().getProperty(BUILD_ID_PROP);
         if (bid == null) {
@@ -463,6 +470,7 @@ class TestDevice implements IManagedTestDevice {
     public void executeShellCommand(final String command, final IShellOutputReceiver receiver)
             throws DeviceNotAvailableException {
         DeviceAction action = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException,
                     AdbCommandRejectedException, ShellCommandUnresponsiveException {
                 getIDevice().executeShellCommand(command, receiver, mCmdTimeout);
@@ -480,6 +488,7 @@ class TestDevice implements IManagedTestDevice {
             final int maxTimeToOutputShellResponse, int retryAttempts)
             throws DeviceNotAvailableException {
         DeviceAction action = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
                     ShellCommandUnresponsiveException {
                 getIDevice().executeShellCommand(command, receiver, maxTimeToOutputShellResponse);
@@ -492,6 +501,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String executeShellCommand(String command) throws DeviceNotAvailableException {
         CollectingOutputReceiver receiver = new CollectingOutputReceiver();
         executeShellCommand(command, receiver);
@@ -503,6 +513,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean runInstrumentationTests(final IRemoteAndroidTestRunner runner,
             final Collection<ITestRunListener> listeners) throws DeviceNotAvailableException {
         RunFailureListener failureListener = new RunFailureListener();
@@ -544,6 +555,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean runInstrumentationTests(IRemoteAndroidTestRunner runner,
             ITestRunListener... listeners) throws DeviceNotAvailableException {
         List<ITestRunListener> listenerList = new ArrayList<ITestRunListener>();
@@ -554,11 +566,13 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String installPackage(final File packageFile, final boolean reinstall,
             final String... extraArgs) throws DeviceNotAvailableException {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction installAction = new DeviceAction() {
+            @Override
             public boolean run() throws InstallException {
                 String result = getIDevice().installPackage(packageFile.getAbsolutePath(),
                         reinstall, extraArgs);
@@ -579,6 +593,7 @@ class TestDevice implements IManagedTestDevice {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction installAction = new DeviceAction() {
+            @Override
             public boolean run() throws InstallException, SyncException, IOException,
             TimeoutException, AdbCommandRejectedException {
                 // TODO: create a getIDevice().installPackage(File, File...) method when the dist
@@ -610,10 +625,12 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String uninstallPackage(final String packageName) throws DeviceNotAvailableException {
         // use array to store response, so it can be returned to caller
         final String[] response = new String[1];
         DeviceAction uninstallAction = new DeviceAction() {
+            @Override
             public boolean run() throws InstallException {
                 String result = getIDevice().uninstallPackage(packageName);
                 response[0] = result;
@@ -628,10 +645,12 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean pullFile(final String remoteFilePath, final File localFile)
             throws DeviceNotAvailableException {
 
         DeviceAction pullAction = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
                     SyncException {
                 SyncService syncService = null;
@@ -660,6 +679,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheridDoc}
      */
+    @Override
     public File pullFile(String remoteFilePath) throws DeviceNotAvailableException {
         try {
             File localFile = FileUtil.createTempFileForRemote(remoteFilePath, null);
@@ -676,6 +696,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheridDoc}
      */
+    @Override
     public File pullFileFromExternal(String remoteFilePath) throws DeviceNotAvailableException {
         String externalPath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         String fullPath = (new File(externalPath, remoteFilePath)).getPath();
@@ -685,9 +706,11 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean pushFile(final File localFile, final String remoteFilePath)
             throws DeviceNotAvailableException {
         DeviceAction pushAction = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
                     SyncException {
                 SyncService syncService = null;
@@ -717,6 +740,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean pushString(final String contents, final String remoteFilePath)
             throws DeviceNotAvailableException {
         File tmpFile = null;
@@ -737,6 +761,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean doesFileExist(String destPath) throws DeviceNotAvailableException {
         String lsGrep = executeShellCommand(String.format("ls \"%s\"", destPath));
         return !lsGrep.contains("No such file or directory");
@@ -745,6 +770,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public long getExternalStoreFreeSpace() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Checking free space for %s", getSerialNumber()));
         String externalStorePath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
@@ -827,6 +853,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String getMountPoint(String mountName) {
         return mMonitor.getMountPoint(mountName);
     }
@@ -907,6 +934,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Syncing %s to %s on device %s",
@@ -971,6 +999,7 @@ class TestDevice implements IManagedTestDevice {
         }
         final String files[] = filePathsToSync.toArray(new String[filePathsToSync.size()]);
         DeviceAction syncAction = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
                     SyncException {
                 SyncService syncService = null;
@@ -1024,6 +1053,7 @@ class TestDevice implements IManagedTestDevice {
             mService = service;
         }
 
+        @Override
         public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException,
                 ShellCommandUnresponsiveException {
             mFileContents = mService.getChildrenSync(mRemoteFileEntry);
@@ -1038,6 +1068,7 @@ class TestDevice implements IManagedTestDevice {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean accept(File dir, String name) {
             return !name.startsWith(".");
         }
@@ -1069,6 +1100,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public String executeAdbCommand(String... cmdArgs) throws DeviceNotAvailableException {
         final String[] fullCmd = buildAdbCommand(cmdArgs);
         AdbAction adbAction = new AdbAction(fullCmd);
@@ -1079,6 +1111,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public CommandResult executeFastbootCommand(String... cmdArgs)
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return doFastbootCommand(getCommandTimeout(), cmdArgs);
@@ -1087,6 +1120,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public CommandResult executeLongFastbootCommand(String... cmdArgs)
             throws DeviceNotAvailableException, UnsupportedOperationException {
         return doFastbootCommand(getLongCommandTimeout(), cmdArgs);
@@ -1287,6 +1321,7 @@ class TestDevice implements IManagedTestDevice {
      *
      * @throws DeviceNotAvailableException if device is not longer available
      */
+    @Override
     public void recoverDevice() throws DeviceNotAvailableException {
         if (mRecoveryMode.equals(RecoveryMode.NONE)) {
             CLog.i("Skipping recovery on %s", getSerialNumber());
@@ -1331,6 +1366,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void startLogcat() {
         if (mLogcatReceiver != null) {
             Log.d(LOG_TAG, String.format("Already capturing logcat for %s, ignoring",
@@ -1360,6 +1396,7 @@ class TestDevice implements IManagedTestDevice {
      * contents of the background logcat capture.
      * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
+    @Override
     public InputStreamSource getLogcat() {
         if (mLogcatReceiver == null) {
             Log.w(LOG_TAG, String.format("Not capturing logcat for %s in background, " +
@@ -1404,6 +1441,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void stopLogcat() {
         if (mLogcatReceiver != null) {
             mLogcatReceiver.stop();
@@ -1541,6 +1579,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
             throws DeviceNotAvailableException {
         Log.i(LOG_TAG, String.format("Connecting to wifi network %s on %s", wifiSsid,
@@ -1594,6 +1633,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
         IWifiHelper wifi = createWifiHelper();
         wifi.removeAllNetworks();
@@ -1622,6 +1662,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean clearErrorDialogs() throws DeviceNotAvailableException {
         // attempt to clear error dialogs multiple times
         for (int i = 0; i < NUM_CLEAR_ATTEMPTS; i++) {
@@ -1682,6 +1723,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void postBootSetup() throws DeviceNotAvailableException  {
         if (isEnableAdbRoot()) {
             enableAdbRoot();
@@ -1705,6 +1747,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebootIntoBootloader()
             throws DeviceNotAvailableException, UnsupportedOperationException {
         if (!mFastbootEnabled) {
@@ -1758,6 +1801,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void reboot() throws DeviceNotAvailableException {
         rebootUntilOnline();
 
@@ -1781,6 +1825,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebootUntilOnline() throws DeviceNotAvailableException {
         doReboot();
         RecoveryMode cachedRecoveryMode = getRecoveryMode();
@@ -1798,6 +1843,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void rebootIntoRecovery() throws DeviceNotAvailableException {
         if (TestDeviceState.FASTBOOT == getDeviceState()) {
             Log.w(LOG_TAG, String.format(
@@ -1814,6 +1860,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void nonBlockingReboot() throws DeviceNotAvailableException {
         doReboot();
     }
@@ -1844,6 +1891,7 @@ class TestDevice implements IManagedTestDevice {
      */
     private void doAdbReboot(final String into) throws DeviceNotAvailableException {
         DeviceAction rebootAction = new DeviceAction() {
+            @Override
             public boolean run() throws TimeoutException, IOException, AdbCommandRejectedException {
                 getIDevice().reboot(into);
                 return true;
@@ -1865,6 +1913,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean enableAdbRoot() throws DeviceNotAvailableException {
         // adb root is a relatively intensive command, so do a brief check first to see
         // if its necessary or not
@@ -1894,6 +1943,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean encryptDevice(boolean inplace) throws DeviceNotAvailableException,
             UnsupportedOperationException {
         if (!isEncryptionSupported()) {
@@ -1929,6 +1979,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean unencryptDevice() throws DeviceNotAvailableException,
             UnsupportedOperationException {
         if (!isEncryptionSupported()) {
@@ -1993,6 +2044,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean unlockDevice() throws DeviceNotAvailableException,
             UnsupportedOperationException {
         if (!isEncryptionSupported()) {
@@ -2057,6 +2109,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isDeviceEncrypted() throws DeviceNotAvailableException {
         String output = getPropertySync("ro.crypto.state");
 
@@ -2070,6 +2123,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean isEncryptionSupported() throws DeviceNotAvailableException {
         if (!isEnableAdbRoot()) {
             CLog.i("root is required for encryption");
@@ -2083,6 +2137,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceOnline(long waitTime) throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceOnline(waitTime) == null) {
             recoverDevice();
@@ -2092,6 +2147,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceOnline() throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceOnline() == null) {
             recoverDevice();
@@ -2101,6 +2157,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceAvailable(long waitTime) throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceAvailable(waitTime) == null) {
             recoverDevice();
@@ -2110,6 +2167,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void waitForDeviceAvailable() throws DeviceNotAvailableException {
         if (mMonitor.waitForDeviceAvailable() == null) {
             recoverDevice();
@@ -2119,6 +2177,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceNotAvailable(long waitTime) {
         return mMonitor.waitForDeviceNotAvailable(waitTime);
     }
@@ -2126,6 +2185,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public boolean waitForDeviceInRecovery(long waitTime) {
         return mMonitor.waitForDeviceInRecovery(waitTime);
     }
@@ -2142,6 +2202,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setRecovery(IDeviceRecovery recovery) {
         mRecovery = recovery;
     }
@@ -2165,6 +2226,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setFastbootEnabled(boolean fastbootEnabled) {
         mFastbootEnabled = fastbootEnabled;
     }
@@ -2172,6 +2234,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public void setDeviceState(final TestDeviceState deviceState) {
         if (!deviceState.equals(getDeviceState())) {
             // disable state changes while fastboot lock is held, because issuing fastboot command
@@ -2189,6 +2252,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public TestDeviceState getDeviceState() {
         return mState;
     }

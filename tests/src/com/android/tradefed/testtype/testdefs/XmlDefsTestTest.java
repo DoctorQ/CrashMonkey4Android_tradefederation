@@ -111,7 +111,6 @@ public class XmlDefsTestTest extends TestCase {
     /**
      * Test a run that was aborted then resumed
      */
-    @SuppressWarnings("unchecked")
     public void testRun_resume() throws DeviceNotAvailableException {
         mXmlTest.addRemoteFilePath(TEST_PATH);
         // turn off sending of coverage for simplicity

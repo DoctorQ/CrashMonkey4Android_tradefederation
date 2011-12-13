@@ -108,12 +108,14 @@ public class LogRegistryTest extends TestCase {
 
         // Simple class that will run in a thread, simulating a new thread spawed inside an Invocation
         class SecondThread implements Runnable {
+            @Override
             public void run() {
                 Log.e(LOG_TAG, testMessage);
             }
         }
         // Simple class that will run in a thread, simulating a new Invocation
         class FirstThread implements Runnable {
+            @Override
             public void run() {
                 mLogRegistry.registerLogger(mockLogger);
                 Log.v(LOG_TAG, testMessage);

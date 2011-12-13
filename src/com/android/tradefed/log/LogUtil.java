@@ -206,6 +206,7 @@ public class LogUtil {
         public static String getClassName(int frame) {
             StackTraceElement[] frames = (new Throwable()).getStackTrace();
             String fullName = frames[frame].getClassName();
+            @SuppressWarnings("rawtypes")
             Class klass = null;
             try {
                 klass = Class.forName(fullName);

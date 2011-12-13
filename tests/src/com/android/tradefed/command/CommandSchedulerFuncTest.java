@@ -140,6 +140,7 @@ public class CommandSchedulerFuncTest extends TestCase {
         Integer mFastCount = 0;
         Integer mSlowCountLimit = 20;
 
+        @Override
         public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
                 throws DeviceNotAvailableException {
             if (config.equals(mSlowConfig)) {
