@@ -60,9 +60,9 @@ public class SystemUpdaterDeviceFlasherTest extends TestCase {
         File fakeImage = new File("fakeImageFile");
         mControl.checkOrder(true);
         EasyMock.expect(mMockDeviceBuild.getOtaPackageFile()).andReturn(fakeImage);
-        EasyMock.expect(mMockDevice.pushFile(fakeImage, "/cache/fishtank-ota.zip")).andReturn(true);
+        EasyMock.expect(mMockDevice.pushFile(fakeImage, "/cache/update.zip")).andReturn(true);
         String commandsRegex = "echo +--update_package +> +/cache/recovery/command +&& *"
-                + "echo +/cache/fishtank-ota.zip +>> +/cache/recovery/command";
+                + "echo +/cache/update.zip +>> +/cache/recovery/command";
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.matches(commandsRegex))).andReturn(
                 "foo");
         mMockDevice.rebootIntoRecovery();

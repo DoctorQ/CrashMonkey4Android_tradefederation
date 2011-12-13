@@ -17,10 +17,10 @@
 
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.File;
 import java.util.Arrays;
@@ -32,8 +32,6 @@ import java.util.List;
  * implementation doesn't rely on fastboot.
  */
 public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
-
-    private static final String LOG_TAG = "SystemUpdaterDeviceFlasher";
 
     private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller();
 
@@ -63,8 +61,8 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     @Override
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
-        Log.i(LOG_TAG, String.format("Flashing device %s with build %s", device.getSerialNumber(),
-                deviceBuild.getBuildId()));
+        CLog.i("Flashing device " + device.getSerialNumber() + " with build "
+            + deviceBuild.getBuildId());
 
         // TODO could add a check for bootloader versions and install
         // the one produced by the build server @ the current build if the one
@@ -73,7 +71,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         if (installUpdate(device, deviceBuild)) {
             if (mFlashOption == UserDataFlashOption.TESTS_ZIP) {
                 mTestsZipInstaller.pushTestsZipOntoData(device, deviceBuild);
-                Log.d(LOG_TAG, "rebooting after installing tests");
+                CLog.d("rebooting after installing tests");
                 device.reboot();
             }
         }
@@ -84,25 +82,25 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         // FIXME same high level logic as in
         // FastbootDeviceFlasher#checkAndFlashSystem, could be de-duped
         if (!mForceSystemFlash && deviceBuild.getBuildId().equals(device.getBuildId())) {
-            Log.i(LOG_TAG, String.format("System is already version %s, skipping install",
-                    device.getBuildId()));
+            CLog.i("System is already version " + device.getBuildId() + ", skipping install");
             // reboot
             return false;
         }
-        Log.i(LOG_TAG, String.format("Flashing system %s", deviceBuild.getBuildId()));
+        CLog.i("Flashing system " + deviceBuild.getBuildId() + " on device "
+            + device.getSerialNumber());
         File otaPackageFile = deviceBuild.getOtaPackageFile();
         if (otaPackageFile == null) {
             throw new TargetSetupError("No OTA package file present for build "
                     + deviceBuild.getBuildId());
         }
-        if (!device.pushFile(otaPackageFile, "/cache/fishtank-ota.zip")) {
+        if (!device.pushFile(otaPackageFile, "/cache/update.zip")) {
             throw new TargetSetupError("Could not push OTA file to the target.");
         }
         String commands =
                 "echo --update_package > /cache/recovery/command &&" +
                 // FIXME would need to be "CACHE:" instead of "/cache/" for
                 // eclair devices
-                "echo /cache/fishtank-ota.zip >> /cache/recovery/command";
+                "echo /cache/update.zip >> /cache/recovery/command";
         device.executeShellCommand(commands);
         device.rebootIntoRecovery();
         device.waitForDeviceAvailable();
@@ -125,9 +123,8 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         List<UserDataFlashOption> supported = Arrays.asList(
                 UserDataFlashOption.TESTS_ZIP, UserDataFlashOption.RETAIN);
         if (!supported.contains(flashOption)) {
-            throw new IllegalArgumentException(String.format(
-                    "%s not supported. This implementation only supports flashing %s", flashOption,
-                    supported.toString()));
+      throw new IllegalArgumentException(flashOption
+          + " not supported. This implementation only supports flashing " + supported.toString());
         }
         mFlashOption = flashOption;
     }
