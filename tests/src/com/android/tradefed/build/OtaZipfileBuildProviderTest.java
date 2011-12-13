@@ -48,7 +48,7 @@ public class OtaZipfileBuildProviderTest extends TestCase {
         IBuildInfo buildInfo = providerAllGood.getBuild();
         assertEquals(BUILD_ID, buildInfo.getBuildId());
         assertTrue(buildInfo instanceof IDeviceBuildInfo);
-        assertEquals(new File(SOME_BAD_PATH), ((IDeviceBuildInfo) buildInfo).getDeviceImageFile());
+        assertEquals(new File(SOME_BAD_PATH), ((IDeviceBuildInfo) buildInfo).getOtaPackageFile());
     }
 
     public void testGetBuild_NoPath() throws BuildRetrievalError {
