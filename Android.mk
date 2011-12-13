@@ -28,6 +28,7 @@ LOCAL_MODULE := tradefed
 LOCAL_MODULE_TAGS := optional
 LOCAL_STATIC_JAVA_LIBRARIES := junit kxml2-2.3.0 guavalib jline-1.0
 LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt
+LOCAL_JAVACFLAGS = -Xlint
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 
