@@ -30,8 +30,8 @@ import java.util.regex.Pattern;
  */
 public class RegexTrieTest extends TestCase {
     private RegexTrie<Integer> mTrie = null;
-    private static final Integer mStored = 42;
-    private static final List<String> mNullList = Arrays.asList((String)null);
+    private static final Integer STORED_VAL = 42;
+    private static final List<String> NULL_LIST = Arrays.asList((String)null);
 
     @Override
     public void setUp() throws Exception {
@@ -43,18 +43,18 @@ public class RegexTrieTest extends TestCase {
     }
 
     public void testStringPattern() {
-        mTrie.put(mStored, "[p]art1", "[p]art2", "[p]art3");
+        mTrie.put(STORED_VAL, "[p]art1", "[p]art2", "[p]art3");
         Integer retrieved = mTrie.retrieve("part1", "part2", "part3");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
     }
 
     public void testAlternation_single() {
-        mTrie.put(mStored, "alpha|beta");
+        mTrie.put(STORED_VAL, "alpha|beta");
         Integer retrieved;
         retrieved = mTrie.retrieve("alpha");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         retrieved = mTrie.retrieve("beta");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         retrieved = mTrie.retrieve("alpha|beta");
         assertNull(retrieved);
         retrieved = mTrie.retrieve("gamma");
@@ -64,16 +64,16 @@ public class RegexTrieTest extends TestCase {
     }
 
     public void testAlternation_multiple() {
-        mTrie.put(mStored, "a|alpha", "b|beta");
+        mTrie.put(STORED_VAL, "a|alpha", "b|beta");
         Integer retrieved;
         retrieved = mTrie.retrieve("a", "b");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         retrieved = mTrie.retrieve("a", "beta");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         retrieved = mTrie.retrieve("alpha", "b");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         retrieved = mTrie.retrieve("alpha", "beta");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
 
         retrieved = mTrie.retrieve("alpha");
         assertNull(retrieved);
@@ -84,37 +84,37 @@ public class RegexTrieTest extends TestCase {
     }
 
     public void testGroups_fullMatch() {
-        mTrie.put(mStored, "a|(alpha)", "b|(beta)");
+        mTrie.put(STORED_VAL, "a|(alpha)", "b|(beta)");
         Integer retrieved;
         List<List<String>> groups = new ArrayList<List<String>>();
 
         retrieved = mTrie.retrieve(groups, "a", "b");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(mNullList, groups.get(0));
-        assertEquals(mNullList, groups.get(1));
+        assertEquals(NULL_LIST, groups.get(0));
+        assertEquals(NULL_LIST, groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "a", "beta");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(mNullList, groups.get(0));
+        assertEquals(NULL_LIST, groups.get(0));
         assertEquals(Arrays.asList("beta"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "alpha", "b");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(2, groups.size());
         assertEquals(Arrays.asList("alpha"), groups.get(0));
-        assertEquals(mNullList, groups.get(1));
+        assertEquals(NULL_LIST, groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "alpha", "beta");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(2, groups.size());
         assertEquals(Arrays.asList("alpha"), groups.get(0));
         assertEquals(Arrays.asList("beta"), groups.get(1));
     }
 
     public void testGroups_partialMatch() {
-        mTrie.put(mStored, "a|(alpha)", "b|(beta)");
+        mTrie.put(STORED_VAL, "a|(alpha)", "b|(beta)");
         Integer retrieved;
         List<List<String>> groups = new ArrayList<List<String>>();
 
@@ -148,21 +148,21 @@ public class RegexTrieTest extends TestCase {
      * Make sure that the wildcard functionality works
      */
     public void testWildcard() {
-        mTrie.put(mStored, "a", null);
+        mTrie.put(STORED_VAL, "a", null);
         Integer retrieved;
         List<List<String>> groups = new ArrayList<List<String>>();
 
         retrieved = mTrie.retrieve(groups, "a", "b", "c");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(3, groups.size());
-        assertEquals(Arrays.asList(), groups.get(0));
+        assertTrue(groups.get(0).isEmpty());
         assertEquals(Arrays.asList("b"), groups.get(1));
         assertEquals(Arrays.asList("c"), groups.get(2));
 
         retrieved = mTrie.retrieve(groups, "a");
         assertNull(retrieved);
         assertEquals(1, groups.size());
-        assertEquals(Arrays.asList(), groups.get(0));
+        assertTrue(groups.get(0).isEmpty());
     }
 
     /**
@@ -171,28 +171,28 @@ public class RegexTrieTest extends TestCase {
      */
     public void testWildcard_precedence() {
         // Do one before and one after the wildcard to check for ordering effects
-        mTrie.put(mStored + 1, "a", "(b)");
-        mTrie.put(mStored, "a", null);
-        mTrie.put(mStored + 2, "a", "(c)");
+        mTrie.put(STORED_VAL + 1, "a", "(b)");
+        mTrie.put(STORED_VAL, "a", null);
+        mTrie.put(STORED_VAL + 2, "a", "(c)");
         Integer retrieved;
         List<List<String>> groups = new ArrayList<List<String>>();
 
         retrieved = mTrie.retrieve(groups, "a", "d");
-        assertEquals(mStored, retrieved);
+        assertEquals(STORED_VAL, retrieved);
         assertEquals(2, groups.size());
-        assertEquals(Arrays.asList(), groups.get(0));
+        assertTrue(groups.get(0).isEmpty());
         assertEquals(Arrays.asList("d"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "a", "b");
-        assertEquals((Integer)(mStored + 1), retrieved);
+        assertEquals((Integer)(STORED_VAL + 1), retrieved);
         assertEquals(2, groups.size());
-        assertEquals(Arrays.asList(), groups.get(0));
+        assertTrue(groups.get(0).isEmpty());
         assertEquals(Arrays.asList("b"), groups.get(1));
 
         retrieved = mTrie.retrieve(groups, "a", "c");
-        assertEquals((Integer)(mStored + 2), retrieved);
+        assertEquals((Integer)(STORED_VAL + 2), retrieved);
         assertEquals(2, groups.size());
-        assertEquals(Arrays.asList(), groups.get(0));
+        assertTrue(groups.get(0).isEmpty());
         assertEquals(Arrays.asList("c"), groups.get(1));
     }
 
@@ -201,7 +201,7 @@ public class RegexTrieTest extends TestCase {
      * without a place to retrieve captures.
      */
     public void testWildcard_noCapture() throws NullPointerException {
-        mTrie.put(mStored, "a", null);
+        mTrie.put(STORED_VAL, "a", null);
         String[] key = new String[] {"a", "b", "c"};
 
         mTrie.retrieve(key);
@@ -210,15 +210,15 @@ public class RegexTrieTest extends TestCase {
     }
 
     public void testMultiChild() {
-        mTrie.put(mStored + 1, "a", "b");
-        mTrie.put(mStored + 2, "a", "c");
+        mTrie.put(STORED_VAL + 1, "a", "b");
+        mTrie.put(STORED_VAL + 2, "a", "c");
         dumpTrie(mTrie);
 
         Object retrieved;
         retrieved = mTrie.retrieve("a", "b");
-        assertEquals(mStored + 1, retrieved);
+        assertEquals(STORED_VAL + 1, retrieved);
         retrieved = mTrie.retrieve("a", "c");
-        assertEquals(mStored + 2, retrieved);
+        assertEquals(STORED_VAL + 2, retrieved);
     }
 
     /**
@@ -257,12 +257,12 @@ public class RegexTrieTest extends TestCase {
         CompPattern cp2 = new CompPattern(p2);
         CompPattern cpOther = new CompPattern(pOther);
 
-        map.put(cp1, mStored);
+        map.put(cp1, STORED_VAL);
         assertTrue(map.containsKey(cp1));
         assertTrue(map.containsKey(cp2));
         assertFalse(map.containsKey(cpOther));
 
-        map.put(cpOther, mStored);
+        map.put(cpOther, STORED_VAL);
         assertEquals(map.size(), 2);
         assertTrue(map.containsKey(cp1));
         assertTrue(map.containsKey(cp2));
