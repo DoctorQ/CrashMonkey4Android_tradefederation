@@ -125,6 +125,7 @@ public class DeviceBatteryLevelChecker implements IDeviceTest, IRemoteTest {
                 // Log the battery level status every mLoggingPollTime minutes
                 CLog.w("Battery level for device %s is currently %d", mTestDevice.getSerialNumber(),
                         newLevel);
+                lastReportTime = System.currentTimeMillis();
             }
 
             getRunUtil().sleep((long) (mChargingPollTime * 60 * 1000));
