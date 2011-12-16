@@ -249,6 +249,20 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     }
 
     /**
+     * Sets whether battery check is required for devices with unknown battery level
+     */
+    public void setRequireBatteryCheck(boolean requireCheck) {
+        mRequireBatteryCheck = requireCheck;
+    }
+
+    /**
+     * Gets whether battery check is required for devices with unknown battery level
+     */
+    public boolean getRequireBatteryCheck() {
+        return mRequireBatteryCheck;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -334,20 +348,39 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         if (nullDeviceRequested() != (device instanceof NullDevice)) {
             return false;
         }
-        if (mMinBattery != null) {
+        if ((mMinBattery != null) || (mMaxBattery != null)) {
             Integer deviceBattery = getBatteryLevel(device);
-            if (((deviceBattery == null) && mRequireBatteryCheck) || deviceBattery < mMinBattery) {
+            if (mRequireBatteryCheck && (deviceBattery == null)) {
+                // Couldn't determine battery level when that check is required; reject device
                 return false;
             }
-        }
-        if (mMaxBattery != null) {
-            Integer deviceBattery = getBatteryLevel(device);
-            if (((deviceBattery == null) && mRequireBatteryCheck) || deviceBattery >= mMaxBattery) {
+            if (isLessAndNotNull(deviceBattery, mMinBattery)) {
+                // deviceBattery < mMinBattery
+                return false;
+            }
+            if (isLessEqAndNotNull(mMaxBattery, deviceBattery)) {
+                // mMaxBattery <= deviceBattery
                 return false;
             }
         }
 
         return true;
+    }
+
+    /** Determine if x is less-than y, given that both are non-Null */
+    private static boolean isLessAndNotNull(Integer x, Integer y) {
+        if ((x == null) || (y == null)) {
+            return false;
+        }
+        return x < y;
+    }
+
+    /** Determine if x is less-than y, given that both are non-Null */
+    private static boolean isLessEqAndNotNull(Integer x, Integer y) {
+        if ((x == null) || (y == null)) {
+            return false;
+        }
+        return x <= y;
     }
 
     private Map<String, Collection<String>> splitOnVariant(Collection<String> products) {
