@@ -336,13 +336,13 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         }
         if (mMinBattery != null) {
             Integer deviceBattery = getBatteryLevel(device);
-            if ((deviceBattery == null && mRequireBatteryCheck) || deviceBattery < mMinBattery) {
+            if (((deviceBattery == null) && mRequireBatteryCheck) || deviceBattery < mMinBattery) {
                 return false;
             }
         }
         if (mMaxBattery != null) {
             Integer deviceBattery = getBatteryLevel(device);
-            if ((deviceBattery == null && mRequireBatteryCheck) || deviceBattery >= mMaxBattery) {
+            if (((deviceBattery == null) && mRequireBatteryCheck) || deviceBattery >= mMaxBattery) {
                 return false;
             }
         }
