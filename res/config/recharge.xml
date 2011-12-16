@@ -16,8 +16,8 @@
 <configuration description="A fake test that waits for nearly-discharged devices and holds them for charging">
 
     <option name="loop" value="true" />
-    <option name="max-battery" value="15" />
-    <target_preparer class="com.android.tradefed.targetprep.DeviceBatteryLevelChecker" />
+    <option name="max-battery" value="20" />
+    <option name="test-tag" value="DeviceBatteryLevelChecker" />
+    <test class="com.android.tradefed.testtype.DeviceBatteryLevelChecker" />
     <logger class="com.android.tradefed.log.FileLogger" />
-
 </configuration>

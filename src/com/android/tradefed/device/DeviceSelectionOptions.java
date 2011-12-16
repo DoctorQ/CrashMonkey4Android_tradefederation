@@ -81,6 +81,12 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         "amount. Scale: 0-100")
     private Integer mMaxBattery = null;
 
+    @Option(name = "require-battery-check", description = "_If_ --min-battery and/or " +
+            "--max-battery is specified, skip devices that have an unknown battery level.  Note " +
+            "that this may leave restart-looping devices in limbo indefinitely without manual " +
+            "intervention.")
+    private boolean mRequireBatteryCheck = false;
+
     // If we have tried to fetch the environment variable ANDROID_SERIAL before.
     private boolean mFetchedEnvVariable = false;
 
@@ -330,13 +336,13 @@ public class DeviceSelectionOptions implements IDeviceSelection {
         }
         if (mMinBattery != null) {
             Integer deviceBattery = getBatteryLevel(device);
-            if (deviceBattery == null || deviceBattery < mMinBattery) {
+            if ((deviceBattery == null && mRequireBatteryCheck) || deviceBattery < mMinBattery) {
                 return false;
             }
         }
         if (mMaxBattery != null) {
             Integer deviceBattery = getBatteryLevel(device);
-            if (deviceBattery == null || deviceBattery >= mMaxBattery) {
+            if ((deviceBattery == null && mRequireBatteryCheck) || deviceBattery >= mMaxBattery) {
                 return false;
             }
         }
@@ -364,8 +370,8 @@ public class DeviceSelectionOptions implements IDeviceSelection {
                 variants.add(parts[1]);
             } else {
                 throw new IllegalArgumentException(String.format("The product type filter \"%s\" " +
-                "is invalid.  It must contain 0 or 1 '%s' characters, not %d.",
-                prod, VARIANT_SEPARATOR, parts.length));
+                        "is invalid.  It must contain 0 or 1 '%s' characters, not %d.",
+                        prod, VARIANT_SEPARATOR, parts.length));
             }
         }
 
