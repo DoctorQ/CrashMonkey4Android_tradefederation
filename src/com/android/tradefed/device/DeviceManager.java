@@ -247,7 +247,10 @@ public class DeviceManager implements IDeviceManager {
         if (mSynchronousMode ) {
             checkRunnable.run();
         } else {
-            new Thread(checkRunnable, threadName).start();
+            Thread checkThread = new Thread(checkRunnable, threadName);
+            // Device checking threads shouldn't hold the JVM open
+            checkThread.setDaemon(true);
+            checkThread.start();
         }
     }
 
