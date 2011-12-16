@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tradefed.targetprep;
+package com.android.tradefed.testtype;
 
 import com.android.ddmlib.IDevice;
 import com.android.tradefed.device.ITestDevice;
@@ -41,6 +41,8 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
         mFakeTestDevice = EasyMock.createStrictMock(ITestDevice.class);
         mFakeDevice = EasyMock.createStrictMock(IDevice.class);
 
+        mChecker.setDevice(mFakeTestDevice);
+
         EasyMock.expect(mFakeTestDevice.getSerialNumber()).andStubReturn("SERIAL");
         EasyMock.expect(mFakeTestDevice.getIDevice()).andStubReturn(mFakeDevice);
     }
@@ -49,7 +51,7 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
         expectBattLevel(null);
         replayDevices();
 
-        mChecker.setUp(mFakeTestDevice, null);
+        mChecker.run(null);
         // expect this to return immediately without throwing an exception.  Should log a warning.
         verifyDevices();
     }
@@ -58,7 +60,7 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
         expectBattLevel(45);
         replayDevices();
 
-        mChecker.setUp(mFakeTestDevice, null);
+        mChecker.run(null);
         verifyDevices();
     }
 
@@ -69,7 +71,7 @@ public class DeviceBatteryLevelCheckerTest extends TestCase {
         expectBattLevel(90);
         replayDevices();
 
-        mChecker.setUp(mFakeTestDevice, null);
+        mChecker.run(null);
         verifyDevices();
     }
 
