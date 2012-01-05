@@ -137,7 +137,8 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
      * @param device
      * @throws DeviceNotAvailableException
      * @throws TargetSetupError if the device should be unencrypted but the
-     * {@link IDeviceFlasher.UserDataFlashOption#RETAIN} flash option is used.
+     *     {@link IDeviceFlasher.UserDataFlashOption#RETAIN} flash option is used, or if the device
+     *     could not be encrypted, unencrypted, or unlocked.
      */
     private void preEncryptDevice(ITestDevice device, IDeviceFlasher flasher)
             throws DeviceNotAvailableException, TargetSetupError {
@@ -155,7 +156,9 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
                         + "userdata partition to unencrypted with %s",
                         flasher.getUserDataFlashOption()));
             }
-            device.unencryptDevice();
+            if (!device.unencryptDevice()) {
+                throw new TargetSetupError("Failed to unencrypt device");
+            }
         }
 
         // Need to encrypt device
@@ -163,12 +166,20 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             switch(flasher.getUserDataFlashOption()) {
                 case TESTS_ZIP: // Intentional fall through.
                 case WIPE_RM:
-                    device.encryptDevice(false);
-                    device.unlockDevice();
+                    if (!device.encryptDevice(false)) {
+                        throw new TargetSetupError("Failed to encrypt device");
+                    }
+                    if (!device.unlockDevice()) {
+                        throw new TargetSetupError("Failed to unlock device");
+                    }
                     break;
                 case RETAIN:
-                    device.encryptDevice(true);
-                    device.unlockDevice();
+                    if (!device.encryptDevice(true)) {
+                        throw new TargetSetupError("Failed to encrypt device");
+                    }
+                    if (!device.unlockDevice()) {
+                        throw new TargetSetupError("Failed to unlock device");
+                    }
                     break;
                 default:
                     // Do nothing, userdata will be encrypted post-flash.
@@ -186,9 +197,10 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
      * @see #preEncryptDevice(ITestDevice, IDeviceFlasher)
      * @param device
      * @throws DeviceNotAvailableException
+     * @throws TargetSetupError If the device could not be encrypted or unlocked.
      */
     private void postEncryptDevice(ITestDevice device, IDeviceFlasher flasher)
-            throws DeviceNotAvailableException {
+            throws DeviceNotAvailableException, TargetSetupError {
         if (!device.isEncryptionSupported()) {
             if (mEncryptUserData) {
                 CLog.e("Encryption on %s is not supported", device.getSerialNumber());
@@ -199,16 +211,22 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         if (mEncryptUserData) {
             switch(flasher.getUserDataFlashOption()) {
                 case FLASH:
-                    device.encryptDevice(true);
+                    if (!device.encryptDevice(true)) {
+                        throw new TargetSetupError("Failed to encrypt device");
+                    }
                     break;
                 case WIPE: // Intentional fall through.
                 case FORCE_WIPE:
-                    device.encryptDevice(false);
+                    if (!device.encryptDevice(false)) {
+                        throw new TargetSetupError("Failed to encrypt device");
+                    }
                     break;
                 default:
                     // Do nothing, userdata was encrypted pre-flash.
             }
-            device.unlockDevice();
+            if (!device.unlockDevice()) {
+                throw new TargetSetupError("Failed to unlock device");
+            }
         }
     }
 }
