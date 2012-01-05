@@ -283,6 +283,10 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     @Option(name="log-hcidump", description="Record the hcidump data. Works on ICS and after.")
     private boolean mLogHcidump = true;
 
+    @Option(name = "test-timeout", description =
+            "Maximum time in ms that an individual test is allowed to run.")
+    private int mTestTimeout = 20 * 60 * 1000; // 20 minutes
+
     private void setupTests() {
         if (mTestCases != null) {
             // assume already set up
@@ -460,6 +464,7 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(mTestClassName);
+        runner.setMaxtimeToOutputResponse(mTestTimeout);
         BugreportCollector bugListener = new BugreportCollector(listener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
 
