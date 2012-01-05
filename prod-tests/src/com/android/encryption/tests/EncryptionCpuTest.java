@@ -87,10 +87,9 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          *
          * @param top The {@link TopHelper} object used to measure the CPU usage via the top
          * command.
-         * @param isEncrypted Whether the device is encrypted or not.
          */
-        protected void addTopStats(TopHelper top, boolean isEncrypted) {
-            String keySuffix = getKeySuffix(isEncrypted);
+        protected void addTopStats(TopHelper top) {
+            String keySuffix = getKeySuffix();
 
             List<TopHelper.TopStats> stats = top.getTopStats();
             if (stats.size() > TOP_TRIM * 2) {
@@ -163,7 +162,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
             }
             InputStreamSource bugreport = mTestDevice.getBugreport();
             listener.testLog(String.format("bugreport_%s", mKey), LogDataType.TEXT, bugreport);
-            addTopStats(mTopHelper, mTestDevice.isDeviceEncrypted());
+            addTopStats(mTopHelper);
         }
     }
 
@@ -204,7 +203,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
                 CLog.d("Pushing %dkB file to device %s took %d ms", mPushFileSize,
                         mTestDevice.getSerialNumber(), elapsedTime);
-                addMetric("push_bw" + getKeySuffix(mTestDevice.isDeviceEncrypted()),
+                addMetric("push_bw" + getKeySuffix(),
                         new Double(1000.0 * mPushFileSize / elapsedTime).toString());
             } finally {
                 stopLogging(listener);
@@ -246,7 +245,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
                 CLog.d("pulling %dkB file from device %s took %d ms", mPullFileSize,
                         mTestDevice.getSerialNumber(), elapsedTime);
-                addMetric("pull_bw" + getKeySuffix(mTestDevice.isDeviceEncrypted()),
+                addMetric("pull_bw" + getKeySuffix(),
                         new Double(1000.0 * mPullFileSize / elapsedTime).toString());
             } finally {
                 stopLogging(listener);
@@ -318,6 +317,20 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
     ITestDevice mTestDevice = null;
 
+    private boolean mIsEncrypted;
+
+    @Option(name="run-push-test", description="Whether to run push test.")
+    private boolean mRunPush = false;
+
+    @Option(name="run-pull-test", description="Whether to run push test.")
+    private boolean mRunPull = false;
+
+    @Option(name="run-video-playback-test", description="Whether to run push test.")
+    private boolean mRunVideoPlayback = true;
+
+    @Option(name="run-video-record-test", description="Whether to run push test.")
+    private boolean mRunVideoRecord = true;
+
     @Option(name="pull-file-size",
             description="The size in kB of the file used in the pull test")
     private int mPullFileSize = 256 * 1024;
@@ -337,26 +350,35 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
         // Allocate enough space for all AbstractEncryptionCpuTest instances below
         mTestCases = new ArrayList<CpuTest>(4);
+        CpuTest test;
 
-        CpuTest test = new PushTest();
-        test.mTestName = "PushTest";
-        test.mKey = "encryption_push_test";
-        mTestCases.add(test);
+        if (mRunPush) {
+            test = new PushTest();
+            test.mTestName = "PushTest";
+            test.mKey = "encryption_push_test";
+            mTestCases.add(test);
+        }
 
-        test = new PullTest();
-        test.mTestName = "PullTest";
-        test.mKey = "encryption_pull_test";
-        mTestCases.add(test);
+        if (mRunPull) {
+            test = new PullTest();
+            test.mTestName = "PullTest";
+            test.mKey = "encryption_pull_test";
+            mTestCases.add(test);
+        }
 
-        test = new VideoPlaybackTest();
-        test.mTestName = "VideoPlaybackTest";
-        test.mKey = "encryption_video_playback_test";
-        mTestCases.add(test);
+        if (mRunVideoPlayback) {
+            test = new VideoPlaybackTest();
+            test.mTestName = "VideoPlaybackTest";
+            test.mKey = "encryption_video_playback_test";
+            mTestCases.add(test);
+        }
 
-        test = new VideoCaptureTest();
-        test.mTestName = "VideoCaptureTest";
-        test.mKey = "encryption_video_record_test";
-        mTestCases.add(test);
+        if (mRunVideoRecord) {
+            test = new VideoCaptureTest();
+            test.mTestName = "VideoCaptureTest";
+            test.mKey = "encryption_video_record_test";
+            mTestCases.add(test);
+        }
     }
 
     /**
@@ -365,6 +387,9 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+
+        mIsEncrypted = mTestDevice.isDeviceEncrypted();
+        CLog.d("Running tests on %s device", (mIsEncrypted ? "encrypted" : "unencrypted"));
 
         setupTests();
 
@@ -456,10 +481,9 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
     /**
      * Returns the key suffix based on the encrypted status of the device.
      *
-     * @param isEncrypted if the device is encrypted.
      * @return {@code _encrypted} if the device is encrypted or {@code _unencrypted} if it is not.
      */
-    private String getKeySuffix(boolean isEncrypted) {
-        return isEncrypted ? "_encrypted" : "_unencrypted";
+    private String getKeySuffix() {
+        return mIsEncrypted ? "_encrypted" : "_unencrypted";
     }
 }
