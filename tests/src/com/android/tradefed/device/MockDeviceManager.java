@@ -117,6 +117,15 @@ public class MockDeviceManager implements IDeviceManager {
         }
     }
 
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ITestDevice forceAllocateDevice(String serial) {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * {@inheritDoc}
      */

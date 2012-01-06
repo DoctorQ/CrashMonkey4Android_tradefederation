@@ -17,9 +17,11 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfigurationFactory;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.log.LogRegistry;
@@ -105,12 +107,34 @@ public class Console extends Thread {
      * This is a sentinel class that will cause TF to shut down.  This enables a user to get TF to
      * shut down via the RegexTrie input handling mechanism.
      */
-    private class QuitRunnable implements Runnable {
+    private class QuitRunnable extends ArgRunnable<CaptureList> {
+        @Option(name = "handover-port", description =
+            "Used to indicate that currently managed devices should be 'handed over' to new " +
+            "tradefed process, which is listening on specified port")
+        private Integer mHandoverPort = null;
+
         @Override
-        public void run() {
-            printLine("Signalling command scheduler for shutdown.");
-            printLine("TF will exit without warning when remaining invocations complete.");
-            mScheduler.shutdown();
+        public void run(CaptureList args) {
+            try {
+                if (args.size() >= 2 && !args.get(1).isEmpty()) {
+                    List<String> optionArgs = getFlatArgs(1, args);
+                    ArgsOptionParser parser = new ArgsOptionParser(this);
+                    parser.parse(optionArgs);
+                }
+
+                if (mHandoverPort == null) {
+                    mScheduler.shutdown();
+                } else {
+                    if (!mScheduler.handoverShutdown(mHandoverPort)) {
+                        // failure message should already be logged
+                        return;
+                    }
+                }
+                printLine("Signalling command scheduler for shutdown.");
+                printLine("TF will exit without warning when remaining invocations complete.");
+            } catch (ConfigurationException e) {
+                printLine(e.toString());
+            }
         }
     }
 
@@ -120,8 +144,8 @@ public class Console extends Thread {
      */
     private class ForceQuitRunnable extends QuitRunnable {
         @Override
-        public void run() {
-            super.run();
+        public void run(CaptureList args) {
+            super.run(args);
             mScheduler.shutdownHard();
         }
     }
@@ -435,7 +459,12 @@ public class Console extends Thread {
 
         commandHelp.put(SET_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
-                "\tlog-level-display <level>     Sets the global display log level to <level>" +
+                "\tlog-level-display <level>  Sets the global display log level to <level>" +
+                LINE_SEPARATOR +
+                "\tenable-handover-server     Starts a handover server. Used to handover control " +
+                "from another TF process running on same machine." +
+                LINE_SEPARATOR +
+                "\tdisable-handover-server    Force shutdown of the handover server." +
                 LINE_SEPARATOR,
                 SET_PATTERN));
 
@@ -445,6 +474,7 @@ public class Console extends Thread {
                 DEBUG_PATTERN));
 
         // Handle quit commands
+        trie.put(new QuitRunnable(), EXIT_PATTERN, null);
         trie.put(new QuitRunnable(), EXIT_PATTERN);
         trie.put(new ForceQuitRunnable(), "kill");
 
@@ -614,6 +644,21 @@ public class Console extends Thread {
             }
         };
         trie.put(runSetLog, SET_PATTERN, "log-level-display", "(.*)");
+
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        startRemoteManager();
+                    }
+                }, SET_PATTERN, "enable-handover-server");
+
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mScheduler.stopRemoteManager();
+                    }
+                }, SET_PATTERN, "disable-handover-server");
+
 
         // Debug commands
         trie.put(new Runnable() {
@@ -795,6 +840,18 @@ public class Console extends Thread {
 
     private void dumpLogs() {
         LogRegistry.getLogRegistry().dumpLogs();
+    }
+
+    private void startRemoteManager() {
+        int port = mScheduler.startRemoteManager();
+        if (port != -1) {
+            printLine(String.format("Started remote manager on port %d.", port));
+            printLine(String.format(
+                    "Provide this port to other tradefed host via 'exit --handover-port %d' " +
+                    "to initiate handover.", port));
+        } else {
+            printLine("Failed to start remote manager to handle handover");
+        }
     }
 
     /**

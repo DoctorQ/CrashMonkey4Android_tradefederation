@@ -372,6 +372,37 @@ public class DeviceManagerTest extends TestCase {
     }
 
     /**
+     * Test {@link DeviceManager#forceAllocateDevice(String)} when device is unknown
+     */
+    public void testForceAllocateDevice() throws DeviceNotAvailableException {
+        EasyMock.expect(mMockDeviceFactory.createDevice()).andReturn(mMockTestDevice);
+        replayMocks();
+        DeviceManager manager = createDeviceManager();
+        assertNotNull(manager.forceAllocateDevice("unknownserial"));
+    }
+
+    /**
+     * Test {@link DeviceManager#forceAllocateDevice(String)} when device is available
+     */
+    public void testForceAllocateDevice_available() throws DeviceNotAvailableException {
+        setCheckAvailableDeviceExpectations();
+        replayMocks();
+        DeviceManager manager = createDeviceManager(mMockIDevice);
+        assertNotNull(manager.forceAllocateDevice(DEVICE_SERIAL));
+    }
+
+    /**
+     * Test {@link DeviceManager#forceAllocateDevice(String)} when device is already allocated
+     */
+    public void testForceAllocateDevice_alreadyAllocated() throws DeviceNotAvailableException {
+        setCheckAvailableDeviceExpectations();
+        replayMocks();
+        DeviceManager manager = createDeviceManager(mMockIDevice);
+        assertNotNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
+        assertNull(manager.forceAllocateDevice(DEVICE_SERIAL));
+    }
+
+    /**
      * Test method for {@link DeviceManager#freeDevice(ITestDevice)}.
      */
     public void testFreeDevice() throws DeviceNotAvailableException {
