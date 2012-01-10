@@ -24,7 +24,6 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
-import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -144,7 +143,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             throws DeviceNotAvailableException, TargetSetupError {
         if (!device.isEncryptionSupported()) {
             if (mEncryptUserData) {
-                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+                throw new TargetSetupError("Encryption is not supported");
             }
             return;
         }
@@ -203,7 +202,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             throws DeviceNotAvailableException, TargetSetupError {
         if (!device.isEncryptionSupported()) {
             if (mEncryptUserData) {
-                CLog.e("Encryption on %s is not supported", device.getSerialNumber());
+                throw new TargetSetupError("Encryption is not supported");
             }
             return;
         }

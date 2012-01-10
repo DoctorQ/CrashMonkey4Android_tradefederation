@@ -125,6 +125,8 @@ class TestDevice implements IManagedTestDevice {
 
     private RecoveryMode mRecoveryMode = RecoveryMode.AVAILABLE;
 
+    private Boolean mIsEncryptionSupported = null;
+
     /**
      * Interface for a generic device communication attempt.
      */
@@ -1939,6 +1941,8 @@ class TestDevice implements IManagedTestDevice {
             return true;
         }
 
+        enableAdbRoot();
+
         String encryptMethod;
         int timeout;
         if (inplace) {
@@ -1954,7 +1958,7 @@ class TestDevice implements IManagedTestDevice {
                 ENCRYPTION_PASSWORD), new NullOutputReceiver(), timeout, 1);
 
         waitForDeviceNotAvailable("reboot", getCommandTimeout());
-        waitForDeviceOnline();  // Device will not become available until the user data is unlockedu.
+        waitForDeviceOnline();  // Device will not become available until the user data is unlocked.
 
         return isDeviceEncrypted();
     }
@@ -1994,10 +1998,18 @@ class TestDevice implements IManagedTestDevice {
         rebootIntoBootloader();
         executeLongFastbootCommand("erase", "userdata");
 
+        // If the device requires time to format the filesystem after fastboot erase userdata, wait
+        // for the device to reboot a second time.
+        if (mOptions.getUnencryptRebootTimeout() > 0) {
+            rebootUntilOnline();
+            if (waitForDeviceNotAvailable(mOptions.getUnencryptRebootTimeout())) {
+                waitForDeviceOnline();
+            }
+        }
+
         if (format) {
             CLog.d("Need to format sdcard for device %s", getSerialNumber());
 
-            rebootUntilOnline();
             RecoveryMode cachedRecoveryMode = getRecoveryMode();
             setRecoveryMode(RecoveryMode.ONLINE);
 
@@ -2041,6 +2053,8 @@ class TestDevice implements IManagedTestDevice {
         }
 
         CLog.i("Unlocking device %s", getSerialNumber());
+
+        enableAdbRoot();
 
         // FIXME: currently, vcd checkpw can return an empty string when it never should.  Try 3
         // times.
@@ -2110,11 +2124,16 @@ class TestDevice implements IManagedTestDevice {
     public boolean isEncryptionSupported() throws DeviceNotAvailableException {
         if (!isEnableAdbRoot()) {
             CLog.i("root is required for encryption");
-            return false;
+            mIsEncryptionSupported = false;
+            return mIsEncryptionSupported;
+        }
+        if (mIsEncryptionSupported != null) {
+            return mIsEncryptionSupported.booleanValue();
         }
         enableAdbRoot();
         String output = executeShellCommand("vdc cryptfs enablecrypto").trim();
-        return (output != null && output.startsWith(ENCRYPTION_SUPPORTED_OUTPUT));
+        mIsEncryptionSupported = (output != null && output.startsWith(ENCRYPTION_SUPPORTED_OUTPUT));
+        return mIsEncryptionSupported;
     }
 
     /**
