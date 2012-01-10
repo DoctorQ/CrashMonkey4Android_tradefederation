@@ -65,6 +65,8 @@ public class BackgroundDeviceAction extends Thread {
         mTestDevice = device;
         mReceiver = receiver;
         mLogStartDelay = startDelay;
+        // don't keep VM open if this thread is still running
+        setDaemon(true);
     }
 
     /**
