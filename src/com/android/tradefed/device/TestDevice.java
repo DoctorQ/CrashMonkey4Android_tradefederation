@@ -118,7 +118,7 @@ class TestDevice implements IManagedTestDevice {
     private long mLongCmdTimeout = 12 * 60 * 1000;
 
     private IDevice mIDevice;
-    private IDeviceRecovery mRecovery;
+    private IDeviceRecovery mRecovery = new WaitDeviceRecovery();
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
     private final Semaphore mFastbootLock = new Semaphore(1);
