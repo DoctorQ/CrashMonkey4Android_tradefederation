@@ -36,6 +36,8 @@ import com.android.tradefed.util.StringEscapeUtils;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A Test that runs an instrumentation test package on given device.
@@ -103,6 +105,10 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
             description="Optional custom test run name to pass to listener. " +
             "If unspecified, will use package name.")
     private String mRunName = null;
+
+    @Option(name = "instrumentation-arg",
+            description = "Additional instrumentation arguments to provide.")
+    private Map<String, String> mInstrArgMap = new HashMap<String, String>();
 
     private ITestDevice mDevice = null;
 
@@ -336,6 +342,16 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     }
 
     /**
+     * Add an argument to provide when running the instrumentation tests
+     *
+     * @param key the argument name
+     * @param value the argument value
+     */
+    public void addInstrumentationArg(String key, String value) {
+        mInstrArgMap.put(key, value);
+    }
+
+    /**
      * @return the {@link IRemoteAndroidTestRunner} to use.
      */
     IRemoteAndroidTestRunner createRemoteAndroidTestRunner(String packageName, String runnerName,
@@ -372,6 +388,9 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
         mRunner.setMaxtimeToOutputResponse(mTestTimeout);
         if (mRunName != null) {
             mRunner.setRunName(mRunName);
+        }
+        for (Map.Entry<String, String> argEntry : mInstrArgMap.entrySet()) {
+            mRunner.addInstrumentationArg(argEntry.getKey(), argEntry.getValue());
         }
 
         if (mInstallFile != null) {
