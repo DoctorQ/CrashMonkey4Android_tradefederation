@@ -243,7 +243,7 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
      * @param msg
      */
     protected synchronized void appendLogMsg(String msg) {
-        if (mOutStream == null) {
+        if (mOutStream == null || msg == null) {
             return;
         }
         // add the msg to log, so readers will know the command was interrupted
