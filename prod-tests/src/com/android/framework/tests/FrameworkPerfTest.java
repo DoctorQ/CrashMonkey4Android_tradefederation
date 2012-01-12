@@ -30,6 +30,7 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -69,8 +70,11 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
         CollectingTestListener collectingListener = new CollectingTestListener();
         Assert.assertTrue(mTestDevice.runInstrumentationTests(runner, collectingListener));
 
+        Collection<TestResult> testResultsCollection =
+                collectingListener.getCurrentRunResults().getTestResults().values();
+
         List<TestResult> testResults =
-                new ArrayList(collectingListener.getCurrentRunResults().getTestResults().values());
+                new ArrayList<TestResult>(testResultsCollection);
 
         if (!testResults.isEmpty()) {
             Map<String, String> testMetrics = testResults.get(0).getMetrics();
