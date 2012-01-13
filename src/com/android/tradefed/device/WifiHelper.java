@@ -16,9 +16,15 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.MultiLineReceiver;
+import com.android.tradefed.targetprep.TargetSetupError;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,7 +37,17 @@ import java.util.regex.Pattern;
  */
 public class WifiHelper implements IWifiHelper {
 
+    private static final String NULL_IP_ADDR = "0.0.0.0";
     private static final String INTERFACE_KEY = "interface";
+    private static final String INSTRUMENTATION_CLASS = ".WifiUtil";
+    private static final String INSTRUMENTATION_PKG = "com.android.tradefed.utils.wifi";
+    private static final String FULL_INSTRUMENTATION_NAME =
+            String.format("%s/%s", INSTRUMENTATION_PKG, INSTRUMENTATION_CLASS);
+
+    private static final String CHECK_INSTRUMENTATION_CMD =
+            String.format("pm list instrumentation %s", INSTRUMENTATION_PKG);
+
+    private static final String WIFIUTIL_APK_NAME = "WifiUtil.apk";
 
     enum WifiState {
         COMPLETED, SCANNING, DISCONNECTED;
@@ -47,8 +63,9 @@ public class WifiHelper implements IWifiHelper {
 
     private final ITestDevice mDevice;
 
-    public WifiHelper(ITestDevice device) {
+    public WifiHelper(ITestDevice device) throws TargetSetupError, DeviceNotAvailableException {
         mDevice = device;
+        ensureDeviceSetup();
     }
 
     /**
@@ -58,6 +75,37 @@ public class WifiHelper implements IWifiHelper {
      */
     IRunUtil getRunUtil() {
         return RunUtil.getDefault();
+    }
+
+    private void ensureDeviceSetup() throws TargetSetupError, DeviceNotAvailableException {
+        final String inst = mDevice.executeShellCommand(CHECK_INSTRUMENTATION_CMD);
+        if ((inst != null) && inst.contains(FULL_INSTRUMENTATION_NAME)) {
+            // Good to go
+            return;
+        } else {
+            // Attempt to install utility
+            File apkTempFile = null;
+            try {
+                apkTempFile = FileUtil.createTempFile(WIFIUTIL_APK_NAME, ".apk");
+                InputStream apkStream = getClass().getResourceAsStream(
+                    String.format("/apks/wifiutil/%s", WIFIUTIL_APK_NAME));
+                FileUtil.writeToFile(apkStream, apkTempFile);
+
+                final String result = mDevice.installPackage(apkTempFile, false);
+                if (result == null) {
+                    // Installed successfully; good to go.
+                    return;
+                } else {
+                    throw new TargetSetupError(String.format(
+                            "Unable to install WifiUtil utility: %s", result));
+                }
+            } catch (IOException e) {
+                throw new TargetSetupError(String.format(
+                        "Failed to unpack WifiUtil utility: %s", e.getMessage()));
+            } finally {
+                FileUtil.deleteFile(apkTempFile);
+            }
+        }
     }
 
     /**
@@ -81,7 +129,7 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public void disconnectFromNetwork(int networkId) throws DeviceNotAvailableException {
-        callWpaCli(String.format("disable_network %d", networkId));
+        runWifiUtil("removeNetwork", "id", Integer.toString(networkId));
     }
 
     /**
@@ -175,7 +223,7 @@ public class WifiHelper implements IWifiHelper {
      * @throws DeviceNotAvailableException
      */
     void removeNetwork(int networkId) throws DeviceNotAvailableException {
-        callWpaCli(String.format("remove_network %d", networkId));
+        runWifiUtil("removeNetwork", "id", Integer.toString(networkId));
     }
 
     /**
@@ -183,35 +231,7 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public Integer addOpenNetwork(String ssid) throws DeviceNotAvailableException {
-        WpaCliOutput output = callWpaCli("add_network");
-        if (!output.isSuccess()) {
-            return null;
-        }
-        Pattern networkIdPattern = Pattern.compile("^\\d+$");
-        Integer networkId = null;
-        for (String line : output.mOutputLines) {
-            Matcher networkMatcher = networkIdPattern.matcher(line);
-            if (networkMatcher.matches()) {
-                networkId = Integer.parseInt(line);
-                break;
-            }
-        }
-        if (networkId == null) {
-            return null;
-        }
-
-        // set ssid - command to send is   set_network 0  ssid '"ssidname"'
-        String setSsidCmd = String.format("set_network %d ssid '\"%s\"'", networkId, ssid);
-        if (!callWpaCliChecked(setSsidCmd)) {
-            removeNetwork(networkId);
-            return null;
-        }
-        // set key_mgmt to NONE (open security)
-        if (!callWpaCliChecked(String.format("set_network %d key_mgmt NONE", networkId))) {
-            removeNetwork(networkId);
-            return null;
-        }
-        return networkId;
+        return asInt(runWifiUtil("addOpenNetwork", "ssid", ssid));
     }
 
     /**
@@ -219,20 +239,7 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
-        Integer networkId = addOpenNetwork(ssid);
-        if (networkId == null) {
-            return null;
-        }
-        if (!callWpaCliChecked(String.format("set_network %d key_mgmt WPA-PSK", networkId))) {
-            removeNetwork(networkId);
-            return null;
-        }
-        String setPskCmd = String.format("set_network %d psk '\"%s\"'", networkId, psk);
-        if (!callWpaCliChecked(setPskCmd)) {
-            removeNetwork(networkId);
-            return null;
-        }
-         return networkId;
+        return asInt(runWifiUtil("addWpaPskNetwork", "ssid", ssid, "psk", psk));
     }
 
     /**
@@ -240,22 +247,7 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public boolean associateNetwork(int networkId) throws DeviceNotAvailableException {
-        if (!callWpaCliChecked("disconnect")) {
-            return false;
-        }
-        if (!callWpaCliChecked(String.format("enable_network %d", networkId))) {
-            return false;
-        }
-        if (!callWpaCliChecked(String.format("select_network %d", networkId))) {
-            return false;
-        }
-        if (!callWpaCliChecked("reconnect")) {
-            return false;
-        }
-        if (!callWpaCliChecked("save_config")) {
-            return false;
-        }
-        return true;
+        return asBool(runWifiUtil("associateNetwork", "id", Integer.toString(networkId)));
     }
 
     /**
@@ -263,18 +255,15 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public boolean waitForIp(long timeout) throws DeviceNotAvailableException {
-        Map<String, String> statusMap = getWifiStatus();
-        if (statusMap == null ) {
+        if (!asBool(runWifiUtil("isWifiEnabled"))) {
             return false;
         }
-        String interfaceName = statusMap.get(INTERFACE_KEY);
-        if (interfaceName == null) {
-            return false;
-        }
+
         long startTime = System.currentTimeMillis();
 
         while (System.currentTimeMillis() < (startTime + timeout)) {
-            if (getIpAddress(interfaceName) != null) {
+            final String ip = getIpAddress();
+            if (!ip.isEmpty() && !NULL_IP_ADDR.equals(getIpAddress())) {
                 return true;
             }
             getRunUtil().sleep(getPollTime());
@@ -286,10 +275,8 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
-    public String getIpAddress(String interfaceName) throws DeviceNotAvailableException {
-        NetCfgOutputParser output = new NetCfgOutputParser(interfaceName);
-        mDevice.executeShellCommand("netcfg", output);
-        return output.mIpAddress;
+    public String getIpAddress() throws DeviceNotAvailableException {
+        return runWifiUtil("getIpAddress");
     }
 
     /**
@@ -297,21 +284,92 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public void removeAllNetworks() throws DeviceNotAvailableException {
-        WpaCliOutput output = callWpaCli("list_networks");
-        if (!output.isSuccess()) {
-            return;
+        runWifiUtil("removeAllNetworks");
+    }
+
+    /**
+     * Run a WifiUtil command and return the result
+     *
+     * @param method the WifiUtil method to call
+     * @param args a flat list of [arg-name, value] pairs to pass
+     * @return The value of the result field in the output
+     */
+    private String runWifiUtil(String method, String... args) throws DeviceNotAvailableException {
+        final String cmd = buildWifiUtilCmd(method, args);
+
+        WifiUtilOutput parser = new WifiUtilOutput();
+        mDevice.executeShellCommand(cmd, parser);
+        return parser.mResult;
+    }
+
+    /**
+     * Build and return a WifiUtil command for the specified method and args
+     *
+     * @param method the WifiUtil method to call
+     * @param args a flat list of [arg-name, value] pairs to pass
+     * @return the command to be executed on the device shell
+     */
+    static String buildWifiUtilCmd(String method, String... args) {
+        Map<String, String> argMap = new HashMap<String, String>();
+        argMap.put("method", method);
+        if ((args.length & 0x1) == 0x1) {
+            throw new IllegalArgumentException(
+                    "args should have even length, consisting of key and value pairs");
         }
-        // expected format is
-        // networkId   SSID
-        Pattern networkPattern = Pattern.compile("^(\\d+)\\s+\\w+");
-        for (String line : output.mOutputLines) {
-            Matcher matcher = networkPattern.matcher(line);
-            if (matcher.find()) {
-                // network id is first group
-                Integer networkId = Integer.parseInt(matcher.group(1));
-                removeNetwork(networkId);
-            }
+        for (int i = 0; i < args.length; i += 2) {
+            argMap.put(args[i], args[i+1]);
         }
+        return buildWifiUtilCmdFromMap(argMap);
+    }
+
+    /**
+     * Build and return a WifiUtil command for the specified args
+     *
+     * @param args A Map of (arg-name, value) pairs to pass as "-e" arguments to the `am` command
+     * @return the commadn to be executed on the device shell
+     */
+    static String buildWifiUtilCmdFromMap(Map<String, String> args) {
+        StringBuilder sb = new StringBuilder("am instrument");
+
+        for (Map.Entry<String, String> arg : args.entrySet()) {
+            sb.append(" -e ");
+            sb.append(arg.getKey());
+            sb.append(" ");
+            sb.append(quote(arg.getValue()));
+        }
+
+        sb.append(" -w ");
+        sb.append(INSTRUMENTATION_PKG);
+        sb.append("/");
+        sb.append(INSTRUMENTATION_CLASS);
+
+        return sb.toString();
+    }
+
+    /**
+     * Helper function to convert a String to an Integer
+     */
+    private static Integer asInt(String str) {
+        try {
+            return Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Helper function to convert a String to a boolean.  Maps "true" to true, and everything else
+     * to false.
+     */
+    private static boolean asBool(String str) {
+        return "true".equals(str);
+    }
+
+    /**
+     * Helper function to wrap the specified String in double-quotes to prevent shell interpretation
+     */
+    private static String quote(String str) {
+        return String.format("\"%s\"", str);
     }
 
     /**
@@ -405,23 +463,26 @@ public class WifiHelper implements IWifiHelper {
         }
     }
 
+
     /**
-     * Process the output of a 'netcfg' command.
-     * <p/>
-     * Looks for valid IP being assigned to a given network interface. 'Valid' is interpreted as:
-     * <ul>
-     * <li>IP != "0.0.0.0"</li>
-     * <li>status == "UP"</li>
-     * <li>interface name != "lo"</li>
-     * </ul>
+     * Processes the output of a WifiUtil invocation
      */
-    private static class NetCfgOutputParser extends MultiLineReceiver {
+    private static class WifiUtilOutput extends MultiLineReceiver {
 
-        String mIpAddress = null;
-        final String mInterfaceName;
+        private boolean mDidCommandComplete = false;
+        private boolean mIsCommandSuccess = true;
 
-        NetCfgOutputParser(String interfaceName) {
-            mInterfaceName = interfaceName;
+        private static final String INST_SUCCESS_MARKER = "INSTRUMENTATION_CODE: -1";
+        private static final Pattern RESULT_PAT =
+                Pattern.compile("INSTRUMENTATION_RESULT: result=(.*)");
+
+        String mResult = null;
+
+        /** The output lines of the WifiUtil invocation. */
+        List<String> mOutputLines;
+
+        WifiUtilOutput() {
+            mOutputLines = new ArrayList<String>();
         }
 
         /**
@@ -429,20 +490,22 @@ public class WifiHelper implements IWifiHelper {
          */
         @Override
         public void processNewLines(String[] lines) {
-            for (String line : lines) {
-                String[] fields = line.split("\\s+");
-                // expect space delimited output in form of
-                // interfaceName status ipAddress
-                if (fields.length >= 2 &&
-                    !fields[0].equals("lo") &&
-                    (mInterfaceName == null || fields[0].equals(mInterfaceName)) &&
-                    fields[1].equals("UP") &&
-                    !fields[2].equals("0.0.0.0")) {
+            // expect INST_SUCCESS_MARKER to be present on last line for successful command
+            if (!mDidCommandComplete) {
+                mDidCommandComplete = lines[lines.length - 1].equals(INST_SUCCESS_MARKER);
+            }
 
-                    mIpAddress = fields[2];
-                    break;
+            for (String line : lines) {
+                mOutputLines.add(line);
+                Matcher resultMatcher = RESULT_PAT.matcher(line);
+                if (resultMatcher.matches()) {
+                    mResult = resultMatcher.group(1);
                 }
             }
+        }
+
+        public boolean isSuccess() {
+            return mDidCommandComplete && mIsCommandSuccess;
         }
 
         /**
@@ -454,3 +517,4 @@ public class WifiHelper implements IWifiHelper {
         }
     }
 }
+

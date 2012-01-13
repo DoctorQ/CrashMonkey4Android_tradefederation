@@ -48,54 +48,6 @@ public class WifiHelperTest extends TestCase {
     }
 
     /**
-     * Test {@link WifiHelper#waitForIp(long)} success case
-     */
-    public void testWaitForIp() throws DeviceNotAvailableException {
-        // expect a wifi status query followed by a 'netcfg' query
-        injectStatusResult(WifiState.COMPLETED);
-        injectShellResponse(NETCFG_WIFI_RESPONSE);
-        EasyMock.replay(mMockDevice);
-        assertTrue(mWifi.waitForIp(1));
-    }
-
-    /**
-     * Test {@link WifiHelper#getIpAddress(String)} for any interface
-     */
-    public void testGetIpAddress_interface() throws DeviceNotAvailableException {
-        injectShellResponse(NETCFG_WIFI_RESPONSE);
-        EasyMock.replay(mMockDevice);
-        assertEquals("192.168.1.1", mWifi.getIpAddress(null));
-    }
-
-    /**
-     * Test {@link WifiHelper#getIpAddress(String)} when ip is not assigned.
-     */
-    public void testGetIpAddress_failed() throws DeviceNotAvailableException {
-        final String netcfgResponse =
-            "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
-            "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
-            "eth0     UP    0.0.0.0 255.255.254.0   0x00001043\r\n";
-        injectShellResponse(netcfgResponse);
-        EasyMock.replay(mMockDevice);
-        assertNull(mWifi.getIpAddress(null));
-    }
-
-    /**
-     * Test {@link WifiHelper#getIpAddress(String)} when a specific interface is requested, that
-     * does not have an ip.
-     */
-    public void testGetIpAddress_diffInterface() throws DeviceNotAvailableException {
-        final String netcfgResponse =
-            "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
-            "rmnet0   UP    192.168.1.1     255.255.255.0   0x000010d1\r\n" +
-            "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
-            "eth0     UP    0.0.0.0 255.255.254.0   0x00001043\r\n";
-        injectShellResponse(netcfgResponse);
-        EasyMock.replay(mMockDevice);
-        assertNull(mWifi.getIpAddress("eth0"));
-    }
-
-    /**
      * Test {@link WifiHelper#waitForWifiState(WifiState...))} success case.
      */
     public void testWaitForWifiState() throws DeviceNotAvailableException {
@@ -130,57 +82,6 @@ public class WifiHelperTest extends TestCase {
         assertNull(mWifi.getWifiStatus());
     }
 
-    /**
-     * Test {@link WifiHelper#addOpenNetwork(String))} success case.
-     */
-    public void testAddOpenNetwork() throws DeviceNotAvailableException {
-        final String addNetworkResponse = String.format(
-                "Using interface 'eth0'\r\n" +
-                "0\r\n" +
-                "%s\r\n", WifiHelper.SUCCESS_MARKER);
-        injectShellResponse(addNetworkResponse);
-        // expect set ssid command
-        injectWpaCliOKResponse();
-        // expect key mgmt command
-        injectWpaCliOKResponse();
-        EasyMock.replay(mMockDevice);
-        assertEquals(Integer.valueOf(0), mWifi.addOpenNetwork("foo"));
-    }
-
-    /**
-     * Test {@link WifiHelper#removeAllNetworks()} success case.
-     */
-    public void testRemoveAllNetworks() throws DeviceNotAvailableException {
-        // expect a list network command followed by a remove network
-        final String listNetworkResponse = String.format(
-                "Using interface 'eth0'\r\n" +
-                "0       MyNetwork     any    [CURRENT]\r\n" +
-                "1       MyNetwork2     any\r\n" +
-                "%s\r\n", WifiHelper.SUCCESS_MARKER);
-        injectShellResponse(listNetworkResponse);
-
-        mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
-        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                assertTrue(cmd.contains("remove_network 0"));
-            }
-        });
-
-        mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
-        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                assertTrue(cmd.contains("remove_network 1"));
-            }
-        });
-
-        EasyMock.replay(mMockDevice);
-        mWifi.removeAllNetworks();
-    }
-
     private void injectStatusResult(WifiState state) throws DeviceNotAvailableException {
         final String statusQueryReturn = String.format(
             "Using interface 'eth0'\r\n" +
@@ -211,5 +112,44 @@ public class WifiHelperTest extends TestCase {
                 receiver.flush();
             }
         });
+    }
+
+    // tests for reimplementation
+    public void testBuildCommand_simple() {
+        final String expected = "am instrument -e method \"meth\" -w " +
+                "com.google.android.tests.utilities.wifi/.WifiUtil";
+        final String cmd = WifiHelper.buildWifiUtilCmd("meth");
+        assertEquals(expected, cmd);
+    }
+
+    public void testBuildCommand_oneArg() {
+        final String start = "am instrument ";
+        final String piece1 = "-e method \"meth\" ";
+        final String piece2 = "-e id \"45\" ";
+        final String end = "-w com.google.android.tests.utilities.wifi/.WifiUtil";
+
+        final String cmd = WifiHelper.buildWifiUtilCmd("meth", "id", "45");
+        // Do this piecewise since Map traverse order is arbitrary
+        assertTrue(cmd.startsWith(start));
+        assertTrue(cmd.contains(piece1));
+        assertTrue(cmd.contains(piece2));
+        assertTrue(cmd.endsWith(end));
+    }
+
+    public void testBuildCommand_withSpace() {
+        final String start = "am instrument ";
+        final String piece1 = "-e method \"addWpaPskNetwork\" ";
+        final String piece2 = "-e ssid \"With Space\" ";
+        final String piece3 = "-e psk \"also has space\" ";
+        final String end = "-w com.google.android.tests.utilities.wifi/.WifiUtil";
+
+        final String cmd = WifiHelper.buildWifiUtilCmd("addWpaPskNetwork", "ssid", "With Space",
+                "psk", "also has space");
+        // Do this piecewise since Map traverse order is arbitrary
+        assertTrue(cmd.startsWith(start));
+        assertTrue(cmd.contains(piece1));
+        assertTrue(cmd.contains(piece2));
+        assertTrue(cmd.contains(piece3));
+        assertTrue(cmd.endsWith(end));
     }
 }

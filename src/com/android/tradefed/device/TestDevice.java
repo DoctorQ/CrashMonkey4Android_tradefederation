@@ -38,6 +38,7 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.StubTestRunListener;
+import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -1560,47 +1561,52 @@ class TestDevice implements IManagedTestDevice {
     public boolean connectToWifiNetwork(String wifiSsid, String wifiPsk)
             throws DeviceNotAvailableException {
         CLog.i("Connecting to wifi network %s on %s", wifiSsid, getSerialNumber());
-        IWifiHelper wifi = createWifiHelper();
-        wifi.enableWifi();
-        // TODO: return false here if failed?
-        wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
+        try {
+            IWifiHelper wifi = createWifiHelper();
+            wifi.enableWifi();
+            // TODO: return false here if failed?
+            wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
 
-        Integer networkId = null;
-        if (wifiPsk != null) {
-            networkId = wifi.addWpaPskNetwork(wifiSsid, wifiPsk);
-        } else {
-            networkId = wifi.addOpenNetwork(wifiSsid);
-        }
+            Integer networkId = null;
+            if (wifiPsk != null) {
+                networkId = wifi.addWpaPskNetwork(wifiSsid, wifiPsk);
+            } else {
+                networkId = wifi.addOpenNetwork(wifiSsid);
+            }
 
-        if (networkId == null) {
-            CLog.e("Failed to add wifi network %s on %s", wifiSsid, getSerialNumber());
-            return false;
-        }
-        if (!wifi.associateNetwork(networkId)) {
-            CLog.e("Failed to enable wifi network %s on %s", wifiSsid, getSerialNumber());
-            return false;
-        }
-        if (!wifi.waitForWifiState(WifiState.COMPLETED)) {
-            CLog.e("wifi network %s failed to associate on %s", wifiSsid, getSerialNumber());
-            return false;
-        }
-        // TODO: make timeout configurable
-        if (!wifi.waitForIp(30 * 1000)) {
-            CLog.e("dhcp timeout when connecting to wifi network %s on %s", wifiSsid,
+            if (networkId == null) {
+                CLog.e("Failed to add wifi network %s on %s", wifiSsid, getSerialNumber());
+                return false;
+            }
+            if (!wifi.associateNetwork(networkId)) {
+                CLog.e("Failed to enable wifi network %s on %s", wifiSsid, getSerialNumber());
+                return false;
+            }
+            if (!wifi.waitForWifiState(WifiState.COMPLETED)) {
+                CLog.e("wifi network %s failed to associate on %s", wifiSsid, getSerialNumber());
+                return false;
+            }
+            // TODO: make timeout configurable
+            if (!wifi.waitForIp(30 * 1000)) {
+                CLog.e("dhcp timeout when connecting to wifi network %s on %s", wifiSsid,
+                        getSerialNumber());
+                return false;
+            }
+            // wait for ping success
+            for (int i = 0; i < 10; i++) {
+                String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
+                if (pingOutput.contains("1 packets transmitted, 1 received")) {
+                    return true;
+                }
+                getRunUtil().sleep(1 * 1000);
+            }
+            CLog.e("ping unsuccessful after connecting to wifi network %s on %s", wifiSsid,
                     getSerialNumber());
             return false;
+        } catch (TargetSetupError e) {
+            CLog.e(e);
+            return false;
         }
-        // wait for ping success
-        for (int i = 0; i < 10; i++) {
-            String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
-            if (pingOutput.contains("1 packets transmitted, 1 received")) {
-                return true;
-            }
-            getRunUtil().sleep(1 * 1000);
-        }
-        CLog.e("ping unsuccessful after connecting to wifi network %s on %s", wifiSsid,
-                getSerialNumber());
-        return false;
     }
 
     /**
@@ -1608,10 +1614,15 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
-        IWifiHelper wifi = createWifiHelper();
-        wifi.removeAllNetworks();
-        wifi.disableWifi();
-        return true;
+        try {
+            IWifiHelper wifi = createWifiHelper();
+            wifi.removeAllNetworks();
+            wifi.disableWifi();
+            return true;
+        } catch (TargetSetupError e) {
+            CLog.e(e);
+            return false;
+        }
     }
 
     /**
@@ -1619,8 +1630,13 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public String getIpAddress() throws DeviceNotAvailableException {
-        IWifiHelper wifi = createWifiHelper();
-        return wifi.getIpAddress(null);
+        try {
+            IWifiHelper wifi = createWifiHelper();
+            return wifi.getIpAddress();
+        } catch (TargetSetupError e) {
+            CLog.e(e);
+            return null;
+        }
     }
 
     /**
@@ -1628,7 +1644,7 @@ class TestDevice implements IManagedTestDevice {
      * <p/>
      * Exposed so unit tests can mock
      */
-    IWifiHelper createWifiHelper() {
+    IWifiHelper createWifiHelper() throws TargetSetupError, DeviceNotAvailableException {
         return new WifiHelper(this);
     }
 

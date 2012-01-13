@@ -105,12 +105,10 @@ interface IWifiHelper {
     boolean waitForIp(long timeout) throws DeviceNotAvailableException;
 
     /**
-     * Gets the IP address associated with the given interfacec name
+     * Gets the IP address associated with the wifi interface
      *
-     * @param interfaceName the interface to get IP address for. If null, will return IP for first
-     * activr valid interface
      */
-    String getIpAddress(String interfaceName) throws DeviceNotAvailableException;
+    String getIpAddress() throws DeviceNotAvailableException;
 
     /**
      * Removes all known networks.
