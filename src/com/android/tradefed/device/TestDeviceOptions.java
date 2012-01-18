@@ -35,6 +35,18 @@ public class TestDeviceOptions {
         "The maximum size of a tmp logcat file, in bytes.")
     private long mMaxLogcatFileSize = 10 * 1024 * 1024;
 
+    @Option(name = "fastboot-timeout", description =
+            "time in ms to wait for a device to boot into fastboot.")
+    private int mFastbootTimeout = 1 * 60 * 1000;
+
+    @Option(name = "adb-recovery-timeout", description =
+            "time in ms to wait for a device to boot into recovery.")
+    private int mAdbRecoveryTimeout = 1 * 60 * 1000;
+
+    @Option(name = "reboot-timeout", description =
+            "time in ms to wait for a device to reboot to full system.")
+    private int mRebootTimeout = 2 * 60 * 1000;
+
     /**
      * @return the mEnableAdbRoot
      */
@@ -94,5 +106,47 @@ public class TestDeviceOptions {
      */
     public void setMaxLogcatFileSize(long maxLogcatFileSize) {
         mMaxLogcatFileSize = maxLogcatFileSize;
+    }
+
+    /**
+     * @return the timeout to boot into fastboot mode in msecs.
+     */
+    public int getFastbootTimeout() {
+        return mFastbootTimeout;
+    }
+
+    /**
+     * @param mFastbootTimeout the timout in msecs to boot into fastboot mode.
+     */
+    public void setFastbootTimeout(int mFastbootTimeout) {
+        this.mFastbootTimeout = mFastbootTimeout;
+    }
+
+    /**
+     * @return the timeout in msecs to boot into recovery mode.
+     */
+    public int getAdbRecoveryTimeout() {
+        return mAdbRecoveryTimeout;
+    }
+
+    /**
+     * @param mAdbRecoveryTimeout the timeout in msecs to boot into recovery mode.
+     */
+    public void setAdbRecoveryTimeout(int mAdbRecoveryTimeout) {
+        this.mAdbRecoveryTimeout = mAdbRecoveryTimeout;
+    }
+
+    /**
+     * @return the timeout in msecs for the full system boot.
+     */
+    public int getRebootTimeout() {
+        return mRebootTimeout;
+    }
+
+    /**
+     * @param mRebootTimeout the timeout in msecs for the system to fully boot.
+     */
+    public void setRebootTimeout(int mRebootTimeout) {
+        this.mRebootTimeout = mRebootTimeout;
     }
 }
