@@ -93,12 +93,7 @@ class TestDevice implements IManagedTestDevice {
 
     /** The time in ms to wait before starting logcat for a device */
     private int mLogStartDelay = 5*1000;
-    /** The time in ms to wait for a device to boot into fastboot. */
-    private static final int FASTBOOT_TIMEOUT = 1 * 60 * 1000;
-    /** The time in ms to wait for a device to boot into recovery. */
-    private static final int ADB_RECOVERY_TIMEOUT = 1 * 60 * 1000;
-    /** The time in ms to wait for a device to reboot to full system. */
-    private static final int REBOOT_TIMEOUT = 2 * 60 * 1000;
+
     /** The time in ms to wait for a device to become unavailable. Should usually be short */
     private static final int DEFAULT_UNAVAILABLE_TIMEOUT = 20 * 1000;
     /** The time in ms to wait for a recovery that we skip because of the NONE mode */
@@ -1740,7 +1735,7 @@ class TestDevice implements IManagedTestDevice {
             CLog.i("Booting device %s into bootloader", getSerialNumber());
             doAdbRebootBootloader();
         }
-        if (!mMonitor.waitForDeviceBootloader(FASTBOOT_TIMEOUT)) {
+        if (!mMonitor.waitForDeviceBootloader(mOptions.getFastbootTimeout())) {
             recoverDeviceFromBootloader();
         }
     }
@@ -1788,7 +1783,7 @@ class TestDevice implements IManagedTestDevice {
 
         setRecoveryMode(cachedRecoveryMode);
 
-        if (mMonitor.waitForDeviceAvailable(REBOOT_TIMEOUT) != null) {
+        if (mMonitor.waitForDeviceAvailable(mOptions.getRebootTimeout()) != null) {
             postBootSetup();
             return;
         } else {
@@ -1825,7 +1820,7 @@ class TestDevice implements IManagedTestDevice {
             rebootUntilOnline();
         }
         doAdbReboot("recovery");
-        if (!waitForDeviceInRecovery(ADB_RECOVERY_TIMEOUT)) {
+        if (!waitForDeviceInRecovery(mOptions.getAdbRecoveryTimeout())) {
             recoverDeviceInRecovery();
         }
     }
