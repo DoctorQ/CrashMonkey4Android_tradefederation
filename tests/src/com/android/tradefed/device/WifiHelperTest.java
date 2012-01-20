@@ -44,6 +44,11 @@ public class WifiHelperTest extends TestCase {
             long getPollTime() {
                 return 50;
             }
+
+            @Override
+            void ensureDeviceSetup() {
+                // ignore
+            }
         };
     }
 
@@ -117,7 +122,7 @@ public class WifiHelperTest extends TestCase {
     // tests for reimplementation
     public void testBuildCommand_simple() {
         final String expected = "am instrument -e method \"meth\" -w " +
-                "com.google.android.tests.utilities.wifi/.WifiUtil";
+                WifiHelper.FULL_INSTRUMENTATION_NAME;
         final String cmd = WifiHelper.buildWifiUtilCmd("meth");
         assertEquals(expected, cmd);
     }
@@ -126,7 +131,7 @@ public class WifiHelperTest extends TestCase {
         final String start = "am instrument ";
         final String piece1 = "-e method \"meth\" ";
         final String piece2 = "-e id \"45\" ";
-        final String end = "-w com.google.android.tests.utilities.wifi/.WifiUtil";
+        final String end = "-w " + WifiHelper.FULL_INSTRUMENTATION_NAME;
 
         final String cmd = WifiHelper.buildWifiUtilCmd("meth", "id", "45");
         // Do this piecewise since Map traverse order is arbitrary
@@ -141,7 +146,7 @@ public class WifiHelperTest extends TestCase {
         final String piece1 = "-e method \"addWpaPskNetwork\" ";
         final String piece2 = "-e ssid \"With Space\" ";
         final String piece3 = "-e psk \"also has space\" ";
-        final String end = "-w com.google.android.tests.utilities.wifi/.WifiUtil";
+        final String end = "-w " + WifiHelper.FULL_INSTRUMENTATION_NAME;
 
         final String cmd = WifiHelper.buildWifiUtilCmd("addWpaPskNetwork", "ssid", "With Space",
                 "psk", "also has space");

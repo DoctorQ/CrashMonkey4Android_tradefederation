@@ -41,7 +41,7 @@ public class WifiHelper implements IWifiHelper {
     private static final String INTERFACE_KEY = "interface";
     private static final String INSTRUMENTATION_CLASS = ".WifiUtil";
     private static final String INSTRUMENTATION_PKG = "com.android.tradefed.utils.wifi";
-    private static final String FULL_INSTRUMENTATION_NAME =
+    static final String FULL_INSTRUMENTATION_NAME =
             String.format("%s/%s", INSTRUMENTATION_PKG, INSTRUMENTATION_CLASS);
 
     private static final String CHECK_INSTRUMENTATION_CMD =
@@ -77,7 +77,7 @@ public class WifiHelper implements IWifiHelper {
         return RunUtil.getDefault();
     }
 
-    private void ensureDeviceSetup() throws TargetSetupError, DeviceNotAvailableException {
+    void ensureDeviceSetup() throws TargetSetupError, DeviceNotAvailableException {
         final String inst = mDevice.executeShellCommand(CHECK_INSTRUMENTATION_CMD);
         if ((inst != null) && inst.contains(FULL_INSTRUMENTATION_NAME)) {
             // Good to go
