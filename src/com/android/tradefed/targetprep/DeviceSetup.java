@@ -188,6 +188,8 @@ public class DeviceSetup implements ITargetPreparer {
                 throw new TargetSetupError(String.format("Failed to push file to %s",
                         device.getSerialNumber()));
             }
+            // Set reasonable permissions for /data/local.prop
+            device.executeShellCommand("chmod 644 /data/local.prop");
             Log.i(LOG_TAG, String.format(
                     "Setup requires system property change. Reboot of %s required",
                     device.getSerialNumber()));
