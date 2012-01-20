@@ -54,6 +54,7 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
     private static final String TEST_TAG = "FrameworkPerformanceTests";
     private static final Pattern METRICS_PATTERN =
             Pattern.compile("(\\d+\\.\\d+),(\\d+),(\\d+),(\\d+\\.\\d+),(\\d+),(\\d+)");
+    private static final int PERF_TIMEOUT = 30*60*1000; //30 minutes timeout
 
     private ITestDevice mTestDevice = null;
 
@@ -66,6 +67,7 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
+        runner.setMaxtimeToOutputResponse(PERF_TIMEOUT);
 
         CollectingTestListener collectingListener = new CollectingTestListener();
         Assert.assertTrue(mTestDevice.runInstrumentationTests(runner, collectingListener));
@@ -126,6 +128,6 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
         CLog.d("About to report metrics: %s", parsedMetrics);
 
         listener.testRunStarted(runName, 0);
-        listener.testRunEnded(0, metrics);
+        listener.testRunEnded(0, parsedMetrics);
     }
 }
