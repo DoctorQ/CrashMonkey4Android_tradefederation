@@ -66,6 +66,11 @@ public interface ICommandScheduler {
     public boolean addCommand(String[] args, ICommandListener listener, long totalExecTime);
 
     /**
+     * Remove all commands from scheduler
+     */
+    public void removeAllCommands();
+
+    /**
      * Attempt to gracefully shutdown the command scheduler.
      * <p/>
      * Clears commands waiting to be tested, and requests that all invocations in progress
