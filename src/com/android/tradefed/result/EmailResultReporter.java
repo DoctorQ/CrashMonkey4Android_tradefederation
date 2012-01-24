@@ -135,6 +135,13 @@ public class EmailResultReporter extends CollectingTestListener implements
     }
 
     /**
+     * Returns the {@link Throwable} passed via {@link #invocationFailed(Throwable)}.
+     */
+    protected Throwable getInvocationException() {
+        return mInvocationThrowable;
+    }
+
+    /**
      * A method to generate the body for email reports.  Will not be called if
      * {@link shouldSendMessage()} returns {@code false}.
      *
