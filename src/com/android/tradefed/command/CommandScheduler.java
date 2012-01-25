@@ -594,6 +594,20 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * {@inheritDoc}
      */
     @Override
+    public synchronized void removeAllCommands() {
+        mCommandQueue.clear();
+        if (mCommandTimer != null) {
+            for (Runnable task : mCommandTimer.getQueue()) {
+                mCommandTimer.remove(task);
+            }
+        }
+        mAllCommands.clear();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public synchronized boolean handoverShutdown(int handoverPort) {
         if (mRemoteClient != null) {
             CLog.e("A handover has already been initiated");

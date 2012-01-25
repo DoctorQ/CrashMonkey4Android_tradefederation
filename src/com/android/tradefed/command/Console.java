@@ -69,6 +69,7 @@ public class Console extends Thread {
     protected static final String RUN_PATTERN = "r(?:un)?";
     protected static final String EXIT_PATTERN = "(?:q|exit)";
     protected static final String SET_PATTERN = "s(?:et)?";
+    protected static final String REMOVE_PATTERN = "remove";
     protected static final String DEBUG_PATTERN = "debug";
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
@@ -425,11 +426,12 @@ public class Console extends Thread {
         genericHelp.add("");
         genericHelp.add("Enter 'help all' to see all embedded documentation at once.");
         genericHelp.add("");
-        genericHelp.add("Enter 'help list'  for help with 'list' commands");
-        genericHelp.add("Enter 'help run'   for help with 'run' commands");
-        genericHelp.add("Enter 'help dump'  for help with 'dump' commands");
-        genericHelp.add("Enter 'help set'   for help with 'set' commands");
-        genericHelp.add("Enter 'help debug' for help with 'debug' commands");
+        genericHelp.add("Enter 'help list'   for help with 'list' commands");
+        genericHelp.add("Enter 'help run'    for help with 'run' commands");
+        genericHelp.add("Enter 'help dump'   for help with 'dump' commands");
+        genericHelp.add("Enter 'help set'    for help with 'set' commands");
+        genericHelp.add("Enter 'help remove' for help with 'remove' commands");
+        genericHelp.add("Enter 'help debug'  for help with 'debug' commands");
 
         commandHelp.put(LIST_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
@@ -467,6 +469,12 @@ public class Console extends Thread {
                 "\tdisable-handover-server    Force shutdown of the handover server." +
                 LINE_SEPARATOR,
                 SET_PATTERN));
+
+        commandHelp.put(REMOVE_PATTERN, String.format(
+                "%s help:" + LINE_SEPARATOR +
+                "\tremove allCommands  Remove all commands currently waiting to be executed"
+                        + LINE_SEPARATOR,
+                REMOVE_PATTERN));
 
         commandHelp.put(DEBUG_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
@@ -667,6 +675,14 @@ public class Console extends Thread {
                         System.gc();
                     }
                 }, DEBUG_PATTERN, "gc");
+
+        // Remove commands
+        trie.put(new Runnable() {
+                    @Override
+                    public void run() {
+                        mScheduler.removeAllCommands();
+                    }
+                }, REMOVE_PATTERN, "allCommands");
     }
 
     /**
