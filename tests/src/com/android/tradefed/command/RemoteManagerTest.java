@@ -16,9 +16,8 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.IDeviceSelection;
-import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.device.ITestDevice;
 
 import junit.framework.TestCase;
 
