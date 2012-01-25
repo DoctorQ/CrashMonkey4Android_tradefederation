@@ -16,10 +16,11 @@
 
 package com.android.tradefed.util.net;
 
+import com.android.tradefed.util.MultiMap;
+
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Map;
 
 /**
  * Helper methods for performing http requests.
@@ -36,54 +37,88 @@ public interface IHttpHelper {
     public static final int MAX_DATA_SIZE = 64 * 1024;
 
     /**
-     * Fetches the document at the given URL, with the given URL parameters and returns it as a
-     * {@link String}.
-     * <p/>
-     * Because remote contents are loaded into memory, this method should only be used for
-     * relatively small data sizes.
-     * <p/>
-     * References:
-     * Java URL Connection:
-     * http://java.sun.com/docs/books/tutorial/networking/urls/readingWriting.html
-     * Java URL Reader: http://java.sun.com/docs/books/tutorial/networking/urls/readingURL.html
-     * Java set Proxy: http://java.sun.com/docs/books/tutorial/networking/urls/_setProxy.html
-     *
-     * @param urlString the base url
-     * @param params the {@link Map} of the parameter name-value pairs to include in the request
-     * @return the {@link String} remote contents
-     * @throws IOException if failed to retrieve data
-     * @throws DataSizeException if retrieved data is > {@link MAX_DATA_SIZE}
-     */
-    public String fetchUrl(String urlString, Map<String, String> params) throws IOException,
-            DataSizeException;
-
-    /**
-     * Perform a request at the given URL, ignoring response.
-     *
-     * @param urlString the base url
-     * @param params the {@link Map} of the parameter name-value pairs to include in the request
-     * @throws IOException if failed to make connection
-     */
-    public void doPost(String urlString, Map<String, String> params) throws IOException;
-
-    /**
      * Build the full encoded URL request string.
      *
-     * @param baseUrl the base URL
+     * @param url the base URL
      * @param paramMap the URL parameters
      * @return the constructed URL
      * @throws IllegalArgumentException if an exception occurs encoding the parameters.
      */
-    public String buildUrl(String baseUrl, Map<String, String> paramMap);
+    public String buildUrl(String url, MultiMap<String, String> paramMap);
 
     /**
-     * Creates a connection to given URL for posting xml data.
+     * Build the encoded parameter string.
+     *
+     * @param paramMap the URL parameters
+     * @return the encoded parameter string
+     * @throws IllegalArgumentException if an exception occurs encoding the parameters.
+     */
+    public String buildParameters(MultiMap<String, String> paramMap);
+
+    /**
+     * Performs a GET HTTP request method for a given URL and returns it as a {@link String}.
+     * <p>
+     * Because remote contents are loaded into memory, this method should only be used for
+     * relatively small data sizes.
+     * </p><p>
+     * References:
+     * </p><ul>
+     * <li>Java URL Connection:
+     * <a href="http://java.sun.com/docs/books/tutorial/networking/urls/readingWriting.html">
+     * http://java.sun.com/docs/books/tutorial/networking/urls/readingWriting.html</a></li>
+     * <li>Java URL Reader:
+     * <a href="http://java.sun.com/docs/books/tutorial/networking/urls/readingURL.html">
+     * http://java.sun.com/docs/books/tutorial/networking/urls/readingURL.html</a></li>
+     * <li>Java set Proxy:
+     * <a href="http://java.sun.com/docs/books/tutorial/networking/urls/_setProxy.html">
+     * http://java.sun.com/docs/books/tutorial/networking/urls/_setProxy.html</a></li>
+     * </ul>
+     *
+     * @param url the URL
+     * @return the {@link String} remote contents
+     * @throws IOException if failed to retrieve data
+     * @throws DataSizeException if retrieved data is > {@link #MAX_DATA_SIZE}
+     */
+    public String doGet(String url) throws IOException, DataSizeException;
+
+    /**
+     * Performs a GET for a given URL, with the given URL parameters ignoring the result.
+     *
+     * @see #doGet(String)
+     * @param url the URL
+     * @throws IOException if failed to retrieve data
+     */
+    public void doGetIgnore(String url) throws IOException;
+
+    /**
+     * Create a to given url.
      *
      * @param url the {@link URL} to connect to.
-     * @param method the http request method to use
+     * @param method the HTTP request method. For example, GET or POST.
+     * @param contentType the content type. For example, "text/html".
+     * @return The HttpURLConnection
+     * @throws IOException if an IOException occurs.
+     */
+    public HttpURLConnection createConnection(URL url, String method, String contentType)
+            throws IOException;
+
+    /**
+     * Creates a connection to given URL for passing xml data.
+     *
+     * @param url the {@link URL} to connect to.
+     * @param method the HTTP request method. For example, GET or POST.
      * @return the {@link HttpURLConnection}
      * @throws IOException if failed to make connection
      */
     public HttpURLConnection createXmlConnection(URL url, String method) throws IOException;
 
+    /**
+     * Creates a connection to given URL for passing json data.
+     *
+     * @param url the {@link URL} to connect to.
+     * @param method the HTTP request method. For example, GET or POST.
+     * @return the {@link HttpURLConnection}
+     * @throws IOException if failed to make connection
+     */
+    public HttpURLConnection createJsonConnection(URL url, String method) throws IOException;
 }
