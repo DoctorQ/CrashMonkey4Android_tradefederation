@@ -83,26 +83,32 @@ public class HostTest implements IDeviceTest, IRemoteTest {
             throw new IllegalArgumentException("Missing Test class name");
         }
         Class<?> classObj = loadTestClass(mClassName);
-        Test test = loadTest(classObj);
-        if (test instanceof IDeviceTest) {
+        Object testObj = loadObject(classObj);
+        if (testObj instanceof IDeviceTest) {
             if (mDevice == null) {
                 throw new IllegalArgumentException("Missing device");
             }
-            ((IDeviceTest)test).setDevice(mDevice);
+            ((IDeviceTest)testObj).setDevice(mDevice);
         }
-        if (test instanceof TestCase) {
-            TestCase testCase = (TestCase)test;
-            if (mMethodName != null) {
-                // run a single test method
-                testCase.setName(mMethodName);
-            } else if (!(test instanceof DeviceTestCase)) {
-                // wrap the test in a suite, because the JUnit TestCase.run implementation can
-                // only run a single method
-                TestSuite testSuite = new TestSuite(classObj);
-                test = testSuite;
+        if (testObj instanceof Test) {
+            Test test = (Test)testObj;
+            if (test instanceof TestCase) {
+                if (mMethodName != null) {
+                    // run a single test method
+                    ((TestCase)test).setName(mMethodName);
+                } else if (!(test instanceof DeviceTestCase)) {
+                    // wrap the test in a suite, because the JUnit TestCase.run implementation can
+                    // only run a single method
+                    TestSuite testSuite = new TestSuite(classObj);
+                    test = testSuite;
+                }
             }
+            JUnitRunUtil.runTest(listener, test);
+        } else if (testObj instanceof IRemoteTest) {
+            ((IRemoteTest)testObj).run(listener);
+        } else {
+            throw new IllegalArgumentException(String.format("%s is not a test", mClassName));
         }
-        JUnitRunUtil.runTest(listener, test);
     }
 
     private Class<?> loadTestClass(String className) throws IllegalArgumentException  {
@@ -114,14 +120,11 @@ public class HostTest implements IDeviceTest, IRemoteTest {
         }
     }
 
-    private Test loadTest(Class<?> classObj) throws IllegalArgumentException {
+    private Object loadObject(Class<?> classObj) throws IllegalArgumentException {
         final String className = classObj.getName();
         try {
             Object testObject = classObj.newInstance();
-            if (!(testObject instanceof Test)) {
-                throw new IllegalArgumentException(String.format("%s is not a Test", className));
-            }
-            return (Test)testObject;
+            return testObject;
         } catch (InstantiationException e) {
             throw new IllegalArgumentException(String.format("Could not load Test class %s",
                     className), e);
