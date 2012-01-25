@@ -150,6 +150,13 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     }
 
     /**
+     * Gets the Android instrumentation runner to be used.
+     */
+    public String getRunnerName() {
+        return mRunnerName;
+    }
+
+    /**
      * Optionally, set the test class name to run.
      */
     public void setClassName(String testClassName) {
