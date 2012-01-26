@@ -24,27 +24,27 @@ import java.io.File;
 public interface IDeviceBuildInfo extends IBuildInfo {
 
     /**
-     * Helper method to retrieve an image file with given name.
-     * @param imageName
+     * Helper method to retrieve a file with given name.
+     * @param name
      * @return the image file or <code>null</code> if not found
      */
-    public File getImageFile(String imageName);
+    public File getFile(String name);
 
     /**
-     * Helper method to retrieve an image file version with given name.
-     * @param imageName
+     * Helper method to retrieve a file version with given name.
+     * @param name
      * @return the image version or <code>null</code> if not found
      */
-    public String getImageVersion(String imageName);
+    public String getVersion(String name);
 
     /**
-     * Stores an image file with given name in this build info
+     * Stores an file with given name in this build info
      *
-     * @param imageName the unique name of the image
-     * @param file the local image {@link File}
-     * @param version the image file version
+     * @param name the unique name of the file
+     * @param file the local {@link File}
+     * @param version the file version
      */
-    public void setImageFile(String imageName, File file, String version);
+    public void setFile(String name, File file, String version);
 
     /**
      * Get the local device image zip file.

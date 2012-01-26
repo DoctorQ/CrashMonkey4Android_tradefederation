@@ -27,14 +27,14 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     private IFolderBuildInfo mFolderBuild;
 
     /**
-     * @see {@link DeviceBuildInfo#DeviceBuildInfo(String, String, String)}
+     * @see DeviceBuildInfo#DeviceBuildInfo(String, String, String)
      */
     public DeviceFolderBuildInfo(String buildId, String testTarget, String buildName) {
         super(buildId, testTarget, buildName);
     }
 
     /**
-     * @see {@link DeviceBuildInfo#DeviceBuildInfo()}
+     * @see DeviceBuildInfo#DeviceBuildInfo()
      */
     public DeviceFolderBuildInfo() {
     }
@@ -83,16 +83,16 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     @Override
-    public File getImageFile(String imageName) {
-        return mDeviceBuild.getImageFile(imageName);
+    public File getFile(String name) {
+        return mDeviceBuild.getFile(name);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getImageVersion(String imageName) {
-        return mDeviceBuild.getImageVersion(imageName);
+    public String getVersion(String name) {
+        return mDeviceBuild.getVersion(name);
     }
 
     /**
@@ -139,8 +139,8 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     @Override
-    public void setImageFile(String imageName, File file, String version) {
-        mDeviceBuild.setImageFile(imageName, file, version);
+    public void setFile(String imageName, File file, String version) {
+        mDeviceBuild.setFile(imageName, file, version);
     }
 
     /**
@@ -176,7 +176,7 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     }
 
     /**
-     * @param localBuild
+     * @param folderBuild
      */
     public void setFolderBuild(IFolderBuildInfo folderBuild) {
         mFolderBuild = folderBuild;
