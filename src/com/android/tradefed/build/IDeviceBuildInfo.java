@@ -24,27 +24,10 @@ import java.io.File;
 public interface IDeviceBuildInfo extends IBuildInfo {
 
     /**
-     * Helper method to retrieve a file with given name.
-     * @param name
-     * @return the image file or <code>null</code> if not found
+     * Returns the unique identifier of platform build under test. Should never be null. Defaults to
+     * {@link #UNKNOWN_BUILD_ID}.
      */
-    public File getFile(String name);
-
-    /**
-     * Helper method to retrieve a file version with given name.
-     * @param name
-     * @return the image version or <code>null</code> if not found
-     */
-    public String getVersion(String name);
-
-    /**
-     * Stores an file with given name in this build info
-     *
-     * @param name the unique name of the file
-     * @param file the local {@link File}
-     * @param version the file version
-     */
-    public void setFile(String name, File file, String version);
+    public String getDeviceBuildId();
 
     /**
      * Get the local device image zip file.
@@ -52,11 +35,16 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public File getDeviceImageFile();
 
     /**
+     * Get the local device image zip version.
+     */
+    public String getDeviceImageVersion();
+
+    /**
      * Set the device system image file to use.
      *
      * @param deviceImageFile
      */
-    public void setDeviceImageFile(File deviceImageFile);
+    public void setDeviceImageFile(File deviceImageFile, String version);
 
     /**
      * Get the local test userdata image file.
@@ -64,11 +52,16 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public File getUserDataImageFile();
 
     /**
+     * Get the local test userdata image version.
+     */
+    public String getUserDataImageVersion();
+
+    /**
      * Set the user data image file to use.
      *
      * @param userDataFile
      */
-    public void setUserDataImageFile(File userDataFile);
+    public void setUserDataImageFile(File userDataFile, String version);
 
     /**
      * Get the local path to the extracted tests.zip file contents.
@@ -76,11 +69,16 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public File getTestsDir();
 
     /**
+     * Get the extracted tests.zip version.
+     */
+    public String getTestsDirVersion();
+
+    /**
      * Set local path to the extracted tests.zip file contents.
      *
      * @param testsZipFile
      */
-    public void setTestsDir(File testsZipFile);
+    public void setTestsDir(File testsZipFile, String version);
 
     /**
      * Get the local baseband image file.
@@ -119,17 +117,52 @@ public interface IDeviceBuildInfo extends IBuildInfo {
     public void setBootloaderImageFile(File bootloaderImgFile, String version);
 
     /**
-     * Get the device OTA package zip file
+     * Get the device OTA package zip file.
      */
     public File getOtaPackageFile();
 
     /**
-     * Set the device OTA package zip file
+     * Get the device OTA package zip version.
      */
-    public void setOtaPackageFile(File otaFile);
+    public String getOtaPackageVersion();
 
     /**
-     * Removes all temporary files
+     * Set the device OTA package zip file.
+     */
+    public void setOtaPackageFile(File otaFile, String version);
+
+    /**
+     * Gets the mkbootimg file used to create the kernel image.
+     */
+    public File getMkbootimgFile();
+
+    /**
+     * Gets the mkbootimg version.
+     */
+    public String getMkbootimgVersion();
+
+    /**
+     * Sets the mkbootimg file used to create the kernel image.
+     */
+    public void setMkbootimgFile(File mkbootimg, String version);
+
+    /**
+     * Gets the ramdisk file used to create the kernel image.
+     */
+    public File getRamdiskFile();
+
+    /**
+     * Gets the ramdisk version.
+     */
+    public String getRamdiskVersion();
+
+    /**
+     * Gets the ramdisk file used to create the kernel image.
+     */
+    public void setRamdiskFile(File ramdisk, String version);
+
+    /**
+     * Removes all temporary files.
      */
     @Override
     public void cleanUp();

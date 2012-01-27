@@ -117,7 +117,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             // assume this is a build problem
             throw new BuildError(String.format(
                     "Device %s did not become available after flashing %s",
-                    device.getSerialNumber(), buildInfo.getBuildId()));
+                    device.getSerialNumber(), deviceBuild.getDeviceBuildId()));
         }
         device.postBootSetup();
     }

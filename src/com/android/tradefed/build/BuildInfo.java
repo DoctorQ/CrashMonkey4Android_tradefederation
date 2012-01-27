@@ -15,30 +15,57 @@
  */
 package com.android.tradefed.build;
 
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.MultiMap;
 import com.android.tradefed.util.UniqueMultiMap;
 import com.google.common.base.Objects;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Hashtable;
 import java.util.Map;
 
 /**
  * Generic implementation of a {@link IBuildInfo}.
  */
 public class BuildInfo implements IBuildInfo {
-
-    private String mBuildInfo = "0";
+    private String mBuildId = "0";
     private String mTestTag = "stub";
     private String mBuildTargetName = "stub";
     private final UniqueMultiMap<String, String> mBuildAttributes =
             new UniqueMultiMap<String, String>();
+    private Map<String, VersionedFile> mVersionedFileMap;
     private String mBuildFlavor = null;
     private String mBuildBranch = null;
     private String mDeviceSerial = null;
 
     /**
+     * Data structure containing the image file and related metadata
+     */
+    private static class VersionedFile {
+        private final File mFile;
+        private final String mVersion;
+
+        VersionedFile(File file, String version) {
+            mFile = file;
+            mVersion = version;
+        }
+
+        File getFile() {
+            return mFile;
+        }
+
+        String getVersion() {
+            return mVersion;
+        }
+    }
+
+    /**
      * Creates a {@link BuildInfo} using default attribute values.
      */
     public BuildInfo() {
+        mVersionedFileMap = new Hashtable<String, VersionedFile>();
     }
 
     /**
@@ -49,9 +76,10 @@ public class BuildInfo implements IBuildInfo {
      * @param buildTargetName the build target name
      */
     public BuildInfo(String buildId, String testTag, String buildTargetName) {
-        mBuildInfo = buildId;
+        mBuildId = buildId;
         mTestTag = testTag;
         mBuildTargetName = buildTargetName;
+        mVersionedFileMap = new Hashtable<String, VersionedFile>();
     }
 
     /**
@@ -62,6 +90,11 @@ public class BuildInfo implements IBuildInfo {
     BuildInfo(BuildInfo buildToCopy) {
         this(buildToCopy.getBuildId(), buildToCopy.getTestTag(), buildToCopy.getBuildTargetName());
         addAllBuildAttributes(buildToCopy);
+        try {
+            addAllFiles(buildToCopy);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -69,7 +102,7 @@ public class BuildInfo implements IBuildInfo {
      */
     @Override
     public String getBuildId() {
-        return mBuildInfo;
+        return mBuildId;
     }
 
     /**
@@ -115,7 +148,7 @@ public class BuildInfo implements IBuildInfo {
     /**
      * Helper method to copy build attributes, branch, and flavor from other build.
      */
-    public void addAllBuildAttributes(BuildInfo build) {
+    protected void addAllBuildAttributes(BuildInfo build) {
         mBuildAttributes.putAll(build.getAttributesMultiMap());
         setBuildFlavor(build.getBuildFlavor());
         setBuildBranch(build.getBuildBranch());
@@ -126,11 +159,82 @@ public class BuildInfo implements IBuildInfo {
     }
 
     /**
+     * Helper method to copy all files from the other build.
+     * <p>
+     * Creates new hardlinks to the files so that each build will have a unique file path to the
+     * file.
+     * </p>
+     *
+     * @throws IOException if an exception is thrown when creating the hardlinks.
+     */
+    protected void addAllFiles(BuildInfo build) throws IOException {
+        for (Map.Entry<String, VersionedFile> fileEntry : build.getVersionedFileMap().entrySet()) {
+            File origFile = fileEntry.getValue().getFile();
+            File copyFile;
+            if (origFile.isDirectory()) {
+                copyFile = FileUtil.createTempDir(fileEntry.getKey());
+                FileUtil.recursiveHardlink(origFile, copyFile);
+            } else {
+                // Only using createTempFile to create a unique dest filename
+                copyFile = FileUtil.createTempFile(fileEntry.getKey(),
+                        FileUtil.getExtension(origFile.getName()));
+                copyFile.delete();
+                FileUtil.hardlinkFile(origFile, copyFile);
+            }
+            setFile(fileEntry.getKey(), copyFile, fileEntry.getValue().getVersion());
+        }
+    }
+
+    protected Map<String, VersionedFile> getVersionedFileMap() {
+        return mVersionedFileMap;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getFile(String name) {
+        VersionedFile fileRecord = mVersionedFileMap.get(name);
+        if (fileRecord != null) {
+            return fileRecord.getFile();
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getVersion(String name) {
+        VersionedFile fileRecord = mVersionedFileMap.get(name);
+        if (fileRecord != null) {
+            return fileRecord.getVersion();
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setFile(String name, File file, String version) {
+        if (mVersionedFileMap.containsKey(name)) {
+            CLog.e("Device build already contains a file for %s in thread %s", name,
+                    Thread.currentThread().getName());
+            return;
+        }
+        mVersionedFileMap.put(name, new VersionedFile(file, version));
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void cleanUp() {
-        // ignore
+        for (VersionedFile fileRecord : mVersionedFileMap.values()) {
+            FileUtil.recursiveDelete(fileRecord.getFile());
+        }
+        mVersionedFileMap.clear();
     }
 
     /**
@@ -138,11 +242,16 @@ public class BuildInfo implements IBuildInfo {
      */
     @Override
     public IBuildInfo clone() {
-        BuildInfo copy = new BuildInfo(mBuildInfo, mTestTag, mBuildTargetName);
+        BuildInfo copy = new BuildInfo(mBuildId, mTestTag, mBuildTargetName);
         copy.addAllBuildAttributes(this);
+        try {
+            copy.addAllFiles(this);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         copy.setBuildBranch(mBuildBranch);
         copy.setBuildFlavor(mBuildFlavor);
-        // don't copy device serial
+
         return copy;
     }
 
@@ -191,7 +300,7 @@ public class BuildInfo implements IBuildInfo {
      */
     @Override
     public int hashCode() {
-        return Objects.hashCode(mBuildAttributes, mBuildBranch, mBuildFlavor, mBuildInfo,
+        return Objects.hashCode(mBuildAttributes, mBuildBranch, mBuildFlavor, mBuildId,
                 mBuildTargetName, mTestTag, mDeviceSerial);
     }
 
@@ -213,7 +322,7 @@ public class BuildInfo implements IBuildInfo {
         return Objects.equal(mBuildAttributes, other.mBuildAttributes) &&
                 Objects.equal(mBuildBranch, other.mBuildBranch) &&
                 Objects.equal(mBuildFlavor, other.mBuildFlavor) &&
-                Objects.equal(mBuildInfo, other.mBuildInfo) &&
+                Objects.equal(mBuildId, other.mBuildId) &&
                 Objects.equal(mBuildTargetName, other.mBuildTargetName) &&
                 Objects.equal(mTestTag, other.mTestTag) &&
                 Objects.equal(mDeviceSerial, other.mDeviceSerial);

@@ -21,6 +21,7 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 
 import java.io.File;
 import java.util.Arrays;
@@ -61,8 +62,8 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     @Override
     public void flash(ITestDevice device, IDeviceBuildInfo deviceBuild)
             throws DeviceNotAvailableException, TargetSetupError {
-        CLog.i("Flashing device " + device.getSerialNumber() + " with build "
-            + deviceBuild.getBuildId());
+        CLog.i("Flashing device %s  with build %s", device.getSerialNumber(),
+            deviceBuild.getDeviceBuildId());
 
         // TODO could add a check for bootloader versions and install
         // the one produced by the build server @ the current build if the one
@@ -81,17 +82,17 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
             throws DeviceNotAvailableException, TargetSetupError {
         // FIXME same high level logic as in
         // FastbootDeviceFlasher#checkAndFlashSystem, could be de-duped
-        if (!mForceSystemFlash && deviceBuild.getBuildId().equals(device.getBuildId())) {
-            CLog.i("System is already version " + device.getBuildId() + ", skipping install");
+        if (!mForceSystemFlash && deviceBuild.getDeviceBuildId().equals(device.getBuildId())) {
+            CLog.i("System is already version %s, skipping install" , device.getBuildId());
             // reboot
             return false;
         }
-        CLog.i("Flashing system " + deviceBuild.getBuildId() + " on device "
-            + device.getSerialNumber());
+        CLog.i("Flashing system %s on device %s", deviceBuild.getDeviceBuildId(),
+            device.getSerialNumber());
         File otaPackageFile = deviceBuild.getOtaPackageFile();
         if (otaPackageFile == null) {
             throw new TargetSetupError("No OTA package file present for build "
-                    + deviceBuild.getBuildId());
+                    + deviceBuild.getDeviceBuildId());
         }
         if (!device.pushFile(otaPackageFile, "/cache/update.zip")) {
             throw new TargetSetupError("Could not push OTA file to the target.");

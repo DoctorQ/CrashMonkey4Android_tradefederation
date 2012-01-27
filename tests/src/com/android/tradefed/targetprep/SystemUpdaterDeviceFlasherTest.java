@@ -99,7 +99,7 @@ public class SystemUpdaterDeviceFlasherTest extends TestCase {
 
     private void yieldDifferentBuilds(boolean different) {
         EasyMock.expect(mMockDevice.getBuildId()).andReturn(A_BUILD_ID).anyTimes();
-        EasyMock.expect(mMockDeviceBuild.getBuildId()).andReturn(
+        EasyMock.expect(mMockDeviceBuild.getDeviceBuildId()).andReturn(
                 (different ? A_BUILD_ID + 1 : A_BUILD_ID)).anyTimes();
     }
 }
