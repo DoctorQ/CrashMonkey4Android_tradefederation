@@ -60,7 +60,7 @@ public class ImageProcessingTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_RUN_NAME = "graphics_image_processing";
     private static final String ITEM_KEY = "frame_time";
     private static final Pattern FRAME_TIME_PATTERN =
-            Pattern.compile("^Renderscript frame time core: (\\d+) ms");
+            Pattern.compile("^Average frame time: (\\d+) ms");
 
     /**
      * Run the ImageProcessing benchmark test, parse test results.
