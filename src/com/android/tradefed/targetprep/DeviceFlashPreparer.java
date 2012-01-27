@@ -19,7 +19,6 @@ package com.android.tradefed.targetprep;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
-import com.android.tradefed.build.IKernelDeviceBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
@@ -97,9 +96,6 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             DeviceNotAvailableException, BuildError {
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        if (buildInfo instanceof IKernelDeviceBuildInfo) {
-            buildInfo = ((IKernelDeviceBuildInfo) buildInfo).getDeviceBuildInfo();
-        }
         if (!(buildInfo instanceof IDeviceBuildInfo)) {
             throw new IllegalArgumentException("Provided buildInfo is not a IDeviceBuildInfo");
         }

@@ -18,7 +18,6 @@ package com.android.tradefed.targetprep;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
-import com.android.tradefed.build.IKernelDeviceBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.config.OptionClass;
@@ -58,10 +57,7 @@ public class TestAppInstallSetup implements ITargetPreparer {
      */
     @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
-            DeviceNotAvailableException {
-        if (buildInfo instanceof IKernelDeviceBuildInfo) {
-            buildInfo = ((IKernelDeviceBuildInfo) buildInfo).getDeviceBuildInfo();
-        }
+            BuildError, DeviceNotAvailableException {
         if (!(buildInfo instanceof IDeviceBuildInfo)) {
             throw new IllegalArgumentException(String.format("Provided buildInfo is not a %s",
                     IDeviceBuildInfo.class.getCanonicalName()));

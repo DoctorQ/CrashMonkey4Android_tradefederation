@@ -19,7 +19,6 @@ package com.android.tradefed.targetprep;
 import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
-import com.android.tradefed.build.IKernelDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
@@ -87,7 +86,6 @@ public class DeviceFlashPreparerTest extends TestCase {
         doSetupExpectations();
         EasyMock.replay(mMockFlasher, mMockDevice);
         mDeviceFlashPreparer.setUp(mMockDevice, mMockBuildInfo);
-        EasyMock.verify(mMockFlasher, mMockDevice);
     }
 
     /**
@@ -107,7 +105,7 @@ public class DeviceFlashPreparerTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
+     * Test {@link DeviceSetupr#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
      * is provided
      */
     public void testSetUp_nonDevice() throws Exception {
@@ -117,19 +115,6 @@ public class DeviceFlashPreparerTest extends TestCase {
         } catch (IllegalArgumentException e) {
             // expected
         }
-    }
-
-    /**
-     * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when a IKernelDeviceBuildInfo type
-     * is provided
-     */
-    public void testSetUp_kernelDevice() throws Exception {
-        IKernelDeviceBuildInfo kernelBuild = EasyMock.createMock(IKernelDeviceBuildInfo.class);
-        EasyMock.expect(kernelBuild.getDeviceBuildInfo()).andReturn(mMockBuildInfo);
-        doSetupExpectations();
-        EasyMock.replay(mMockFlasher, mMockDevice, kernelBuild);
-        mDeviceFlashPreparer.setUp(mMockDevice, kernelBuild);
-        EasyMock.verify(mMockFlasher, mMockDevice, kernelBuild);
     }
 
     /**
@@ -153,6 +138,5 @@ public class DeviceFlashPreparerTest extends TestCase {
         } catch (BuildError e) {
             // expected
         }
-        EasyMock.verify(mMockFlasher, mMockDevice);
     }
 }
