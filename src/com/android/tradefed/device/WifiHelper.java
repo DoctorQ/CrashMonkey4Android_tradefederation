@@ -128,14 +128,6 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
-    public void disconnectFromNetwork(int networkId) throws DeviceNotAvailableException {
-        runWifiUtil("removeNetwork", "id", Integer.toString(networkId));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public boolean waitForWifiState(WifiState... expectedStates) throws DeviceNotAvailableException {
         return waitForWifiState(DEFAULT_WIFI_STATE_TIMEOUT, expectedStates);
     }
@@ -230,24 +222,36 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
-    public Integer addOpenNetwork(String ssid) throws DeviceNotAvailableException {
-        return asInt(runWifiUtil("addOpenNetwork", "ssid", ssid));
+    public boolean addOpenNetwork(String ssid) throws DeviceNotAvailableException {
+        int id = asInt(runWifiUtil("addOpenNetwork", "ssid", ssid));
+        if (id < 0) {
+            return false;
+        }
+        if (!asBool(runWifiUtil("associateNetwork", "id", Integer.toString(id)))) {
+            return false;
+        }
+        if (!asBool(runWifiUtil("saveConfiguration"))) {
+            return false;
+        }
+        return true;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
-        return asInt(runWifiUtil("addWpaPskNetwork", "ssid", ssid, "psk", psk));
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean associateNetwork(int networkId) throws DeviceNotAvailableException {
-        return asBool(runWifiUtil("associateNetwork", "id", Integer.toString(networkId)));
+    public boolean addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException {
+        int id = asInt(runWifiUtil("addWpaPskNetwork", "ssid", ssid, "psk", psk));
+        if (id < 0) {
+            return false;
+        }
+        if (!asBool(runWifiUtil("associateNetwork", "id", Integer.toString(id)))) {
+            return false;
+        }
+        if (!asBool(runWifiUtil("saveConfiguration"))) {
+            return false;
+        }
+        return true;
     }
 
     /**

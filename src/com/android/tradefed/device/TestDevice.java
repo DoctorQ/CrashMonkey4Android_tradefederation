@@ -1569,19 +1569,15 @@ class TestDevice implements IManagedTestDevice {
             // TODO: return false here if failed?
             wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
 
-            Integer networkId = null;
+            boolean added = false;
             if (wifiPsk != null) {
-                networkId = wifi.addWpaPskNetwork(wifiSsid, wifiPsk);
+                added = wifi.addWpaPskNetwork(wifiSsid, wifiPsk);
             } else {
-                networkId = wifi.addOpenNetwork(wifiSsid);
+                added = wifi.addOpenNetwork(wifiSsid);
             }
 
-            if (networkId == null) {
+            if (!added) {
                 CLog.e("Failed to add wifi network %s on %s", wifiSsid, getSerialNumber());
-                return false;
-            }
-            if (!wifi.associateNetwork(networkId)) {
-                CLog.e("Failed to enable wifi network %s on %s", wifiSsid, getSerialNumber());
                 return false;
             }
             if (!wifi.waitForWifiState(WifiState.COMPLETED)) {

@@ -38,14 +38,6 @@ interface IWifiHelper {
     void disableWifi() throws DeviceNotAvailableException;
 
     /**
-     * Disconnect from the wifi network identified by the provided integer.
-     *
-     * @param networkId the network id identifying its profile in wpa_supplicant configuration
-     * @throws DeviceNotAvailableException
-     */
-    void disconnectFromNetwork(int networkId) throws DeviceNotAvailableException;
-
-    /**
      * Waits until one of the expected wifi states occurs.
      *
      * @param expectedStates one or more wifi states to expect
@@ -64,35 +56,20 @@ interface IWifiHelper {
      * ssid.
      *
      * @param ssid the ssid of network to add.
-     * @return an integer number identifying the profile created in wpa_supplicant configuration.
-     *         <code>null</code> if an error occured.
+     * @return <code>true</code> if network was added successfully, <code>false</code> otherwise.
      * @throws DeviceNotAvailableException
      */
-    Integer addOpenNetwork(String ssid) throws DeviceNotAvailableException;
+    boolean addOpenNetwork(String ssid) throws DeviceNotAvailableException;
 
     /**
      * Adds the WPA-PSK security network identified by ssid.
      *
      * @param ssid the ssid of network to add.
      * @param psk the WPA-PSK passphrase to use
-     * @return an integer number identifying the profile created in wpa_supplicant configuration.
-     *         <code>null</code> if an error occured.
+     * @return <code>true</code> if network was added successfully, <code>false</code> otherwise.
      * @throws DeviceNotAvailableException
      */
-    Integer addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException;
-
-    /**
-     * Associate with the wifi network identified by the provided integer.
-     *
-     * @param networkId the network id identifying its profile in wpa_supplicant configuration,
-     *            e.g. returned by AddOpenNetwork
-     * @return <code>true</code> if the call is successful. <code>false</code> if the call failed.
-     *         Note that a <code>true</code> return does not necessarily mean that the device has
-     *         successfully associated with the network, must call {@link #getWifiStatus()} or
-     *         {@link #waitForWifiState(WifiState...)} to verify.
-     * @throws DeviceNotAvailableException
-     */
-    boolean associateNetwork(int networkId) throws DeviceNotAvailableException;
+    boolean addWpaPskNetwork(String ssid, String psk) throws DeviceNotAvailableException;
 
     /**
      * Wait until an ip address is assigned to wifi adapter.
