@@ -106,10 +106,18 @@ public class PushFilePreparer implements ITargetPreparer {
                 fail(String.format("Local source file '%s' does not exist", pair[0]));
                 continue;
             }
-
-            if (!device.pushFile(src, pair[1])) {
-                fail(String.format("Failed to push local '%s' to remote '%s'", pair[0], pair[1]));
-                continue;
+            if (src.isDirectory()) {
+                if (!device.pushDir(src, pair[1])) {
+                    fail(String.format("Failed to push local '%s' to remote '%s'", pair[0],
+                            pair[1]));
+                    continue;
+                }
+            } else {
+                if (!device.pushFile(src, pair[1])) {
+                    fail(String.format("Failed to push local '%s' to remote '%s'", pair[0],
+                            pair[1]));
+                    continue;
+                }
             }
         }
 
