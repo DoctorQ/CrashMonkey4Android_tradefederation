@@ -86,6 +86,7 @@ public class DeviceFlashPreparerTest extends TestCase {
         doSetupExpectations();
         EasyMock.replay(mMockFlasher, mMockDevice);
         mDeviceFlashPreparer.setUp(mMockDevice, mMockBuildInfo);
+        EasyMock.verify(mMockFlasher, mMockDevice);
     }
 
     /**
@@ -105,7 +106,7 @@ public class DeviceFlashPreparerTest extends TestCase {
     }
 
     /**
-     * Test {@link DeviceSetupr#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
+     * Test {@link DeviceSetup#setUp(ITestDevice, IBuildInfo)} when a non IDeviceBuildInfo type
      * is provided
      */
     public void testSetUp_nonDevice() throws Exception {
@@ -138,5 +139,6 @@ public class DeviceFlashPreparerTest extends TestCase {
         } catch (BuildError e) {
             // expected
         }
+        EasyMock.verify(mMockFlasher, mMockDevice);
     }
 }
