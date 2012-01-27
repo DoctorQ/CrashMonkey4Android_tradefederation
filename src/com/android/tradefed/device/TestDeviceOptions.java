@@ -47,6 +47,10 @@ public class TestDeviceOptions {
             "time in ms to wait for a device to reboot to full system.")
     private int mRebootTimeout = 2 * 60 * 1000;
 
+    @Option(name = "unencrypt-reboot-timeout", description = "time in ms to wait for the device to "
+            + "format the filesystem and reboot after unencryption")
+    private int mUnencryptRebootTimeout = 0;
+
     /**
      * @return the mEnableAdbRoot
      */
@@ -116,10 +120,10 @@ public class TestDeviceOptions {
     }
 
     /**
-     * @param mFastbootTimeout the timout in msecs to boot into fastboot mode.
+     * @param fastbootTimeout the timout in msecs to boot into fastboot mode.
      */
-    public void setFastbootTimeout(int mFastbootTimeout) {
-        this.mFastbootTimeout = mFastbootTimeout;
+    public void setFastbootTimeout(int fastbootTimeout) {
+        mFastbootTimeout = fastbootTimeout;
     }
 
     /**
@@ -130,10 +134,10 @@ public class TestDeviceOptions {
     }
 
     /**
-     * @param mAdbRecoveryTimeout the timeout in msecs to boot into recovery mode.
+     * @param adbRecoveryTimeout the timeout in msecs to boot into recovery mode.
      */
-    public void setAdbRecoveryTimeout(int mAdbRecoveryTimeout) {
-        this.mAdbRecoveryTimeout = mAdbRecoveryTimeout;
+    public void setAdbRecoveryTimeout(int adbRecoveryTimeout) {
+        mAdbRecoveryTimeout = adbRecoveryTimeout;
     }
 
     /**
@@ -148,5 +152,21 @@ public class TestDeviceOptions {
      */
     public void setRebootTimeout(int mRebootTimeout) {
         this.mRebootTimeout = mRebootTimeout;
+    }
+
+    /**
+     * @return the timeout in msecs for the filesystem to be formatted and the device to reboot
+     * after unencryption.
+     */
+    public int getUnencryptRebootTimeout() {
+        return mUnencryptRebootTimeout;
+    }
+
+    /**
+     * @param unencryptRebootTimeout the timeout in msecs for the filesystem to be formatted and
+     * the device to reboot after unencryption.
+     */
+    public void setUnencryptRebootTimeout(int unencryptRebootTimeout) {
+        mUnencryptRebootTimeout = unencryptRebootTimeout;
     }
 }
