@@ -70,10 +70,30 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         mDeviceBuild = new DeviceBuildInfo("1", TEST_STRING, TEST_STRING);
     }
 
+    public void testCantTouchFilesystem() throws Exception {
+        // expect initial android stop
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial_number_stub");
+        EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+
+        // turtle!  (return false, for "write failed")
+        EasyMock.expect(mMockDevice.pushString((String) EasyMock.anyObject(),
+                (String) EasyMock.anyObject())).andReturn(false);
+
+        EasyMock.replay(mMockDevice);
+        try {
+            mZipInstaller.deleteData(mMockDevice);
+            fail("Didn't throw TargetSetupError on failed write test");
+        } catch (TargetSetupError e) {
+            // expected
+        }
+        EasyMock.verify(mMockDevice);
+    }
+
     /**
      * Exercise the core logic on a successful scenario.
      */
-    public void testPushTestsZipOntoData() throws DeviceNotAvailableException, TargetSetupError {
+    public void testPushTestsZipOntoData() throws Exception {
         // mock a filesystem with these contents:
         // /data/app
         // /data/$SKIP_THIS
@@ -81,10 +101,14 @@ public class DefaultTestsZipInstallerTest extends TestCase {
                 mMockDevice, FileListingService.DIRECTORY_DATA, "app", SKIP_THIS);
 
         // expect initial android stop
-        EasyMock.expect(mMockDevice.getSerialNumber()).andReturn("serial_number_stub").anyTimes();
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial_number_stub");
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+
+        // turtle!  (to make sure filesystem is writable)
+        EasyMock.expect(mMockDevice.pushString((String) EasyMock.anyObject(),
+                (String) EasyMock.anyObject())).andReturn(true);
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))

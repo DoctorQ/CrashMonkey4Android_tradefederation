@@ -23,6 +23,7 @@ import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
@@ -35,7 +36,8 @@ import java.util.Set;
  * A default implementation of tests zip installer.
  */
 public class DefaultTestsZipInstaller implements ITestsZipInstaller {
-    static final String LOG_TAG = "DefaultTestsZipInstaller";
+    private static final String DEVICE_DATA_PATH = buildAbsPath(FileListingService.DIRECTORY_DATA);
+    private static final File DEVICE_DATA_FILE = new File(DEVICE_DATA_PATH);
 
     /**
      * A list of /data subdirectories to NOT wipe when doing UserDataFlashOption.TESTS_ZIP
@@ -83,12 +85,11 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
 
         File[] hostDataFiles = getTestsZipDataFiles(hostDir);
         for (File hostSubDir : hostDataFiles) {
-            device.syncFiles(hostSubDir, FileListingService.DIRECTORY_DATA);
+            device.syncFiles(hostSubDir, DEVICE_DATA_PATH);
         }
 
-        File deviceRootPath = new File(FileListingService.FILE_SEPARATOR
-                + FileListingService.DIRECTORY_DATA);
-        for (File dir : findDirs(hostDir, deviceRootPath)) {
+        // FIXME: this may end up mixing host slashes and device slashes
+        for (File dir : findDirs(hostDir, DEVICE_DATA_FILE)) {
             device.executeShellCommand("chown system.system " + dir.getPath());
         }
     }
@@ -105,6 +106,17 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         CLog.d("clearing " + FileListingService.DIRECTORY_DATA + " directory on device "
                 + device.getSerialNumber());
 
+        // Touch a file so that we can make sure the filesystem is mounted and r/w and usable.  If
+        // this method is a no-op, then the filesystem might be corrupt and mounted r/o, or might
+        // not be mounted at all.
+        String turtlePath = buildRelPath(DEVICE_DATA_PATH,
+                String.format("turtles-%d.txt", System.currentTimeMillis()));
+        boolean yayTurtle = device.pushString("I like turtles", turtlePath);
+        if (!yayTurtle) {
+            throw new TargetSetupError(String.format("Failed userdata write check on device %s",
+                    device.getSerialNumber()));
+        }
+
         IFileEntry dataEntry = device.getFileEntry(FileListingService.DIRECTORY_DATA);
         if (dataEntry == null) {
             throw new TargetSetupError(String.format("Could not find %s folder on %s",
@@ -118,6 +130,14 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         }
 
         device.setRecoveryMode(cachedRecoveryMode);
+    }
+
+    private static String buildRelPath(String... parts) {
+        return ArrayUtil.join(FileListingService.FILE_SEPARATOR, (Object[]) parts);
+    }
+
+    private static String buildAbsPath(String... parts) {
+        return FileListingService.FILE_SEPARATOR + buildRelPath(parts);
     }
 
     /**
