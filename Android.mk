@@ -60,3 +60,38 @@ include $(BUILD_HOST_PREBUILT)
 
 # Build all sub-directories
 include $(call all-makefiles-under,$(LOCAL_PATH))
+
+########################################################
+# Zip up the built files and dist it as google-tradefed.zip
+ifneq (,$(filter tradefed, $(TARGET_BUILD_APPS)))
+
+tradefed_dist_host_jars := tradefed tradefed-tests ddmlib-prebuilt tf-prod-tests
+tradefed_dist_host_jar_files := $(foreach m, $(tradefed_dist_host_jars), $(HOST_OUT_JAVA_LIBRARIES)/$(m).jar)
+
+tradefed_dist_host_exes := tradefed.sh
+tradefed_dist_host_exe_files := $(foreach m, $(tradefed_dist_host_exes), $(BUILD_OUT_EXECUTABLES)/$(m))
+
+tradefed_dist_test_apks := TradeFedUiTestApp TradeFedTestApp
+tradefed_dist_test_apk_files := $(foreach m, $(tradefed_dist_test_apks), $(TARGET_OUT_DATA_APPS)/$(m).apk)
+
+tradefed_dist_files := \
+    $(tradefed_dist_host_jar_files) \
+    $(tradefed_dist_test_apk_files) \
+    $(tradefed_dist_host_exe_files)
+
+tradefed_dist_intermediates := $(call intermediates-dir-for,PACKAGING,tradefed_dist,HOST,COMMON)
+tradefed_dist_zip := $(tradefed_dist_intermediates)/tradefed.zip
+$(tradefed_dist_zip) : $(tradefed_dist_files)
+	@echo "Package: $@"
+	$(hide) rm -rf $(dir $@) && mkdir -p $(dir $@)
+	$(hide) cp -f $^ $(dir $@)
+	$(hide) cd $(dir $@) && zip -q $(notdir $@) $(notdir $^)
+
+.PHONY: tradefed_dist
+tradefed_dist : $(tradefed_dist_zip)
+
+$(call dist-for-goals, tradefed_dist, $(tradefed_dist_zip))
+dist: tradefed_dist
+
+endif  # tradefed in $(TARGET_BUILD_APPS)
+
