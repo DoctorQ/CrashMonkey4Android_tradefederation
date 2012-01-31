@@ -57,7 +57,7 @@ public class TestAppInstallSetup implements ITargetPreparer {
      */
     @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
-            BuildError, DeviceNotAvailableException {
+            DeviceNotAvailableException {
         if (!(buildInfo instanceof IDeviceBuildInfo)) {
             throw new IllegalArgumentException(String.format("Provided buildInfo is not a %s",
                     IDeviceBuildInfo.class.getCanonicalName()));
