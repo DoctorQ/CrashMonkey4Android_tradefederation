@@ -43,6 +43,86 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     @Override
+    public String getDeviceBuildId() {
+        return mDeviceBuild.getDeviceBuildId();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getDeviceImageFile() {
+        return mDeviceBuild.getDeviceImageFile();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getDeviceImageVersion() {
+        return mDeviceBuild.getDeviceImageVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDeviceImageFile(File deviceImageFile, String version) {
+        mDeviceBuild.setDeviceImageFile(deviceImageFile, version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getUserDataImageFile() {
+        return mDeviceBuild.getUserDataImageFile();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getUserDataImageVersion() {
+        return mDeviceBuild.getUserDataImageVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setUserDataImageFile(File userDataFile, String version) {
+        mDeviceBuild.setUserDataImageFile(userDataFile, version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getTestsDir() {
+        return mDeviceBuild.getTestsDir();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getTestsDirVersion() {
+        return mDeviceBuild.getTestsDirVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setTestsDir(File testsDir, String version) {
+        mDeviceBuild.setTestsDir(testsDir, version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public File getBasebandImageFile() {
         return mDeviceBuild.getBasebandImageFile();
     }
@@ -53,6 +133,14 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
     @Override
     public String getBasebandVersion() {
         return mDeviceBuild.getBasebandVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setBasebandImage(File basebandFile, String version) {
+        mDeviceBuild.setBasebandImage(basebandFile, version);
     }
 
     /**
@@ -75,54 +163,6 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     @Override
-    public File getDeviceImageFile() {
-        return mDeviceBuild.getDeviceImageFile();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public File getFile(String name) {
-        return mDeviceBuild.getFile(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getVersion(String name) {
-        return mDeviceBuild.getVersion(name);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public File getTestsDir() {
-        return mDeviceBuild.getTestsDir();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public File getUserDataImageFile() {
-        return mDeviceBuild.getUserDataImageFile();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setBasebandImage(File basebandFile, String version) {
-        mDeviceBuild.setBasebandImage(basebandFile, version);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public void setBootloaderImageFile(File bootloaderImgFile, String version) {
         mDeviceBuild.setBootloaderImageFile(bootloaderImgFile, version);
     }
@@ -131,33 +171,75 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
      * {@inheritDoc}
      */
     @Override
-    public void setDeviceImageFile(File deviceImageFile) {
-        mDeviceBuild.setDeviceImageFile(deviceImageFile);
+    public File getOtaPackageFile() {
+        return mDeviceBuild.getOtaPackageFile();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setFile(String imageName, File file, String version) {
-        mDeviceBuild.setFile(imageName, file, version);
+    public String getOtaPackageVersion() {
+        return mDeviceBuild.getOtaPackageVersion();
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setTestsDir(File testsDir) {
-        mDeviceBuild.setTestsDir(testsDir);
+    public void setOtaPackageFile(File otaFile, String version) {
+        mDeviceBuild.setOtaPackageFile(otaFile, version);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void setUserDataImageFile(File userDataFile) {
-        mDeviceBuild.setUserDataImageFile(userDataFile);
+    public File getMkbootimgFile() {
+        return mDeviceBuild.getMkbootimgFile();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getMkbootimgVersion() {
+        return mDeviceBuild.getMkbootimgVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setMkbootimgFile(File mkbootimg, String version) {
+        mDeviceBuild.setMkbootimgFile(mkbootimg, version);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public File getRamdiskFile() {
+        return mDeviceBuild.getRamdiskFile();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getRamdiskVersion() {
+        return mDeviceBuild.getRamdiskVersion();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setRamdiskFile(File ramdisk, String version) {
+        mDeviceBuild.setRamdiskFile(ramdisk, version);
+    }
+
+
 
     /**
      * {@inheritDoc}
@@ -189,21 +271,6 @@ public class DeviceFolderBuildInfo extends BuildInfo implements IDeviceBuildInfo
         mDeviceBuild = deviceBuild;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public File getOtaPackageFile() {
-        return mDeviceBuild.getOtaPackageFile();
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void setOtaPackageFile(File otaFile) {
-        mDeviceBuild.setOtaPackageFile(otaFile);
-    }
 
     /**
      * {@inheritDoc}

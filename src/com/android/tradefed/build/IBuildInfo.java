@@ -17,6 +17,7 @@ package com.android.tradefed.build;
 
 import com.android.tradefed.device.ITestDevice;
 
+import java.io.File;
 import java.util.Map;
 
 /**
@@ -109,13 +110,37 @@ public interface IBuildInfo {
      */
     public void addBuildAttribute(String attributeName, String attributeValue);
 
+
+    /**
+     * Helper method to retrieve a file with given name.
+     * @param name
+     * @return the image file or <code>null</code> if not found
+     */
+    public File getFile(String name);
+
+    /**
+     * Helper method to retrieve a file version with given name.
+     * @param name
+     * @return the image version or <code>null</code> if not found
+     */
+    public String getVersion(String name);
+
+    /**
+     * Stores an file with given name in this build info.
+     *
+     * @param name the unique name of the file
+     * @param file the local {@link File}
+     * @param version the file version
+     */
+    public void setFile(String name, File file, String version);
+
     /**
      * Clean up any temporary build files
      */
     public void cleanUp();
 
     /**
-     * @return
+     * Clones the {@link IBuildInfo} object.
      */
     public IBuildInfo clone();
 

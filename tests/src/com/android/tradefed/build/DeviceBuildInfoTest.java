@@ -64,6 +64,9 @@ public class DeviceBuildInfoTest extends TestCase {
         }
     }
 
+    /**
+     * Test method for {@link DeviceBuildInfo#cleanUp()}.
+     */
     public void testCleanUp() {
         assertTrue(mBuildInfo.getBasebandImageFile().exists());
         mBuildInfo.cleanUp();

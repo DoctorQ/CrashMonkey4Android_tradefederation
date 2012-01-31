@@ -51,7 +51,7 @@ public class OtaZipfileBuildProvider implements IBuildProvider {
         }
         String bid = buildProp.getProperty("ro.build.version.incremental");
         IDeviceBuildInfo buildInfo = new DeviceBuildInfo(bid, "flasher", bid);
-        buildInfo.setOtaPackageFile(new File(getOtaPath()));
+        buildInfo.setOtaPackageFile(new File(getOtaPath()), bid);
         return buildInfo;
 
     }

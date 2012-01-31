@@ -85,7 +85,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
             DeviceNotAvailableException {
 
         CLog.i("Flashing device %s with build %s", device.getSerialNumber(),
-                deviceBuild.getBuildId());
+                deviceBuild.getDeviceBuildId());
 
         // get system build id before booting into fastboot
         String systemBuildId = device.getBuildId();
@@ -142,7 +142,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
 
         if (resourceParser.getRequiredBoards() == null) {
             throw new TargetSetupError(String.format("Build %s is missing required board info.",
-                    localBuild.getBuildId()));
+                    localBuild.getDeviceBuildId()));
         }
         String deviceProductType = device.getProductType();
         if (deviceProductType == null) {
@@ -413,8 +413,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     protected boolean checkAndFlashSystem(ITestDevice device, String systemBuildId,
             IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
         if (mForceSystemFlash ||
-                (systemBuildId != null && ! systemBuildId.equals(deviceBuild.getBuildId()))) {
-            CLog.i("Flashing system %s", deviceBuild.getBuildId());
+                (systemBuildId != null && !systemBuildId.equals(deviceBuild.getDeviceBuildId()))) {
+            CLog.i("Flashing system %s", deviceBuild.getDeviceBuildId());
             flashSystem(device, deviceBuild);
             return true;
         } else {

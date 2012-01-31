@@ -63,15 +63,15 @@ public class LocalBuildProvider extends StubBuildProvider {
         buildInfo.addAllBuildAttributes(stubBuild);
 
         try {
-            buildInfo.setDeviceImageFile(mDeviceImageFile);
+            buildInfo.setDeviceImageFile(mDeviceImageFile, stubBuild.getBuildId());
             if (mTestsDir != null) {
-                buildInfo.setTestsDir(mTestsDir);
+                buildInfo.setTestsDir(mTestsDir, stubBuild.getBuildId());
             } else {
                 CLog.d("Null Test Dir, if you want to pass a test dir, use --%s",
                         TEST_DIR_OPTION_NAME);
             }
             if (mUserDataFile != null) {
-                buildInfo.setUserDataImageFile(mUserDataFile);
+                buildInfo.setUserDataImageFile(mUserDataFile, stubBuild.getBuildId());
             } else {
                 CLog.d("Null User Data File, if you want to pass a user data file, use --%s",
                         DATA_FILE_OPTION_NAME);
