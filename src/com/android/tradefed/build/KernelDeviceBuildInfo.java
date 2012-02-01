@@ -329,10 +329,6 @@ public class KernelDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo
         mKernelBuild = kernelBuild;
     }
 
-    private void generateBuildId() {
-
-    }
-
     /**
      * {@inheritDoc}
      */
