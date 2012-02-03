@@ -16,6 +16,7 @@
 
 package com.android.tradefed.util.net;
 
+import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.MultiMap;
 
 import java.io.IOException;
@@ -82,6 +83,19 @@ public interface IHttpHelper {
     public String doGet(String url) throws IOException, DataSizeException;
 
     /**
+     * Performs {{@link #doGet(String)} retrying upon failure.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     *
+     * @param url the URL
+     * @return the {@link String} remote contents
+     * @throws IOException if failed to retrieve data
+     * @throws DataSizeException if retrieved data is > {@link #MAX_DATA_SIZE}
+     */
+    public String doGetWithRetry(String url) throws IOException, DataSizeException;
+
+    /**
      * Performs a GET for a given URL, with the given URL parameters ignoring the result.
      *
      * @see #doGet(String)
@@ -89,6 +103,33 @@ public interface IHttpHelper {
      * @throws IOException if failed to retrieve data
      */
     public void doGetIgnore(String url) throws IOException;
+
+    /**
+     * Performs {{@link #doGetIgnore(String)} retrying upon failure.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     *
+     * @param url the URL
+     * @throws IOException if failed to retrieve data
+     */
+    public void doGetIgnoreWithRetry(String url) throws IOException;
+
+    /**
+     * Performs a POST HTTP request method for a given URL and returns it as a {@link String},
+     * retrying upon failure.
+     * <p>
+     * Because remote contents are loaded into memory, this method should only be used for
+     * relatively small data sizes.
+     * </p>
+     * @param url the URL
+     * @param postData the data to be posted once the connection is open
+     *  @return the {@link String} remote contents
+     * @throws IOException if failed to retrieve data
+     * @throws DataSizeException if retrieved data is > {@link #MAX_DATA_SIZE}
+     */
+    public String doPostWithRetry(String url, String postData) throws IOException,
+            DataSizeException;
 
     /**
      * Create a to given url.
@@ -121,4 +162,68 @@ public interface IHttpHelper {
      * @throws IOException if failed to make connection
      */
     public HttpURLConnection createJsonConnection(URL url, String method) throws IOException;
+
+    /**
+     * Get the operation timeout in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    long getOpTimeout();
+
+    /**
+     * Set the operation timeout in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    void setOpTimeout(long time);
+
+    /**
+     * Get the initial poll interval in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    long getInitialPollInterval();
+
+    /**
+     * Set the initial poll interval in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    void setInitialPollInterval(long time);
+
+    /**
+     * Get the max poll interval in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    long getMaxPollInterval();
+
+    /**
+     * Set the initial poll interval in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    void setMaxPollInterval(long time);
+
+    /**
+     * Get the maximum time to keep trying the request in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    long getMaxTime();
+
+    /**
+     * Set the maximum time to keep trying the request in ms.
+     *
+     * @see IRunUtil#runEscalatingTimedRetry(long, long, long, long,
+     *     com.android.tradefed.util.IRunUtil.IRunnableResult)
+     */
+    void setMaxTime(long time);
 }
