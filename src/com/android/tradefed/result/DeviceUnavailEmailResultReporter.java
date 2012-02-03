@@ -15,12 +15,14 @@
  */
 package com.android.tradefed.result;
 
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 
 /**
  * An {@link EmailResultReporter} that will send email when invocation fails due to a device not
  * available exception.
  */
+@OptionClass(alias = "device-unavail-email")
 public class DeviceUnavailEmailResultReporter extends EmailResultReporter {
 
     @Override

@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.Email;
 import com.android.tradefed.util.IEmail;
@@ -24,6 +25,7 @@ import com.android.tradefed.util.IEmail;
  * An {@link EmailResultReporter} that can also restrict notifications
  * to just test or invocation failures
  */
+@OptionClass(alias = "failure-email")
 public class FailureEmailResultReporter extends EmailResultReporter {
 
     @Option(name = "send-only-on-failure",
