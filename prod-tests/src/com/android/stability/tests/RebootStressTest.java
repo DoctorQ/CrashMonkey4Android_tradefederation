@@ -20,7 +20,9 @@ import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IShardableTest;
@@ -40,8 +42,6 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
 
     // max number of ms to allowed for the post-boot waitForDeviceAvailable check
     private static final long DEVICE_AVAIL_TIME = 3 * 1000;
-    // number of ms to sleep between  post-boot device checks
-    private static final long POLL_SLEEP_TIME = 1 * 1000;
 
     @Option(name = "iterations", description = "number of reboot iterations to perform")
     private int mIterations = 1;
@@ -54,11 +54,21 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             "The test run name used to report metrics.")
     private String mRunName = "reboot-stress";
 
-    @Option( name = "post-boot-wait-time", description =
-            "Number of seconds to wait between reboot attempts")
+    @Option(name = "post-boot-wait-time", description =
+            "Total number of seconds to wait between reboot attempts")
     private int mWaitTime = 10;
 
+    @Option(name = "post-boot-poll-time", description =
+            "Number of seconds to wait between device health checks")
+    private int mPollSleepTime = 1;
+
+    @Option(name = "wipe-data", description =
+            "Flag to set if userdata should be wiped between reboots")
+    private boolean mWipeUserData = false;
+
     private ITestDevice mDevice;
+    private String mLastKmsg;
+    private String mDmesg;
 
     /**
      * Set the run name
@@ -110,6 +120,15 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
         mWaitTime = waitTimeSec;
     }
 
+    void setPollTime(int pollTime) {
+        mPollSleepTime = pollTime;
+
+    }
+
+    void setWipeData(boolean wipeData) {
+        mWipeUserData = wipeData;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -125,6 +144,8 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             // device will be set by test invoker
             testShard.setRunName(mRunName);
             testShard.setWaitTime(mWaitTime);
+            testShard.setWipeData(mWipeUserData);
+            testShard.setPollTime(mPollSleepTime);
             // attempt to divide iterations evenly among shards with no remainder
             int iterationsForShard = Math.round(remainingIterations/i);
             if (iterationsForShard > 0) {
@@ -149,8 +170,14 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
         try {
             for (actualIterations = 0; actualIterations < mIterations; actualIterations++) {
                 CLog.i("Reboot attempt %d of %d", actualIterations+1, mIterations);
-                getDevice().reboot();
-                doWait();
+                getDevice().rebootIntoBootloader();
+                if (mWipeUserData) {
+                    getDevice().executeFastbootCommand("-w", "reboot");
+                    getDevice().waitForDeviceAvailable();
+                } else {
+                    getDevice().reboot();
+                }
+                doWaitAndCheck(listener);
             }
         } finally {
             Map<String, String> metrics = new HashMap<String, String>(1);
@@ -158,6 +185,14 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             metrics.put("iterations", Integer.toString(actualIterations));
             metrics.put("shards", "1");
             listener.testRunEnded(durationMs, metrics);
+            if (mLastKmsg != null) {
+                listener.testLog(String.format("last_kmsg_%s", getDevice().getSerialNumber()),
+                        LogDataType.TEXT, new ByteArrayInputStreamSource(mLastKmsg.getBytes()));
+            }
+            if (mDmesg != null) {
+                listener.testLog(String.format("dmesg_%s", getDevice().getSerialNumber()),
+                        LogDataType.TEXT, new ByteArrayInputStreamSource(mDmesg.getBytes()));
+            }
         }
     }
 
@@ -167,7 +202,7 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
      *
      * @throws DeviceNotAvailableException
      */
-    private void doWait() throws DeviceNotAvailableException {
+    private void doWaitAndCheck(ITestInvocationListener listener) throws DeviceNotAvailableException {
         long waitTimeMs = mWaitTime * 1000;
         long elapsedTime = 0;
 
@@ -175,8 +210,25 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             long startTime = System.currentTimeMillis();
             // ensure device is still up
             getDevice().waitForDeviceAvailable(DEVICE_AVAIL_TIME);
-            RunUtil.getDefault().sleep(POLL_SLEEP_TIME);
+            checkForUserDataFailure(listener);
+            RunUtil.getDefault().sleep(mPollSleepTime * 1000);
             elapsedTime += System.currentTimeMillis() - startTime;
         }
+    }
+
+    /**
+     * Check logs for userdata formatting/mounting issues.
+     *
+     * @throws DeviceNotAvailableException
+     */
+    private void checkForUserDataFailure(ITestInvocationListener listener)
+            throws DeviceNotAvailableException {
+        mLastKmsg = getDevice().executeShellCommand("cat /proc/last_kmsg");
+        mDmesg = getDevice().executeShellCommand("dmesg");
+        Assert.assertFalse(String.format("Read only mount of userdata detected on %s",
+                getDevice().getSerialNumber()),
+                mDmesg.contains("Remounting filesystem read-only"));
+        Assert.assertFalse(String.format("Last kmsg log showed a kernel panic on %s",
+                getDevice().getSerialNumber()), mLastKmsg.contains("Kernel panic"));
     }
 }
