@@ -194,12 +194,15 @@ public class SideloadOtaStabilityTest implements IDeviceTest, IBuildReceiver,
         mResumable = false;
         checkFields();
 
+        String expectedBuildId = mOtaDeviceBuild.getOtaBuild().getOtaPackageVersion();
+        CLog.i("Starting OTA sideload test from %s to %s, for %d iterations",
+                mOtaDeviceBuild.getDeviceImageVersion(), expectedBuildId, mIterations);
+
         long startTime = System.currentTimeMillis();
         listener.testRunStarted(mRunName, 0);
         int actualIterations = 0;
         try {
             File otaFile = mOtaDeviceBuild.getOtaBuild().getOtaPackageFile();
-            String expectedBuildId = mOtaDeviceBuild.getOtaBuild().getOtaPackageVersion();
             while (actualIterations < mIterations) {
                 if (actualIterations != 0) {
                     // don't need to flash device on first iteration
