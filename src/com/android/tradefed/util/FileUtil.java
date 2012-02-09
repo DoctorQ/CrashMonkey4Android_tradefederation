@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.command.FatalHostError;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -282,7 +283,13 @@ public class FileUtil {
      * @throws IOException
      */
     public static void recursiveCopy(File sourceDir, File destDir) throws IOException {
-        for (File childFile : sourceDir.listFiles()) {
+        File[] childFiles = sourceDir.listFiles();
+        if (childFiles == null) {
+            throw new IOException(String.format(
+                    "Failed to recursively copy. Could not determine contents for directory '%s'",
+                    sourceDir.getAbsolutePath()));
+        }
+        for (File childFile : childFiles) {
             File destChild = new File(destDir, childFile.getName());
             if (childFile.isDirectory()) {
                 if (!destChild.mkdir()) {
