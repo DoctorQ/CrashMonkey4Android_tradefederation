@@ -66,6 +66,10 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             "Flag to set if userdata should be wiped between reboots")
     private boolean mWipeUserData = false;
 
+    @Option(name = "wipe-data-cmd", description =
+            "the fastboot command to use to wipe data and reboot device.")
+    private String mFastbootWipeCmd = "-w reboot";
+
     private ITestDevice mDevice;
     private String mLastKmsg;
     private String mDmesg;
@@ -172,7 +176,7 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
                 CLog.i("Reboot attempt %d of %d", actualIterations+1, mIterations);
                 getDevice().rebootIntoBootloader();
                 if (mWipeUserData) {
-                    getDevice().executeFastbootCommand("-w", "reboot");
+                    getDevice().executeFastbootCommand(mFastbootWipeCmd.split(" "));
                     getDevice().waitForDeviceAvailable();
                 } else {
                     getDevice().reboot();
