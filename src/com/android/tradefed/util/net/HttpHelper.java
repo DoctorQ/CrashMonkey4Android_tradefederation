@@ -17,11 +17,16 @@
 package com.android.tradefed.util.net;
 
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.IRunUtil.IRunnableResult;
 import com.android.tradefed.util.MultiMap;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -31,6 +36,22 @@ import java.net.URLEncoder;
  * Contains helper methods for making http requests
  */
 public class HttpHelper implements IHttpHelper {
+    /**
+     * Time before timing out a request in ms.
+     */
+    private long mQueryTimeout = 1 * 60 * 1000;
+    /**
+     * Initial poll interval in ms.
+     */
+    private long mInitialPollInterval = 1 * 1000;
+    /**
+     * Max poll interval in ms.
+     */
+    private long mMaxPollInterval = 10 * 60 * 1000;
+    /**
+     * Max time for retrying request in ms.
+     */
+    private long mMaxTime = 10 * 60 * 1000;
 
     /**
      * {@inheritDoc}
@@ -115,18 +136,6 @@ public class HttpHelper implements IHttpHelper {
     }
 
     /**
-     * Factory method for opening an input stream to a remote url. Exposed so unit tests can mock
-     * out the stream used.
-     *
-     * @param url the {@link URL}
-     * @return the {@link InputStream}
-     * @throws IOException if stream could not be opened.
-     */
-    InputStream getRemoteUrlStream(URL url) throws IOException {
-        return url.openStream();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -156,5 +165,295 @@ public class HttpHelper implements IHttpHelper {
     @Override
     public HttpURLConnection createJsonConnection(URL url, String method) throws IOException {
         return createConnection(url, method, "text/json");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String doGetWithRetry(String url) throws IOException, DataSizeException {
+        GetRequestRunnable runnable = new GetRequestRunnable(url, false);
+        if (getRunUtil().runEscalatingTimedRetry(getOpTimeout(), getInitialPollInterval(),
+                getMaxPollInterval(), getMaxTime(), runnable)) {
+            return runnable.getResponse();
+        } else if (runnable.getException() instanceof IOException) {
+            throw (IOException) runnable.getException();
+        } else if (runnable.getException() instanceof DataSizeException) {
+            throw (DataSizeException) runnable.getException();
+        } else if (runnable.getException() instanceof RuntimeException) {
+            throw (RuntimeException) runnable.getException();
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void doGetIgnoreWithRetry(String url) throws IOException {
+        GetRequestRunnable runnable = new GetRequestRunnable(url, true);
+        if (getRunUtil().runEscalatingTimedRetry(getOpTimeout(), getInitialPollInterval(),
+                getMaxPollInterval(), getMaxTime(), runnable)) {
+            return;
+        } else if (runnable.getException() instanceof IOException) {
+            throw (IOException) runnable.getException();
+        } else if (runnable.getException() instanceof RuntimeException) {
+            throw (RuntimeException) runnable.getException();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String doPostWithRetry(String url, String postData) throws IOException,
+            DataSizeException {
+        PostRequestRunnable runnable = new PostRequestRunnable(url, postData);
+        if (getRunUtil().runEscalatingTimedRetry(getOpTimeout(), getInitialPollInterval(),
+                getMaxPollInterval(), getMaxTime(), runnable)) {
+            return runnable.getResponse();
+        } else if (runnable.getException() instanceof IOException) {
+            throw (IOException) runnable.getException();
+        } else if (runnable.getException() instanceof DataSizeException) {
+            throw (DataSizeException) runnable.getException();
+        } else if (runnable.getException() instanceof RuntimeException) {
+            throw (RuntimeException) runnable.getException();
+        }
+        return null;
+    }
+
+    /**
+     * Runnable for making requests with
+     * {@link IRunUtil#runEscalatingTimedRetry(long, long, long, long, IRunnableResult)}.
+     */
+    private abstract class RequestRunnable implements IRunnableResult {
+        private String mResponse = null;
+        private Exception mException = null;
+        private final String mUrl;
+
+        public RequestRunnable(String url) {
+            mUrl = url;
+        }
+
+        public String getUrl() {
+            return mUrl;
+        }
+
+        public String getResponse() {
+            return mResponse;
+        }
+
+        protected void setResponse(String response) {
+            mResponse = response;
+        }
+
+        /**
+         * Returns the last {@link Exception} that occurred when performing run().
+         */
+        public Exception getException() {
+            return mException;
+        }
+
+        protected void setException(Exception e) {
+            mException = e;
+        }
+
+        public void cancel() {
+            // ignore
+        }
+    }
+
+    /**
+     * Runnable for making GET requests with
+     * {@link IRunUtil#runEscalatingTimedRetry(long, long, long, long, IRunnableResult)}.
+     */
+    private class GetRequestRunnable extends RequestRunnable {
+        private boolean mIgnoreResult;
+
+        public GetRequestRunnable(String url, boolean ignoreResult) {
+            super(url);
+            mIgnoreResult = ignoreResult;
+        }
+
+        /**
+         * Perform a single GET request, storing the response or the associated exception in case of
+         * error.
+         */
+        public boolean run() {
+            try {
+                if (mIgnoreResult) {
+                    doGetIgnore(getUrl());
+                } else {
+                    setResponse(doGet(getUrl()));
+                }
+                return true;
+            } catch (IOException e) {
+                CLog.i("IOException %s from %s", e.getMessage(), getUrl());
+                setException(e);
+            } catch (DataSizeException e) {
+                CLog.i("Unexpected oversized response from %s", getUrl());
+                setException(e);
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Runnable for making POST requests with
+     * {@link IRunUtil#runEscalatingTimedRetry(long, long, long, long, IRunnableResult)}.
+     */
+    private class PostRequestRunnable extends RequestRunnable {
+        String mPostData;
+        public PostRequestRunnable(String url, String postData) {
+            super(url);
+            mPostData = postData;
+        }
+
+        /**
+         * Perform a single POST request, storing the response or the associated exception in case
+         * of error.
+         */
+        public boolean run() {
+            InputStream inputStream = null;
+            OutputStream outputStream = null;
+            OutputStreamWriter outputStreamWriter = null;
+            try {
+                HttpURLConnection conn = createConnection(new URL(getUrl()), "POST", null);
+                inputStream = getConnectionInputStream(conn);
+                outputStream = getConnectionOutputStream(conn);
+
+                outputStreamWriter = new OutputStreamWriter(outputStream);
+                outputStreamWriter.write(mPostData);
+
+                byte[] bufResult = new byte[MAX_DATA_SIZE];
+                int currBufPos = 0;
+                int bytesRead;
+                // read data from stream into temporary buffer
+                while ((bytesRead = inputStream.read(bufResult, currBufPos,
+                        bufResult.length - currBufPos)) != -1) {
+                    currBufPos += bytesRead;
+                    if (currBufPos >= bufResult.length) {
+                        throw new DataSizeException();
+                    }
+                }
+                setResponse(new String(bufResult, 0, currBufPos));
+                return true;
+            } catch (IOException e) {
+                CLog.i("IOException %s from %s", e.getMessage(), getUrl());
+                setException(e);
+            } catch (DataSizeException e) {
+                CLog.i("Unexpected oversized response from %s", getUrl());
+                setException(e);
+            } finally {
+                StreamUtil.closeStream(outputStream);
+                StreamUtil.closeStream(inputStream);
+                if (outputStreamWriter != null) {
+                    try {
+                        outputStreamWriter.close();
+                    } catch (IOException e) {
+                        // ignore
+                    }
+                }
+            }
+
+            return false;
+        }
+    }
+
+    /**
+     * Factory method for opening an input stream to a remote url. Exposed for unit testing.
+     *
+     * @param url the {@link URL}
+     * @return the {@link InputStream}
+     * @throws IOException if stream could not be opened.
+     */
+    InputStream getRemoteUrlStream(URL url) throws IOException {
+        return url.openStream();
+    }
+
+    /**
+     * Factory method for getting connection input stream. Exposed for unit testing.
+     */
+    InputStream getConnectionInputStream(HttpURLConnection conn) throws IOException {
+        return conn.getInputStream();
+    }
+
+    /**
+     * Factory method for getting connection output stream. Exposed for unit testing.
+     */
+    OutputStream getConnectionOutputStream(HttpURLConnection conn) throws IOException {
+        return conn.getOutputStream();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getOpTimeout() {
+        return mQueryTimeout;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setOpTimeout(long time) {
+        mQueryTimeout = time;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getInitialPollInterval() {
+        return mInitialPollInterval;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setInitialPollInterval(long time) {
+        mInitialPollInterval = time;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getMaxPollInterval() {
+        return mMaxPollInterval;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setMaxPollInterval(long time) {
+        mMaxPollInterval = time;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public long getMaxTime() {
+        return mMaxTime;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setMaxTime(long time) {
+        mMaxTime = time;
+    }
+
+    /**
+     * Get {@link IRunUtil} to use. Exposed so unit tests can mock.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 }

@@ -17,22 +17,27 @@
 package com.android.tradefed.util.net;
 
 import com.android.tradefed.util.MultiMap;
+import com.android.tradefed.util.StreamUtil;
 import com.android.tradefed.util.net.IHttpHelper.DataSizeException;
 
 import junit.framework.TestCase;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 
 /**
  * Unit tests for {@link HttpHelper}.
  */
 public class HttpHelperTest extends TestCase {
-
     private static final String TEST_URL_STRING = "http://foo";
-    private HttpHelper mHelper;
+    private static final String TEST_POST_DATA = "this is post data";
+    private static final String TEST_DATA = "this is test data";
+    private TestHttpHelper mHelper;
 
     /**
      * {@inheritDoc}
@@ -40,7 +45,16 @@ public class HttpHelperTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mHelper = new HttpHelper();
+        mHelper = new TestHttpHelper();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        mHelper.close();
     }
 
     /**
@@ -86,15 +100,7 @@ public class HttpHelperTest extends TestCase {
      * Normal case test for {@link HttpHelper#doGet(String)}
      */
     public void testDoGet() throws IOException, DataSizeException {
-        final String testString = "this is some data";
-        final ByteArrayInputStream mockStream = new ByteArrayInputStream(testString.getBytes());
-        HttpHelper helper = new HttpHelper() {
-            @Override
-            InputStream getRemoteUrlStream(URL url) {
-                return mockStream;
-            }
-        };
-        assertEquals(testString, helper.doGet(TEST_URL_STRING));
+        assertEquals(TEST_DATA, mHelper.doGet(TEST_URL_STRING));
     }
 
     /**
@@ -102,20 +108,239 @@ public class HttpHelperTest extends TestCase {
      * remote stream returns too much data.
      */
     public void testDoGet_datasize() throws IOException {
-        // test with 64K + 1
-        final byte[] bigData = new byte[IHttpHelper.MAX_DATA_SIZE + 1];
-        final ByteArrayInputStream mockStream = new ByteArrayInputStream(bigData);
-        HttpHelper helper = new HttpHelper() {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
             @Override
             InputStream getRemoteUrlStream(URL url) {
-                return mockStream;
+                // test with 64K + 1
+                return new ByteArrayInputStream(new byte[IHttpHelper.MAX_DATA_SIZE + 1]);
             }
         };
+
         try {
-            helper.doGet(TEST_URL_STRING);
+            mHelper.doGet(TEST_URL_STRING);
             fail("DataSizeException not thrown");
         } catch (DataSizeException e) {
             // expected
+        }
+    }
+
+    /**
+     * Normal case test for {@link HttpHelper#doGetWithRetry(String)}.
+     */
+    public void testDoGetWithRetry() throws IOException, DataSizeException {
+        assertEquals(TEST_DATA, mHelper.doGetWithRetry(TEST_URL_STRING));
+    }
+
+    /**
+     * Test that {@link HttpHelper#doGetWithRetry(String)} throws a {@link DataSizeException} when
+     * the remote stream returns too much data.
+     */
+    public void testDoGetWithRetry_datasize() throws IOException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            @Override
+            InputStream getRemoteUrlStream(URL url) {
+                // test with 64K + 1
+                return new ByteArrayInputStream(new byte[IHttpHelper.MAX_DATA_SIZE + 1]);
+            }
+        };
+
+        try {
+            mHelper.doGetWithRetry(TEST_URL_STRING);
+            fail("DataSizeException not thrown");
+        } catch (DataSizeException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that {@link HttpHelper#doGetWithRetry(String)} throws a {@link IOException} if an
+     * {@link IOException} is thrown on each attempt.
+     */
+    public void testDoGetWithRetry_ioexception() throws DataSizeException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            @Override
+            public String doGet(String url) throws IOException {
+                throw new IOException();
+            }
+        };
+
+        try {
+            mHelper.doGetWithRetry(TEST_URL_STRING);
+            fail("IOException not thrown");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that {@link HttpHelper#doGetWithRetry(String)} returns data if an {@link IOException} is
+     * thrown on the first attempt, but is fine on the second attempt.
+     */
+    public void testDoGetWithRetry_retry() throws IOException, DataSizeException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            boolean mExceptionThrown = false;
+
+            @Override
+            public String doGet(String url) throws IOException, DataSizeException {
+                if (!mExceptionThrown) {
+                    mExceptionThrown = true;
+                    throw new IOException();
+                }
+                return super.doGet(url);
+            }
+        };
+
+        assertEquals(TEST_DATA, mHelper.doGetWithRetry(TEST_URL_STRING));
+    }
+
+    /**
+     * Normal case test for {@link HttpHelper#doPostWithRetry(String, String)}.
+     */
+    public void testDoPostWithRetry() throws IOException, DataSizeException {
+        assertEquals(TEST_DATA, mHelper.doPostWithRetry(TEST_URL_STRING, TEST_POST_DATA));
+        assertEquals(TEST_POST_DATA, mHelper.getOutputStream().toString());
+    }
+
+    /**
+     * Test that {@link HttpHelper#doPostWithRetry(String, String)} throws a
+     * {@link DataSizeException} when the remote stream returns too much data.
+     */
+    public void testDoPostWithRetry_datasize() throws IOException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            @Override
+            InputStream getConnectionInputStream(HttpURLConnection conn) {
+                // test with 64K + 1
+                return new ByteArrayInputStream(new byte[IHttpHelper.MAX_DATA_SIZE + 1]);
+            }
+        };
+
+        try {
+            mHelper.doPostWithRetry(TEST_URL_STRING, TEST_POST_DATA);
+            fail("DataSizeException not thrown");
+        } catch (DataSizeException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that {@link HttpHelper#doPostWithRetry(String, String)} throws a {@link IOException} if
+     * an {@link IOException} is thrown on each attempt.
+     */
+    public void testDoPostWithRetry_ioexception() throws DataSizeException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            @Override
+            public HttpURLConnection createConnection(URL url, String method, String contentType)
+                    throws IOException {
+                throw new IOException();
+            }
+        };
+
+        try {
+            mHelper.doPostWithRetry(TEST_URL_STRING, TEST_POST_DATA);
+            fail("IOException not thrown");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Test that {@link HttpHelper#doPostWithRetry(String, String)} returns data if an
+     * {@link IOException} is thrown on the first attempt, but is fine on the second attempt.
+     */
+    public void testDoPostWithRetry_retry() throws IOException, DataSizeException {
+        mHelper.close();
+        mHelper = new TestHttpHelper() {
+            boolean mExceptionThrown = false;
+
+            @Override
+            public HttpURLConnection createConnection(URL url, String method, String contentType)
+                    throws IOException {
+                if (!mExceptionThrown) {
+                    mExceptionThrown = true;
+                    throw new IOException();
+                }
+                return super.createConnection(url, method, contentType);
+            }
+        };
+
+        assertEquals(TEST_DATA, mHelper.doPostWithRetry(TEST_URL_STRING, TEST_POST_DATA));
+        assertEquals(TEST_POST_DATA, mHelper.getOutputStream().toString());
+    }
+
+    /**
+     * A class which extends {@link HttpHelper} for testing without using the network.
+     */
+    private class TestHttpHelper extends HttpHelper {
+        InputStream mInputStream = new ByteArrayInputStream(TEST_DATA.getBytes());
+        OutputStream mOutputStream = new ByteArrayOutputStream();
+
+        /**
+         * Create a {@link TestHttpHelper}
+         */
+        public TestHttpHelper() {
+            // Override all the polling related values to make this unit test run as fast as
+            // possible while still delivering consistent results.
+            setOpTimeout(300);
+            setInitialPollInterval(10);
+            setMaxPollInterval(50);
+            setMaxTime(50);
+        }
+
+        /**
+         * Close any open streams.
+         */
+        public void close() {
+            StreamUtil.closeStream(mInputStream);
+            StreamUtil.closeStream(mOutputStream);
+        }
+
+        /**
+         * Get the output stream used in {@link #doPostWithRetry(String, String)}.
+         */
+        public OutputStream getOutputStream() {
+            return mOutputStream;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        InputStream getRemoteUrlStream(URL url) {
+            return mInputStream;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        @SuppressWarnings("unused")
+        public HttpURLConnection createConnection(URL url, String method, String contentType)
+                throws IOException {
+            return null;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        @SuppressWarnings("unused")
+        InputStream getConnectionInputStream(HttpURLConnection conn) throws IOException {
+            return mInputStream;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        @SuppressWarnings("unused")
+        OutputStream getConnectionOutputStream(HttpURLConnection conn) throws IOException {
+            return mOutputStream;
         }
     }
 }
