@@ -182,8 +182,9 @@ public class HttpHelper implements IHttpHelper {
             throw (DataSizeException) runnable.getException();
         } else if (runnable.getException() instanceof RuntimeException) {
             throw (RuntimeException) runnable.getException();
+        } else {
+            throw new IOException("GET request could not be completed");
         }
-        return null;
     }
 
     /**
@@ -199,6 +200,8 @@ public class HttpHelper implements IHttpHelper {
             throw (IOException) runnable.getException();
         } else if (runnable.getException() instanceof RuntimeException) {
             throw (RuntimeException) runnable.getException();
+        } else {
+            throw new IOException("GET request could not be completed");
         }
     }
 
@@ -218,8 +221,9 @@ public class HttpHelper implements IHttpHelper {
             throw (DataSizeException) runnable.getException();
         } else if (runnable.getException() instanceof RuntimeException) {
             throw (RuntimeException) runnable.getException();
+        } else {
+            throw new IOException("POST request could not be completed");
         }
-        return null;
     }
 
     /**
@@ -293,6 +297,9 @@ public class HttpHelper implements IHttpHelper {
             } catch (DataSizeException e) {
                 CLog.i("Unexpected oversized response from %s", getUrl());
                 setException(e);
+            } catch (RuntimeException e) {
+                CLog.i("RuntimeException %s", e.getMessage());
+                setException(e);
             }
 
             return false;
@@ -344,6 +351,9 @@ public class HttpHelper implements IHttpHelper {
                 setException(e);
             } catch (DataSizeException e) {
                 CLog.i("Unexpected oversized response from %s", getUrl());
+                setException(e);
+            } catch (RuntimeException e) {
+                CLog.i("RuntimeException %s", e.getMessage());
                 setException(e);
             } finally {
                 StreamUtil.closeStream(outputStream);
