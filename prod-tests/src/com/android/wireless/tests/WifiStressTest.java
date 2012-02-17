@@ -108,6 +108,18 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             description="The device idle time after screen off")
     private String mIdleTime = "30"; // 30 seconds
 
+    @Option(name="scan-test",
+            description="Option to run the scan stress test")
+    private boolean mScanTestFlag = true;
+
+    @Option(name="tether-test",
+            description="Option to run the tethering stress test")
+    private boolean mTetherTestFlag = true;
+
+    @Option(name="reconnection-test",
+            description="Option to run the wifi reconnection stress test")
+    private boolean mReconnectionTestFlag = true;
+
     private void setupTests() throws DeviceNotAvailableException {
         // get RadioHelper
         mRadioHelper = new RadioHelper(mTestDevice);
@@ -125,7 +137,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestMetricsName = "wifi_stress";
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_ap_stress", ITERATION_PATTERN);
-        if (!mRadioHelper.isWifiOnlyDevice()) {
+        if (mTetherTestFlag) {
             mTestList.add(t);
         }
 
@@ -138,7 +150,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("avg_scan_time", "^average scanning time is (\\d+)");
         t.mPatternMap.put("scan_quality","ssid appear (\\d+) out of (\\d+) scan iterations");
-        mTestList.add(t);
+        if (mScanTestFlag) {
+            mTestList.add(t);
+        }
 
         // Add WiFi reconnection test
         t = new TestInfo();
@@ -148,7 +162,10 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestMetricsName = "wifi_stress";
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_reconnection_stress", ITERATION_PATTERN);
-        mTestList.add(t);
+        if (mReconnectionTestFlag) {
+            mTestList.add(t);
+        }
+        Assert.assertTrue("No test is added.", mTestList.size() > 0);
     }
 
     /**
