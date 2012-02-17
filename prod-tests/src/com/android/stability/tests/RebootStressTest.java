@@ -26,6 +26,8 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IShardableTest;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
@@ -176,7 +178,7 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
                 CLog.i("Reboot attempt %d of %d", actualIterations+1, mIterations);
                 getDevice().rebootIntoBootloader();
                 if (mWipeUserData) {
-                    getDevice().executeFastbootCommand(mFastbootWipeCmd.split(" "));
+                    executeFastbootWipeCommand();
                     getDevice().waitForDeviceAvailable();
                 } else {
                     getDevice().reboot();
@@ -198,6 +200,17 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
                         LogDataType.TEXT, new ByteArrayInputStreamSource(mDmesg.getBytes()));
             }
         }
+    }
+
+    private void executeFastbootWipeCommand() throws DeviceNotAvailableException {
+        for (int i=1; i <= 2; i++) {
+            CommandResult result = getDevice().executeFastbootCommand(mFastbootWipeCmd.split(" "));
+            if (result.getStatus().equals(CommandStatus.SUCCESS)) {
+                return;
+            }
+            CLog.w("fastboot '%s' failed on attempt %d of 2", mFastbootWipeCmd, i);
+        }
+        Assert.fail(String.format("fastboot reboot command '%s' failed", mFastbootWipeCmd));
     }
 
     /**
