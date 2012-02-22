@@ -72,13 +72,14 @@ public class TestLoader {
         return new URLClassLoader(urls);
     }
 
+    @SuppressWarnings("unchecked")
     private Test loadTests(Set<String> classNames, ClassLoader classLoader) {
         TestSuite testSuite = new TestSuite();
         for (String className : classNames) {
             try {
                 Class<?> testClass = Class.forName(className, true, classLoader);
                 if (TestCase.class.isAssignableFrom(testClass)) {
-                    testSuite.addTestSuite(testClass);
+                    testSuite.addTestSuite((Class<? extends TestCase>)testClass);
                 }
             } catch (ClassNotFoundException e) {
                 // ignore for now
