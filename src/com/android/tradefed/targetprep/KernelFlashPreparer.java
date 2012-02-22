@@ -109,13 +109,10 @@ public class KernelFlashPreparer implements ITargetPreparer {
     File createBootImage(File mkbootimg, File kernel, File ramdisk) throws IOException {
         CLog.d("Create boot.img from %s and %s", kernel.getAbsolutePath(),
                 ramdisk.getAbsolutePath());
-        Process p = null;
         String bootPath = getBootImgPath();
         try {
-            String cmd = String.format("%s --kernel %s --ramdisk %s -o %s",
-                    mkbootimg.getAbsolutePath(), kernel.getAbsolutePath(),
-                    ramdisk.getAbsolutePath(), bootPath);
-            CLog.d("Creating image file with command: %s", cmd);
+            String[] cmd = {mkbootimg.getAbsolutePath(), "--kernel", kernel.getAbsolutePath(),
+                    "--ramdisk", ramdisk.getAbsolutePath(), "-o", bootPath};
             CommandResult result = getRunUtil().runTimedCmd(30 * 1000, cmd);
             if (result.getStatus() != CommandStatus.SUCCESS) {
                 CLog.e("mkbootimg failed. Command status was %s", result.getStatus());
