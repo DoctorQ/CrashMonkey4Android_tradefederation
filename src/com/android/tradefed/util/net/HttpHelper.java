@@ -327,12 +327,13 @@ public class HttpHelper implements IHttpHelper {
             OutputStreamWriter outputStreamWriter = null;
             try {
                 HttpURLConnection conn = createConnection(new URL(getUrl()), "POST", null);
-                inputStream = getConnectionInputStream(conn);
-                outputStream = getConnectionOutputStream(conn);
 
+                outputStream = getConnectionOutputStream(conn);
                 outputStreamWriter = new OutputStreamWriter(outputStream);
                 outputStreamWriter.write(mPostData);
+                outputStreamWriter.flush();
 
+                inputStream = getConnectionInputStream(conn);
                 byte[] bufResult = new byte[MAX_DATA_SIZE];
                 int currBufPos = 0;
                 int bytesRead;

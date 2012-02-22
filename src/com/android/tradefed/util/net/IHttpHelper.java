@@ -124,7 +124,7 @@ public interface IHttpHelper {
      * </p>
      * @param url the URL
      * @param postData the data to be posted once the connection is open
-     *  @return the {@link String} remote contents
+     * @return the {@link String} remote contents
      * @throws IOException if failed to retrieve data
      * @throws DataSizeException if retrieved data is > {@link #MAX_DATA_SIZE}
      */
