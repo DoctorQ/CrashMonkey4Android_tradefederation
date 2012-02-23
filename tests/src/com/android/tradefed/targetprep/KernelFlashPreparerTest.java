@@ -272,17 +272,19 @@ public class KernelFlashPreparerTest extends TestCase {
      * path.
      */
     public void testCreateBootImage() throws IOException {
-        Capture<String> command = new Capture<String>();
+        Capture<String> bootimgPath = new Capture<String>();
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyInt(),
-                EasyMock.capture(command))).andReturn(new CommandResult(CommandStatus.SUCCESS));
+                EasyMock.eq(mMkbootimg.getAbsolutePath()), EasyMock.eq("--kernel"),
+                EasyMock.eq(mKernel.getAbsolutePath()), EasyMock.eq("--ramdisk"),
+                EasyMock.eq(mRamdisk.getAbsolutePath()), EasyMock.eq("-o"),
+                EasyMock.capture(bootimgPath))).andReturn(new CommandResult(CommandStatus.SUCCESS));
 
         EasyMock.replay(mMockRunUtil);
 
         mBootImg = mFlashPreparer.createBootImage(mMkbootimg, mKernel, mRamdisk);
-        verifyCommand(command.getValue());
+        assertEquals(mBootImg.getAbsolutePath(), bootimgPath.getValue());
         assertTrue(mBootImg.exists());
         assertTrue(mBootImg.isFile());
-
         EasyMock.verify(mMockRunUtil);
     }
 
@@ -290,9 +292,13 @@ public class KernelFlashPreparerTest extends TestCase {
      * Test {@link KernelFlashPreparer#createBootImage(File, File, File)} if mkbootimg fails.
      */
     public void testCreateBootImage_failed() {
-        Capture<String> command = new Capture<String>();
+        Capture<String> bootimgPath = new Capture<String>();
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyInt(),
-                EasyMock.capture(command))).andReturn(new CommandResult(CommandStatus.FAILED));
+                EasyMock.eq(mMkbootimg.getAbsolutePath()), EasyMock.eq("--kernel"),
+                EasyMock.eq(mKernel.getAbsolutePath()), EasyMock.eq("--ramdisk"),
+                EasyMock.eq(mRamdisk.getAbsolutePath()), EasyMock.eq("-o"),
+                EasyMock.capture(bootimgPath))).andReturn(new CommandResult(CommandStatus.FAILED));
+
 
         EasyMock.replay(mMockRunUtil);
 
@@ -302,7 +308,7 @@ public class KernelFlashPreparerTest extends TestCase {
         } catch (IOException e) {
             // Expected.
         }
-        verifyCommand(command.getValue());
+        assertEquals(mBootImg.getAbsolutePath(), bootimgPath.getValue());
         assertFalse(mBootImg.exists());
 
         EasyMock.verify(mMockRunUtil);
@@ -316,9 +322,12 @@ public class KernelFlashPreparerTest extends TestCase {
      * </p>
      */
     public void testCreateBootImage_runtimeexception() throws IOException {
-        Capture<String> command = new Capture<String>();
+        Capture<String> bootimgPath = new Capture<String>();
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyInt(),
-                EasyMock.capture(command))).andThrow(new RuntimeException());
+                EasyMock.eq(mMkbootimg.getAbsolutePath()), EasyMock.eq("--kernel"),
+                EasyMock.eq(mKernel.getAbsolutePath()), EasyMock.eq("--ramdisk"),
+                EasyMock.eq(mRamdisk.getAbsolutePath()), EasyMock.eq("-o"),
+                EasyMock.capture(bootimgPath))).andThrow(new RuntimeException());
 
         EasyMock.replay(mMockRunUtil);
 
@@ -328,21 +337,9 @@ public class KernelFlashPreparerTest extends TestCase {
         } catch (RuntimeException e) {
             // Expected.
         }
-        verifyCommand(command.getValue());
+        assertEquals(mBootImg.getAbsolutePath(), bootimgPath.getValue());
         assertFalse(mBootImg.exists());
 
         EasyMock.verify(mMockRunUtil);
-    }
-
-    private void verifyCommand(String command) {
-        assertNotNull(command);
-        assertTrue(String.format(("Expected command in the form \"<mkbootimg> --kernel <kernel> "
-                + "--ramdisk <ramdisk.img> -o <boot.img>\", actual \"%s\""), command),
-                command.startsWith(String.format("%s --kernel %s --ramdisk %s -o",
-                mMkbootimg.getAbsolutePath(), mKernel.getAbsolutePath(),
-                mRamdisk.getAbsolutePath())));
-        String[] splitCommand = command.split("\\s+");
-        File boot = new File(splitCommand[splitCommand.length - 1]);
-        assertEquals(mBootImg.getAbsolutePath(), boot.getAbsolutePath());
     }
 }
