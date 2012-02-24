@@ -20,7 +20,6 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
@@ -53,8 +52,6 @@ import java.util.regex.Pattern;
  * {@inheritDoc}
  */
 public class DeviceManager implements IDeviceManager {
-
-    private static final String LOG_TAG = "DeviceManager";
 
     /** max wait time in ms for fastboot devices command to complete */
     private static final long FASTBOOT_CMD_TIMEOUT = 1 * 60 * 1000;
@@ -128,7 +125,7 @@ public class DeviceManager implements IDeviceManager {
             // device property selection options won't work properly with a device in fastboot
             addFastbootDevices();
         } else {
-            Log.w(LOG_TAG, "Fastboot is not available.");
+            CLog.w("Fastboot is not available.");
             mFastbootListeners = null;
             mFastbootMonitor = null;
             mFastbootEnabled = false;
@@ -176,7 +173,7 @@ public class DeviceManager implements IDeviceManager {
         }
         if (fastbootResult.getStderr() != null &&
             fastbootResult.getStderr().indexOf("usage: fastboot") >= 0) {
-            Log.logAndDisplay(LogLevel.WARN, LOG_TAG,
+            CLog.logAndDisplay(LogLevel.WARN,
                               "You are running an older version of fastboot, please update it.");
             return true;
         }
@@ -215,13 +212,11 @@ public class DeviceManager implements IDeviceManager {
     private void checkAndAddAvailableDevice(final IDevice device) {
         if (mCheckDeviceMap.containsKey(device.getSerialNumber())) {
             // device already being checked, ignore
-            Log.d(LOG_TAG, String.format("Already checking new device %s, ignoring",
-                    device.getSerialNumber()));
+            CLog.d("Already checking new device %s, ignoring", device.getSerialNumber());
             return;
         }
         if (!mGlobalDeviceFilter.matches(device)) {
-            Log.v(LOG_TAG, String.format("New device %s doesn't match global filter, ignoring",
-                    device.getSerialNumber()));
+            CLog.v("New device %s doesn't match global filter, ignoring", device.getSerialNumber());
             return;
         }
         final IDeviceStateMonitor monitor = createStateMonitor(device);
@@ -231,11 +226,10 @@ public class DeviceManager implements IDeviceManager {
         Runnable checkRunnable = new Runnable() {
             @Override
             public void run() {
-                Log.d(LOG_TAG, String.format("checking new device %s responsiveness",
-                        device.getSerialNumber()));
+                CLog.d("checking new device %s responsiveness", device.getSerialNumber());
                 if (monitor.waitForDeviceShell(CHECK_WAIT_DEVICE_AVAIL_MS)) {
-                    Log.logAndDisplay(LogLevel.INFO, LOG_TAG, String.format(
-                            "Detected new device %s", device.getSerialNumber()));
+                    CLog.logAndDisplay(LogLevel.INFO, "Detected new device %s",
+                            device.getSerialNumber());
                     addAvailableDevice(device);
                 } else{
                     CLog.e("Device %s is not responsive to adb shell command , " +
@@ -380,7 +374,7 @@ public class DeviceManager implements IDeviceManager {
         try {
             return mAvailableDeviceQueue.take(ANY_DEVICE_OPTIONS);
         } catch (InterruptedException e) {
-            Log.w(LOG_TAG, "interrupted while taking device");
+            CLog.w("interrupted while taking device");
             return null;
         }
     }
@@ -424,7 +418,7 @@ public class DeviceManager implements IDeviceManager {
         try {
             return mAvailableDeviceQueue.poll(timeout, TimeUnit.MILLISECONDS, options);
         } catch (InterruptedException e) {
-            Log.w(LOG_TAG, "interrupted while polling for device");
+            CLog.w("interrupted while polling for device");
             return null;
         }
     }
@@ -436,7 +430,7 @@ public class DeviceManager implements IDeviceManager {
             testDevice.startLogcat();
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
-        Log.i(LOG_TAG, String.format("Allocated device %s", testDevice.getSerialNumber()));
+        CLog.i("Allocated device %s", testDevice.getSerialNumber());
         return testDevice;
     }
 
@@ -489,13 +483,13 @@ public class DeviceManager implements IDeviceManager {
                 ideviceToReturn = new StubDevice(ideviceToReturn.getSerialNumber(), true);
                 deviceState = FreeDeviceState.AVAILABLE;
             } catch (DeviceNotAvailableException e) {
-                Log.e(LOG_TAG, e);
+                CLog.e(e);
                 deviceState = FreeDeviceState.UNAVAILABLE;
             }
         }
         if (mAllocatedDeviceMap.remove(device.getSerialNumber()) == null) {
-            Log.e(LOG_TAG, String.format("freeDevice called with unallocated device %s",
-                    device.getSerialNumber()));
+            CLog.e("freeDevice called with unallocated device %s",
+                    device.getSerialNumber());
         } else if (deviceState == FreeDeviceState.UNRESPONSIVE) {
             // TODO: add class flag to control if unresponsive device's are returned to pool
             // TODO: also consider tracking unresponsive events received per device - so a
@@ -504,9 +498,8 @@ public class DeviceManager implements IDeviceManager {
         } else if (deviceState == FreeDeviceState.AVAILABLE) {
             addAvailableDevice(ideviceToReturn);
         } else if (deviceState == FreeDeviceState.UNAVAILABLE) {
-            Log.logAndDisplay(LogLevel.WARN, LOG_TAG, String.format(
-                    "Freed device %s is unavailable. Removing from use.",
-                    device.getSerialNumber()));
+            CLog.logAndDisplay(LogLevel.WARN, "Freed device %s is unavailable. Removing from use.",
+                    device.getSerialNumber());
         }
     }
 
@@ -603,8 +596,7 @@ public class DeviceManager implements IDeviceManager {
     @Override
     public ITestDevice connectToTcpDevice(String ipAndPort) {
         if (mAllocatedDeviceMap.containsKey(ipAndPort)) {
-            Log.w(LOG_TAG, String.format("Device with tcp serial %s is already allocated",
-                    ipAndPort));
+            CLog.w("Device with tcp serial %s is already allocated", ipAndPort);
             return null;
         }
         // create a mapping between this device, and its soon-to-be associated tcp serial number
@@ -617,8 +609,7 @@ public class DeviceManager implements IDeviceManager {
                 tcpDevice.waitForDeviceOnline();
                 return tcpDevice;
             } catch (DeviceNotAvailableException e) {
-                Log.w(LOG_TAG, String.format("Device with tcp serial %s did not come online",
-                        ipAndPort));
+                CLog.w("Device with tcp serial %s did not come online", ipAndPort);
             }
         }
         freeDevice(tcpDevice, FreeDeviceState.IGNORE);
@@ -631,15 +622,14 @@ public class DeviceManager implements IDeviceManager {
     @Override
     public ITestDevice reconnectDeviceToTcp(ITestDevice usbDevice)
             throws DeviceNotAvailableException {
-        Log.i(LOG_TAG, String.format("Reconnecting device %s to adb over tcpip",
-                usbDevice.getSerialNumber()));
+        CLog.i("Reconnecting device %s to adb over tcpip", usbDevice.getSerialNumber());
         ITestDevice tcpDevice = null;
         if (usbDevice instanceof IManagedTestDevice) {
             IManagedTestDevice managedUsbDevice = (IManagedTestDevice)usbDevice;
             String ipAndPort = managedUsbDevice.switchToAdbTcp();
             if (ipAndPort != null) {
-                Log.d(LOG_TAG, String.format("Device %s was switched to adb tcp on %s",
-                        usbDevice.getSerialNumber(), ipAndPort));
+                CLog.d("Device %s was switched to adb tcp on %s", usbDevice.getSerialNumber(),
+                        ipAndPort);
                 tcpDevice = connectToTcpDevice(ipAndPort);
                 if (tcpDevice == null) {
                     // ruh roh, could not connect to device
@@ -648,21 +638,20 @@ public class DeviceManager implements IDeviceManager {
                 }
             }
         } else {
-            Log.e(LOG_TAG, "reconnectDeviceToTcp: unrecognized device type.");
+            CLog.e("reconnectDeviceToTcp: unrecognized device type.");
         }
         return tcpDevice;
     }
 
     @Override
     public boolean disconnectFromTcpDevice(ITestDevice tcpDevice) {
-        Log.i(LOG_TAG, String.format("Disconnecting and freeing tcp device %s",
-                tcpDevice.getSerialNumber()));
+        CLog.i("Disconnecting and freeing tcp device %s", tcpDevice.getSerialNumber());
         boolean result = false;
         try {
             result = tcpDevice.switchToAdbUsb();
         } catch (DeviceNotAvailableException e) {
-            Log.w(LOG_TAG, String.format("Failed to switch device %s to usb mode: %s",
-                    tcpDevice.getSerialNumber(), e.getMessage()));
+            CLog.w("Failed to switch device %s to usb mode: %s", tcpDevice.getSerialNumber(),
+                    e.getMessage());
         }
         freeDevice(tcpDevice, FreeDeviceState.IGNORE);
         return result;
@@ -676,9 +665,8 @@ public class DeviceManager implements IDeviceManager {
             if (adbConnectResult.startsWith(resultSuccess)) {
                 return true;
             }
-            Log.w(LOG_TAG, String.format(
-                    "Failed to connect to device on %s, attempt %d of 3. Response: %s.",
-                    ipAndPort, i, adbConnectResult));
+            CLog.w("Failed to connect to device on %s, attempt %d of 3. Response: %s.",
+                    ipAndPort, i, adbConnectResult);
             getRunUtil().sleep(5*1000);
         }
         return false;
@@ -696,7 +684,7 @@ public class DeviceManager implements IDeviceManager {
         if (CommandStatus.SUCCESS.equals(result.getStatus())) {
             return result.getStdout();
         }
-        Log.w(LOG_TAG, String.format("adb %s failed", cmdArgs[0]));
+        CLog.w("adb %s failed", cmdArgs[0]);
         return null;
     }
 
@@ -909,8 +897,8 @@ public class DeviceManager implements IDeviceManager {
          */
         @Override
         public void deviceConnected(IDevice device) {
-            Log.d(LOG_TAG, String.format("Detected device connect %s, id %d",
-                    device.getSerialNumber(), device.hashCode()));
+            CLog.d("Detected device connect %s, id %d", device.getSerialNumber(),
+                    device.hashCode());
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device.getSerialNumber());
             if (testDevice == null) {
                 if (isValidDeviceSerial(device.getSerialNumber()) &&
@@ -923,8 +911,7 @@ public class DeviceManager implements IDeviceManager {
             } else {
                 // this device is known already. However DDMS will allocate a new IDevice, so need
                 // to update the TestDevice record with the new device
-                Log.d(LOG_TAG, String.format("Updating IDevice for device %s",
-                        device.getSerialNumber()));
+                CLog.d("Updating IDevice for device %s", device.getSerialNumber());
                 testDevice.setIDevice(device);
                 TestDeviceState newState = TestDeviceState.getStateByDdms(device.getState());
                 testDevice.setDeviceState(newState);
@@ -941,8 +928,8 @@ public class DeviceManager implements IDeviceManager {
         @Override
         public void deviceDisconnected(IDevice disconnectedDevice) {
             if (mAvailableDeviceQueue.remove(disconnectedDevice)) {
-                Log.i(LOG_TAG, String.format("Removed disconnected device %s from available queue",
-                        disconnectedDevice.getSerialNumber()));
+                CLog.i("Removed disconnected device %s from available queue",
+                        disconnectedDevice.getSerialNumber());
             }
             IManagedTestDevice testDevice = mAllocatedDeviceMap.get(
                     disconnectedDevice.getSerialNumber());
@@ -1036,8 +1023,8 @@ public class DeviceManager implements IDeviceManager {
         CommandResult fastbootResult = getRunUtil().runTimedCmd(FASTBOOT_CMD_TIMEOUT,
                 "fastboot", "devices");
         if (fastbootResult.getStatus().equals(CommandStatus.SUCCESS)) {
-            Log.v(LOG_TAG, String.format("fastboot devices returned %s",
-                    fastbootResult.getStdout()));
+            CLog.v("fastboot devices returned\n %s",
+                    fastbootResult.getStdout());
             return parseDevicesOnFastboot(fastbootResult.getStdout());
         } else {
             CLog.w("'fastboot devices' failed. Result: %s, stderr: %s", fastbootResult.getStatus(),
