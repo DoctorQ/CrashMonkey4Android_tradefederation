@@ -135,7 +135,10 @@ public class DeviceSetup implements ITargetPreparer {
             DeviceNotAvailableException, BuildError {
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
 
-        device.enableAdbRoot();
+        if (!device.enableAdbRoot()) {
+            throw new TargetSetupError(String.format("failed to enable adb root on %s",
+                    device.getSerialNumber()));
+        }
 
         configureSystemProperties(device);
 

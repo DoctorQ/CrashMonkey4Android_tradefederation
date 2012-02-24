@@ -173,44 +173,6 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * A {@link DeviceAction} that runs 'adb root'
-     */
-    private class AdbRootAction extends AdbAction {
-        /**
-         * flag to signal 'adb root' was successful, and that caller should wait for device to go
-         * unavailable, then online again.
-         */
-        boolean mNeedWait = false;
-
-        AdbRootAction(String[] fullCmd) {
-            super(fullCmd);
-        }
-
-        @Override
-        public boolean run() throws TimeoutException, IOException {
-            mNeedWait = false;
-            if (super.run()) {
-                CLog.d("adb root on %s returned '%s'", getSerialNumber(), mOutput.trim());
-                if (mOutput.contains("adbd is already running as root")) {
-                    // this should rarely/never happen, since enableAdbRoot checks if adb runs as
-                    // root..
-                    return true;
-                } else if (mOutput.contains("restarting adbd as root")) {
-                    mNeedWait= true;
-                    return true;
-
-                } else {
-                    // interpret as communication failure
-                    throw new IOException(String.format("Unrecognized output from adb root: %s",
-                            mOutput.trim()));
-                }
-            }
-            return false;
-        }
-    }
-
-
-    /**
      * Creates a {@link TestDevice}.
      *
      * @param device the associated {@link IDevice}
@@ -1903,17 +1865,21 @@ class TestDevice implements IManagedTestDevice {
             return true;
         }
         CLog.i("adb root on device %s", getSerialNumber());
-        final String[] fullCmd = buildAdbCommand("root");
-        AdbRootAction rootAction = new AdbRootAction(fullCmd);
-
-        performDeviceAction("adb root", rootAction, MAX_RETRY_ATTEMPTS);
-        if (rootAction.mNeedWait) {
+        int attempts = MAX_RETRY_ATTEMPTS + 1;
+        for (int i=1; i <= attempts; i++) {
+            String output = executeAdbCommand("root");
             // wait for device to disappear from adb
-            waitForDeviceNotAvailable("root", 30 * 1000);
+            waitForDeviceNotAvailable("root", 20 * 1000);
             // wait for device to be back online
             waitForDeviceOnline();
+
+            if (isAdbRoot()) {
+                return true;
+            }
+            CLog.w("'adb root' on %s unsuccessful on attempt %d of %d. Output: '%s'",
+                    getSerialNumber(), i, attempts, output);
         }
-        return true;
+        return false;
     }
 
     private boolean isAdbRoot() throws DeviceNotAvailableException {

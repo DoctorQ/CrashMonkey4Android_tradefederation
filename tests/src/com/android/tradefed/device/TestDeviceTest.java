@@ -143,6 +143,7 @@ public class TestDeviceTest extends TestCase {
      */
     private void setEnableAdbRootExpectations() throws Exception {
         injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        injectShellResponse("id", "uid=0(root) gid=0(root)");
         CommandResult adbResult = new CommandResult();
         adbResult.setStatus(CommandStatus.SUCCESS);
         adbResult.setStdout("restarting adbd as root");
@@ -157,10 +158,12 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
-     * Test that {@link TestDevice#enableAdbRoot()} reattempts adb root on unexpected output
+     * Test that {@link TestDevice#enableAdbRoot()} reattempts adb root
      */
     public void testEnableAdbRoot_rootRetry() throws Exception {
         injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        injectShellResponse("id", "uid=0(root) gid=0(root)");
         CommandResult adbBadResult = new CommandResult(CommandStatus.SUCCESS);
         adbBadResult.setStdout("");
         EasyMock.expect(
@@ -174,9 +177,9 @@ public class TestDeviceTest extends TestCase {
                         EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("root"))).andReturn(
                 adbResult);
         EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
-                Boolean.TRUE);
+                Boolean.TRUE).times(2);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(
-                mMockIDevice);
+                mMockIDevice).times(2);
         EasyMock.replay(mMockIDevice, mMockRunUtil, mMockMonitor);
         assertTrue(mTestDevice.enableAdbRoot());
     }
