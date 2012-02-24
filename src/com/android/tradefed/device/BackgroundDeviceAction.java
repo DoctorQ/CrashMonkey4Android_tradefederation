@@ -120,7 +120,7 @@ public class BackgroundDeviceAction extends Thread {
         try {
             mTestDevice.waitForDeviceOnline(10 * 60 * 1000);
         } catch (DeviceNotAvailableException e) {
-            CLog.e("Device %s not online", mSerialNumber);
+            CLog.w("Device %s not online", mSerialNumber);
         }
     }
 
