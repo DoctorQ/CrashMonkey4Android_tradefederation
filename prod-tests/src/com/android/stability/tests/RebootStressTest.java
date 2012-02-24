@@ -15,6 +15,7 @@
  */
 package com.android.stability.tests;
 
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -69,8 +70,8 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
     private boolean mWipeUserData = false;
 
     @Option(name = "wipe-data-cmd", description =
-            "the fastboot command to use to wipe data and reboot device.")
-    private String mFastbootWipeCmd = "-w reboot";
+            "the fastboot command(s) to use to wipe data and reboot device.")
+    private Collection<String> mFastbootWipeCmds = new ArrayList<String>();
 
     private ITestDevice mDevice;
     private String mLastKmsg;
@@ -135,6 +136,10 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
         mWipeUserData = wipeData;
     }
 
+    void setFastbootWipeDataCmds(Collection<String> cmds) {
+        mFastbootWipeCmds.addAll(cmds);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -151,6 +156,7 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             testShard.setRunName(mRunName);
             testShard.setWaitTime(mWaitTime);
             testShard.setWipeData(mWipeUserData);
+            testShard.setFastbootWipeDataCmds(mFastbootWipeCmds);
             testShard.setPollTime(mPollSleepTime);
             // attempt to divide iterations evenly among shards with no remainder
             int iterationsForShard = Math.round(remainingIterations/i);
@@ -179,11 +185,13 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
                 getDevice().rebootIntoBootloader();
                 if (mWipeUserData) {
                     executeFastbootWipeCommand();
-                    getDevice().waitForDeviceAvailable();
                 } else {
-                    getDevice().reboot();
+                    getDevice().executeFastbootCommand("reboot");
                 }
+                getDevice().waitForDeviceAvailable();
                 doWaitAndCheck(listener);
+                CLog.logAndDisplay(LogLevel.INFO, "Device %s completed %d of %d iterations",
+                        getDevice().getSerialNumber(), actualIterations+1, mIterations);
             }
         } finally {
             Map<String, String> metrics = new HashMap<String, String>(1);
@@ -199,18 +207,21 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
                 listener.testLog(String.format("dmesg_%s", getDevice().getSerialNumber()),
                         LogDataType.TEXT, new ByteArrayInputStreamSource(mDmesg.getBytes()));
             }
+            CLog.logAndDisplay(LogLevel.INFO, "Device %s completed %d of %d iterations",
+                    getDevice().getSerialNumber(), actualIterations, mIterations);
         }
     }
 
     private void executeFastbootWipeCommand() throws DeviceNotAvailableException {
-        for (int i=1; i <= 2; i++) {
-            CommandResult result = getDevice().executeFastbootCommand(mFastbootWipeCmd.split(" "));
-            if (result.getStatus().equals(CommandStatus.SUCCESS)) {
-                return;
-            }
-            CLog.w("fastboot '%s' failed on attempt %d of 2", mFastbootWipeCmd, i);
+        if (mFastbootWipeCmds.isEmpty()) {
+            // default to use fastboot -w reboot
+            mFastbootWipeCmds.add("-w reboot");
         }
-        Assert.fail(String.format("fastboot reboot command '%s' failed", mFastbootWipeCmd));
+        for (String fastbootCmd : mFastbootWipeCmds) {
+            CLog.i("Running '%s'", fastbootCmd);
+            CommandResult result = getDevice().executeFastbootCommand(fastbootCmd.split(" "));
+            Assert.assertEquals(result.getStderr(), CommandStatus.SUCCESS, result.getStatus());
+        }
     }
 
     /**
