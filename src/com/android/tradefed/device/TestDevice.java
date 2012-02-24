@@ -60,7 +60,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Semaphore;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -115,7 +115,7 @@ class TestDevice implements IManagedTestDevice {
     private IDeviceRecovery mRecovery = new WaitDeviceRecovery();
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
-    private final Semaphore mFastbootLock = new Semaphore(1);
+    private final ReentrantLock mFastbootLock = new ReentrantLock();
     private LogCatReceiver mLogcatReceiver;
     private IFileEntry mRootFile = null;
     private boolean mFastbootEnabled = true;
@@ -1128,15 +1128,15 @@ class TestDevice implements IManagedTestDevice {
         }
         final String[] fullCmd = buildFastbootCommand(cmdArgs);
         for (int i = 0; i < MAX_RETRY_ATTEMPTS; i++) {
+            CommandResult result = new CommandResult(CommandStatus.EXCEPTION);
             // block state changes while executing a fastboot command, since
             // device will disappear from fastboot devices while command is being executed
+            mFastbootLock.lock();
             try {
-                mFastbootLock.acquire();
-            } catch (InterruptedException e) {
-                // ignore
+                result = getRunUtil().runTimedCmd(timeout, fullCmd);
+            } finally {
+                mFastbootLock.unlock();
             }
-            CommandResult result = getRunUtil().runTimedCmd(timeout, fullCmd);
-            mFastbootLock.release();
             if (!isRecoveryNeeded(result)) {
                 return result;
             }
@@ -2237,12 +2237,11 @@ class TestDevice implements IManagedTestDevice {
         if (!deviceState.equals(getDeviceState())) {
             // disable state changes while fastboot lock is held, because issuing fastboot command
             // will disrupt state
-            if (getDeviceState().equals(TestDeviceState.FASTBOOT) && !mFastbootLock.tryAcquire()) {
+            if (getDeviceState().equals(TestDeviceState.FASTBOOT) && mFastbootLock.isLocked()) {
                 return;
             }
-            CLog.d("Device %s state is now %s", getSerialNumber(), deviceState);
             mState = deviceState;
-            mFastbootLock.release();
+            CLog.d("Device %s state is now %s", getSerialNumber(), deviceState);
             mMonitor.setState(deviceState);
         }
     }

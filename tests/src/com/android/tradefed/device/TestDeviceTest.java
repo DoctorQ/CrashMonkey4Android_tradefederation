@@ -24,6 +24,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.TestDevice.LogCatReceiver;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -707,9 +708,61 @@ public class TestDeviceTest extends TestCase {
     /**
      * Test that state changes are ignore while {@link TestDevice#executeFastbootCommand(String...)}
      * is active.
+     * @throws InterruptedException
      */
-    public void testExecuteFastbootCommand_state() {
-        // TODO: implement this
+    public void testExecuteFastbootCommand_state() throws InterruptedException {
+        // build a fastboot response that will block
+        IAnswer<CommandResult> blockResult = new IAnswer<CommandResult>() {
+            @Override
+            public CommandResult answer() throws Throwable {
+                synchronized(this) {
+                    // first inform this test that fastboot cmd is executing
+                    notifyAll();
+                    // now wait for test to unblock us when its done testing logic
+                    wait(1000);
+                }
+                return new CommandResult(CommandStatus.SUCCESS);
+            }
+        };
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("fastboot"),
+                EasyMock.eq("-s"),EasyMock.eq("serial"), EasyMock.eq("foo"))).andAnswer(
+                        blockResult);
+
+        // expect
+        mMockMonitor.setState(TestDeviceState.FASTBOOT);
+        mMockMonitor.setState(TestDeviceState.NOT_AVAILABLE);
+        replayMocks();
+
+        mTestDevice.setDeviceState(TestDeviceState.FASTBOOT);
+        assertEquals(TestDeviceState.FASTBOOT, mTestDevice.getDeviceState());
+
+        // start fastboot command in background thread
+        Thread fastbootThread = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    mTestDevice.executeFastbootCommand("foo");
+                } catch (DeviceNotAvailableException e) {
+                    CLog.e(e);
+                }
+            }
+        };
+        fastbootThread.start();
+        try {
+            synchronized (blockResult) {
+                blockResult.wait(1000);
+            }
+            // expect to ignore this
+            mTestDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+            assertEquals(TestDeviceState.FASTBOOT, mTestDevice.getDeviceState());
+        } finally {
+            synchronized (blockResult) {
+                blockResult.notifyAll();
+            }
+        }
+        fastbootThread.join();
+        mTestDevice.setDeviceState(TestDeviceState.NOT_AVAILABLE);
+        assertEquals(TestDeviceState.NOT_AVAILABLE, mTestDevice.getDeviceState());
     }
 
     /**
