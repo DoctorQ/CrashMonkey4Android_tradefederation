@@ -20,12 +20,13 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
 public class RunCommandTargetPreparer implements ITargetPreparer {
-    @Option(name = "run-command", description = "Command to run")
+    @Option(name = "run-command", description = "adb shell command to run")
     private Collection<String> mCommands = new ArrayList<String>();
 
     /**
@@ -37,6 +38,7 @@ public class RunCommandTargetPreparer implements ITargetPreparer {
         for (String cmd : mCommands) {
             // If the command had any output, the executeShellCommand method will log it at the
             // VERBOSE level; so no need to do any logging from here.
+            CLog.d("About to run command on device %s: %s", device.getSerialNumber(), cmd);
             final String output = device.executeShellCommand(cmd);
         }
     }
