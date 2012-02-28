@@ -60,6 +60,8 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
     /** The block size in bytes for the dd command */
     private final static int BLOCK_SIZE = 1024;
 
+    private final static int TEST_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+
     /**
      * Class used for tests.  Includes fields such as name post key and the method for running the
      * test.
@@ -272,6 +274,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                         "com.android.mediaframeworktest", ".MediaRecorderStressTestRunner",
                         mTestDevice.getIDevice());
                 runner.setClassName("com.android.mediaframeworktest.stress.MediaPlayerStressTest");
+                runner.setMaxtimeToOutputResponse(TEST_TIMEOUT);
 
                 CLog.d("Running video playback instrumentation");
                 startLogging();
@@ -300,6 +303,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                         mTestDevice.getIDevice());
                 runner.setMethodName("com.android.camera.stress.VideoCapture",
                         "testBackVideoCapture");
+                runner.setMaxtimeToOutputResponse(TEST_TIMEOUT);
                 runner.addInstrumentationArg("video_iterations", Integer.toString(1));
                 runner.addInstrumentationArg("video_duration", Integer.toString(3 * 60 * 1000));
 
