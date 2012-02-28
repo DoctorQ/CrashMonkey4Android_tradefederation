@@ -99,13 +99,13 @@ public class BackgroundDeviceAction extends Thread {
     }
 
     private void recoverDevice(String exceptionType) {
-        CLog.d("%s while running %s on %s. May see duplicaton content in log.", exceptionType,
+        CLog.d("%s while running %s on %s. May see duplicated content in log.", exceptionType,
                 mDescriptor, mSerialNumber);
 
         // FIXME: Determine when we should append a message to the receiver.
         if (mReceiver instanceof LargeOutputReceiver) {
             ((LargeOutputReceiver) mReceiver).appendLogMsg(String.format(
-                    "%s interrupted. May see duplicate content in log.", mDescriptor));
+                    "%s interrupted. May see duplicated content in log.", mDescriptor));
         }
 
         // Make sure we haven't been cancelled before we sleep for a long time
