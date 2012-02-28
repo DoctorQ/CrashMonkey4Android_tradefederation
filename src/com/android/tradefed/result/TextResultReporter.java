@@ -15,11 +15,17 @@
  */
 package com.android.tradefed.result;
 
+import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import junit.textui.ResultPrinter;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -29,11 +35,27 @@ import java.util.Map;
 public class TextResultReporter extends InvocationToJUnitResultForwarder
     implements ITestInvocationListener {
 
+    private ILogFileSaver mLogFileSaver;
+
+    private static final String REPORT_DIR_NAME = "output-file-path";
+    @Option(name = REPORT_DIR_NAME, description =
+            "root file system path to directory to store logs")
+    private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
+
     /**
      * Creates a {@link TextResultReporter}.
      */
     public TextResultReporter() {
         super(new ResultPrinter(System.out));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void invocationStarted(IBuildInfo buildInfo) {
+        super.invocationStarted(buildInfo);
+        mLogFileSaver = new LogFileSaver(buildInfo, mReportDir);
     }
 
     /**
@@ -68,6 +90,22 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
         if (!metrics.isEmpty()) {
             ResultPrinter printer = (ResultPrinter)getJUnitListener();
             printer.getWriter().format("\nMetrics: %s\n", metrics);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
+        try {
+            File logFile = mLogFileSaver.saveLogData(dataName, dataType,
+                    dataStream.createInputStream());
+            CLog.logAndDisplay(LogLevel.INFO, "Saved %s log to %s", dataName,
+                    logFile.getAbsolutePath());
+        } catch (IOException e) {
+            CLog.e("Failed to save log data");
+            CLog.e(e);
         }
     }
 }
