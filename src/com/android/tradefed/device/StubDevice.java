@@ -326,7 +326,6 @@ class StubDevice implements IDevice {
     @Override
     public String getPropertySync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        // TODO implement this
         return null;
     }
 
@@ -335,7 +334,6 @@ class StubDevice implements IDevice {
      */
     @Override
     public boolean arePropertiesSet() {
-        // TODO implement this
         return false;
     }
 
@@ -345,7 +343,6 @@ class StubDevice implements IDevice {
     @Override
     public String getPropertyCacheOrSync(String name) throws TimeoutException,
             AdbCommandRejectedException, ShellCommandUnresponsiveException, IOException {
-        // TODO implement this
         return null;
     }
 
@@ -355,7 +352,6 @@ class StubDevice implements IDevice {
     @Override
     public Integer getBatteryLevel() throws TimeoutException, AdbCommandRejectedException,
             IOException, ShellCommandUnresponsiveException {
-        // TODO implement this
         return null;
     }
 
@@ -365,7 +361,26 @@ class StubDevice implements IDevice {
     @Override
     public Integer getBatteryLevel(long freshnessMs) throws TimeoutException,
             AdbCommandRejectedException, IOException, ShellCommandUnresponsiveException {
-        // TODO implement this
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void createForward(int localPort, String remoteSocketName,
+            DeviceUnixSocketNamespace namespace) throws TimeoutException,
+            AdbCommandRejectedException, IOException {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void removeForward(int localPort, String remoteSocketName,
+            DeviceUnixSocketNamespace namespace) throws TimeoutException,
+            AdbCommandRejectedException, IOException {
+        // ignore
     }
 }
