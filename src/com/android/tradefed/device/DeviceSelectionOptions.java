@@ -413,13 +413,32 @@ public class DeviceSelectionOptions implements IDeviceSelection {
 
     @Override
     public String getDeviceProductType(IDevice device) {
-        // FIXME: merge this into the getProperties match
-        return device.getProperty("ro.hardware");
+        return getProperty(device, "ro.hardware");
+    }
+
+    private String getProperty(IDevice device, String propName) {
+        try {
+            return device.getPropertyCacheOrSync(propName);
+        } catch (TimeoutException e) {
+            handlePropException(device, e);
+        } catch (AdbCommandRejectedException e) {
+            handlePropException(device, e);
+        } catch (IOException e) {
+            handlePropException(device, e);
+        } catch (ShellCommandUnresponsiveException e) {
+            handlePropException(device, e);
+        }
+        return null;
+    }
+
+    private void handlePropException(IDevice device, Exception e) {
+        CLog.w("Failed to query device property for %s: %s", device.getSerialNumber(),
+                e.toString());
     }
 
     @Override
     public String getDeviceProductVariant(IDevice device) {
-        return device.getProperty("ro.product.device");
+        return getProperty(device, "ro.product.device");
     }
 
     @Override
