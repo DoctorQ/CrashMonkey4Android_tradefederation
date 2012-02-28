@@ -126,23 +126,23 @@ public class DeviceSelectionOptionsTest extends TestCase {
         };
     }
 
-    public void testGetProductType_mismatch() {
+    public void testGetProductType_mismatch() throws Exception {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(OTHER_DEVICE_TYPE);
 
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.hardware")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.product.device")).andReturn(null);
         EasyMock.replay(mMockDevice);
 
         assertFalse(options.matches(mMockDevice));
     }
 
-    public void testGetProductType_match() {
+    public void testGetProductType_match() throws Exception {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(DEVICE_TYPE);
 
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.hardware")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.product.device")).andReturn(null);
         EasyMock.replay(mMockDevice);
         assertTrue(options.matches(mMockDevice));
     }
@@ -151,12 +151,12 @@ public class DeviceSelectionOptionsTest extends TestCase {
      * Test scenario where device does not return a valid product type. For now, this will result
      * in device not being matched.
      */
-    public void testGetProductType_missingProduct() {
+    public void testGetProductType_missingProduct() throws Exception {
         DeviceSelectionOptions options = new DeviceSelectionOptions();
         options.addProductType(DEVICE_TYPE);
 
-        EasyMock.expect(mMockDevice.getProperty("ro.hardware")).andReturn(DEVICE_TYPE);
-        EasyMock.expect(mMockDevice.getProperty("ro.product.device")).andReturn(null);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.hardware")).andReturn(DEVICE_TYPE);
+        EasyMock.expect(mMockDevice.getPropertyCacheOrSync("ro.product.device")).andReturn(null);
         EasyMock.replay(mMockDevice);
         assertTrue(options.matches(mMockDevice));
     }
