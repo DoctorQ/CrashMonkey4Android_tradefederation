@@ -373,6 +373,8 @@ public class TestInvocation implements ITestInvocation {
                                 info.getBuildId());
                         resumeConfig.getBuildProvider().cleanUp(clonedBuild);
                     }
+                    // FIXME: is it a bug to return from here, when we may not have completed the
+                    // FIXME: config.getTests iteration?
                     return canReschedule;
                 }
             }
