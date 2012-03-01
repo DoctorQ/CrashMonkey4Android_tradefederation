@@ -70,6 +70,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private static final String SWITCH_STANZA = "Camera and video recorder preview switching";
     private static final String PLAYBACK_STANZA = "Video record and play back stress test:";
     private static final String RECORDING_STANZA = "H263 video record";
+    private static final String TIMELAPSE_STANZA = "Start camera time lapse stress:";
     private static final Pattern EXPECTED_LOOP_COUNT_PATTERN =
             Pattern.compile("Total number of loops:\\s*(\\d+)");
     private static final Pattern ACTUAL_LOOP_COUNT_PATTERN =
@@ -163,6 +164,8 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
                 key = "VideoRecordPlayback";
             } else if (line.startsWith(RECORDING_STANZA)) {
                 key = "VideoRecording";
+            } else if (TIMELAPSE_STANZA.equals(line)) {
+                key = "TimeLapseRecord";
             } else if (line.isEmpty()) {
                 // ignore
                 continue;
