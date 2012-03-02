@@ -187,6 +187,8 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
 
         } else {
             super.flashSystem(device, deviceBuild);
+            device.waitForDeviceOnline();
+            device.rebootIntoBootloader();
         }
     }
 
