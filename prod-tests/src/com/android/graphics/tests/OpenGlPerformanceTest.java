@@ -30,15 +30,22 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.SimpleStats;
 
 import junit.framework.Assert;
+import junit.framework.TestCase;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileReader;
+//import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,29 +63,89 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_RUNNER_NAME = ".RsPerfTestRunner";
     private static final String TEST_CLASS = "com.android.perftest.RsBenchTest";
     private static final String OUTPUT_FILE = "rsbench_result";
+    private static final int TEST_TIMER = 60 * 60 *1000; // test running timer
 
-    // The order of item keys are matching the order they show in the output file
-    private static final String[] ITEM_KEYS = {"text1", "text2", "text3",
-            "GeoTestFlatColor1", "GeoTestFlatColor2", "GeoTestFlatColor3", "GeoTestSingleTexture1",
-            "GeoTestSingleTexture2", "GeoTestSingleTexture3",
-            "FullScreenMesh10","FullScrennMesh100", "FullScreenMeshW4",
-            "GeoTestHeavyVertex1", "GeoTestHeavyVertex2", "GeoTestHeavyVertex3",
-            "10xSingleTexture", "Multitexture",
-            "BlendedSingleTexture", "BlendedMultiTexture",
-            "GeoTestHeavyFrag1", "GeoTestHeavyFrag2",
-            "GeoTestHeavyFrag3", "GeoTestHeavyFragHeavyVertex1",
-            "GeoTestHeavyFragHeavyVertex2", "GeoTestHeavyFragHeavyVertex3",
-            "UITestWithIcon10by10", "UITestWithIcon100by100",
-            "UITestWithImageText3", "UITestWithImageText5",
-            "UITestListView", "UITestLiveWallPaper"};
-    private final String[] RU_KEYS = {"graphics_text", "graphics_geo_light", "graphics_mesh",
-            "graphics_geo_heavy", "graphics_texture", "graphics_ui"};
-    private final int[][] RU_ITEM_KEYS_MAP = {{0, 1, 2}, {3, 4, 5, 6, 7, 8}, {9, 10, 11},
-            {12, 13, 14, 19, 20, 21, 22, 23, 24}, {15, 16, 17, 18}, {25, 26, 27, 28, 29, 30}};
+    private final RegexTrie<String> mPatternMap = new RegexTrie<String>();
+    private Map<String, String[]> mKeyMap = new HashMap<String, String[]>();
+    private Map<String, Double[]> mTestResults = new HashMap<String, Double[]>();
 
     @Option(name="iterations",
             description="The number of iterations to run benchmark tests.")
-    private int mIterations = 10;
+    private int mIterations = 5;
+
+    public OpenGlPerformanceTest() {
+        // 3 tests, RenderScript Text Rendering
+        mPatternMap.put("text1", "Fill screen with text 1 time, (\\d+.\\d+),");
+        mPatternMap.put("text2", "Fill screen with text 3 times, (\\d+.\\d+),");
+        mPatternMap.put("text3", "Fill screen with text 5 times, (\\d+.\\d+),");
+        // 6 tests, RenderScript Texture Blending
+        mPatternMap.put("10xSingleTexture", "Fill screen 10x singletexture, (\\d+.\\d+),");
+        mPatternMap.put("Multitexture", "Fill screen 10x 3tex multitexture, (\\d+.\\d+),");
+        mPatternMap.put("BlendedSingleTexture", "Fill screen 10x blended singletexture, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("BlendedMultiTexture", "Fill screen 10x blended 3tex multitexture, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("3xModulatedBlendedSingletexture",
+                "Fill screen 3x modulate blended singletexture, (\\d+.\\d+),");
+        mPatternMap.put("1xModulatedBlendedSingletexture",
+                "Fill screen 1x modulate blended singletexture, (\\d+.\\d+),");
+        // 3 tests, RenderScript Mesh
+        mPatternMap.put("FullScreenMesh10", "Full screen mesh 10 by 10, (\\d+.\\d+),");
+        mPatternMap.put("FullScrennMesh100", "Full screen mesh 100 by 100, (\\d+.\\d+),");
+        mPatternMap.put("FullScreenMeshW4", "Full screen mesh W / 4 by H / 4, (\\d+.\\d+),");
+        // 6 tests, RenderScript Geo Test (light)
+        mPatternMap.put("GeoTestFlatColor1", "Geo test 25.6k flat color, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestFlatColor2", "Geo test 51.2k flat color, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestFlatColor3", "Geo test 204.8k small tries flat color, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("GeoTestSingleTexture1", "Geo test 25.6k single texture, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestSingleTexture2", "Geo test 51.2k single texture, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestSingleTexture3", "Geo test 204.8k small tries single texture, " +
+                "(\\d+.\\d+),");
+        // 9 tests, RenderScript Geo Test (heavy)
+        mPatternMap.put("GeoTestHeavyVertex1","Geo test 25.6k geo heavy vertex, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyVertex2","Geo test 51.2k geo heavy vertex, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyVertex3", "Geo test 204.8k geo raster load heavy vertex, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFrag1", "Geo test 25.6k heavy fragment, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFrag2", "Geo test 51.2k heavy fragment, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFrag3", "Geo test 204.8k small tries heavy fragment, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFragHeavyVertex1",
+                "Geo test 25.6k heavy fragment heavy vertex, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFragHeavyVertex2",
+                "Geo test 51.2k heavy fragment heavy vertex, (\\d+.\\d+),");
+        mPatternMap.put("GeoTestHeavyFragHeavyVertex3",
+                "Geo test 204.8k small tries heavy fragment heavy vertex, (\\d+.\\d+),");
+        // 6 tests, RenerScript UI Test
+        mPatternMap.put("UITestWithIcon10by10", "UI test with icon display 10 by 10, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("UITestWithIcon100by100", "UI test with icon display 100 by 100, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("UITestWithImageText3", "UI test with image and text display 3 pages, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("UITestWithImageText5", "UI test with image and text display 5 pages, " +
+                "(\\d+.\\d+),");
+        mPatternMap.put("UITestListView", "UI test with list view, (\\d+.\\d+),");
+        mPatternMap.put("UITestLiveWallPaper", "UI test with live wallpaper, (\\d+.\\d+),");
+
+        mKeyMap.put("graphics_text", (new String[]{"text1", "text2", "text3"}));
+        mKeyMap.put("graphics_geo_light", (new String[]{"GeoTestFlatColor1", "GeoTestFlatColor2",
+                "GeoTestFlatColor3", "GeoTestSingleTexture1", "GeoTestSingleTexture2",
+                "GeoTestSingleTexture3"}));
+        mKeyMap.put("graphics_mesh", (new String[]{"FullScreenMesh10","FullScrennMesh100",
+                "FullScreenMeshW4"}));
+        mKeyMap.put("graphics_geo_heavy", (new String[]{"GeoTestHeavyVertex1",
+                "GeoTestHeavyVertex2", "GeoTestHeavyVertex3", "GeoTestHeavyFrag1",
+                "GeoTestHeavyFrag2", "GeoTestHeavyFrag3", "GeoTestHeavyFragHeavyVertex1",
+                "GeoTestHeavyFragHeavyVertex2", "GeoTestHeavyFragHeavyVertex3"}));
+        mKeyMap.put("graphics_texture", (new String[]{"10xSingleTexture", "Multitexture",
+                "BlendedSingleTexture", "BlendedMultiTexture", "3xModulatedBlendedSingletexture",
+                "1xModulatedBlendedSingletexture"}));
+        mKeyMap.put("graphics_ui", (new String[]{"UITestWithIcon10by10", "UITestWithIcon100by100",
+                "UITestWithImageText3", "UITestWithImageText5",
+                "UITestListView", "UITestLiveWallPaper"}));
+    }
 
     /**
      * Run the OpenGl benchmark tests
@@ -94,6 +161,7 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.addInstrumentationArg("iterations", Integer.toString(mIterations));
         runner.setClassName(TEST_CLASS);
+        runner.setMaxtimeToOutputResponse(TEST_TIMER);
         // Add bugreport listener for failed test
         BugreportCollector bugListener = new
             BugreportCollector(standardListener, mTestDevice);
@@ -110,17 +178,14 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
      * @param test
      * @param listener
      */
-    private void logOutputFile(ITestInvocationListener listener) throws DeviceNotAvailableException {
+    private void logOutputFile(ITestInvocationListener listener)
+            throws DeviceNotAvailableException {
         // take a bug report, it is possible the system crashed
         InputStreamSource bugreport = mTestDevice.getBugreport();
         listener.testLog("bugreport.txt", LogDataType.TEXT, bugreport);
         bugreport.cancel();
         File resFile = null;
         InputStreamSource outputSource = null;
-        List<String> testName = new ArrayList<String>();
-        List<List<String>> testResults = new ArrayList<List<String>>();
-        float[] testAverage = null;
-        float[] testStd = null;
 
         for (int i = 0; i < mIterations; i++) {
             // In each iteration, the test result is saved in a file rsbench_result*.csv
@@ -139,7 +204,7 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
                         outputSource);
 
                 // Parse the results file and report results to dash board
-                parseOutputFile(resFile, testName, testResults, i, listener);
+                parseOutputFile(new FileInputStream(resFile), i, listener);
             } catch (IOException e) {
                 CLog.e("IOException while reading outputfile %s", outputFileName);
             } finally {
@@ -152,70 +217,80 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
             }
         }
 
-        testAverage = new float[testResults.size()];
-        testStd = new float[testResults.size()];
+        printTestResults();
+        printKeyMap();
 
-        // After processing the output file, calculate average data and report data to dashboard
+        Map<String, String> runMetrics = new HashMap<String,String>();
+
+        // After processing the output file, calculate average data and report data
         // Find the RU-ITEM keys mapping for data posting
-        for (int ruIndex = 0; ruIndex < RU_KEYS.length; ruIndex++) {
-            Map<String, String> runMetrics = new HashMap<String, String>();
-            int[] itemKeys = RU_ITEM_KEYS_MAP[ruIndex];
-            for (int i  = 0; i < itemKeys.length; i++) {
-                int itemIndex = itemKeys[i];
-                float averageFps = getAverage(testResults.get(itemIndex));
-                float std = getStd(testResults.get(itemIndex), averageFps);
-                testAverage[itemIndex] = averageFps;
-                testStd[itemIndex] =  std;
-                runMetrics.put(ITEM_KEYS[itemIndex], String.valueOf(averageFps));
+        for (Map.Entry<String, String[]> entry: mKeyMap.entrySet()) {
+            String[] itemKeys = entry.getValue();
+
+            CLog.v("ru key: %s", entry.getKey());
+
+            for (String key: itemKeys) {
+                CLog.v("item key: %s", key);
+                Assert.assertNotNull("no test results", mTestResults.get(key));
+                SimpleStats simpleStats = new SimpleStats();
+                simpleStats.addAll(Arrays.asList(mTestResults.get(key)));
+                double averageFps = simpleStats.mean();
+                runMetrics.put(key, String.valueOf(averageFps));
             }
-            reportMetrics(RU_KEYS[ruIndex], listener, runMetrics);
+            reportMetrics(entry.getKey(), runMetrics, listener);
+            runMetrics.clear();
         }
-
-        // Log the results
-        for (int i = 0; i < testName.size(); i++) {
-            CLog.d("%s: %f, %f", testName.get(i), testAverage[i], testStd[i]);
-        }
-    }
-
-    private float getAverage(List<String> dataArray) {
-        float sum = 0;
-        for (int i = 0; i < dataArray.size(); i++) {
-            sum += Float.parseFloat(dataArray.get(i));
-        }
-        return (sum/dataArray.size());
-    }
-
-    private float getStd(List<String> dataArray, float mean) {
-        float sum = 0;
-        for (int i = 0; i < dataArray.size(); i++) {
-            sum += Math.pow((Float.parseFloat(dataArray.get(i)) - mean), 2.0);
-        }
-        return ((float)Math.sqrt(sum/dataArray.size()));
     }
 
     // Parse one result file and save test name and fps value
-    private void parseOutputFile(File dataFile, List<String> nameList,
-            List<List<String>> dataArray, int iterationId, ITestInvocationListener listener) {
+    private void parseOutputFile(InputStream dataInputStream, int iterationId,
+            ITestInvocationListener listener) {
         try {
-            BufferedReader br= new BufferedReader(new FileReader(dataFile));
+            BufferedReader br= new BufferedReader(new InputStreamReader(dataInputStream));
             String line = null;
-            int testIndex  = 0;
             while ((line = br.readLine()) != null) {
-                String[]  data = line.trim().split(",");
-                if (iterationId == 0) {
-                    nameList.add(data[0].trim());
-                    List<String>  fpsList = new ArrayList<String>();
-                    fpsList.add(data[1].trim());
-                    dataArray.add(testIndex, fpsList);
-                } else {
-                    // get the result list, update the result and add it back to the array
-                    dataArray.get(testIndex).add(data[1].trim());
+                List<List<String>> capture = new ArrayList<List<String>>(1);
+                String key = mPatternMap.retrieve(capture, line);
+
+                if (key != null) {
+                    for (int i = 0; i < capture.size(); i++) {
+                        CLog.v("caputre.get[%d]: %s", i, capture.get(i).toString());
+                    }
+
+                    CLog.v("Retrieve key: %s, catpure: %s",
+                            key, capture.toString());
+
+                    // for value into the corresponding
+                    Double[] fps = mTestResults.get(key);
+                    if (fps == null) {
+                        fps = new Double[mIterations];
+                        CLog.v("initialize fps array");
+                    }
+                    fps[iterationId] = Double.parseDouble(capture.get(0).get(0));
+                    mTestResults.put(key, fps);
                 }
-                testIndex++;
             }
         } catch (IOException e) {
             CLog.e("IOException while reading from data stream: %s", e);
             return;
+        }
+    }
+
+    private void printKeyMap() {
+        for (Map.Entry<String, String[]> entry:mKeyMap.entrySet()) {
+            CLog.v("ru key: %s", entry.getKey());
+            for (String itemKey: entry.getValue()) {
+                CLog.v("item key: %s", itemKey);
+            }
+        }
+    }
+
+    private void printTestResults() {
+        for (Map.Entry<String, Double[]> entry: mTestResults.entrySet()) {
+            CLog.v("key %s:", entry.getKey());
+            for (Double d: entry.getValue()) {
+                CLog.v("value: %f", d.doubleValue());
+            }
         }
     }
 
@@ -224,8 +299,8 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
      * <p />
      * Exposed for unit testing
      */
-    private void reportMetrics(String metricsName, ITestInvocationListener listener,
-            Map<String, String> metrics) {
+    protected void reportMetrics(String metricsName, Map<String, String> metrics,
+            ITestInvocationListener listener) {
         // Create an empty testRun to report the parsed runMetrics
         CLog.d("About to report metrics to %s: %s", metricsName, metrics);
         listener.testRunStarted(metricsName, 0);
@@ -251,5 +326,177 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
+    }
+
+    /**
+     * A meta-test to ensure the parsing working properly
+     * To run the meta test, run command
+     * tradefed.sh run singleCommand host -n --class
+     * 'com.android.graphics.tests.OpenGlPerformanceTest$MetaTest'
+     */
+    public static class MetaTest extends TestCase {
+        private OpenGlPerformanceTest mTestInstance = null;
+
+        private static String join(String... subStrings) {
+            StringBuilder sb = new StringBuilder();
+            for (String subString : subStrings) {
+                sb.append(subString);
+                sb.append("\n");
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public void setUp() throws Exception {
+            mTestInstance = new OpenGlPerformanceTest() {};
+        }
+
+        // Make sure that parsing works
+        public void testParseOutputFile() throws Exception {
+            String output = join(
+                    "Fill screen with text 1 time, 97.65624,",
+                    "Fill screen with text 3 times, 36.576443,",
+                    "Fill screen with text 5 times, 12.382367,",
+                    "Fill screen 10x singletexture, 40.617382,",
+                    "Fill screen 10x 3tex multitexture, 28.32861,",
+                    "Fill screen 10x blended singletexture, 18.389112,",
+                    "Fill screen 10x blended 3tex multitexture, 5.4448433,",
+                    "Fill screen 3x modulate blended singletexture, 27.754648,",
+                    "Fill screen 1x modulate blended singletexture, 58.207214,",
+                    "Full screen mesh 10 by 10, 12.727504,",
+                    "Full screen mesh 100 by 100, 4.489136,",
+                    "Full screen mesh W / 4 by H / 4, 2.688967,",
+                    "Geo test 25.6k flat color, 31.259768,",
+                    "Geo test 51.2k flat color, 17.985611,",
+                    "Geo test 204.8k small tries flat color, 3.6580455,",
+                    "Geo test 25.6k single texture, 30.03905,",
+                    "Geo test 51.2k single texture, 14.622021,",
+                    "Geo test 204.8k small tries single texture, 3.7195458,",
+                    "Geo test 25.6k geo heavy vertex, 20.104542,",
+                    "Geo test 51.2k geo heavy vertex, 8.982305,",
+                    "Geo test 204.8k geo raster load heavy vertex, 2.9978714,",
+                    "Geo test 25.6k heavy fragment, 30.788176,",
+                    "Geo test 51.2k heavy fragment, 6.938662,",
+                    "Geo test 204.8k small tries heavy fragment, 2.9441204,",
+                    "Geo test 25.6k heavy fragment heavy vertex, 16.331863,",
+                    "Geo test 51.2k heavy fragment heavy vertex, 4.531243,",
+                    "Geo test 204.8k small tries heavy fragment heavy vertex, 1.6915321,",
+                    "UI test with icon display 10 by 10, 93.370674,",
+                    "UI test with icon display 100 by 100, 1.2948335,",
+                    "UI test with image and text display 3 pages, 99.50249,",
+                    "UI test with image and text display 5 pages, 77.57951,",
+                    "UI test with list view, 117.78562,",
+                    "UI test with live wallpaper, 38.197098,");
+
+            InputStream inputStream = new ByteArrayInputStream(output.getBytes());
+            mTestInstance.parseOutputFile(inputStream, 0, null);
+            assertNotNull(mTestInstance.mTestResults);
+
+            // 3 tests, RenderScript Text Rendering
+            assertEquals("97.65624", mTestInstance.mTestResults.get("text1")[0].toString());
+            assertEquals("36.576443", mTestInstance.mTestResults.get("text2")[0].toString());
+            assertEquals("12.382367", mTestInstance.mTestResults.get("text3")[0].toString());
+
+            // 6 tests, RenderScript Texture Blending
+            assertEquals("40.617382",
+                    mTestInstance.mTestResults.get("10xSingleTexture")[0].toString());
+            assertEquals("28.32861",
+                    mTestInstance.mTestResults.get("Multitexture")[0].toString());
+            assertEquals("18.389112",
+                    mTestInstance.mTestResults.get("BlendedSingleTexture")[0].toString());
+            assertEquals("5.4448433",
+                    mTestInstance.mTestResults.get("BlendedMultiTexture")[0].toString());
+            assertEquals("27.754648",
+                    mTestInstance.mTestResults.get(
+                            "3xModulatedBlendedSingletexture")[0].toString());
+            assertEquals("58.207214",
+                    mTestInstance.mTestResults.get(
+                            "1xModulatedBlendedSingletexture")[0].toString());
+
+            // 3 tests, RenderScript Mesh
+            assertEquals("12.727504",
+                    mTestInstance.mTestResults.get("FullScreenMesh10")[0].toString());
+            assertEquals("4.489136",
+                    mTestInstance.mTestResults.get("FullScrennMesh100")[0].toString());
+            assertEquals("2.688967",
+                    mTestInstance.mTestResults.get("FullScreenMeshW4")[0].toString());
+
+            // 6 tests, RenderScript Geo Test (light)
+            assertEquals("31.259768",
+                    mTestInstance.mTestResults.get("GeoTestFlatColor1")[0].toString());
+            assertEquals("17.985611",
+                    mTestInstance.mTestResults.get("GeoTestFlatColor2")[0].toString());
+            assertEquals("3.6580455",
+                    mTestInstance.mTestResults.get("GeoTestFlatColor3")[0].toString());
+            assertEquals("30.03905",
+                    mTestInstance.mTestResults.get("GeoTestSingleTexture1")[0].toString());
+            assertEquals("14.622021",
+                    mTestInstance.mTestResults.get("GeoTestSingleTexture2")[0].toString());
+            assertEquals("3.7195458",
+                    mTestInstance.mTestResults.get("GeoTestSingleTexture3")[0].toString());
+
+            // 9 tests, RenderScript Geo Test (heavy)
+            assertEquals("20.104542",
+                    mTestInstance.mTestResults.get("GeoTestHeavyVertex1")[0].toString());
+            assertEquals("8.982305",
+                    mTestInstance.mTestResults.get("GeoTestHeavyVertex2")[0].toString());
+            assertEquals("2.9978714",
+                    mTestInstance.mTestResults.get("GeoTestHeavyVertex3")[0].toString());
+            assertEquals("30.788176",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFrag1")[0].toString());
+            assertEquals("6.938662",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFrag2")[0].toString());
+            assertEquals("2.9441204",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFrag3")[0].toString());
+            assertEquals("16.331863",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFragHeavyVertex1")[0].toString());
+            assertEquals("4.531243",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFragHeavyVertex2")[0].toString());
+            assertEquals("1.6915321",
+                    mTestInstance.mTestResults.get("GeoTestHeavyFragHeavyVertex3")[0].toString());
+
+            // 6 tests, RenerScript UI Test
+            assertEquals("93.370674",
+                    mTestInstance.mTestResults.get("UITestWithIcon10by10")[0].toString());
+            assertEquals("1.2948335",
+                    mTestInstance.mTestResults.get("UITestWithIcon100by100")[0].toString());
+            assertEquals("99.50249",
+                    mTestInstance.mTestResults.get("UITestWithImageText3")[0].toString());
+            assertEquals("77.57951",
+                    mTestInstance.mTestResults.get("UITestWithImageText5")[0].toString());
+            assertEquals("117.78562",
+                    mTestInstance.mTestResults.get("UITestListView")[0].toString());
+            assertEquals("38.197098",
+                    mTestInstance.mTestResults.get("UITestLiveWallPaper")[0].toString());
+        }
+
+        // Verify parsing two iterations
+        public void testParseTwoInputs() throws Exception {
+            String output1 = join(
+                    "Fill screen with text 1 time, 97.65624,",
+                    "Fill screen with text 3 times, 36.576443,",
+                    "UI test with live wallpaper, 38.197098,");
+            String output2 = join(
+                    "Fill screen with text 1 time, 97.56097,",
+                    "Fill screen with text 3 times, 36.75119,",
+                    "UI test with live wallpaper, 38.05175,");
+
+            InputStream inputStream = new ByteArrayInputStream(output1.getBytes());
+            mTestInstance.parseOutputFile(inputStream, 0, null);
+            //mTestInstance.printTestResults();
+            inputStream = new ByteArrayInputStream(output2.getBytes());
+            mTestInstance.parseOutputFile(inputStream, 1, null);
+            assertNotNull(mTestInstance.mTestResults);
+
+            assertEquals("97.65624", mTestInstance.mTestResults.get("text1")[0].toString());
+            assertEquals("36.576443", mTestInstance.mTestResults.get("text2")[0].toString());
+            assertEquals("38.197098",
+                    mTestInstance.mTestResults.get("UITestLiveWallPaper")[0].toString());
+
+            assertEquals("97.56097", mTestInstance.mTestResults.get("text1")[1].toString());
+            assertEquals("36.75119", mTestInstance.mTestResults.get("text2")[1].toString());
+            assertEquals("38.05175",
+                    mTestInstance.mTestResults.get("UITestLiveWallPaper")[1].toString());
+        }
     }
 }
