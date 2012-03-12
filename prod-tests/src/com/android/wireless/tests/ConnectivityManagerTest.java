@@ -41,11 +41,19 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         "com.android.connectivitymanagertest";
     private static final String TEST_RUNNER_NAME =
         ".ConnectivityManagerTestRunner";
+    private static final String TEST_CLASS_NAME =
+        String.format("%s.functional.ConnectivityManagerMobileTest", TEST_PACKAGE_NAME);
     private RadioHelper mRadioHelper;
 
     @Option(name="ssid",
             description="The ssid used for wi-fi connection.")
     private String mSsid = null;
+
+    @Option(name="method", description="Test method to run")
+    private String mTestMethodName = null;
+
+    @Option(name="wifi-only")
+    private boolean mWifiOnly = false;
 
     @Override
     public void setDevice(ITestDevice testDevice) {
@@ -74,6 +82,12 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.addInstrumentationArg("ssid", mSsid);
+        if (mTestMethodName != null) {
+            runner.setMethodName(TEST_CLASS_NAME, mTestMethodName);
+        }
+        if (mWifiOnly) {
+            runner.addBooleanArg("wifi-only", true);
+        }
         mTestDevice.runInstrumentationTests(runner, bugListener);
     }
 }
