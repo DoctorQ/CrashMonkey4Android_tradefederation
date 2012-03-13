@@ -89,8 +89,10 @@ class TestDevice implements IManagedTestDevice {
     private static final int ENCRYPTION_INPLACE_TIMEOUT = 2 * 60 * 60 * 1000;
     /** Encrypting with wipe can take up to 5 minutes. */
     private static final int ENCRYPTION_WIPE_TIMEOUT = 5 * 60 * 1000;
-    /** Beginning of the string returned by vdc for "vdc enablecrypto". */
-    private static final String ENCRYPTION_SUPPORTED_OUTPUT = "500 Usage: cryptfs enablecrypto";
+    /** Beginning of the string returned by vdc for "vdc cryptfs enablecrypto". */
+    private static final String ENCRYPTION_SUPPORTED_CODE = "500";
+    /** Message in the string returned by vdc for "vdc cryptfs enablecrypto". */
+    private static final String ENCRYPTION_SUPPORTED_USAGE = "Usage: ";
 
     /** The time in ms to wait before starting logcat for a device */
     private int mLogStartDelay = 5*1000;
@@ -2094,7 +2096,8 @@ class TestDevice implements IManagedTestDevice {
         }
         enableAdbRoot();
         String output = executeShellCommand("vdc cryptfs enablecrypto").trim();
-        mIsEncryptionSupported = (output != null && output.startsWith(ENCRYPTION_SUPPORTED_OUTPUT));
+        mIsEncryptionSupported = (output != null && output.startsWith(ENCRYPTION_SUPPORTED_CODE) &&
+                output.contains(ENCRYPTION_SUPPORTED_USAGE));
         return mIsEncryptionSupported;
     }
 
