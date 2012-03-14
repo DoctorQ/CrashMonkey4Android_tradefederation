@@ -123,7 +123,11 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         setupDevice();
         RadioHelper mRadioHelper = new RadioHelper(mTestDevice);
-        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
+        // Capture a bugreport if activation or data setup failed
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(standardListener);
+            return;
+        }
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -165,7 +169,9 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
         File resFile = null;
         try {
             resFile = mTestDevice.pullFileFromExternal(mOutputFile);
-            Assert.assertNotNull("no output file, test failed.", resFile);
+            if (resFile == null) {
+              return;
+            }
             // Save a copy of the output file
             CLog.d("Sending %d byte file %s into the logosphere!",
                     resFile.length(), resFile);

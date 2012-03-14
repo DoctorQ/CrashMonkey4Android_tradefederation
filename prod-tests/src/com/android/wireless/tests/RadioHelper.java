@@ -17,6 +17,9 @@ package com.android.wireless.tests;
 
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -30,6 +33,8 @@ public class RadioHelper {
     private final int RETRY_ATTEMPTS = 3;
     private final int ACTIVATION_WAITING_TIME =  5 * 60 * 1000; // 5 minutes;
     private final String WIFI_ONLY = "wifi-only";
+    /* Maximum time to wait for device to connect to data network */
+    public static int MAX_DATA_SETUP_TIME = 3 * 60 * 1000; // 3 minutes
     private ITestDevice mDevice;
 
     RadioHelper(ITestDevice device) {
@@ -108,7 +113,6 @@ public class RadioHelper {
             String host = PING_SERVER_LIST[i];
             CLog.d("Start ping test, ping %s", host);
             String res = mDevice.executeShellCommand("ping -c 10 -w 100 " + host);
-            CLog.d("res: %s", res);
             if (!res.contains(failString)) {
                 return true;
             }
@@ -147,5 +151,30 @@ public class RadioHelper {
             }
         }
         return false;
+    }
+
+    /**
+     * Wait for device data setup
+     * @return true if data setup succeeded
+     * @return false if data setup failed
+     */
+    public boolean waitForDataSetup() throws DeviceNotAvailableException {
+        long startTime = System.currentTimeMillis();
+        while ((System.currentTimeMillis() - startTime) < MAX_DATA_SETUP_TIME) {
+            getRunUtil().sleep(30 * 1000);
+            if (pingTest()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // capture a bugreport
+    public void getBugreport(ITestInvocationListener listener)
+            throws DeviceNotAvailableException {
+        CLog.d("Capture a bugreport");
+        InputStreamSource bugreport = mDevice.getBugreport();
+        listener.testLog("bugreport", LogDataType.TEXT, bugreport);
+        bugreport.cancel();
     }
 }

@@ -46,12 +46,14 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
     private static String mTestName = "TelephonyTest";
     private static final String mOutputFile = "/data/data/com.android.phone/files/phoneResults.txt";
+    private static final int TEST_TIMER = 10 * 60 * 60 * 1000; // 10 hours
 
     // Define metrics for result report
     private static final String mMetricsName = "PhoneVoiceConnectionStress";
     private final String[] keys = {"CallActiveFailure", "CallDisconnectionFailure", "HangupFailure",
             "ServiceStateChange", "SuccessfulCall"};
     private int[] callStatus = new int[5];
+    private RadioHelper mRadioHelper;
 
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME = "com.android.phonetests";
@@ -88,8 +90,12 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
 
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mPhoneNumber);
-        // wait for 3 minutes for fully booting up and data connection
-        getRunUtil().sleep(3*60*1000);
+        mRadioHelper = new RadioHelper(mTestDevice);
+        // wait for data connection
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(listener);
+            return;
+        }
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -99,6 +105,7 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
         runner.addInstrumentationArg("callduration", mCallDuration);
         runner.addInstrumentationArg("pausetime", mPauseTime);
         runner.addInstrumentationArg("phonenumber", mPhoneNumber);
+        runner.setMaxtimeToOutputResponse(TEST_TIMER);
 
         // Add bugreport listener for failed test
         BugreportCollector bugListener = new
@@ -199,12 +206,5 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
-    }
-
-    /**
-     * Gets the {@link IRunUtil} instance to use.
-     */
-    IRunUtil getRunUtil() {
-        return RunUtil.getDefault();
     }
 }
