@@ -2026,37 +2026,37 @@ class TestDevice implements IManagedTestDevice {
         int i = 0;
         do {
             // Enter the password. Output will be:
-            // "200 -1" if the password has already been entered correctly,
-            // "200 0" if the password is entered correctly,
-            // "200 N" where N is any positive number if the password is incorrect,
+            // "200 [X] -1" if the password has already been entered correctly,
+            // "200 [X] 0" if the password is entered correctly,
+            // "200 [X] N" where N is any positive number if the password is incorrect,
             // any other string if there is an error.
             output = executeShellCommand(String.format("vdc cryptfs checkpw \"%s\"",
                     ENCRYPTION_PASSWORD)).trim();
 
-            if ("200 -1".equals(output)) {
+            if (output.startsWith("200 ") && output.endsWith(" -1")) {
                 return true;
             }
 
-            if (!"".equals(output) && !"200 0".equals(output)) {
+            if (!output.isEmpty() && !(output.startsWith("200 ") && output.endsWith(" 0"))) {
                 CLog.e("checkpw gave output '%s' while trying to unlock device %s",
                         output, getSerialNumber());
                 return false;
             }
 
             getRunUtil().sleep(500);
-        } while ("".equals(output) && i++ < 3);
+        } while (output.isEmpty() && ++i < 3);
 
-        if ("".equals(output)) {
+        if (output.isEmpty()) {
             CLog.e("checkpw gave no output while trying to unlock device %s");
         }
 
         // Restart the framework. Output will be:
-        // "200 0" if the user data partition can be mounted,
-        // "200 -1" if the user data partition can not be mounted (no correct password given),
+        // "200 [X] 0" if the user data partition can be mounted,
+        // "200 [X] -1" if the user data partition can not be mounted (no correct password given),
         // any other string if there is an error.
         output = executeShellCommand("vdc cryptfs restart").trim();
 
-        if (!"200 0".equals(output)) {
+        if (!(output.startsWith("200 ") &&  output.endsWith(" 0"))) {
             CLog.e("restart gave output '%s' while trying to unlock device %s", output,
                     getSerialNumber());
             return false;
