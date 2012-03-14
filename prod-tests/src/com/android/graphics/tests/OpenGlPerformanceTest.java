@@ -231,7 +231,9 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
 
             for (String key: itemKeys) {
                 CLog.v("item key: %s", key);
-                Assert.assertNotNull("no test results", mTestResults.get(key));
+                if (mTestResults.get(key) == null) {
+                    continue;
+                }
                 SimpleStats simpleStats = new SimpleStats();
                 simpleStats.addAll(Arrays.asList(mTestResults.get(key)));
                 double averageFps = simpleStats.mean();
