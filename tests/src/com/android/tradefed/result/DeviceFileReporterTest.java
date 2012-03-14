@@ -68,6 +68,28 @@ public class DeviceFileReporterTest extends TestCase {
         verifyMocks();
     }
 
+    /**
+     * Make sure that we correctly handle the case where a file doesn't exist while matching the
+     * exact name.
+     * <p />
+     * This verifies a fix for a bug where we would mistakenly treat the
+     * "file.txt: No such file or directory" message as a filename.  This would happen when we tried
+     * to match an exact filename that doesn't exist, rather than using a shell glob.
+     */
+    public void testNoExist() throws Exception {
+        final String file = "/data/traces.txt";
+        final String result = file + ": No such file or directory\r\n";
+        dfr.addPatterns(file);
+
+        EasyMock.expect(mDevice.executeShellCommand((String)EasyMock.anyObject()))
+                .andReturn(result);
+
+        replayMocks();
+        dfr.run();
+        // No pull attempt should happen
+        verifyMocks();
+    }
+
     public void testTwoFiles() throws Exception {
         final String result = "/data/tombstones/tombstone_00\r\n/data/tombstones/tombstone_01\r\n";
         final String filename1 = "/data/tombstones/tombstone_00";
