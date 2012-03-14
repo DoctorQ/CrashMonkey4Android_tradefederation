@@ -16,7 +16,10 @@
 
 package com.android.tradefed.build;
 
+import com.android.tradefed.util.FileUtil;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -66,4 +69,30 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
         }
         mAppPackageFiles.clear();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IBuildInfo clone() {
+        AppBuildInfo copy = new AppBuildInfo(getBuildId(), getTestTag(), getBuildTargetName());
+        copy.addAllBuildAttributes(this);
+        try {
+            for (File origFile : mAppPackageFiles) {
+                // Only using createTempFile to create a unique dest filename
+                File copyFile = FileUtil.createTempFile(origFile.getName(),
+                        FileUtil.getExtension(origFile.getName()));
+                copyFile.delete();
+                FileUtil.hardlinkFile(origFile, copyFile);
+                copy.addAppPackageFile(copyFile);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        copy.setBuildBranch(getBuildBranch());
+        copy.setBuildFlavor(getBuildFlavor());
+
+        return copy;
+    }
+
 }
