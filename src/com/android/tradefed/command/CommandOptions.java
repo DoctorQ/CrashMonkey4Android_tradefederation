@@ -39,7 +39,7 @@ public class CommandOptions implements ICommandOptions {
 
     @Option(name = "min-loop-time", description =
             "the minimum invocation time in ms when in loop mode.")
-    private long mMinLoopTime = 60 * 1000;
+    private long mMinLoopTime = 10 * 60 * 1000;
 
     @Option(name = "loop", description = "keep running continuously.",
             importance = Importance.ALWAYS)
