@@ -268,7 +268,7 @@ public class BugreportCollector implements ITestInvocationListener {
         if (mDescriptiveName != null) {
             logDesc = mDescriptiveName;
         }
-        String logName = String.format("bug-%s.%d.txt", logDesc, System.currentTimeMillis());
+        String logName = String.format("bug-%s.%d", logDesc, System.currentTimeMillis());
         CLog.v("Log name is %s", logName);
         InputStreamSource bugreport = mTestDevice.getBugreport();
         try {
