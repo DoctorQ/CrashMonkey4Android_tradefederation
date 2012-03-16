@@ -116,7 +116,10 @@ public class DeviceFileReporter {
                 File file = null;
                 InputStreamSource iss = null;
                 try {
+                    CLog.v("Trying to pull file %s from device %s", filename,
+                            mDevice.getSerialNumber());
                     file = mDevice.pullFile(filename);
+                    CLog.v("Local file %s has size %d", file, file.length());
                     iss = createIssForFile(file);
                     mListener.testLog(filename, pat.getValue(), iss);
                     filenames.add(filename);

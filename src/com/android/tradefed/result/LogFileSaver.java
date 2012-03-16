@@ -117,11 +117,19 @@ public class LogFileSaver implements ILogFileSaver {
     }
 
     /**
+     * A helper function that translates a string into something that can be used as a filename
+     */
+    private static String sanitizeFilename(String name) {
+        return name.replace(File.separatorChar, '_');
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public File saveLogData(String dataName, LogDataType dataType, InputStream dataStream)
             throws IOException {
+        final String saneDataName = sanitizeFilename(dataName);
         // add underscore to end of data name to make generated name more readable
         File logFile = FileUtil.createTempFile(dataName + "_", "." + dataType.getFileExt(),
                 mRootDir);
@@ -143,13 +151,14 @@ public class LogFileSaver implements ILogFileSaver {
         BufferedInputStream bufInput = null;
         ZipOutputStream outStream = null;
         try {
+            final String saneDataName = sanitizeFilename(dataName);
             // add underscore to end of data name to make generated name more readable
-            File logFile = FileUtil.createTempFile(dataName + "_", "."
+            File logFile = FileUtil.createTempFile(saneDataName + "_", "."
                     + LogDataType.ZIP.getFileExt(), mRootDir);
             bufInput = new BufferedInputStream(dataStream);
             outStream = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(
                     logFile), BUFFER_SIZE));
-            outStream.putNextEntry(new ZipEntry(dataName + "." + dataType.getFileExt()));
+            outStream.putNextEntry(new ZipEntry(saneDataName + "." + dataType.getFileExt()));
             StreamUtil.copyStreams(bufInput, outStream);
             Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
             return logFile;

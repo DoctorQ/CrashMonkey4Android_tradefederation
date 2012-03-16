@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.Log;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
@@ -29,8 +29,6 @@ import java.io.InputStream;
  * required.
  */
 public class SnapshotInputStreamSource implements InputStreamSource {
-    private static final String LOG_TAG = "SnapshotInputStreamSource";
-
     private File mBackingFile;
     private boolean mIsCancelled = false;
 
@@ -46,8 +44,7 @@ public class SnapshotInputStreamSource implements InputStreamSource {
             mBackingFile = createBackingFile(stream);
         } catch (IOException e) {
             // Log an error and invalidate ourself
-            Log.e(LOG_TAG, String.format("Received IOException while trying to wrap a stream: %s",
-                    e));
+            CLog.e("Received IOException while trying to wrap a stream: %s", e);
             cancel();
         }
     }
@@ -58,7 +55,7 @@ public class SnapshotInputStreamSource implements InputStreamSource {
      * Exposed for unit testing
      */
     File createBackingFile(InputStream stream) throws IOException {
-        File backingFile = FileUtil.createTempFile(LOG_TAG + "_", ".txt");
+        File backingFile = FileUtil.createTempFile(this.getClass().getSimpleName() + "_", ".txt");
         FileUtil.writeToFile(stream, backingFile);
         return backingFile;
     }
