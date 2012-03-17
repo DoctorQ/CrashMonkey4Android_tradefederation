@@ -195,16 +195,19 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
 
             try {
                 resFile = mTestDevice.pullFileFromExternal(outputFileName);
-                Assert.assertNotNull("no test results, test failed?", resFile);
-                // Save a copy of the output file
-                CLog.d("Sending %d byte file %s into the logosphere!",
-                        resFile.length(), resFile);
-                outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
-                listener.testLog(outputFileName, LogDataType.TEXT,
-                        outputSource);
+                if (resFile != null) {
+                    // Save a copy of the output file
+                    CLog.d("Sending %d byte file %s into the logosphere!",
+                            resFile.length(), resFile);
+                    outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
+                    listener.testLog(outputFileName, LogDataType.TEXT,
+                            outputSource);
 
-                // Parse the results file and report results to dash board
-                parseOutputFile(new FileInputStream(resFile), i, listener);
+                    // Parse the results file and report results to dash board
+                    parseOutputFile(new FileInputStream(resFile), i, listener);
+                } else {
+                    CLog.v("File %s doesn't exist or pulling the file failed", outputFileName);
+                }
             } catch (IOException e) {
                 CLog.e("IOException while reading outputfile %s", outputFileName);
             } finally {
