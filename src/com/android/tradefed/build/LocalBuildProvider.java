@@ -37,7 +37,7 @@ public class LocalBuildProvider extends StubBuildProvider {
             importance = Importance.IF_UNSET)
     private File mDeviceImageFile = null;
 
-    @Option(name = TEST_DIR_OPTION_NAME, description = "the dir containing the unziped test files.")
+    @Option(name = TEST_DIR_OPTION_NAME, description = "the dir containing the unzipped test files.")
     private File mTestsDir = null;
 
     @Option(name = DATA_FILE_OPTION_NAME, description = "the user data file to use.")
