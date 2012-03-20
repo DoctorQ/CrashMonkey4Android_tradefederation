@@ -34,6 +34,35 @@ public class FailureEmailResultReporterTest extends TestCase {
     private IEmail mMockMailer;
     private FailureEmailResultReporter mEmailReporter;
 
+    private class FakeFailureEmailResultReporter extends FailureEmailResultReporter {
+        private boolean mHasFailedTests;
+        private InvocationStatus mInvocationStatus;
+
+        FakeFailureEmailResultReporter(boolean sendOnFailure, boolean sendOnInvFailure,
+                boolean hasFailedTests, InvocationStatus invocationStatus) {
+            super();
+
+            setSendOnFailure(sendOnFailure);
+            setSendOnInvocationFailure(sendOnInvFailure);
+            mHasFailedTests = hasFailedTests;
+            mInvocationStatus = invocationStatus;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public boolean hasFailedTests() {
+            return mHasFailedTests;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        public InvocationStatus getInvocationStatus() {
+            return mInvocationStatus;
+        }
+    }
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -45,7 +74,6 @@ public class FailureEmailResultReporterTest extends TestCase {
      * Test normal success case for {@link EmailResultReporter#invocationEnded(long)}.
      */
     public void testInvocationEnded_empty() throws IllegalArgumentException, IOException {
-        mMockMailer.send((Message)EasyMock.anyObject());
         EasyMock.replay(mMockMailer);
         mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
@@ -55,10 +83,10 @@ public class FailureEmailResultReporterTest extends TestCase {
 
     /**
      * Test that no email is sent if
-     * {@link EmailResultReporter#setSendOnlyOnInvocationFailure(boolean)} is set
+     * {@link EmailResultReporter#setSendOnInvocationFailure(boolean)} is set
      */
     public void testInvocationEnded_onFailure() throws IllegalArgumentException, IOException {
-        mEmailReporter.setSendOnlyOnInvocationFailure(true);
+        mEmailReporter.setSendOnInvocationFailure(true);
         EasyMock.replay(mMockMailer);
         mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
@@ -68,13 +96,13 @@ public class FailureEmailResultReporterTest extends TestCase {
 
     /**
      * Test that email is sent if
-     * {@link EmailResultReporter#setSendOnlyOnInvocationFailure(boolean)} is set and invocation
+     * {@link EmailResultReporter#setSendOnInvocationFailure(boolean)} is set and invocation
      * failed
      */
     public void testInvocationEnded_invFailure() throws IllegalArgumentException, IOException {
         Capture<Message> msgCapture = new Capture<Message>();
         mMockMailer.send(EasyMock.capture(msgCapture));
-        mEmailReporter.setSendOnlyOnInvocationFailure(true);
+        mEmailReporter.setSendOnInvocationFailure(true);
         EasyMock.replay(mMockMailer);
         mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
         mEmailReporter.addDestination("foo");
@@ -84,5 +112,63 @@ public class FailureEmailResultReporterTest extends TestCase {
         Message capturedMessage = msgCapture.getValue();
         // ensure invocation stack trace is present
         assertTrue(capturedMessage.getBody().contains("BuildError"));
+    }
+
+    public void testShouldSendMessage() {
+        FakeFailureEmailResultReporter r;
+
+        // Don't send email on success
+        r = new FakeFailureEmailResultReporter(false, false, false, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(false, true, false, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, false, false, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, true, false, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        // When hasTestFailures() is true, only send email when send-only-on-failure flag is set
+        r = new FakeFailureEmailResultReporter(false, false, true, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(false, true, true, InvocationStatus.SUCCESS);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, false, true, InvocationStatus.SUCCESS);
+        assertTrue(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, true, true, InvocationStatus.SUCCESS);
+        assertTrue(r.shouldSendMessage());
+
+        // When getInvocationStatus() is not SUCCESS, only send email when send-only-on-inv-failure
+        // flag is set.
+        r = new FakeFailureEmailResultReporter(false, false, false, InvocationStatus.FAILED);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(false, true, false, InvocationStatus.FAILED);
+        assertTrue(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, false, false, InvocationStatus.FAILED);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, true, false, InvocationStatus.FAILED);
+        assertTrue(r.shouldSendMessage());
+
+        // When getInvocationStatus() is not SUCCESS, only send email when send-only-on-inv-failure
+        // flag is set.
+        r = new FakeFailureEmailResultReporter(false, false, true, InvocationStatus.FAILED);
+        assertFalse(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(false, true, true, InvocationStatus.FAILED);
+        assertTrue(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, false, true, InvocationStatus.FAILED);
+        assertTrue(r.shouldSendMessage());
+
+        r = new FakeFailureEmailResultReporter(true, true, true, InvocationStatus.FAILED);
+        assertTrue(r.shouldSendMessage());
     }
 }

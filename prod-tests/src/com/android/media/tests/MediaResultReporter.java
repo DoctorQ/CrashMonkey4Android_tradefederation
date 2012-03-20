@@ -18,7 +18,7 @@ package com.android.media.tests;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.result.FailureEmailResultReporter;
+import com.android.tradefed.result.EmailResultReporter;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestSummary;
@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Media reporter that send the test summary through email.
  */
-public class MediaResultReporter extends FailureEmailResultReporter {
+public class MediaResultReporter extends EmailResultReporter {
 
     private static final String LOG_TAG = "MediaResultReporter";
 
