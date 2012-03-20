@@ -58,6 +58,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
 
     private static final Pattern ITERATION_PATTERN =
         Pattern.compile("^iteration (\\d+) out of (\\d+)");
+    private static final int AP_TEST_TIMER = 3 * 60 * 60 * 1000; // 3 hours
+    private static final int SCAN_TEST_TIMER = 30 * 60 * 1000; // 30 minutes
+    private static final int RECONNECT_TEST_TIMER = 12 * 60 * 60 * 1000; // 12 hours
 
     private String mOutputFile = "WifiStressTestOutput.txt";
     private RadioHelper mRadioHelper;
@@ -74,13 +77,14 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         public String mTestClass = null;
         public String mTestMethod = null;
         public String mTestMetricsName = null;
+        public int mTestTimer;
         public RegexTrie<String> mPatternMap = null;
 
         @Override
         public String toString() {
             return String.format("TestInfo: mTestName(%s), mTestClass(%s), mTestMethod(%s)," +
-                    " mTestMetricsName(%s), mPatternMap(%s)", mTestName, mTestClass, mTestMethod,
-                    mTestMetricsName, mPatternMap.toString());
+                    " mTestMetricsName(%s), mPatternMap(%s), mTestTimer(%d)", mTestName,
+                    mTestClass, mTestMethod, mTestMetricsName, mPatternMap.toString(), mTestTimer);
         }
     }
 
@@ -135,6 +139,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestClass = "com.android.connectivitymanagertest.stress.WifiApStress";
         t.mTestMethod = "testWifiHotSpot";
         t.mTestMetricsName = "wifi_stress";
+        t.mTestTimer = AP_TEST_TIMER;
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_ap_stress", ITERATION_PATTERN);
         if (mTetherTestFlag) {
@@ -147,6 +152,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestClass = "com.android.connectivitymanagertest.stress.WifiStressTest";
         t.mTestMethod = "testWifiScanning";
         t.mTestMetricsName = "wifi_scan_performance";
+        t.mTestTimer = SCAN_TEST_TIMER;
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("avg_scan_time", "^average scanning time is (\\d+)");
         t.mPatternMap.put("scan_quality","ssid appear (\\d+) out of (\\d+) scan iterations");
@@ -160,12 +166,12 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         t.mTestClass = "com.android.connectivitymanagertest.stress.WifiStressTest";
         t.mTestMethod = "testWifiReconnectionAfterSleep";
         t.mTestMetricsName = "wifi_stress";
+        t.mTestTimer = RECONNECT_TEST_TIMER;
         t.mPatternMap = new RegexTrie<String>();
         t.mPatternMap.put("wifi_reconnection_stress", ITERATION_PATTERN);
         if (mReconnectionTestFlag) {
             mTestList.add(t);
         }
-        Assert.assertTrue("No test is added.", mTestList.size() > 0);
     }
 
     /**
@@ -213,7 +219,10 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         setupTests();
         configDevice();
-        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(standardListener);
+            return;
+        }
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -239,6 +248,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             CLog.d("TestInfo: " + testCase.toString());
             runner.setClassName(testCase.mTestClass);
             runner.setMethodName(testCase.mTestClass, testCase.mTestMethod);
+            runner.setMaxtimeToOutputResponse(testCase.mTestTimer);
             bugListener.setDescriptiveName(testCase.mTestName);
             mTestDevice.runInstrumentationTests(runner, bugListener);
             logOutputFile(testCase, bugListener);
@@ -259,16 +269,17 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
 
         try {
             resFile = mTestDevice.pullFileFromExternal(mOutputFile);
-            Assert.assertNotNull("no output file, test failed.", resFile);
-            // Save a copy of the output file
-            CLog.d("Sending %d byte file %s into the logosphere!",
-                    resFile.length(), resFile);
-            outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
-            listener.testLog(String.format("result-%s.txt", test.mTestName), LogDataType.TEXT,
-                    outputSource);
+            if (resFile != null) {
+                // Save a copy of the output file
+                CLog.d("Sending %d byte file %s into the logosphere!",
+                        resFile.length(), resFile);
+                outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
+                listener.testLog(String.format("result-%s.txt", test.mTestName), LogDataType.TEXT,
+                        outputSource);
 
-            // Parse the results file and post results to test listener
-            parseOutputFile(test, resFile, listener);
+                // Parse the results file and post results to test listener
+                parseOutputFile(test, resFile, listener);
+            }
         } catch (IOException e) {
             CLog.e("IOException while reading output file: %s", mOutputFile);
         } finally {

@@ -61,7 +61,8 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
     private static final String TEST_RUNNER_NAME = ".PhoneInstrumentationStressTestRunner";
     private static final String TEST_CLASS_NAME =
             "com.android.phonetests.stress.telephony.TelephonyStress";
-    public static final String TEST_METHOD = "testTelephonyStability";
+    private static final String TEST_METHOD = "testTelephonyStability";
+    private static final int TEST_TIMER = 9 * 60 * 60 * 1000; // 9 hours
     private static final Pattern ITERATION_PATTERN =
             Pattern.compile("^iteration (\\d+) out of (\\d+)");
     private static final String VOICE_REGISTRATION_KEY = "voice_registration";
@@ -73,6 +74,7 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
     private RegexTrie<String> mPatternMap = null;
     Map<String, String> mRunMetrics = new HashMap<String, String>();
     private int mResIndex = 0;
+    private RadioHelper mRadioHelper;
 
     @Option(name="call-duration",
             description="The time of a call to be held in the test (in seconds)")
@@ -122,7 +124,6 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         mRunMetrics.put(VOICE_CONNECTION_KEY, value);
         mRunMetrics.put(DATA_REGISTRATION_KEY, value);
         mRunMetrics.put(DATA_CONNECTION_KEY, value);
-        getRunUtil().sleep(3*60*1000);  // wait for 3 minutes for device to set up data connection
     }
 
     /**
@@ -139,6 +140,11 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mPhoneNumber);
         configDevice();
         setupTest();
+        mRadioHelper = new RadioHelper(mTestDevice);
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(listener);
+            return;
+        }
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
@@ -148,6 +154,7 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         runner.addInstrumentationArg("callduration", mCallDuration);
         runner.addInstrumentationArg("phonenumber", mPhoneNumber);
         runner.addInstrumentationArg("idletime", Integer.toString(mIdleTime));
+        runner.setMaxtimeToOutputResponse(TEST_TIMER);
 
         // Add bugreport listener for failed test
         BugreportCollector bugListener = new
@@ -248,12 +255,5 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
-    }
-
-    /**
-     * Gets the {@link IRunUtil} instance to use.
-     */
-    IRunUtil getRunUtil() {
-        return RunUtil.getDefault();
     }
 }

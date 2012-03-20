@@ -42,11 +42,10 @@ import java.util.Map;
  */
 public class RadioStressTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
-    private static String mTestName = "RadioStartupStress";
-    /* Maxium time to wait for SETUP_DATA_CALL */
-    private static int MAX_DATA_SETUP_TIME = 5 * 60 * 1000;
-    /* Time to wait for framework to bootup */
-    private static final int BOOTING_TIME = 5 * 60 * 1000;
+    private static String TEST_NAME = "RadioStartupStress";
+    // Define metrics for result report
+    private static final String METRICS_NAME = "RadioStartupStress";
+    private static final int VOICE_TEST_TIMER = 5 * 60 * 1000; // 5 minutes for voice test
 
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME = "com.android.phonetests";
@@ -54,9 +53,6 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     private static final String TEST_CLASS_NAME =
         "com.android.phonetests.stress.telephony.TelephonyStress";
     public static final String TEST_METHOD = "testSingleCallPowerUsage";
-
-    // Define metrics for result report
-    private static final String mMetricsName = "RadioStartupStress";
 
     private RadioHelper mRadioHelper;
     @Option(name="iteration",
@@ -79,7 +75,7 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     // set the threshold so that the test won't drag too long
     @Option(name="threshold",
             description="Threshold to stop the test")
-    private int mThreshold = 10;
+    private int mThreshold = 100;
 
     /**
      * Run radio startup stress test, capture bugreport if the test failed.
@@ -94,7 +90,11 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mPhoneNumber);
         mRadioHelper = new RadioHelper(mTestDevice);
-        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
+        // capture a bugreport if activation or data setup failed
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(listener);
+            return;
+        }
 
         int mSuccessRun = 0;
         for (int i = 0; i < mIteration; i++) {
@@ -117,9 +117,6 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             mTestDevice.postBootSetup();
             mTestDevice.clearErrorDialogs();
 
-            // Wait for the device to fully booting up and connect to mobile network
-            getRunUtil().sleep(BOOTING_TIME);
-
             // verify data connection first
             boolean dataFlag = false;
             if (verifyDataConnection()) {
@@ -131,8 +128,6 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
             // verify voice connection
             if (mVoiceVerificationFlag) {
                 boolean voiceFlag = verifyVoiceConnection(listener);
-                getRunUtil().sleep(MAX_DATA_SETUP_TIME);
-                // after the voice call, phone app is reset
                 dataFlag = verifyDataConnection();
                 if (voiceFlag && dataFlag) {
                     mSuccessRun++;
@@ -148,7 +143,7 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
 
         Map<String, String> runMetrics = new HashMap<String, String>(1);
         runMetrics.put("iteration", String.valueOf(mSuccessRun));
-        reportMetrics(mMetricsName, runMetrics, listener);
+        reportMetrics(METRICS_NAME, runMetrics, listener);
     }
 
     /**
@@ -175,12 +170,13 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
         runner.addInstrumentationArg("callduration", mCallDuration);
         runner.addInstrumentationArg("phonenumber", mPhoneNumber);
         runner.addInstrumentationArg("repeatcount", "1");
+        runner.setMaxtimeToOutputResponse(VOICE_TEST_TIMER);
 
         // Add bugreport listener for failed test
         BugreportCollector bugListener = new
             BugreportCollector(listener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
-        bugListener.setDescriptiveName(mTestName);
+        bugListener.setDescriptiveName(TEST_NAME);
         CollectingTestListener collectListener = new CollectingTestListener();
 
         mTestDevice.runInstrumentationTests(runner, bugListener, collectListener);
@@ -192,17 +188,7 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     }
 
     private boolean verifyDataConnection() throws DeviceNotAvailableException {
-        // Try three times, just in case the data setup takes a little more time
-        // After 10 minutes, fail the test
-        long startTime = System.currentTimeMillis();
-        while ((System.currentTimeMillis() - startTime) < MAX_DATA_SETUP_TIME) {
-            if (mRadioHelper.pingTest()) {
-                return true;
-            } else {
-                getRunUtil().sleep(30 * 1000);
-            }
-        }
-        return false;
+        return mRadioHelper.waitForDataSetup();
     }
 
     /**
@@ -226,12 +212,5 @@ public class RadioStressTest implements IRemoteTest, IDeviceTest {
     @Override
     public ITestDevice getDevice() {
         return mTestDevice;
-    }
-
-    /**
-     * Gets the {@link IRunUtil} instance to use.
-     */
-    IRunUtil getRunUtil() {
-        return RunUtil.getDefault();
     }
 }

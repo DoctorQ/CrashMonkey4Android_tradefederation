@@ -43,6 +43,8 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         ".ConnectivityManagerTestRunner";
     private static final String TEST_CLASS_NAME =
         String.format("%s.functional.ConnectivityManagerMobileTest", TEST_PACKAGE_NAME);
+    private static final int TEST_TIMER = 60 * 60 * 1000;  // 1 hour
+
     private RadioHelper mRadioHelper;
 
     @Option(name="ssid",
@@ -71,7 +73,11 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mSsid);
         mRadioHelper = new RadioHelper(mTestDevice);
-        Assert.assertTrue("Activation failed", mRadioHelper.radioActivation());
+        // capture a bugreport if activation or data setup failed
+        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+            mRadioHelper.getBugreport(standardListener);
+            return;
+        }
 
         // Add bugreport listener for bugreport after each test case fails
         BugreportCollector bugListener = new
@@ -82,6 +88,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.addInstrumentationArg("ssid", mSsid);
+        runner.setMaxtimeToOutputResponse(TEST_TIMER);
         if (mTestMethodName != null) {
             runner.setMethodName(TEST_CLASS_NAME, mTestMethodName);
         }
