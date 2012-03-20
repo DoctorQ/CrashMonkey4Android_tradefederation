@@ -28,13 +28,13 @@ import com.android.tradefed.util.IEmail;
 @OptionClass(alias = "failure-email")
 public class FailureEmailResultReporter extends EmailResultReporter {
 
-    @Option(name = "send-only-on-failure",
-            description = "Flag for sending email only on test failure.")
-    private boolean mSendOnlyOnTestFailure = false;
+    @Option(name = "send-on-test-failure",
+            description = "Flag for sending email on test failure.")
+    private boolean mSendOnTestFailure = true;
 
-    @Option(name = "send-only-on-inv-failure",
-            description = "Flag for sending email only on invocation failure.")
-    private boolean mSendOnlyOnInvFailure = false;
+    @Option(name = "send-on-inv-failure",
+            description = "Flag for sending email on invocation failure.")
+    private boolean mSendOnInvFailure = true;
 
     /**
      * Default constructor
@@ -55,23 +55,29 @@ public class FailureEmailResultReporter extends EmailResultReporter {
     }
 
     /**
-     * Sets the send-only-on-inv-failure flag
+     * Sets the send-on-failure flag
      */
-    void setSendOnlyOnInvocationFailure(boolean send) {
-        mSendOnlyOnInvFailure = send;
+    void setSendOnFailure(boolean send) {
+        mSendOnTestFailure = send;
+    }
+
+    /**
+     * Sets the send-on-inv-failure flag
+     */
+    void setSendOnInvocationFailure(boolean send) {
+        mSendOnInvFailure = send;
     }
 
     @Override
     protected boolean shouldSendMessage() {
-        if (mSendOnlyOnTestFailure) {
-            if (!hasFailedTests()) {
-                CLog.v("Not sending email because there are no failures to report.");
-                return false;
-            }
-        } else if (mSendOnlyOnInvFailure && getInvocationStatus().equals(InvocationStatus.SUCCESS)) {
-            CLog.v("Not sending email because invocation succeeded.");
-            return false;
+        if (mSendOnTestFailure && hasFailedTests()) {
+            CLog.v("Sending email because there are failures and send-on-failure was set");
+            return true;
         }
-        return true;
+        if (mSendOnInvFailure && !getInvocationStatus().equals(InvocationStatus.SUCCESS)) {
+            CLog.v("Sending email because invocation failed and send-on-inv-failure was set.");
+            return true;
+        }
+        return false;
     }
 }
