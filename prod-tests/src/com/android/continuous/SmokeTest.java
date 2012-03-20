@@ -16,6 +16,7 @@
 
 package com.android.continuous;
 
+import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.config.OptionClass;
@@ -28,6 +29,7 @@ import com.android.tradefed.result.BugreportCollector.Relation;
 import com.android.tradefed.result.DeviceFileReporter;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.LogDataType;
+import com.android.tradefed.result.NameMangleListener;
 import com.android.tradefed.testtype.InstrumentationTest;
 
 import java.util.LinkedHashMap;
@@ -51,15 +53,41 @@ public class SmokeTest extends InstrumentationTest {
      */
     @Override
     public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
+        // trimListener should be the first thing to receive any results.  It will pass the results
+        // through to the bugListener, which will forward them (after collecting any necessary
+        // bugreports) to the real Listener(s).
         final BugreportCollector bugListener = new BugreportCollector(listener, getDevice());
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
+        final ITestInvocationListener trimListener = new TrimListener(bugListener);
 
-        super.run(bugListener);
+        super.run(trimListener);
 
-        final DeviceFileReporter dfr = new DeviceFileReporter(getDevice(), bugListener);
+        final DeviceFileReporter dfr = new DeviceFileReporter(getDevice(), trimListener);
         dfr.addPatterns(mUploadFilePatterns);
         dfr.run();
     }
 
+    /**
+     * A class to adjust the test identifiers from something like this:
+     * com.android.smoketest.SmokeTestRunner$3#com.android.voicedialer.VoiceDialerActivity
+     * To this:
+     * SmokeFAST#com.android.voicedialer.VoiceDialerActivity
+     */
+    static class TrimListener extends NameMangleListener {
+        public TrimListener(ITestInvocationListener listener) {
+            super(listener);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        protected TestIdentifier mangleTestId(TestIdentifier test) {
+            final String method = test.getTestName();
+            final String klass = test.getClassName().replaceFirst(
+                    "com.android.smoketest.SmokeTestRunner(?:\\$\\d+)?", "SmokeFAST");
+            return new TestIdentifier(klass, method);
+        }
+    }
 }
 
