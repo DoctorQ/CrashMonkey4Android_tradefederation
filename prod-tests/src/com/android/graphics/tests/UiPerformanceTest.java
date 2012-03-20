@@ -41,6 +41,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 /**
  * Run UiPerformanceTest suite which measures the performance of
@@ -60,6 +62,7 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
     private static String CONFIG_FILE = "/home/xiaw/testfiles/UiPerformance/UiPerfTests.conf";
 
     private static final String TEST_CASE_PREFIX = "test";
+    private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
     private static final Pattern JANKINESS_PATTERN =
             Pattern.compile("^number of jankiness: (\\d+)");
@@ -106,7 +109,8 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         setupDevice();
-
+        // start the test until device is fully booted and stable
+        RunUtil.getDefault().sleep(START_TIMER);
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
 
