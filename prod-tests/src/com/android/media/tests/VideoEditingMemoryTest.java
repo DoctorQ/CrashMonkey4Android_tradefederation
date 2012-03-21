@@ -79,8 +79,8 @@ public class VideoEditingMemoryTest implements IDeviceTest, IRemoteTest {
      * The first string 'testStressAddRemoveEffects' represent the dashboard key and
      * the last string represent the test result.
      */
-    private static final Pattern TOTAL_MEM_DIFF_PATTERN =
-            Pattern.compile("(.+?)\\s.*diff.*\\s(\\d+)");
+    public static final Pattern TOTAL_MEM_DIFF_PATTERN =
+            Pattern.compile("(.+?)\\s.*diff.*\\s(-?\\d+)");
 
     public Map<String, String> mRunMetrics = new HashMap<String, String>();
     public Map<String, String> mKeyMap = new HashMap<String, String>();
