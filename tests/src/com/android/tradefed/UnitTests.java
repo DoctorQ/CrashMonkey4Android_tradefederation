@@ -33,6 +33,7 @@ import com.android.tradefed.config.ConfigurationTest;
 import com.android.tradefed.config.ConfigurationXmlParserTest;
 import com.android.tradefed.config.OptionCopierTest;
 import com.android.tradefed.config.OptionSetterTest;
+import com.android.tradefed.device.CpuStatsCollectorTest;
 import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.DeviceSelectionOptionsTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
@@ -123,6 +124,7 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(OptionSetterTest.class);
 
         // device
+        addTestSuite(CpuStatsCollectorTest.class);
         addTestSuite(DeviceManagerTest.class);
         addTestSuite(DeviceSelectionOptionsTest.class);
         addTestSuite(DeviceStateMonitorTest.class);
