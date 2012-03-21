@@ -59,7 +59,6 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
             "com.android.testing.uiautomation.UiAutomationTestRunner";
     private static String OUTPUT_FILE_NAME = "UiPerfTestsOutput.txt"; // output file
     private static String RAW_DATA_DIRECTORY = "UiPerformanceRawData"; // raw data directory
-    private static String CONFIG_FILE = "/home/xiaw/testfiles/UiPerformance/UiPerfTests.conf";
 
     private static final String TEST_CASE_PREFIX = "test";
     private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
@@ -97,8 +96,6 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
             mTestDevice.executeShellCommand(String.format("rm %s/*", rawFileDir));
             CLog.v("remove files under the raw data directory");
         }
-        // push the configuration file
-        mTestDevice.pushFile(new File(CONFIG_FILE), "/sdcard/" + CONFIG_FILE);
     }
 
     /**
