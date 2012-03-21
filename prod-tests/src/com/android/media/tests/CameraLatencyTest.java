@@ -17,11 +17,11 @@
 package com.android.media.tests;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
@@ -54,8 +54,6 @@ import java.util.Map;
  * Note that this test will not run properly unless /sdcard is mounted and writable.
  */
 public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
-    private static final String LOG_TAG = "CameraLatencyTest";
-
     ITestDevice mTestDevice = null;
 
     // Constants for running the tests
@@ -146,9 +144,9 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
 
         // Grab a bugreport if warranted
         if (auxListener.hasFailedTests()) {
-            Log.e(LOG_TAG, String.format("Grabbing bugreport after test '%s' finished with " +
-                    "%d failures and %d errors.", test.mTestName, auxListener.getNumFailedTests(),
-                    auxListener.getNumErrorTests()));
+            CLog.i("Grabbing bugreport after test '%s' finished with %d failures and %d errors.",
+                    test.mTestName, auxListener.getNumFailedTests(),
+                    auxListener.getNumErrorTests());
             InputStreamSource bugreport = mTestDevice.getBugreport();
             listener.testLog(String.format("bugreport-%s.txt", test.mTestName), LogDataType.TEXT,
                     bugreport);
@@ -183,8 +181,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
             }
 
             // Upload a verbatim copy of the output file
-            Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
-                    outputFile.length(), outputFile));
+            CLog.d("Sending %d byte file %s into the logosphere!", outputFile.length(), outputFile);
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
             listener.testLog(String.format("output-%s.txt", test.mTestName), LogDataType.TEXT,
                     outputSource);
@@ -192,7 +189,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
             // Parse the output file to upload aggregated metrics
             parseOutputFile(test, new FileInputStream(outputFile), listener);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("IOException while reading or parsing output file: %s", e));
+            CLog.e("IOException while reading or parsing output file: %s", e);
         } finally {
             if (outputFile != null) {
                 outputFile.delete();
@@ -215,8 +212,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         try {
             contents = StreamUtil.getStringFromStream(dataStream);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Got IOException during %s test processing: %s",
-                    test.mTestName, e));
+            CLog.e("Got IOException during %s test processing: %s", test.mTestName, e);
             return;
         }
 
@@ -228,13 +224,13 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
             List<List<String>> capture = new ArrayList<List<String>>(1);
             String key = test.mPatternMap.retrieve(capture, line);
             if (key != null) {
-                Log.d(LOG_TAG, String.format("Got %s key '%s' and captures '%s'",
-                        test.mTestName, key, capture.toString()));
+                CLog.d("Got %s key '%s' and captures '%s'", test.mTestName, key,
+                        capture.toString());
             } else if (line.isEmpty()) {
                 // ignore
                 continue;
             } else {
-                Log.e(LOG_TAG, String.format("Got unmatched line: %s", line));
+                CLog.d("Got unmatched line: %s", line);
                 continue;
             }
 
@@ -252,8 +248,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
     void reportMetrics(ITestInvocationListener listener, TestInfo test,
             Map<String, String> metrics) {
         // Create an empty testRun to report the parsed runMetrics
-        Log.d(LOG_TAG, String.format("About to report metrics for %s: %s", test.mTestMetricsName,
-                metrics));
+        CLog.d("About to report metrics for %s: %s", test.mTestMetricsName, metrics);
         listener.testRunStarted(test.mTestMetricsName, 0);
         listener.testRunEnded(0, metrics);
     }
