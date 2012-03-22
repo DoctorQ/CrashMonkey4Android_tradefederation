@@ -44,11 +44,14 @@ import com.android.tradefed.invoker.TestInvocationTest;
 import com.android.tradefed.log.FileLoggerTest;
 import com.android.tradefed.log.LogRegistryTest;
 import com.android.tradefed.result.CollectingTestListenerTest;
+import com.android.tradefed.result.EmailResultReporterTest;
 import com.android.tradefed.result.FailureEmailResultReporterTest;
+import com.android.tradefed.result.InvocationFailureEmailResultReporterTest;
 import com.android.tradefed.result.InvocationToJUnitResultForwarderTest;
 import com.android.tradefed.result.JUnitToInvocationResultForwarderTest;
 import com.android.tradefed.result.LogFileSaverTest;
 import com.android.tradefed.result.SnapshotInputStreamSourceTest;
+import com.android.tradefed.result.TestFailureEmailResultReporterTest;
 import com.android.tradefed.result.TestSummaryTest;
 import com.android.tradefed.result.XmlResultReporterTest;
 import com.android.tradefed.targetprep.DefaultTestsZipInstallerTest;
@@ -136,12 +139,15 @@ public class UnitTests extends DeviceTestSuite {
 
         // result
         addTestSuite(CollectingTestListenerTest.class);
+        addTestSuite(EmailResultReporterTest.class);
         addTestSuite(FailureEmailResultReporterTest.class);
+        addTestSuite(InvocationFailureEmailResultReporterTest.class);
         addTestSuite(InvocationToJUnitResultForwarderTest.class);
         addTestSuite(JUnitToInvocationResultForwarderTest.class);
         addTestSuite(LogFileSaverTest.class);
         addTestSuite(SnapshotInputStreamSourceTest.class);
         addTestSuite(TestSummaryTest.class);
+        addTestSuite(TestFailureEmailResultReporterTest.class);
         addTestSuite(XmlResultReporterTest.class);
 
         // targetprep

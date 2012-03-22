@@ -15,35 +15,17 @@
  */
 package com.android.tradefed.result;
 
-import com.android.tradefed.build.BuildInfo;
-import com.android.tradefed.targetprep.BuildError;
-import com.android.tradefed.util.IEmail;
-import com.android.tradefed.util.IEmail.Message;
-
 import junit.framework.TestCase;
 
-import org.easymock.Capture;
-import org.easymock.EasyMock;
-
-import java.io.IOException;
-
 /**
- * Unit tests for {@link EmailResultReporter}.
+ * Unit tests for {@link FailureEmailResultReporter}.
  */
 public class FailureEmailResultReporterTest extends TestCase {
-    private IEmail mMockMailer;
-    private FailureEmailResultReporter mEmailReporter;
-
-    private class FakeFailureEmailResultReporter extends FailureEmailResultReporter {
+    private class FakeEmailResultReporter extends FailureEmailResultReporter {
         private boolean mHasFailedTests;
         private InvocationStatus mInvocationStatus;
 
-        FakeFailureEmailResultReporter(boolean sendOnFailure, boolean sendOnInvFailure,
-                boolean hasFailedTests, InvocationStatus invocationStatus) {
-            super();
-
-            setSendOnFailure(sendOnFailure);
-            setSendOnInvocationFailure(sendOnInvFailure);
+        FakeEmailResultReporter(boolean hasFailedTests, InvocationStatus invocationStatus) {
             mHasFailedTests = hasFailedTests;
             mInvocationStatus = invocationStatus;
         }
@@ -63,112 +45,29 @@ public class FailureEmailResultReporterTest extends TestCase {
         }
     }
 
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        mMockMailer = EasyMock.createMock(IEmail.class);
-        mEmailReporter = new FailureEmailResultReporter(mMockMailer);
-    }
-
     /**
-     * Test normal success case for {@link EmailResultReporter#invocationEnded(long)}.
+     * Test that {@link FailureEmailResultReporter#shouldSendMessage()} returns true if
+     * {@link EmailResultReporter#getInvocationStatus()} is not {@link InvocationStatus#SUCCESS}.
      */
-    public void testInvocationEnded_empty() throws IllegalArgumentException, IOException {
-        EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
-        mEmailReporter.addDestination("foo");
-        mEmailReporter.invocationEnded(0);
-        EasyMock.verify(mMockMailer);
-    }
-
-    /**
-     * Test that no email is sent if
-     * {@link EmailResultReporter#setSendOnInvocationFailure(boolean)} is set
-     */
-    public void testInvocationEnded_onFailure() throws IllegalArgumentException, IOException {
-        mEmailReporter.setSendOnInvocationFailure(true);
-        EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
-        mEmailReporter.addDestination("foo");
-        mEmailReporter.invocationEnded(0);
-        EasyMock.verify(mMockMailer);
-    }
-
-    /**
-     * Test that email is sent if
-     * {@link EmailResultReporter#setSendOnInvocationFailure(boolean)} is set and invocation
-     * failed
-     */
-    public void testInvocationEnded_invFailure() throws IllegalArgumentException, IOException {
-        Capture<Message> msgCapture = new Capture<Message>();
-        mMockMailer.send(EasyMock.capture(msgCapture));
-        mEmailReporter.setSendOnInvocationFailure(true);
-        EasyMock.replay(mMockMailer);
-        mEmailReporter.invocationStarted(new BuildInfo("888", "mytest", "mybuild"));
-        mEmailReporter.addDestination("foo");
-        mEmailReporter.invocationFailed(new BuildError("boot failed"));
-        mEmailReporter.invocationEnded(0);
-        EasyMock.verify(mMockMailer);
-        Message capturedMessage = msgCapture.getValue();
-        // ensure invocation stack trace is present
-        assertTrue(capturedMessage.getBody().contains("BuildError"));
-    }
-
     public void testShouldSendMessage() {
-        FakeFailureEmailResultReporter r;
-
-        // Don't send email on success
-        r = new FakeFailureEmailResultReporter(false, false, false, InvocationStatus.SUCCESS);
+        // Don't send email if there is no test failure and no invocation failure.
+        FakeEmailResultReporter r = new FakeEmailResultReporter(false, InvocationStatus.SUCCESS);
         assertFalse(r.shouldSendMessage());
 
-        r = new FakeFailureEmailResultReporter(false, true, false, InvocationStatus.SUCCESS);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, false, false, InvocationStatus.SUCCESS);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, true, false, InvocationStatus.SUCCESS);
-        assertFalse(r.shouldSendMessage());
-
-        // When hasTestFailures() is true, only send email when send-only-on-failure flag is set
-        r = new FakeFailureEmailResultReporter(false, false, true, InvocationStatus.SUCCESS);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(false, true, true, InvocationStatus.SUCCESS);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, false, true, InvocationStatus.SUCCESS);
+        // Send email if there is an invocation failure.
+        r = new FakeEmailResultReporter(false, InvocationStatus.BUILD_ERROR);
         assertTrue(r.shouldSendMessage());
 
-        r = new FakeFailureEmailResultReporter(true, true, true, InvocationStatus.SUCCESS);
+        // Send email if there is an invocation failure.
+        r = new FakeEmailResultReporter(false, InvocationStatus.FAILED);
         assertTrue(r.shouldSendMessage());
 
-        // When getInvocationStatus() is not SUCCESS, only send email when send-only-on-inv-failure
-        // flag is set.
-        r = new FakeFailureEmailResultReporter(false, false, false, InvocationStatus.FAILED);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(false, true, false, InvocationStatus.FAILED);
+        // Send email if there is an test failure.
+        r = new FakeEmailResultReporter(true, InvocationStatus.SUCCESS);
         assertTrue(r.shouldSendMessage());
 
-        r = new FakeFailureEmailResultReporter(true, false, false, InvocationStatus.FAILED);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, true, false, InvocationStatus.FAILED);
-        assertTrue(r.shouldSendMessage());
-
-        // When getInvocationStatus() is not SUCCESS, only send email when send-only-on-inv-failure
-        // flag is set.
-        r = new FakeFailureEmailResultReporter(false, false, true, InvocationStatus.FAILED);
-        assertFalse(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(false, true, true, InvocationStatus.FAILED);
-        assertTrue(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, false, true, InvocationStatus.FAILED);
-        assertTrue(r.shouldSendMessage());
-
-        r = new FakeFailureEmailResultReporter(true, true, true, InvocationStatus.FAILED);
+        // Send email if there is an test failure and an invocation failure.
+        r = new FakeEmailResultReporter(true, InvocationStatus.FAILED);
         assertTrue(r.shouldSendMessage());
     }
 }

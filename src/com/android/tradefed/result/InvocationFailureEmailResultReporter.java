@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,38 +20,38 @@ import com.android.tradefed.util.Email;
 import com.android.tradefed.util.IEmail;
 
 /**
- * An {@link EmailResultReporter} that sends notifications if either a test failure or invocation
- * failure occurred.
+ * An {@link EmailResultReporter} that can also restrict notifications to just invocation failures.
  */
-@OptionClass(alias = "failure-email")
-public class FailureEmailResultReporter extends EmailResultReporter {
+@OptionClass(alias = "invocation-failure-email")
+public class InvocationFailureEmailResultReporter extends EmailResultReporter {
 
     /**
      * Default constructor
      */
-    public FailureEmailResultReporter() {
+    public InvocationFailureEmailResultReporter() {
         this(new Email());
     }
 
     /**
-     * Create a {@link FailureEmailResultReporter} with a custom {@link IEmail} instance to use.
+     * Create a {@link InvocationFailureEmailResultReporter} with a custom {@link IEmail} instance
+     * to use.
      * <p/>
      * Exposed for unit testing.
      *
      * @param mailer the {@link IEmail} instance to use.
      */
-    protected FailureEmailResultReporter(IEmail mailer) {
+    protected InvocationFailureEmailResultReporter(IEmail mailer) {
         super(mailer);
     }
 
     /**
-     * Send a message if there was a failure.
+     * Send a message if there was an invocation failure.
      *
-     * @return {@code true} if the InvocationStatus is not {@link InvocationStatus#SUCCESS} or
-     * if {@link #hasFailedTests()} is true, {@code false} otherwise.
+     * @return {@code true} if the InvocationStatus is not {@link InvocationStatus#SUCCESS}, or
+     * {@code false} if it is.
      */
     @Override
     protected boolean shouldSendMessage() {
-        return !getInvocationStatus().equals(InvocationStatus.SUCCESS) || hasFailedTests();
+        return !getInvocationStatus().equals(InvocationStatus.SUCCESS);
     }
 }

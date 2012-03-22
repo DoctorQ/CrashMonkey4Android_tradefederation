@@ -143,7 +143,7 @@ public class EmailResultReporter extends CollectingTestListener implements
 
     /**
      * A method to generate the body for email reports.  Will not be called if
-     * {@link shouldSendMessage()} returns {@code false}.
+     * {@link #shouldSendMessage()} returns {@code false}.
      *
      * @return A {@link String} containing the body to use for an email report
      */
