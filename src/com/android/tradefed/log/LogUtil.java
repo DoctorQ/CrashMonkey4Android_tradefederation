@@ -52,7 +52,7 @@ public class LogUtil {
      * {@see Log#getLogFormatString()}
      */
     public static String getLogFormatString(LogLevel logLevel, String tag, String message) {
-        SimpleDateFormat formatter = new SimpleDateFormat("MM-dd kk:mm:ss");
+        SimpleDateFormat formatter = new SimpleDateFormat("MM-dd HH:mm:ss");
         return String.format("%s %c/%s: %s\n", formatter.format(new Date()),
                 logLevel.getPriorityLetter(), tag, message);
     }
