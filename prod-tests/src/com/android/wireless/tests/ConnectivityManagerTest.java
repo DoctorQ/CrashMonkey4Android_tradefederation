@@ -73,10 +73,12 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mSsid);
         mRadioHelper = new RadioHelper(mTestDevice);
-        // capture a bugreport if activation or data setup failed
-        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
-            mRadioHelper.getBugreport(standardListener);
-            return;
+        if (!mWifiOnly) {
+            // capture a bugreport if activation or data setup failed
+            if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+                mRadioHelper.getBugreport(standardListener);
+                return;
+            }
         }
 
         // Add bugreport listener for bugreport after each test case fails

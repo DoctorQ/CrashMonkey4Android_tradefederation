@@ -124,6 +124,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
             description="Option to run the wifi reconnection stress test")
     private boolean mReconnectionTestFlag = true;
 
+    @Option(name="wifi-only")
+    private boolean mWifiOnly = false;
+
     private void setupTests() throws DeviceNotAvailableException {
         // get RadioHelper
         mRadioHelper = new RadioHelper(mTestDevice);
@@ -219,9 +222,11 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         setupTests();
         configDevice();
-        if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
-            mRadioHelper.getBugreport(standardListener);
-            return;
+        if (!mWifiOnly) {
+            if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
+                mRadioHelper.getBugreport(standardListener);
+                return;
+            }
         }
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
