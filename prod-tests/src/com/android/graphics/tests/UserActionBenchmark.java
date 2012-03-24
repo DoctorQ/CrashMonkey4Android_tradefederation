@@ -28,6 +28,7 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
@@ -58,6 +59,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
 
     private static final String METRICS_RUN_NAME = "UserActionFramerateBenchmark";
+    private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
     private final String mOutputPath = "avgFrameRateOut.txt";
 
@@ -83,6 +85,11 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+
+        // Start the test after device is fully booted and stable
+        // FIXME: add option in TF to wait until device is booted and stable
+        RunUtil.getDefault().sleep(START_TIMER);
+
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         String scriptFullPath =
             String.format("%s/%s/%s", extStore, mScriptPath, mTestDevice.getProductType());

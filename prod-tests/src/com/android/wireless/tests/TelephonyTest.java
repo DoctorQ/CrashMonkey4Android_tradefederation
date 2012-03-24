@@ -46,7 +46,7 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
     private static String mTestName = "TelephonyTest";
     private static final String mOutputFile = "/data/data/com.android.phone/files/phoneResults.txt";
-    private static final int TEST_TIMER = 10 * 60 * 60 * 1000; // 10 hours
+    private static final int TEST_TIMER = 15 * 60 * 60 * 1000; // 15 hours
 
     // Define metrics for result report
     private static final String mMetricsName = "PhoneVoiceConnectionStress";

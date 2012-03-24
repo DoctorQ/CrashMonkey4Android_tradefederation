@@ -29,6 +29,7 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -55,6 +56,7 @@ public class ImageProcessingTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_RUNNER_NAME = ".ImageProcessingTestRunner";
     private static final String TEST_CLASS = "com.android.rs.image.ImageProcessingTest";
     private static final String OUTPUT_FILE = "image_processing_result.txt";
+    private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
     // Define keys for data posting
     private static final String TEST_RUN_NAME = "graphics_image_processing";
@@ -69,6 +71,9 @@ public class ImageProcessingTest implements IDeviceTest, IRemoteTest {
     public void run(ITestInvocationListener standardListener)
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
+        // Start the test after device is fully booted and stable
+        // FIXME: add option in TF to wait until device is booted and stable
+        RunUtil.getDefault().sleep(START_TIMER);
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());

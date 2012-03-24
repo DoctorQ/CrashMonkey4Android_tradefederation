@@ -31,6 +31,7 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.SimpleStats;
 
 import junit.framework.Assert;
@@ -63,7 +64,8 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_RUNNER_NAME = ".RsPerfTestRunner";
     private static final String TEST_CLASS = "com.android.perftest.RsBenchTest";
     private static final String OUTPUT_FILE = "rsbench_result";
-    private static final int TEST_TIMER = 60 * 60 *1000; // test running timer
+    private static final int TEST_TIMER = 60 * 60 *1000; // test running timer 1 hour
+    private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
     private final RegexTrie<String> mPatternMap = new RegexTrie<String>();
     private Map<String, String[]> mKeyMap = new HashMap<String, String[]>();
@@ -156,6 +158,10 @@ public class OpenGlPerformanceTest implements IDeviceTest, IRemoteTest {
             throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         CLog.d("option values: mIterations(%d)", mIterations);
+
+        // Start the test after device is fully booted and stable
+        // FIXME: add option in TF to wait until device is booted and stable
+        RunUtil.getDefault().sleep(START_TIMER);
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());
