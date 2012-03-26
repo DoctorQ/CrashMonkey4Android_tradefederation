@@ -378,6 +378,26 @@ public class FileUtil {
         }
     }
 
+
+    /**
+     * Utility method to extract one specific file from zip file into a tmp file
+     *
+     * @param zipFile the {@link ZipFile} to extract
+     * @param filePath the filePath of to extract
+     * @throws IOException if failed to extract file
+     * @return the {@link File} or null if not found
+     */
+    public static File extractFileFromZip(ZipFile zipFile, String filePath) throws IOException {
+        ZipEntry entry = zipFile.getEntry(filePath);
+        if (entry == null) {
+            return null;
+        }
+        File createdFile = FileUtil.createTempFile("extracted",
+                FileUtil.getExtension(filePath));
+        FileUtil.writeToFile(zipFile.getInputStream(entry), createdFile);
+        return createdFile;
+    }
+
     /**
      * Utility method to create a temporary zip file containing the given directory and
      * all its contents.

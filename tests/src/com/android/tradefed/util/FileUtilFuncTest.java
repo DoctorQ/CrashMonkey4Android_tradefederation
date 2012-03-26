@@ -214,6 +214,32 @@ public class FileUtilFuncTest extends TestCase {
         }
     }
 
+    /**
+     * Test creating then extracting a a single file from zip file
+     *
+     * @throws IOException
+     */
+    public void testCreateAndExtractFileFromZip() throws IOException {
+        File tmpParentDir = createTempDir("foo");
+        File zipFile = null;
+        File extractedSubFile = null;
+        try {
+            File childDir = new File(tmpParentDir, "foochild");
+            assertTrue(childDir.mkdir());
+            File subFile = new File(childDir, "foo.txt");
+            FileUtil.writeToFile("contents", subFile);
+            zipFile = FileUtil.createZip(tmpParentDir);
+
+            extractedSubFile = FileUtil.extractFileFromZip(new ZipFile(zipFile),
+                    tmpParentDir.getName() + "/foochild/foo.txt");
+            assertNotNull(extractedSubFile);
+            assertTrue(FileUtil.compareFileContents(subFile, extractedSubFile));
+        } finally {
+            FileUtil.deleteFile(zipFile);
+            FileUtil.deleteFile(extractedSubFile);
+        }
+    }
+
     public void testRecursiveCopy() throws IOException {
         File tmpParentDir = createTempDir("foo");
         File childDir = createTempDir("foochild", tmpParentDir);
