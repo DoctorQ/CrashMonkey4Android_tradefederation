@@ -36,6 +36,7 @@ import java.util.Set;
  * A default implementation of tests zip installer.
  */
 public class DefaultTestsZipInstaller implements ITestsZipInstaller {
+    private static final int RM_ATTEMPTS = 3;
     private static final String DEVICE_DATA_PATH = buildAbsPath(FileListingService.DIRECTORY_DATA);
     private static final File DEVICE_DATA_FILE = new File(DEVICE_DATA_PATH);
 
@@ -124,12 +125,31 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         }
         for (IFileEntry dataSubDir : dataEntry.getChildren(false)) {
             if (!mDataWipeSkipList.contains(dataSubDir.getName())) {
-                device.executeShellCommand(String.format("rm -r %s",
-                        dataSubDir.getFullEscapedPath()));
+                deleteDir(device, dataSubDir.getFullEscapedPath());
             }
         }
 
         device.setRecoveryMode(cachedRecoveryMode);
+    }
+
+    /**
+     * @param fullEscapedPath
+     * @throws DeviceNotAvailableException
+     * @throws TargetSetupError
+     */
+    private void deleteDir(ITestDevice device, String fullEscapedPath)
+            throws DeviceNotAvailableException, TargetSetupError {
+        String result = "unknown";
+        for (int i = 1; i <= RM_ATTEMPTS; i++) {
+            result = device.executeShellCommand(String.format("rm -r %s", fullEscapedPath));
+            if (!device.doesFileExist(fullEscapedPath)) {
+                return;
+            }
+            CLog.d("Failed to delete dir %s on device %s on attempt %d of %d: stdout: %s",
+                    fullEscapedPath, device.getSerialNumber(), i, RM_ATTEMPTS, result);
+        }
+        throw new TargetSetupError(String.format("Failed to delete dir %s. rm output: %s",
+                fullEscapedPath, result));
     }
 
     private static String buildRelPath(String... parts) {

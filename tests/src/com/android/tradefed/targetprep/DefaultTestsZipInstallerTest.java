@@ -19,7 +19,6 @@ package com.android.tradefed.targetprep;
 import com.android.ddmlib.FileListingService;
 import com.android.tradefed.build.DeviceBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.MockFileUtil;
@@ -111,6 +110,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
                 (String) EasyMock.anyObject())).andReturn(true);
 
         // expect 'rm app' but not 'rm $SKIP_THIS'
+        EasyMock.expect(mMockDevice.doesFileExist("data/app")).andReturn(false);
         EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))
                 .andReturn("");
 
@@ -129,6 +129,42 @@ public class DefaultTestsZipInstallerTest extends TestCase {
 
         EasyMock.replay(mMockDevice);
         mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);
+        EasyMock.verify(mMockDevice);
+    }
+
+    /**
+     * Test repeats to delete a dir are aborted
+     */
+    public void testPushTestsZipOntoData_retry() throws Exception {
+        // mock a filesystem with these contents:
+        // /data/app
+        // /data/$SKIP_THIS
+        MockFileUtil.setMockDirContents(
+                mMockDevice, FileListingService.DIRECTORY_DATA, "app", SKIP_THIS);
+
+        // expect initial android stop
+        EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial_number_stub");
+        EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
+        mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+
+        // turtle!  (to make sure filesystem is writable)
+        EasyMock.expect(mMockDevice.pushString((String) EasyMock.anyObject(),
+                (String) EasyMock.anyObject())).andReturn(true);
+
+        // expect 'rm app' but not 'rm $SKIP_THIS'
+        EasyMock.expect(mMockDevice.doesFileExist("data/app")).andStubReturn(true);
+        EasyMock.expect(mMockDevice.executeShellCommand(EasyMock.contains("rm -r data/app")))
+                .andStubReturn("oh noes, rm failed");
+
+
+        EasyMock.replay(mMockDevice);
+        try {
+            mZipInstaller.pushTestsZipOntoData(mMockDevice, mDeviceBuild);
+            fail("TargetSetupError not thrown");
+        } catch (TargetSetupError e) {
+            // expected
+        }
         EasyMock.verify(mMockDevice);
     }
 }

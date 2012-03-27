@@ -1299,6 +1299,13 @@ class TestDevice implements IManagedTestDevice {
             }
             postBootSetup();
             mRecoveryMode = RecoveryMode.AVAILABLE;
+        } else if (mRecoveryMode.equals(RecoveryMode.ONLINE)) {
+            // turn off recovery mode to prevent reentrant recovery
+            // TODO: look for a better way to handle this, such as doing postBootUp steps in
+            // recovery itself
+            mRecoveryMode = RecoveryMode.NONE;
+            postOnlineSetup();
+            mRecoveryMode = RecoveryMode.ONLINE;
         }
         CLog.i("Recovery successful for %s", getSerialNumber());
     }
@@ -1681,13 +1688,18 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public void postBootSetup() throws DeviceNotAvailableException  {
-        if (isEnableAdbRoot()) {
-            enableAdbRoot();
-        }
+        postOnlineSetup();
         if (mOptions.isDisableKeyguard()) {
             CLog.i("Attempting to disable keyguard on %s using %s", getSerialNumber(),
                     getDisableKeyguardCmd());
             executeShellCommand(getDisableKeyguardCmd());
+        }
+    }
+
+    // TODO: consider exposing this method
+    private void postOnlineSetup() throws DeviceNotAvailableException  {
+        if (isEnableAdbRoot()) {
+            enableAdbRoot();
         }
     }
 

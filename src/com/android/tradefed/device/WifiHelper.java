@@ -353,11 +353,14 @@ public class WifiHelper implements IWifiHelper {
     /**
      * Helper function to convert a String to an Integer
      */
-    private static Integer asInt(String str) {
+    private static int asInt(String str) {
+        if (str == null) {
+            return -1;
+        }
         try {
             return Integer.parseInt(str);
         } catch (NumberFormatException e) {
-            return null;
+            return -1;
         }
     }
 

@@ -464,10 +464,10 @@ public class TestDeviceTest extends TestCase {
                 EasyMock.anyInt());
         EasyMock.expectLastCall().andThrow(new IOException());
         mMockRecovery.recoverDevice(EasyMock.eq(mMockMonitor), EasyMock.eq(true));
+        setEnableAdbRootExpectations();
         mMockIDevice.executeShellCommand(EasyMock.eq(testCommand), EasyMock.eq(mMockReceiver),
                 EasyMock.anyInt());
-        EasyMock.replay(mMockIDevice);
-        EasyMock.replay(mMockRecovery);
+        EasyMock.replay(mMockIDevice, mMockRecovery, mMockRunUtil, mMockMonitor);
         mRecoveryTestDevice.executeShellCommand(testCommand, mMockReceiver);
     }
 
