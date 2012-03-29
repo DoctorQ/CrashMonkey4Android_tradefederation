@@ -135,9 +135,11 @@ public class DeviceFlashPreparerTest extends TestCase {
         EasyMock.replay(mMockFlasher, mMockDevice);
         try {
             mDeviceFlashPreparer.setUp(mMockDevice, mMockBuildInfo);
-            fail("BuildError not thrown");
+            fail("DeviceFlashPreparerTest not thrown");
         } catch (BuildError e) {
-            // expected
+            // expected; use the general version to make absolutely sure that
+            // DeviceFailedToBootError properly masquerades as a BuildError.
+            assertTrue(e instanceof DeviceFailedToBootError);
         }
         EasyMock.verify(mMockFlasher, mMockDevice);
     }
