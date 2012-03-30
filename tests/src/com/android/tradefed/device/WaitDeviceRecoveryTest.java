@@ -144,18 +144,14 @@ public class WaitDeviceRecoveryTest extends TestCase {
      */
     public void testRecoverDeviceBootloader_fastboot() throws DeviceNotAvailableException {
         mMockRunUtil.sleep(EasyMock.anyLong());
-        mMockMonitor.waitForDeviceBootloaderStateUpdate();
-        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.FASTBOOT);
-        CommandResult result = new CommandResult();
-        result.setStatus(CommandStatus.SUCCESS);
         // expect reboot
         EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("fastboot"),
                 EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("reboot-bootloader"))).
-                andReturn(result);
+                andReturn(new CommandResult(CommandStatus.SUCCESS));
         EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
                 Boolean.TRUE);
         EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
-                Boolean.TRUE);
+                Boolean.TRUE).times(2);
         replayMocks();
         mRecovery.recoverDeviceBootloader(mMockMonitor);
         verifyMocks();
@@ -167,11 +163,17 @@ public class WaitDeviceRecoveryTest extends TestCase {
      */
     public void testRecoverDeviceBootloader_unavailable() throws DeviceNotAvailableException {
         mMockRunUtil.sleep(EasyMock.anyLong());
-        mMockMonitor.waitForDeviceBootloaderStateUpdate();
-        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE).
-                times(2);
         EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
+        // expect reboot
+        EasyMock.expect(mMockRunUtil.runTimedCmd(EasyMock.anyLong(), EasyMock.eq("fastboot"),
+                EasyMock.eq("-s"), EasyMock.eq("serial"), EasyMock.eq("reboot-bootloader"))).
+                andReturn(new CommandResult(CommandStatus.SUCCESS));
+        EasyMock.expect(mMockMonitor.waitForDeviceNotAvailable(EasyMock.anyLong())).andReturn(
                 Boolean.TRUE);
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE).times(2);
         replayMocks();
         mRecovery.recoverDeviceBootloader(mMockMonitor);
         verifyMocks();
@@ -183,9 +185,30 @@ public class WaitDeviceRecoveryTest extends TestCase {
      */
     public void testRecoverDeviceBootloader_online() throws Exception {
         mMockRunUtil.sleep(EasyMock.anyLong());
-        mMockMonitor.waitForDeviceBootloaderStateUpdate();
-        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE).
-                times(2);
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE);
+        EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
+        mMockDevice.reboot("bootloader");
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.TRUE);
+        replayMocks();
+        mRecovery.recoverDeviceBootloader(mMockMonitor);
+        verifyMocks();
+    }
+
+    /**
+     * Test {@link WaitDeviceRecovery#recoverDeviceBootloader(IDeviceStateMonitor)} when device is
+     * initially unavailable, then comes online when bootloader is expected
+     */
+    public void testRecoverDeviceBootloader_unavailable_online() throws Exception {
+        mMockRunUtil.sleep(EasyMock.anyLong());
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE);
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+                Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.ONLINE);
         EasyMock.expect(mMockMonitor.waitForDeviceOnline()).andReturn(mMockDevice);
         mMockDevice.reboot("bootloader");
         EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
@@ -201,11 +224,9 @@ public class WaitDeviceRecoveryTest extends TestCase {
      */
     public void testRecoverDeviceBootloader_unavailable_failure() throws Exception {
         mMockRunUtil.sleep(EasyMock.anyLong());
-        mMockMonitor.waitForDeviceBootloaderStateUpdate();
-        EasyMock.expect(mMockMonitor.getDeviceState()).andReturn(TestDeviceState.NOT_AVAILABLE).
-                times(2);
-        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andReturn(
+        EasyMock.expect(mMockMonitor.waitForDeviceBootloader(EasyMock.anyLong())).andStubReturn(
                 Boolean.FALSE);
+        EasyMock.expect(mMockMonitor.getDeviceState()).andStubReturn(TestDeviceState.NOT_AVAILABLE);
         replayMocks();
         try {
             mRecovery.recoverDeviceBootloader(mMockMonitor);
