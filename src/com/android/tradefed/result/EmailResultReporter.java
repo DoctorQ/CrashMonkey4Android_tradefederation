@@ -15,7 +15,6 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.config.OptionClass;
@@ -43,7 +42,6 @@ import java.util.Map;
 @OptionClass(alias = "email")
 public class EmailResultReporter extends CollectingTestListener implements
         ITestSummaryListener {
-    private static final String LOG_TAG = "EmailResultReporter";
     private static final String DEFAULT_SUBJECT_TAG = "Tradefed";
 
     @Option(name="sender", description="The envelope-sender address to use for the messages.",
@@ -96,6 +94,13 @@ public class EmailResultReporter extends CollectingTestListener implements
     @Override
     public void putSummary(List<TestSummary> summaries) {
         mSummaries = summaries;
+    }
+
+    /**
+     * Allow subclasses to get at the summaries we've received
+     */
+    protected List<TestSummary> fetchSummaries() {
+        return mSummaries;
     }
 
     /**
@@ -209,7 +214,7 @@ public class EmailResultReporter extends CollectingTestListener implements
         }
 
         if (mDestinations.isEmpty()) {
-            Log.e(LOG_TAG, "Failed to send email because no destination addresses were set.");
+            CLog.e("Failed to send email because no destination addresses were set.");
             return;
         }
 
