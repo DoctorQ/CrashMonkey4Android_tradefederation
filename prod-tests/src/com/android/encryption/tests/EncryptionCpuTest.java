@@ -21,6 +21,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.CollectingOutputReceiver;
+import com.android.tradefed.device.CpuStatsCollector;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.TopHelper;
@@ -62,6 +63,9 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
     private final static int TEST_TIMEOUT = 10 * 60 * 1000; // 10 minutes
 
+    @Option(name="use-cpustats")
+    private boolean mUseCpuStats = false;
+
     /**
      * Class used for tests.  Includes fields such as name post key and the method for running the
      * test.
@@ -71,7 +75,8 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
         public String mKey = null;
 
         private TopHelper mTopHelper = null;
-        private File mTopLogFile = null;
+        private CpuStatsCollector mCpuStatsCollector = null;
+        private File mLogFile = null;
 
         private Map<String, String> mMetrics = new HashMap<String, String>();
 
@@ -106,6 +111,43 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
         }
 
         /**
+         * Helper method for adding all the cpustats statistics to the test metrics.
+         *
+         * @param helper The {@link CpuStatsCollector} object used to measure the CPU usage via the
+         * cpustats command.
+         */
+        protected void addCpuStats(CpuStatsCollector helper) {
+            String keySuffix = getKeySuffix();
+
+            Map<String, List<CpuStatsCollector.CpuStats>> cpuStats = helper.getCpuStats();
+            if (cpuStats.containsKey("Total") || cpuStats.get("Total").size() > TOP_TRIM * 2) {
+                List<CpuStatsCollector.CpuStats> totalStats = cpuStats.get("Total");
+
+                totalStats = totalStats.subList(TOP_TRIM, totalStats.size() - TOP_TRIM);
+
+                addMetric("total_mean" + keySuffix,
+                        CpuStatsCollector.getTotalPercentageMean(totalStats).toString());
+                addMetric("user_mean" + keySuffix,
+                        CpuStatsCollector.getUserPercentageMean(totalStats).toString());
+                addMetric("system_mean" + keySuffix,
+                        CpuStatsCollector.getSystemPercentageMean(totalStats).toString());
+                addMetric("iow_mean" + keySuffix,
+                        CpuStatsCollector.getIowPercentageMean(totalStats).toString());
+                addMetric("irq_mean" + keySuffix,
+                        CpuStatsCollector.getIrqPercentageMean(totalStats).toString());
+
+                Double estimatedMhz = CpuStatsCollector.getEstimatedMhzMean(totalStats);
+                if (estimatedMhz != null) {
+                    addMetric("estimated_mhz_mean" + keySuffix, estimatedMhz.toString());
+                }
+                Double usedMhz = CpuStatsCollector.getUsedMhzPercentageMean(totalStats);
+                if (usedMhz != null) {
+                    addMetric("used_mhz_mean" + keySuffix, usedMhz.toString());
+                }
+            }
+        }
+
+        /**
          * Helper method for adding a metric to the test metrics.
          *
          * @param key The test metric key.
@@ -128,12 +170,18 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          * Creates the {@link TopHelper} and sets up the logging to file.
          */
         protected void setupLogging() {
-            mTopHelper = new TopHelper(mTestDevice);
             try {
-                mTopLogFile = FileUtil.createTempFile("top_", ".txt");
-                mTopHelper.logToFile(mTopLogFile);
+                mLogFile = FileUtil.createTempFile("stats_", ".txt");
             } catch (IOException e) {
                 CLog.e("Error creating log file: %s", e.getMessage());
+            }
+
+            if (mUseCpuStats) {
+                mCpuStatsCollector = new CpuStatsCollector(mTestDevice);
+                mCpuStatsCollector.logToFile(mLogFile);
+            } else {
+                mTopHelper = new TopHelper(mTestDevice);
+                mTopHelper.logToFile(mLogFile);
             }
         }
 
@@ -141,7 +189,11 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          * Starts the {@link TopHelper}.
          */
         protected void startLogging() {
-            mTopHelper.start();
+            if (mUseCpuStats) {
+                mCpuStatsCollector.start();
+            } else {
+                mTopHelper.start();
+            }
         }
 
         /**
@@ -151,20 +203,28 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
          */
         protected void stopLogging(ITestInvocationListener listener)
                 throws DeviceNotAvailableException {
-            mTopHelper.cancel();
-            if (mTopLogFile != null) {
+            if (mUseCpuStats) {
+                mCpuStatsCollector.cancel();
+            } else {
+                mTopHelper.cancel();
+            }
+            if (mLogFile != null) {
                 try {
-                    listener.testLog(String.format("top_%s", mKey), LogDataType.TEXT,
-                            new SnapshotInputStreamSource(new FileInputStream(mTopLogFile)));
+                    listener.testLog(String.format("stats_%s", mKey), LogDataType.TEXT,
+                            new SnapshotInputStreamSource(new FileInputStream(mLogFile)));
                 } catch (FileNotFoundException e) {
                     CLog.e("Error saving log file: %s", e.getMessage());
                 }
-                mTopLogFile.delete();
-                mTopLogFile = null;
+                mLogFile.delete();
+                mLogFile = null;
             }
             InputStreamSource bugreport = mTestDevice.getBugreport();
             listener.testLog(String.format("bugreport_%s", mKey), LogDataType.TEXT, bugreport);
-            addTopStats(mTopHelper);
+            if (mUseCpuStats) {
+                addCpuStats(mCpuStatsCollector);
+            } else {
+                addTopStats(mTopHelper);
+            }
         }
     }
 
