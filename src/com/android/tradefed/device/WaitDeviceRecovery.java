@@ -37,7 +37,12 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
     /** the time in ms to wait before beginning recovery attempts */
     protected static final long INITIAL_PAUSE_TIME = 5 * 1000;
 
-    private static final long BOOTLOADER_POLL_ATTEMPTS = 3;
+    /**
+     * The number of attempts to check if device is in bootloader.
+     * <p/>
+     * Exposed for unit testing
+     */
+    public static final int BOOTLOADER_POLL_ATTEMPTS = 3;
 
     // TODO: add a separate configurable timeout per operation
     @Option(name="device-wait-time",
