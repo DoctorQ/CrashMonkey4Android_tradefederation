@@ -186,6 +186,25 @@ public class BugreportCollectorTest extends TestCase {
         verifyMocks();
     }
 
+    public void testWaitForDevice() throws Exception {
+        Predicate pred = new Predicate(Relation.AFTER, Freq.EACH, Noun.TESTCASE);
+        mCollector.addPredicate(pred);
+        mCollector.setDeviceWaitTime(1);
+
+        mMockDevice.waitForDeviceOnline(1000);
+        EasyMock.expectLastCall().times(2);  // Once per ending test method
+        setListenerTestRunExpectations(mMockListener, "runName1", "testName1", "value");
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName1."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
+        setListenerTestRunExpectations(mMockListener, "runName2", "testName2", "value");
+        mMockListener.testLog(EasyMock.contains("bug-FooTest#testName2."),
+                EasyMock.eq(LogDataType.TEXT), EasyMock.eq(mBugreportISS));
+        replayMocks();
+        injectTestRun("runName1", "testName1", "value");
+        injectTestRun("runName2", "testName2", "value");
+        verifyMocks();
+    }
+
     public void testTestEnded_firstCase() throws Exception {
         Predicate pred = new Predicate(Relation.AFTER, Freq.FIRST, Noun.TESTCASE);
         mCollector.addPredicate(pred);
