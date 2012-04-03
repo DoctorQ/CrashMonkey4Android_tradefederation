@@ -241,7 +241,6 @@ public class OptionSetter {
      * @param valueText the value
      * @throws ConfigurationException if Option cannot be found or valueText is wrong type
      */
-    @SuppressWarnings("unchecked")
     public void setOptionValue(String optionName, String valueText) throws ConfigurationException {
         OptionFieldsForName optionFields = fieldsForArg(optionName);
         for (Map.Entry<Object, Field> fieldEntry : optionFields) {
@@ -256,24 +255,62 @@ public class OptionSetter {
                         String.format("Couldn't convert '%s' to a %s for option '%s'", valueText,
                                 type, optionName));
             }
-            try {
-                field.setAccessible(true);
-                if (Collection.class.isAssignableFrom(field.getType())) {
-                    Collection collection = (Collection)field.get(optionSource);
-                    if (collection == null) {
-                        throw new ConfigurationException(String.format(
-                                "internal error: no storage allocated for field '%s' (used for " +
-                                "option '%s') in class '%s'",
-                                field.getName(), optionName, optionSource.getClass().getName()));
-                    }
-                    collection.add(value);
-                } else {
-                    field.set(optionSource, value);
+            setFieldValue(optionName, optionSource, field, value);
+        }
+    }
+
+    /**
+     * Sets the given {@link Option} fields value.
+     *
+     * @param optionName the {@link Option#name()}
+     * @param optionSource the {@link Object} to set
+     * @param field the {@link Field}
+     * @param value the value to set
+     * @throws ConfigurationException
+     */
+    @SuppressWarnings("unchecked")
+    static void setFieldValue(String optionName, Object optionSource, Field field, Object value)
+            throws ConfigurationException {
+        try {
+            field.setAccessible(true);
+            if (Collection.class.isAssignableFrom(field.getType())) {
+                Collection collection = (Collection)field.get(optionSource);
+                if (collection == null) {
+                    throw new ConfigurationException(String.format(
+                            "internal error: no storage allocated for field '%s' (used for " +
+                            "option '%s') in class '%s'",
+                            field.getName(), optionName, optionSource.getClass().getName()));
                 }
-            } catch (IllegalAccessException e) {
-                throw new ConfigurationException(String.format(
-                        "internal error when setting option '%s'", optionName), e);
+                if (value instanceof Collection) {
+                    collection.addAll((Collection)value);
+                } else {
+                    collection.add(value);
+                }
+            } else if (Map.class.isAssignableFrom(field.getType())) {
+                Map map = (Map)field.get(optionSource);
+                if (map == null) {
+                    throw new ConfigurationException(String.format(
+                            "internal error: no storage allocated for field '%s' (used for " +
+                            "option '%s') in class '%s'",
+                            field.getName(), optionName, optionSource.getClass().getName()));
+                }
+                if (value instanceof Map) {
+                    map.putAll((Map)value);
+                } else {
+                    throw new ConfigurationException(String.format(
+                            "internal error: value provided for field '%s' is not a map (used " +
+                            "for option '%s') in class '%s'",
+                            field.getName(), optionName, optionSource.getClass().getName()));
+                }
+            } else {
+                field.set(optionSource, value);
             }
+        } catch (IllegalAccessException e) {
+            throw new ConfigurationException(String.format(
+                    "internal error when setting option '%s'", optionName), e);
+        } catch (IllegalArgumentException e) {
+            throw new ConfigurationException(String.format(
+                    "internal error when setting option '%s'", optionName), e);
         }
     }
 
@@ -463,7 +500,7 @@ public class OptionSetter {
      * @param optionClass the {@link Class} to search
      * @return a {@link Collection} of fields annotated with {@link Option}
      */
-    protected static Collection<Field> getOptionFieldsForClass(final Class<?> optionClass) {
+    static Collection<Field> getOptionFieldsForClass(final Class<?> optionClass) {
         Collection<Field> fieldList = new ArrayList<Field>();
         buildOptionFieldsForClass(optionClass, fieldList);
         return fieldList;
@@ -498,24 +535,35 @@ public class OptionSetter {
      *         empty (in case of {@link Collection}s
      */
     static String getFieldValueAsString(Field field, Object optionObject) {
-        try {
-            field.setAccessible(true);
-            Object fieldValue = field.get(optionObject);
-            if (fieldValue == null) {
+        Object fieldValue = getFieldValue(field, optionObject);
+        if (fieldValue == null) {
+            return null;
+        }
+        if (fieldValue instanceof Collection) {
+            Collection collection = (Collection)fieldValue;
+            if (collection.isEmpty()) {
                 return null;
             }
-            if (fieldValue instanceof Collection) {
-                Collection collection = (Collection)fieldValue;
-                if (collection.isEmpty()) {
-                    return null;
-                }
-            } else if (fieldValue instanceof Map) {
-                Map map = (Map)fieldValue;
-                if (map.isEmpty()) {
-                    return null;
-                }
+        } else if (fieldValue instanceof Map) {
+            Map map = (Map)fieldValue;
+            if (map.isEmpty()) {
+                return null;
             }
-            return fieldValue.toString();
+        }
+        return fieldValue.toString();
+    }
+
+    /**
+     * Return the given {@link Field}'s value, handling any exceptions.
+     *
+     * @param field the {@link Field}
+     * @param optionObject the {@link Object} to get field's value from.
+     * @return the field's value as a {@link Object}, or <code>null</code>
+     */
+    static Object getFieldValue(Field field, Object optionObject) {
+        try {
+            field.setAccessible(true);
+            return field.get(optionObject);
         } catch (IllegalArgumentException e) {
             Log.w(LOG_TAG, String.format(
                     "Could not read value for field %s in class %s. Reason: %s", field.getName(),
