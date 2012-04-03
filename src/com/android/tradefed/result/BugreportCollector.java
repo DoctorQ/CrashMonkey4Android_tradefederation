@@ -18,6 +18,7 @@ package com.android.tradefed.result;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
@@ -210,6 +211,12 @@ public class BugreportCollector implements ITestInvocationListener {
     private boolean mAsynchronous = false;
     @SuppressWarnings("unused")
     private boolean mCapturedBugreport = false;
+
+    /**
+     * How long to potentially wait for the device to be Online before we try to capture a
+     * bugreport.  If negative, no check will be performed
+     */
+    private int mDeviceWaitTimeSecs = -1;
     private String mDescriptiveName = null;
     // FIXME: Add support for minimum wait time between successive bugreports
     // FIXME: get rid of reset() method
@@ -230,6 +237,15 @@ public class BugreportCollector implements ITestInvocationListener {
 
     public void addPredicate(Predicate p) {
         mPredicates.add(p);
+    }
+
+    /**
+     * Set the time (in seconds) to wait for the device to be Online before we try to capture a
+     * bugreport.  If negative, no check will be performed.  Any {@link DeviceNotAvailableException}
+     * encountered during this check will be logged and ignored.
+     */
+    public void setDeviceWaitTime(int waitTime) {
+        mDeviceWaitTimeSecs = waitTime;
     }
 
     /**
@@ -270,6 +286,18 @@ public class BugreportCollector implements ITestInvocationListener {
         }
         String logName = String.format("bug-%s.%d", logDesc, System.currentTimeMillis());
         CLog.v("Log name is %s", logName);
+        if (mDeviceWaitTimeSecs >= 0) {
+            try {
+                mTestDevice.waitForDeviceOnline((long)mDeviceWaitTimeSecs * 1000);
+            } catch (DeviceNotAvailableException e) {
+                // Because we want to be as transparent as possible, we don't let this exception
+                // bubble up; if a problem happens that actually affects the test, the test will
+                // run into it.  If the test doesn't care (or, for instance, expects the device to
+                // be unavailable for a period of time), then we don't care.
+                CLog.e("Caught DeviceNotAvailableException while trying to capture bugreport");
+                CLog.e(e);
+            }
+        }
         InputStreamSource bugreport = mTestDevice.getBugreport();
         try {
             mListener.testLog(logName, LogDataType.TEXT, bugreport);
