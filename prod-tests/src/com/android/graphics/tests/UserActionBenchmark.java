@@ -37,7 +37,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -58,20 +60,17 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
 
     ITestDevice mTestDevice = null;
 
-    private static final String METRICS_RUN_NAME = "UserActionFramerateBenchmark";
     private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
-    private final String mOutputPath = "avgFrameRateOut.txt";
+    private static final String DEVICE_TEST_OUTPUT_FILE = "avgFrameRateOut.txt";
 
-    /** The time in ms to wait the scripted monkey finish */
-    private int mCmdTimeout = 60 * 60 * 1000;
+    // The time in ms to wait the scripted monkey finish.
+    private static final int CMD_TIMEOUT = 60 * 60 * 1000;
 
-    private static String[] mTestCases =
-        {"contacts", "gmail", "launcher", "liveWallpaper", "home",
-         "launchAllApps", "browserzoom", "browserscroll", "browserfling"};
+    private static final Pattern AVERAGE_FPS = Pattern.compile("(.*):(\\d+.\\d+)");
 
-    private static final Pattern AVERAGE_FPS =
-        Pattern.compile("(.*):(\\d+.\\d+)");
+    @Option(name = "test-case", description = "The name of test-cases  to run. May be repeated.")
+    private Collection<String> mTestCases = new ArrayList<String>();
 
     @Option(name = "iteration", description = "Test run iteration")
     private int mIteration = 1;
@@ -81,6 +80,9 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
 
     @Option(name = "script-path", description = "Test script path")
     private String mScriptPath = "userActionFPSScript";
+
+    @Option(name = "test-label", description = "Test label")
+    private String mTestLabel = "UserActionFramerateBenchmark";
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
@@ -97,7 +99,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
             // Start the scripted monkey command
             mTestDevice.executeShellCommand(String.format(
                 "monkey -f /%s/%s.txt --throttle %d %d", scriptFullPath,
-                testCase, mThrottle, mIteration), new NullOutputReceiver(), mCmdTimeout, 2);
+                testCase, mThrottle, mIteration), new NullOutputReceiver(), CMD_TIMEOUT, 2);
             logOutputFiles(listener);
             cleanResultFile();
         }
@@ -108,7 +110,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
      */
     private void cleanResultFile() throws DeviceNotAvailableException {
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, mOutputPath));
+        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, DEVICE_TEST_OUTPUT_FILE));
     }
 
     /**
@@ -120,7 +122,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
         File outputFile = null;
         InputStreamSource outputSource = null;
         try {
-            outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
+            outputFile = mTestDevice.pullFileFromExternal(DEVICE_TEST_OUTPUT_FILE);
 
             if (outputFile == null) {
                 return;
@@ -130,7 +132,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(mOutputPath, LogDataType.TEXT, outputSource);
+            listener.testLog(DEVICE_TEST_OUTPUT_FILE, LogDataType.TEXT, outputSource);
 
             // Parse the output file to upload aggregated metrics
             parseOutputFile(new FileInputStream(outputFile), listener);
@@ -194,7 +196,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
      */
     void reportMetrics(ITestInvocationListener listener, Map<String, String> metrics) {
         Log.d(LOG_TAG, String.format("About to report metrics: %s", metrics));
-        listener.testRunStarted(METRICS_RUN_NAME, 0);
+        listener.testRunStarted(mTestLabel, 0);
         listener.testRunEnded(0, metrics);
     }
 
