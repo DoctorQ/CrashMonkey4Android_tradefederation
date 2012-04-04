@@ -63,6 +63,27 @@ public class BugreportParser extends AbstractSectionParser {
     }
 
     /**
+     * Helper method to retrieve the number of ANRs that occurred in a parsed bugreport
+     */
+    public int getAnrCount(ItemList parsedData) {
+        return parsedData.getItemsByType(ANR).size();
+    }
+
+    /**
+     * Helper method to retrieve the number of Java crashes that occurred in a parsed bugreport
+     */
+    public int getJavaCrashCount(ItemList parsedData) {
+        return parsedData.getItemsByType(JAVA_CRASH).size();
+    }
+
+    /**
+     * Helper method to retrieve the number of native crashes that occurred in a parsed bugreport
+     */
+    public int getNativeCrashCount(ItemList parsedData) {
+        return parsedData.getItemsByType(NATIVE_CRASH).size();
+    }
+
+    /**
      * Parse a bugreport InputStreamSource into an {@link ItemList} object.  This is an entrance
      * method that makes {@link BugreportParser} convenient to use from Tradefed-based tests.
      *
