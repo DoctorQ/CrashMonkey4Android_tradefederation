@@ -16,7 +16,6 @@
 package com.android.tradefed.command;
 
 import com.android.tradefed.command.Console.CaptureList;
-import com.android.tradefed.command.Console.IConsoleReader;
 import com.android.tradefed.util.RegexTrie;
 
 import junit.framework.TestCase;
@@ -32,7 +31,6 @@ import java.util.List;
 public class ConsoleTest extends TestCase {
 
     private ICommandScheduler mMockScheduler;
-    private IConsoleReader mMockConsoleReader;
     private Console mConsole;
 
     /**
@@ -42,8 +40,13 @@ public class ConsoleTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockScheduler = EasyMock.createStrictMock(ICommandScheduler.class);
-        mMockConsoleReader = EasyMock.createNiceMock(IConsoleReader.class);
-        mConsole = new Console(mMockScheduler, mMockConsoleReader);
+        /**
+         * Note: Eclipse doesn't play nice with consoles allocated like {@code new ConsoleReader()}.
+         * To make an actual ConsoleReader instance, you should likely use the four-arg
+         * {@link jline.ConsoleReader} constructor and use {@link jline.UnsupportedTerminal} or
+         * similar as the implementation.
+         */
+        mConsole = new Console(mMockScheduler, null);
      }
 
     /**
