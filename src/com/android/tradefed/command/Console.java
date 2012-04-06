@@ -75,7 +75,7 @@ public class Console extends Thread {
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
     protected ICommandScheduler mScheduler;
-    protected IConsoleReader mConsoleReader;
+    protected ConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
     private boolean mShouldExit = false;
     private String[] mMainArgs = new String[] {};
@@ -152,98 +152,27 @@ public class Console extends Thread {
     }
 
     /**
-     * Interface for interacting with underlying console.
-     * <p/>
-     * Exposed for unit testing.
-     */
-    static interface IConsoleReader {
-
-        /**
-         * Wrapper for {@link ConsoleReader#printString(String)}.
-         */
-        void printString(String output) throws IOException;
-
-        /**
-         * Wrapper for {@link ConsoleReader#printNewLine()}.
-         */
-        void printNewline() throws IOException;
-
-        /**
-         * Wrapper for {@link ConsoleReader#printNewLine()}.
-         */
-        String readLine(String consolePrompt) throws IOException;
-
-        /**
-         * Configure the console for non interactive mode
-         */
-        void setNonInteractiveMode();
-
-    }
-
-    /**
-     * Wrapper class for directing {@link IConsoleReader} calls to jline
-     */
-    static class JLineConsoleWrapper implements IConsoleReader {
-
-        private ConsoleReader mJLineReader;
-
-        JLineConsoleWrapper() {
-            try {
-                mJLineReader = new ConsoleReader();
-            } catch (IOException e) {
-                System.err.println("Unable to initialize ConsoleReader: " + e.getMessage());
-                mJLineReader = null;
-            }
-        }
-
-        @Override
-        public void printString(String output) throws IOException {
-            if (mJLineReader != null) {
-                mJLineReader.printString(output);
-            } else {
-                System.out.print(output);
-            }
-        }
-
-        @Override
-        public void printNewline() throws IOException {
-            if (mJLineReader != null) {
-                mJLineReader.printNewline();
-            } else {
-                System.out.println();
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public String readLine(String consolePrompt) throws IOException {
-            if (mJLineReader != null) {
-                return mJLineReader.readLine(consolePrompt);
-            } else {
-                return null;
-            }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void setNonInteractiveMode() {
-            mJLineReader = null;
-        }
-    }
-
-    /**
      * Retrieve the {@link RegexTrie} that defines the console behavior.  Exposed for unit testing.
      */
     RegexTrie<Runnable> getCommandTrie() {
         return mCommandTrie;
     }
 
+    /**
+     * Return a new ConsoleReader, or {@code null} if an IOException occurs.  Note that this
+     * function must be static so that we can run it before the superclass constructor.
+     */
+    private static ConsoleReader getReader() {
+        try {
+            return new ConsoleReader();
+        } catch (IOException e) {
+            System.err.format("Failed to initialize ConsoleReader: %s\n", e.getMessage());
+            return null;
+        }
+     }
+
     protected Console() {
-        this(new CommandScheduler(), new JLineConsoleWrapper());
+        this(new CommandScheduler(), getReader());
     }
 
     /**
@@ -252,7 +181,7 @@ public class Console extends Thread {
      * <p/>
      * Exposed for unit testing
      */
-    Console(ICommandScheduler scheduler, IConsoleReader reader) {
+    Console(ICommandScheduler scheduler, ConsoleReader reader) {
         super();
         mScheduler = scheduler;
         mConsoleReader = reader;
@@ -692,7 +621,11 @@ public class Console extends Thread {
      *         console is not available or user entered EOF ({@code ^D}).
      */
     private String getConsoleInput() throws IOException {
-        return mConsoleReader.readLine(getConsolePrompt());
+        if (mConsoleReader != null) {
+            return mConsoleReader.readLine(getConsolePrompt());
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -707,13 +640,18 @@ public class Console extends Thread {
      * @param output
      */
     protected void printLine(String output) {
-        try {
-            mConsoleReader.printString(output);
-            mConsoleReader.printNewline();
-        } catch (IOException e) {
-            // not guaranteed to work, but worth a try
-            System.err.println("Console failed to print a message to stdout: "
-                    + e.getMessage());
+        if (mConsoleReader != null) {
+            try {
+                mConsoleReader.printString(output);
+                mConsoleReader.printNewline();
+            } catch (IOException e) {
+                // not guaranteed to work, but worth a try
+                System.err.println("Console failed to print a message to stdout: "
+                        + e.getMessage());
+            }
+        } else {
+            System.out.print(output);
+            System.out.println();
         }
     }
 
@@ -746,7 +684,6 @@ public class Console extends Thread {
             // Check System.console() since jline doesn't seem to consistently know whether or not
             // the console is functional.
             if (System.console() == null) {
-                mConsoleReader.setNonInteractiveMode();
                 if (arrrgs.isEmpty()) {
                     printLine("No commands for non-interactive mode; exiting.");
                     return;
