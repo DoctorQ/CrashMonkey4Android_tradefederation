@@ -64,6 +64,11 @@ public class DeviceSetup implements ITargetPreparer {
             "Must be used with --local-data-path.")
     private String mRemoteDataPath = null;
 
+    @Option(name = "force-skip-system-props", description =
+            "force setup to not modify any device system properties. " +
+            "All other system property options will be ignored.")
+    private boolean mForceNoSystemProps = false;
+
     @Option(name="disable-dialing", description="set disable dialing property on boot.")
     private boolean mDisableDialing = true;
 
@@ -164,6 +169,9 @@ public class DeviceSetup implements ITargetPreparer {
      */
     private void configureSystemProperties(ITestDevice device) throws TargetSetupError,
             DeviceNotAvailableException {
+        if (mForceNoSystemProps) {
+            return;
+        }
         // build the local.prop file contents with properties to change
         StringBuilder propertyBuilder = new StringBuilder();
         if (mDisableDialing) {
