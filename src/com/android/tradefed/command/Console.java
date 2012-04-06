@@ -735,12 +735,18 @@ public class Console extends Thread {
                 } else {
                     printLine(String.format("Using commandline arguments as starting command: %s",
                             arrrgs));
+                    if (mConsoleReader != null) {
+                        // Add the starting command as the first item in the console history
+                        // FIXME: this will not properly escape commands that were properly escaped
+                        // FIXME: on the commandline.  That said, it will still be more convenient
+                        // FIXME: than copying by hand.
+                        final String cmd = ArrayUtil.join(" ", arrrgs);
+                        mConsoleReader.getHistory().addToHistory(cmd);
+                    }
                     tokens = arrrgs.toArray(new String[0]);
                     arrrgs = Collections.emptyList();
                 }
 
-                // TODO: think about having the modules themselves advertise their management
-                // TODO: interfaces
                 Runnable command = mCommandTrie.retrieve(groups, tokens);
                 if (command != null) {
                     executeCmdRunnable(command, groups);
