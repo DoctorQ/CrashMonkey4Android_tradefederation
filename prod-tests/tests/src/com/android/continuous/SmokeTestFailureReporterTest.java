@@ -21,14 +21,20 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.IEmail;
+import com.android.tradefed.util.IEmail.Message;
 
 import junit.framework.TestCase;
+
+import org.easymock.Capture;
+import org.easymock.EasyMock;
 
 import java.util.Collections;
 import java.util.Map;
 
 public class SmokeTestFailureReporterTest extends TestCase {
     private SmokeTestFailureReporter mReporter = null;
+    private IEmail mMailer = null;
 
     private static final String TAG = "DeviceSmokeTests";
     private static final String BID = "123456";
@@ -38,10 +44,11 @@ public class SmokeTestFailureReporterTest extends TestCase {
 
     @Override
     public void setUp() {
-        mReporter = new SmokeTestFailureReporter();
+        mMailer = EasyMock.createMock(IEmail.class);
+        mReporter = new SmokeTestFailureReporter(mMailer);
     }
 
-    public void testSingleFail() {
+    public void testSingleFail() throws Exception {
         final String expSubject = "git_master SmokeFAST failed on generic-userdebug @123456";
         final String expBodyStart = "FooTest#testFoo failed\n\n";
 
@@ -49,10 +56,15 @@ public class SmokeTestFailureReporterTest extends TestCase {
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
         final String trace = "this is a trace";
 
-        IBuildInfo build = new BuildInfo(BID, TAG, TARGET);
+        final Capture<Message> msgCapture = new Capture<Message>();
+        mMailer.send(EasyMock.capture(msgCapture));
+        EasyMock.replay(mMailer);
+
+        final IBuildInfo build = new BuildInfo(BID, TAG, TARGET);
         build.setBuildFlavor(FLAVOR);
         build.setBuildBranch(BRANCH);
 
+        mReporter.addDestination("dest.ination@email.com");
         mReporter.invocationStarted(build);
         mReporter.testRunStarted("testrun", 1);
         mReporter.testStarted(testId);
@@ -61,17 +73,22 @@ public class SmokeTestFailureReporterTest extends TestCase {
         mReporter.testRunEnded(2, emptyMap);
         mReporter.invocationEnded(1);
 
-        final String subj = mReporter.generateEmailSubject();
-        final String body = mReporter.generateEmailBody();
+        EasyMock.verify(mMailer);
+
+        assertTrue(msgCapture.hasCaptured());
+        final Message msg = msgCapture.getValue();
+        final String subj = msg.getSubject();
+        final String body = msg.getBody();
         CLog.i("subject: %s", subj);
         CLog.i("body:\n%s", body);
         assertEquals(expSubject, subj);
         assertTrue(String.format(
                 "Expected body to start with \"\"\"%s\"\"\".  Body was actually: %s\n",
                 expBodyStart, body), body.startsWith(expBodyStart));
+
     }
 
-    public void testTwoPassOneFail() {
+    public void testTwoPassOneFail() throws Exception {
         final String expSubject = "git_master SmokeFAST failed on generic-userdebug @123456";
         final String expBodyStart = "FooTest#testFail failed\n\n";
 
@@ -81,10 +98,15 @@ public class SmokeTestFailureReporterTest extends TestCase {
         final TestIdentifier testPass1 = new TestIdentifier("FooTest", "testPass1");
         final TestIdentifier testPass2 = new TestIdentifier("FooTest", "testPass2");
 
+        final Capture<Message> msgCapture = new Capture<Message>();
+        mMailer.send(EasyMock.capture(msgCapture));
+        EasyMock.replay(mMailer);
+
         IBuildInfo build = new BuildInfo(BID, TAG, TARGET);
         build.setBuildFlavor(FLAVOR);
         build.setBuildBranch(BRANCH);
 
+        mReporter.addDestination("dest.ination@email.com");
         mReporter.invocationStarted(build);
         mReporter.testRunStarted("testrun", 1);
         mReporter.testStarted(testPass1);
@@ -99,8 +121,12 @@ public class SmokeTestFailureReporterTest extends TestCase {
         mReporter.testRunEnded(2, emptyMap);
         mReporter.invocationEnded(1);
 
-        final String subj = mReporter.generateEmailSubject();
-        final String body = mReporter.generateEmailBody();
+        EasyMock.verify(mMailer);
+
+        assertTrue(msgCapture.hasCaptured());
+        final Message msg = msgCapture.getValue();
+        final String subj = msg.getSubject();
+        final String body = msg.getBody();
         CLog.i("subject: %s", subj);
         CLog.i("body:\n%s", body);
         assertEquals(expSubject, subj);
