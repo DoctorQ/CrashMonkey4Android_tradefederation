@@ -646,6 +646,7 @@ public class Console extends Thread {
     protected void printLine(String output) {
         if (mConsoleReader != null) {
             try {
+                mConsoleReader.printString(output);
                 mConsoleReader.printNewline();
             } catch (IOException e) {
                 // not guaranteed to work, but worth a try
