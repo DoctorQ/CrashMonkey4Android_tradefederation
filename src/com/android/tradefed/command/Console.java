@@ -24,6 +24,7 @@ import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.log.ConsoleReaderOutputStream;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.QuotationAwareTokenizer;
@@ -34,6 +35,7 @@ import jline.ConsoleReader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -164,7 +166,9 @@ public class Console extends Thread {
      */
     private static ConsoleReader getReader() {
         try {
-            return new ConsoleReader();
+            final ConsoleReader reader = new ConsoleReader();
+            System.setOut(new PrintStream(new ConsoleReaderOutputStream(reader)));
+            return reader;
         } catch (IOException e) {
             System.err.format("Failed to initialize ConsoleReader: %s\n", e.getMessage());
             return null;
@@ -642,7 +646,6 @@ public class Console extends Thread {
     protected void printLine(String output) {
         if (mConsoleReader != null) {
             try {
-                mConsoleReader.printString(output);
                 mConsoleReader.printNewline();
             } catch (IOException e) {
                 // not guaranteed to work, but worth a try
