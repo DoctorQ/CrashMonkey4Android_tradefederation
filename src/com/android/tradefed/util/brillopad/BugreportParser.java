@@ -36,6 +36,12 @@ import java.io.InputStreamReader;
  * A brillopad parser that understands the Android bugreport format
  */
 public class BugreportParser extends AbstractSectionParser {
+    private static final String MEM_INFO_SECTION_REGEX = "------ MEMORY INFO .*";
+    private static final String PROCRANK_SECTION_REGEX = "------ PROCRANK .*";
+    private static final String SYSTEM_PROP_SECTION_REGEX = "------ SYSTEM PROPERTIES .*";
+    private static final String SYSTEM_LOG_SECTION_REGEX = "------ SYSTEM LOG .*";
+    private static final String NOOP_SECTION_REGEX = "------ .*";
+
     // For convenience, since these will likely be the most common events that people are
     // interested in.
     public static final String ANR = AnrParser.SECTION_NAME;
@@ -97,13 +103,13 @@ public class BugreportParser extends AbstractSectionParser {
 
     @Override
     public void addDefaultSectionParsers(RegexTrie<IBlockParser> sectionTrie) {
-        sectionTrie.put(new MemInfoParser(), MemInfoParser.SECTION_REGEX);
-        sectionTrie.put(new ProcRankParser(), ProcRankParser.SECTION_REGEX);
-        sectionTrie.put(new SystemPropParser(), SystemPropParser.SECTION_REGEX);
-        sectionTrie.put(new SystemLogParser(), SystemLogParser.SECTION_REGEX);
+        sectionTrie.put(new MemInfoParser(), MEM_INFO_SECTION_REGEX);
+        sectionTrie.put(new ProcRankParser(), PROCRANK_SECTION_REGEX);
+        sectionTrie.put(new SystemPropParser(), SYSTEM_PROP_SECTION_REGEX);
+        sectionTrie.put(new SystemLogParser(), SYSTEM_LOG_SECTION_REGEX);
 
         // Add a default section parser so that the Trie will commit prior sections
-        sectionTrie.put(new NoopSectionParser(), NoopSectionParser.SECTION_REGEX);
+        sectionTrie.put(new NoopSectionParser(), NOOP_SECTION_REGEX);
     }
 }
 

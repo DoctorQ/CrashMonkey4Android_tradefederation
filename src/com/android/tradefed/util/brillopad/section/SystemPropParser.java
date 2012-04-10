@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
  */
 public class SystemPropParser implements IBlockParser {
     public static final String SECTION_NAME = "SYSTEM PROPERTIES";
-    public static final String SECTION_REGEX = "------ SYSTEM PROPERTIES .*";
 
     /** Match a single property line, such as "[gsm.sim.operator.numeric]: []" */
     private static final Pattern PROP_LINE = Pattern.compile("^\\[(.*)\\]: \\[(.*)\\]$");

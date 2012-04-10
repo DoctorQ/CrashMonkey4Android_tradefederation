@@ -30,7 +30,6 @@ import java.util.regex.Pattern;
  */
 public class MemInfoParser implements IBlockParser {
     public static final String SECTION_NAME = "MEMORY INFO";
-    public static final String SECTION_REGEX = "------ MEMORY INFO .*";
 
     /** Match a single MemoryInfo line, such as "MemFree:           65420 kB" */
     private static final Pattern INFO_LINE = Pattern.compile("^([^:]+):\\s+(\\d+) kB");

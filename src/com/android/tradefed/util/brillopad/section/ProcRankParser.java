@@ -33,8 +33,6 @@ import java.util.regex.Pattern;
  */
 public class ProcRankParser implements IBlockParser {
     public static final String SECTION_NAME = "PROCRANK";
-    public static final String SECTION_REGEX = "------ PROCRANK .*";
-
 
     private int mNumFields = -1;
     private String[] mFieldNames = null;

@@ -25,7 +25,6 @@ import java.util.List;
  */
 public class NoopSectionParser implements IBlockParser {
     public static final String SECTION_NAME = "unknown";
-    public static final String SECTION_REGEX = "------ .*";
 
     @Override
     public void parseBlock(List<String> block, ItemList itemlist) {

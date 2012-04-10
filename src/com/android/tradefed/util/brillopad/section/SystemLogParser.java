@@ -33,7 +33,6 @@ import java.util.regex.Pattern;
  */
 public class SystemLogParser implements IBlockParser {
     public static final String SECTION_NAME = "SYSTEM LOG";
-    public static final String SECTION_REGEX = "------ SYSTEM LOG .*";
 
     private ISyslogParser mJava = new JavaCrashParser();
     private ISyslogParser mNative = new NativeCrashParser();
