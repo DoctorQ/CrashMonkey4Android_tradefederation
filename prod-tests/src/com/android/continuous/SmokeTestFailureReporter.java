@@ -22,6 +22,8 @@ import com.android.tradefed.result.TestFailureEmailResultReporter;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.result.TestResult.TestStatus;
 import com.android.tradefed.result.TestRunResult;
+import com.android.tradefed.util.Email;
+import com.android.tradefed.util.IEmail;
 
 import java.util.Map;
 
@@ -29,6 +31,24 @@ import java.util.Map;
  * A customized failure reporter that sends emails in a specific format
  */
 public class SmokeTestFailureReporter extends TestFailureEmailResultReporter {
+    /**
+     * Default constructor
+     */
+    public SmokeTestFailureReporter() {
+        this(new Email());
+    }
+
+    /**
+     * Create a {@link SmokeTestFailureEmailReporter} with a custom {@link IEmail} instance to use.
+     * <p/>
+     * Exposed for unit testing.
+     *
+     * @param mailer the {@link IEmail} instance to use.
+     */
+    protected SmokeTestFailureReporter(IEmail mailer) {
+        super(mailer);
+    }
+
     /**
      * {@inheritDoc}
      */
