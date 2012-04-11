@@ -13,23 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
 
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
-import com.android.tradefed.util.brillopad.item.IItem;
+package com.android.tradefed.util.brillopad;
+
+import com.android.tradefed.util.brillopad.item.MemInfoItem;
 
 import junit.framework.TestCase;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Unit tests for {@link MemInfoParser}
  */
 public class MemInfoParserTest extends TestCase {
-    @SuppressWarnings("unchecked")
     public void testMemInfoParser() {
         List<String> inputBlock = Arrays.asList(
                 "MemTotal:         353332 kB",
@@ -38,16 +35,8 @@ public class MemInfoParserTest extends TestCase {
                 "Cached:            86204 kB",
                 "SwapCached:            0 kB");
         MemInfoParser parser = new MemInfoParser();
-        ItemList br = new ItemList();
+        MemInfoItem output = parser.parse(inputBlock);
 
-        parser.parseBlock(inputBlock, br);
-        List<IItem> items = br.getItems();
-        assertNotNull(items);
-        assertEquals(1, items.size());
-        assertTrue("Expected item of type GenericMapItem!", items.get(0) instanceof GenericMapItem);
-        assertEquals(MemInfoParser.SECTION_NAME, items.get(0).getType());
-
-        Map<String, Integer> output = (GenericMapItem<String, Integer>)items.get(0);
         assertEquals(5, output.size());
         assertEquals((Integer)353332, output.get("MemTotal"));
         assertEquals((Integer)65420, output.get("MemFree"));
@@ -56,4 +45,3 @@ public class MemInfoParserTest extends TestCase {
         assertEquals((Integer)0, output.get("SwapCached"));
     }
 }
-

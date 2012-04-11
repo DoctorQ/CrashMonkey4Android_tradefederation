@@ -13,23 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section.syslog;
+package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.ItemList;
+
+import com.android.tradefed.util.brillopad.item.IItem;
+
+import java.util.List;
 
 /**
- * Attempt to parse a line of the logcat
+ * A {@link IParser} that consumes nothing.
  */
-public interface ISyslogParser {
-    // FIXME: ILogcatLineParser is a better name
+public class NoopParser implements IParser {
     /**
-     * Parse of line of logcat
+     * {@inheritDoc}
      */
-    public void parseLine(int tid, int pid, String msg, ItemList itemlist);
-
-    /**
-     * A signal that input is done for this parser
-     */
-    public void commit(ItemList itemlist);
+    @Override
+    public IItem parse(List<String> block) {
+        // ignore
+        return null;
+    }
 }
 

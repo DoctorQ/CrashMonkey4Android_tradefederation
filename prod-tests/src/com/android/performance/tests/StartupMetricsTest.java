@@ -28,11 +28,10 @@ import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.brillopad.BugreportParser;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
+import com.android.tradefed.util.brillopad.item.BugreportItem;
 import com.android.tradefed.util.brillopad.item.IItem;
-import com.android.tradefed.util.brillopad.section.MemInfoParser;
-import com.android.tradefed.util.brillopad.section.ProcRankParser;
+import com.android.tradefed.util.brillopad.item.MemInfoItem;
+import com.android.tradefed.util.brillopad.item.ProcrankItem;
 
 import junit.framework.Assert;
 
@@ -94,13 +93,12 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
      * @param listener the {@link ITestInvocationListener} of test results
      * @throws DeviceNotAvailableException
      */
-    @SuppressWarnings("unchecked")
     void fetchBugReportMetrics(ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         // Make sure the device is available and settled, before getting bugreport.
         mTestDevice.waitForDeviceAvailable();
         BugreportParser parser = new BugreportParser();
-        ItemList bugreport = null;
+        BugreportItem bugreport = null;
         // Retrieve bugreport
         InputStreamSource bugSource = mTestDevice.getBugreport();
         try {
@@ -113,17 +111,16 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
             bugSource.cancel();
         }
         // Process meminfo information and post it to the dashboard
-        IItem item = bugreport.getFirstItemByType(MemInfoParser.SECTION_NAME);
+        IItem item = bugreport.getMemInfo();
         if (item != null) {
-            Map<String, String> memInfoMap = convertMap((GenericMapItem<String, Integer>) item);
+            Map<String, String> memInfoMap = convertMap((MemInfoItem) item);
             reportMetrics(listener, "startup-meminfo", memInfoMap);
         }
 
         // Process procrank information and post it to the dashboard
-        item = bugreport.getFirstItemByType(ProcRankParser.SECTION_NAME);
+        item = bugreport.getProcrank();
         if (item != null) {
-            Map <String, Map<String, Integer>> procRankMap =
-                    (GenericMapItem<String, Map<String, Integer>>) item;
+            Map <String, Map<String, Integer>> procRankMap = (ProcrankItem) item;
             parseProcRankMap(listener, procRankMap);
         }
     }

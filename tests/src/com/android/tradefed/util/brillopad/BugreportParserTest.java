@@ -15,48 +15,115 @@
  */
 package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
-import com.android.tradefed.util.brillopad.item.IItem;
-import com.android.tradefed.util.brillopad.section.MemInfoParser;
+import com.android.tradefed.util.brillopad.item.BugreportItem;
 
 import junit.framework.TestCase;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Unit tests for {@link BugreportParser}
  */
 public class BugreportParserTest extends TestCase {
-    @SuppressWarnings("unchecked")
-    public void testMemInfoParser() {
-        List<String> inputBlock = Arrays.asList(
+
+    /**
+     * Test that a bugreport can be parsed.
+     */
+    public void testParse() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 2012-04-25 20:45:10",
+                "========================================================",
+                "------ SECTION ------",
+                "",
+                "------ MEMORY INFO (/proc/meminfo) ------",
                 "MemTotal:         353332 kB",
                 "MemFree:           65420 kB",
                 "Buffers:           20800 kB",
                 "Cached:            86204 kB",
-                "SwapCached:            0 kB");
-        MemInfoParser parser = new MemInfoParser();
-        ItemList br = new ItemList();
+                "SwapCached:            0 kB",
+                "",
+                "------ PROCRANK (procrank) ------",
+                "  PID      Vss      Rss      Pss      Uss  cmdline",
+                "  178   87136K   81684K   52829K   50012K  system_server",
+                " 1313   78128K   77996K   48603K   45812K  com.google.android.apps.maps",
+                " 3247   61652K   61492K   33122K   30972K  com.android.browser",
+                "                          ------   ------  ------",
+                "                          203624K  163604K  TOTAL",
+                "RAM: 731448K total, 415804K free, 9016K buffers, 108548K cached",
+                "[procrank: 1.6s elapsed]",
+                "",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: java.lang.Exception",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method1(Class.java:1)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method2(Class.java:2)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method3(Class.java:3)",
+                "04-25 17:17:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.package",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:17:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "04-25 18:33:27.273   115   115 I DEBUG   : *** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***",
+                "04-25 18:33:27.273   115   115 I DEBUG   : Build fingerprint: 'product:build:target'",
+                "04-25 18:33:27.273   115   115 I DEBUG   : pid: 3112, tid: 3112  >>> com.google.android.browser <<<",
+                "04-25 18:33:27.273   115   115 I DEBUG   : signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 00000000",
+                "",
+                "------ SYSTEM PROPERTIES ------",
+                "[dalvik.vm.dexopt-flags]: [m=y]",
+                "[dalvik.vm.heapgrowthlimit]: [48m]",
+                "[dalvik.vm.heapsize]: [256m]",
+                "[gsm.version.ril-impl]: [android moto-ril-multimode 1.0]",
+                "",
+                "------ SECTION ------",
+                "");
 
-        parser.parseBlock(inputBlock, br);
-        List<IItem> items = br.getItems();
-        assertNotNull(items);
-        assertEquals(1, items.size());
-        assertTrue("Expected item of type GenericMapItem!", items.get(0) instanceof GenericMapItem);
-        assertEquals(MemInfoParser.SECTION_NAME, items.get(0).getType());
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+        assertNotNull(bugreport);
+        assertEquals(parseTime("2012-04-25 20:45:10.000"), bugreport.getTime());
 
-        Map<String, Integer> output = (GenericMapItem<String, Integer>)items.get(0);
-        assertEquals(5, output.size());
-        assertEquals((Integer)353332, output.get("MemTotal"));
-        assertEquals((Integer)65420, output.get("MemFree"));
-        assertEquals((Integer)20800, output.get("Buffers"));
-        assertEquals((Integer)86204, output.get("Cached"));
-        assertEquals((Integer)0, output.get("SwapCached"));
+        assertNotNull(bugreport.getMemInfo());
+        assertEquals(5, bugreport.getMemInfo().size());
+
+        assertNotNull(bugreport.getProcrank());
+        assertEquals(3, bugreport.getProcrank().size());
+
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(parseTime("2012-04-25 09:55:47.799"), bugreport.getSystemLog().getStartTime());
+        assertEquals(parseTime("2012-04-25 18:33:27.273"), bugreport.getSystemLog().getStopTime());
+        assertEquals(3, bugreport.getSystemLog().getEvents().size());
+
+        assertNotNull(bugreport.getSystemProps());
+        assertEquals(4, bugreport.getSystemProps().size());
     }
 
-    // FIXME: testcase: log tag with embedded colon
-    // FIXME: '05-25 15:04:46.900  2793  2793 I DataGauge:DataUsageService: Custom datagauge boot service destroyed'
+    /**
+     * Test that the logcat year is set correctly from the bugreport timestamp.
+     */
+    public void testParse_set_logcat_year() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 1999-01-01 02:03:04",
+                "========================================================",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "01-01 01:02:03.000     1     1 I TAG     : message",
+                "01-01 01:02:04.000     1     1 I TAG     : message",
+                "");
+
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+        assertNotNull(bugreport);
+        assertEquals(parseTime("1999-01-01 02:03:04.000"), bugreport.getTime());
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(parseTime("1999-01-01 01:02:03.000"), bugreport.getSystemLog().getStartTime());
+        assertEquals(parseTime("1999-01-01 01:02:04.000"), bugreport.getSystemLog().getStopTime());
+    }
+
+    private Date parseTime(String timeStr) throws ParseException {
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
+        return formatter.parse(timeStr);
+    }
 }
 

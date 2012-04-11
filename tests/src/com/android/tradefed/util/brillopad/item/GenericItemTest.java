@@ -17,51 +17,57 @@ package com.android.tradefed.util.brillopad.item;
 
 import junit.framework.TestCase;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
- * Unit test for {@link AbstractItem}.
+ * Unit test for {@link GenericItem}.
  */
-public class AbstractItemTest extends TestCase {
+public class GenericItemTest extends TestCase {
+    private static final Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
+            "integer", "string"));
+
     private String mStringAttribute = "String";
     private Integer mIntegerAttribute = 1;
 
     /** Empty item with no attributes set */
-    private StubAbstractItem mEmptyItem1;
+    private GenericItem mEmptyItem1;
     /** Empty item with no attributes set */
-    private StubAbstractItem mEmptyItem2;
+    private GenericItem mEmptyItem2;
     /** Item with only the string attribute set */
-    private StubAbstractItem mStringItem;
+    private GenericItem mStringItem;
     /** Item with only the integer attribute set */
-    private StubAbstractItem mIntegerItem;
+    private GenericItem mIntegerItem;
     /** Item with both attributes set, product of mStringItem and mIntegerItem */
-    private StubAbstractItem mFullItem1;
+    private GenericItem mFullItem1;
     /** Item with both attributes set, product of mStringItem and mIntegerItem */
-    private StubAbstractItem mFullItem2;
+    private GenericItem mFullItem2;
     /** Item that is inconsistent with the others */
-    private StubAbstractItem mInconsistentItem;
+    private GenericItem mInconsistentItem;
 
     @Override
     public void setUp() {
-        mEmptyItem1 = new StubAbstractItem();
-        mEmptyItem2 = new StubAbstractItem();
-        mStringItem = new StubAbstractItem();
+        mEmptyItem1 = new GenericItem(null, ATTRIBUTES);
+        mEmptyItem2 = new GenericItem(null, ATTRIBUTES);
+        mStringItem = new GenericItem(null, ATTRIBUTES);
         mStringItem.setAttribute("string", mStringAttribute);
-        mIntegerItem = new StubAbstractItem();
+        mIntegerItem = new GenericItem(null, ATTRIBUTES);
         mIntegerItem.setAttribute("integer", mIntegerAttribute);
-        mFullItem1 = new StubAbstractItem();
+        mFullItem1 = new GenericItem(null, ATTRIBUTES);
         mFullItem1.setAttribute("string", mStringAttribute);
         mFullItem1.setAttribute("integer", mIntegerAttribute);
-        mFullItem2 = new StubAbstractItem();
+        mFullItem2 = new GenericItem(null, ATTRIBUTES);
         mFullItem2.setAttribute("string", mStringAttribute);
         mFullItem2.setAttribute("integer", mIntegerAttribute);
-        mInconsistentItem = new StubAbstractItem();
+        mInconsistentItem = new GenericItem(null, ATTRIBUTES);
         mInconsistentItem.setAttribute("string", "gnirts");
         mInconsistentItem.setAttribute("integer", 2);
     }
 
     /**
-     * Test for {@link AbstractItem#mergeAttributes(IItem)}.
+     * Test for {@link GenericItem#mergeAttributes(IItem)}.
      */
     public void testMergeAttributes() throws ConflictingItemException {
         Map<String, Object> attributes;
@@ -111,7 +117,7 @@ public class AbstractItemTest extends TestCase {
     }
 
     /**
-     * Test for {@link AbstractItem#isConsistent(IItem)}.
+     * Test for {@link GenericItem#isConsistent(IItem)}.
      */
     public void testIsConsistent() {
         assertTrue(mEmptyItem1.isConsistent(mEmptyItem1));
@@ -128,7 +134,7 @@ public class AbstractItemTest extends TestCase {
     }
 
     /**
-     * Test {@link AbstractItem#equals(Object)}.
+     * Test {@link GenericItem#equals(Object)}.
      */
     public void testEquals() {
         assertTrue(mEmptyItem1.equals(mEmptyItem1));
@@ -145,11 +151,11 @@ public class AbstractItemTest extends TestCase {
     }
 
     /**
-     * Test for {@link AbstractItem#setAttribute(String, Object)} and
-     * {@link AbstractItem#getAttribute(String)}.
+     * Test for {@link GenericItem#setAttribute(String, Object)} and
+     * {@link GenericItem#getAttribute(String)}.
      */
     public void testAttributes() {
-        StubAbstractItem item = new StubAbstractItem();
+        GenericItem item = new GenericItem(null, ATTRIBUTES);
 
         assertNull(item.getAttribute("string"));
         assertNull(item.getAttribute("integer"));
@@ -175,38 +181,38 @@ public class AbstractItemTest extends TestCase {
     }
 
     /**
-     * Test for {@link AbstractItem#areEqual(Object, Object)}
+     * Test for {@link GenericItem#areEqual(Object, Object)}
      */
     public void testAreEqual() {
-        assertTrue(AbstractItem.areEqual(null, null));
-        assertTrue(AbstractItem.areEqual("test", "test"));
-        assertFalse(AbstractItem.areEqual(null, "test"));
-        assertFalse(AbstractItem.areEqual("test", null));
-        assertFalse(AbstractItem.areEqual("test", ""));
+        assertTrue(GenericItem.areEqual(null, null));
+        assertTrue(GenericItem.areEqual("test", "test"));
+        assertFalse(GenericItem.areEqual(null, "test"));
+        assertFalse(GenericItem.areEqual("test", null));
+        assertFalse(GenericItem.areEqual("test", ""));
     }
 
     /**
-     * Test for {@link AbstractItem#areConsistent(Object, Object)}
+     * Test for {@link GenericItem#areConsistent(Object, Object)}
      */
     public void testAreConsistent() {
-        assertTrue(AbstractItem.areConsistent(null, null));
-        assertTrue(AbstractItem.areConsistent("test", "test"));
-        assertTrue(AbstractItem.areConsistent(null, "test"));
-        assertTrue(AbstractItem.areConsistent("test", null));
-        assertFalse(AbstractItem.areConsistent("test", ""));
+        assertTrue(GenericItem.areConsistent(null, null));
+        assertTrue(GenericItem.areConsistent("test", "test"));
+        assertTrue(GenericItem.areConsistent(null, "test"));
+        assertTrue(GenericItem.areConsistent("test", null));
+        assertFalse(GenericItem.areConsistent("test", ""));
     }
 
     /**
-     * Test for {@link AbstractItem#mergeObjects(Object, Object)}
+     * Test for {@link GenericItem#mergeObjects(Object, Object)}
      */
     public void testMergeObjects() throws ConflictingItemException {
-        assertNull(AbstractItem.mergeObjects(null, null));
-        assertEquals("test", AbstractItem.mergeObjects("test", "test"));
-        assertEquals("test", AbstractItem.mergeObjects(null, "test"));
-        assertEquals("test", AbstractItem.mergeObjects("test", null));
+        assertNull(GenericItem.mergeObjects(null, null));
+        assertEquals("test", GenericItem.mergeObjects("test", "test"));
+        assertEquals("test", GenericItem.mergeObjects(null, "test"));
+        assertEquals("test", GenericItem.mergeObjects("test", null));
 
         try {
-            assertEquals("test", AbstractItem.mergeObjects("test", ""));
+            assertEquals("test", GenericItem.mergeObjects("test", ""));
             fail("Expected ConflictingItemException to be thrown");
         } catch (ConflictingItemException e) {
             // Expected because "test" conflicts with "".

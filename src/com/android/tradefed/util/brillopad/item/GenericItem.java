@@ -15,26 +15,28 @@
  */
 package com.android.tradefed.util.brillopad.item;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 /**
- * An abstract implementation of the {@link IItem} interface which implements helper methods.
+ * An implementation of the {@link IItem} interface which implements helper methods.
  */
-public abstract class AbstractItem implements IItem {
+public class GenericItem implements IItem {
     private Map<String, Object> mAttributes = new HashMap<String, Object>();
     private Set<String> mAllowedAttributes;
+    private String mType = null;
 
-    protected AbstractItem(String[] allowedAttributes) {
+    protected GenericItem(String type, Set<String> allowedAttributes) {
         mAllowedAttributes = new HashSet<String>();
-        mAllowedAttributes.addAll(Arrays.asList(allowedAttributes));
+        mAllowedAttributes.addAll(allowedAttributes);
+        mType = type;
     }
 
-    protected AbstractItem(String[] allowedAttributes, Map<String, Object> attributes) {
-        this(allowedAttributes);
+    protected GenericItem(String type, Set<String> allowedAttributes,
+            Map<String, Object> attributes) {
+        this(type, allowedAttributes);
 
         for (Map.Entry<String, Object> entry : attributes.entrySet()) {
             setAttribute(entry.getKey(), entry.getValue());
@@ -42,8 +44,30 @@ public abstract class AbstractItem implements IItem {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getType() {
+        return mType;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IItem merge(IItem other) throws ConflictingItemException {
+        if (this == other) {
+            return this;
+        }
+        if (other == null || getClass() != other.getClass()) {
+            throw new ConflictingItemException("Conflicting class types");
+        }
+
+        return new GenericItem(getType(), mAllowedAttributes, mergeAttributes(other));
+    }
+
+    /**
      * Merges the attributes from the item and another and returns a Map of the merged attributes.
-     *
      * <p>
      * Goes through each field in the item preferring non-null attributes over null attributes.
      * </p>
@@ -52,7 +76,7 @@ public abstract class AbstractItem implements IItem {
      * @return A Map from Strings to Objects containing merged attributes.
      * @throws ConflictingItemException If the two items are not consistent.
      */
-    public Map<String, Object> mergeAttributes(IItem other) throws ConflictingItemException {
+    protected Map<String, Object> mergeAttributes(IItem other) throws ConflictingItemException {
         if (this == other) {
             return mAttributes;
         }
@@ -60,21 +84,13 @@ public abstract class AbstractItem implements IItem {
             throw new ConflictingItemException("Conflicting class types");
         }
 
-        AbstractItem item = (AbstractItem) other;
+        GenericItem item = (GenericItem) other;
         Map<String, Object> mergedAttributes = new HashMap<String, Object>();
         for (String attribute : mAllowedAttributes) {
             mergedAttributes.put(attribute,
                     mergeObjects(getAttribute(attribute), item.getAttribute(attribute)));
         }
         return mergedAttributes;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getType() {
-        return null;
     }
 
     /**
@@ -89,7 +105,7 @@ public abstract class AbstractItem implements IItem {
             return false;
         }
 
-        AbstractItem item = (AbstractItem) other;
+        GenericItem item = (GenericItem) other;
         for (String attribute : mAllowedAttributes) {
             if (!areConsistent(getAttribute(attribute), item.getAttribute(attribute))) {
                 return false;
@@ -110,7 +126,7 @@ public abstract class AbstractItem implements IItem {
             return false;
         }
 
-        AbstractItem item = (AbstractItem) other;
+        GenericItem item = (GenericItem) other;
         for (String attribute : mAllowedAttributes) {
             if (!areEqual(getAttribute(attribute), item.getAttribute(attribute))) {
                 return false;
@@ -145,16 +161,6 @@ public abstract class AbstractItem implements IItem {
             throw new IllegalArgumentException();
         }
         return mAttributes.get(attribute);
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public int hashCode() {
-        // TODO Added to appease Eclipse. implement this
-        return super.hashCode();
     }
 
     /**

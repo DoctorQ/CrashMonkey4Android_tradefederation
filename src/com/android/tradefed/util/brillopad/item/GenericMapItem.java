@@ -51,16 +51,21 @@ public class GenericMapItem<K, V> extends HashMap<K,V> implements IItem {
         return mType;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public IItem merge(IItem other) throws ConflictingItemException {
+    public IItem merge(IItem other) {
         // FIXME
         return this;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean isConsistent(IItem other) {
         // FIXME
         return true;
     }
 }
-

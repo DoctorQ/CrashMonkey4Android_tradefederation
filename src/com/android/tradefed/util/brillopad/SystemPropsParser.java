@@ -13,44 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ILineParser;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
+import com.android.tradefed.util.brillopad.item.SystemPropsItem;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@link ILineParser} to handle the System Properties section of the bugreport
+ * A {@link IParser} to handle the output from {@code getprop}.
  */
-public class SystemPropParser implements IBlockParser {
-    public static final String SECTION_NAME = "SYSTEM PROPERTIES";
-
+public class SystemPropsParser implements IParser {
     /** Match a single property line, such as "[gsm.sim.operator.numeric]: []" */
     private static final Pattern PROP_LINE = Pattern.compile("^\\[(.*)\\]: \\[(.*)\\]$");
 
     /**
      * {@inheritDoc}
+     *
+     * @return The {@link SystemPropsItem}.
      */
     @Override
-    public void parseBlock(List<String> block, ItemList itemlist) {
-        GenericMapItem<String, String> output =
-                new GenericMapItem<String, String>(SECTION_NAME);
+    public SystemPropsItem parse(List<String> lines) {
+        SystemPropsItem item = new SystemPropsItem();
 
-        for (String line : block) {
+        for (String line : lines) {
             Matcher m = PROP_LINE.matcher(line);
             if (m.matches()) {
-                output.put(m.group(1), m.group(2));
+                item.put(m.group(1), m.group(2));
             } else {
                 CLog.w("Failed to parse line '%s'", line);
             }
         }
-        itemlist.addItem(output);
+        return item;
     }
 }
 

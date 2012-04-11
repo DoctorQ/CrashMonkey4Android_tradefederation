@@ -15,25 +15,28 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.util.RegexTrie;
-import com.android.tradefed.util.brillopad.section.AbstractSectionParser;
-import com.android.tradefed.util.brillopad.section.MemInfoParser;
-import com.android.tradefed.util.brillopad.section.NoopSectionParser;
-import com.android.tradefed.util.brillopad.section.ProcRankParser;
-import com.android.tradefed.util.brillopad.section.SystemLogParser;
-import com.android.tradefed.util.brillopad.section.SystemPropParser;
-import com.android.tradefed.util.brillopad.section.syslog.AnrParser;
-import com.android.tradefed.util.brillopad.section.syslog.JavaCrashParser;
-import com.android.tradefed.util.brillopad.section.syslog.NativeCrashParser;
+import com.android.tradefed.util.brillopad.item.BugreportItem;
+import com.android.tradefed.util.brillopad.item.LogcatItem;
+import com.android.tradefed.util.brillopad.item.MemInfoItem;
+import com.android.tradefed.util.brillopad.item.ProcrankItem;
+import com.android.tradefed.util.brillopad.item.SystemPropsItem;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * A brillopad parser that understands the Android bugreport format
+ * A {@link IParser} to parse Android bugreports.
  */
 public class BugreportParser extends AbstractSectionParser {
     private static final String MEM_INFO_SECTION_REGEX = "------ MEMORY INFO .*";
@@ -42,74 +45,128 @@ public class BugreportParser extends AbstractSectionParser {
     private static final String SYSTEM_LOG_SECTION_REGEX = "------ SYSTEM LOG .*";
     private static final String NOOP_SECTION_REGEX = "------ .*";
 
-    // For convenience, since these will likely be the most common events that people are
-    // interested in.
-    public static final String ANR = AnrParser.SECTION_NAME;
-    public static final String JAVA_CRASH = JavaCrashParser.SECTION_NAME;
-    public static final String NATIVE_CRASH = NativeCrashParser.SECTION_NAME;
+    /**
+     * Matches: == dumpstate: 2012-04-26 12:13:14
+     */
+    private static final Pattern DATE = Pattern.compile(
+            "^== dumpstate: (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})$");
+
+    private LogcatParser mLogcatParser = new LogcatParser();
+    private BugreportItem mBugreport = null;
 
     /**
-     * Parse a bugreport file into an {@link ItemList} object.  This is the main entrance method to
-     * the parser.
+     * Parse a bugreport from a {@link BufferedReader} into an {@link BugreportItem} object.
      *
-     * @param input a {@link BufferedReader} from which a bugreport can be read
-     * @return an {@link ItemList} containing the parsed elements of the bugreport
+     * @param input a {@link BufferedReader}.
+     * @return The {@link BugreportItem}.
+     * @see #parse(List)
      */
-    public ItemList parse(BufferedReader input) throws IOException {
-        ItemList itemlist = new ItemList();
+    public BugreportItem parse(BufferedReader input) throws IOException {
         String line;
+
+        setup();
         while ((line = input.readLine()) != null) {
-            parseLine(line, itemlist);
+            parseLine(line);
         }
+        commit();
 
-        // signal EOF
-        commit(itemlist);
-
-        return itemlist;
+        return mBugreport;
     }
 
     /**
-     * Helper method to retrieve the number of ANRs that occurred in a parsed bugreport
-     */
-    public int getAnrCount(ItemList parsedData) {
-        return parsedData.getItemsByType(ANR).size();
-    }
-
-    /**
-     * Helper method to retrieve the number of Java crashes that occurred in a parsed bugreport
-     */
-    public int getJavaCrashCount(ItemList parsedData) {
-        return parsedData.getItemsByType(JAVA_CRASH).size();
-    }
-
-    /**
-     * Helper method to retrieve the number of native crashes that occurred in a parsed bugreport
-     */
-    public int getNativeCrashCount(ItemList parsedData) {
-        return parsedData.getItemsByType(NATIVE_CRASH).size();
-    }
-
-    /**
-     * Parse a bugreport InputStreamSource into an {@link ItemList} object.  This is an entrance
-     * method that makes {@link BugreportParser} convenient to use from Tradefed-based tests.
+     * Parse a bugreport from a {@link InputStreamSource} into an {@link BugreportItem} object.
      *
-     * @param input an {@link InputStreamSource} from which a bugreport can be read
-     * @return an {@link ItemList} containing the parsed elements of the bugreport
+     * @param input a {@link InputStreamSource}.
+     * @return The {@link BugreportItem}.
+     * @see #parse(List)
      */
-    public ItemList parse(InputStreamSource input) throws IOException {
+    public BugreportItem parse(InputStreamSource input) throws IOException {
         InputStream stream = input.createInputStream();
         return parse(new BufferedReader(new InputStreamReader(stream)));
     }
 
-    @Override
-    public void addDefaultSectionParsers(RegexTrie<IBlockParser> sectionTrie) {
-        sectionTrie.put(new MemInfoParser(), MEM_INFO_SECTION_REGEX);
-        sectionTrie.put(new ProcRankParser(), PROCRANK_SECTION_REGEX);
-        sectionTrie.put(new SystemPropParser(), SYSTEM_PROP_SECTION_REGEX);
-        sectionTrie.put(new SystemLogParser(), SYSTEM_LOG_SECTION_REGEX);
+    /**
+     * {@inheritDoc}
+     *
+     * @return The {@link BugreportItem}.
+     */
+    public BugreportItem parse(List<String> lines) {
+        setup();
+        for (String line : lines) {
+            parseLine(line);
+        }
+        commit();
 
-        // Add a default section parser so that the Trie will commit prior sections
-        sectionTrie.put(new NoopSectionParser(), NOOP_SECTION_REGEX);
+        return mBugreport;
+    }
+
+    /**
+     * Sets up the parser by adding the section parsers and adding an initial {@link IParser} to
+     * parse the bugreport header.
+     */
+    protected void setup() {
+        // Set the initial parser explicitly since the header isn't part of a section.
+        setParser(new IParser() {
+            @Override
+            public BugreportItem parse(List<String> lines) {
+                BugreportItem bugreport = new BugreportItem();
+                for (String line : lines) {
+                    Matcher m = DATE.matcher(line);
+                    if (m.matches()) {
+                        bugreport.setTime(parseTime(m.group(1)));
+                    }
+                }
+                return bugreport;
+            }
+        });
+        addSectionParser(new MemInfoParser(), MEM_INFO_SECTION_REGEX);
+        addSectionParser(new ProcrankParser(), PROCRANK_SECTION_REGEX);
+        addSectionParser(new SystemPropsParser(), SYSTEM_PROP_SECTION_REGEX);
+        addSectionParser(mLogcatParser, SYSTEM_LOG_SECTION_REGEX);
+        addSectionParser(new NoopParser(), NOOP_SECTION_REGEX);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    protected void commit() {
+        // signal EOF
+        super.commit();
+
+        if (mBugreport != null) {
+            mBugreport.setMemInfo((MemInfoItem) getSection(MemInfoItem.TYPE));
+            mBugreport.setProcrank((ProcrankItem) getSection(ProcrankItem.TYPE));
+            mBugreport.setSystemLog((LogcatItem) getSection(LogcatItem.TYPE));
+            mBugreport.setSystemProps((SystemPropsItem) getSection(SystemPropsItem.TYPE));
+        }
+    }
+
+    /**
+     * Set the {@link BugreportItem} and the year of the {@link LogcatParser} from the bugreport
+     * header.
+     */
+    @Override
+    protected void onSwitchParser() {
+        if (mBugreport == null) {
+            mBugreport = (BugreportItem) getSection(BugreportItem.TYPE);
+            if (mBugreport.getTime() != null) {
+                mLogcatParser.setYear(new SimpleDateFormat("yyyy").format(mBugreport.getTime()));
+            }
+        }
+    }
+
+    /**
+     * Converts a {@link String} into a {@link Date}.
+     */
+    private static Date parseTime(String timeStr) {
+        DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        try {
+            return formatter.parse(timeStr);
+        } catch (ParseException e) {
+            CLog.e("Could not parse time string %s", timeStr);
+            return null;
+        }
     }
 }
 

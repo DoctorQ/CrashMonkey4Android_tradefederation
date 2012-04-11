@@ -13,46 +13,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ILineParser;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
+import com.android.tradefed.util.brillopad.item.MemInfoItem;
 
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@link ILineParser} to handle the Memory Info section of the bugreport
+ * A {@link IParser} to handle the output from {@code /proc/meminfo}.
  */
-public class MemInfoParser implements IBlockParser {
-    public static final String SECTION_NAME = "MEMORY INFO";
+public class MemInfoParser implements IParser {
 
     /** Match a single MemoryInfo line, such as "MemFree:           65420 kB" */
     private static final Pattern INFO_LINE = Pattern.compile("^([^:]+):\\s+(\\d+) kB");
 
     /**
      * {@inheritDoc}
+     *
+     * @return The {@link MemInfoItem}.
      */
     @Override
-    public void parseBlock(List<String> block, ItemList itemlist) {
-        GenericMapItem<String, Integer> output =
-                new GenericMapItem<String, Integer>(SECTION_NAME);
+    public MemInfoItem parse(List<String> block) {
+        MemInfoItem item = new MemInfoItem();
 
         for (String line : block) {
             Matcher m = INFO_LINE.matcher(line);
             if (m.matches()) {
                 String key = m.group(1);
                 Integer value = Integer.parseInt(m.group(2));
-                output.put(key, value);
+                item.put(key, value);
             } else {
                 CLog.w("Failed to parse line '%s'", line);
             }
         }
-        itemlist.addItem(output);
+
+        return item;
     }
 }
-

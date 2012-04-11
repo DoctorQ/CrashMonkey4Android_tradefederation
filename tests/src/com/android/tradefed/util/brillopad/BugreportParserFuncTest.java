@@ -17,7 +17,10 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
-import com.android.tradefed.util.brillopad.item.IItem;
+import com.android.tradefed.util.brillopad.item.AnrItem;
+import com.android.tradefed.util.brillopad.item.BugreportItem;
+import com.android.tradefed.util.brillopad.item.JavaCrashItem;
+import com.android.tradefed.util.brillopad.item.NativeCrashItem;
 
 import junit.framework.TestCase;
 
@@ -69,21 +72,19 @@ public class BugreportParserFuncTest extends TestCase {
 
         InputStream bugStream = new FileInputStream(BR_FILE);
         InputStreamSource bugSource = new SnapshotInputStreamSource(bugStream);
-        ItemList bugreport = null;
+        BugreportItem bugreport = null;
         try {
             bugreport = parser.parse(bugSource);
         } finally {
             bugSource.cancel();
         }
 
-        List<IItem> jc = bugreport.getItemsByType("JAVA CRASH");
-        List<IItem> nc = bugreport.getItemsByType("NATIVE CRASH");
-        List<IItem> anr = bugreport.getItemsByType("ANR");
+        List<JavaCrashItem> jc = bugreport.getSystemLog().getJavaCrashes();
+        List<NativeCrashItem> nc = bugreport.getSystemLog().getNativeCrashes();
+        List<AnrItem> anr = bugreport.getSystemLog().getAnrs();
         System.err.format("Got %d items for JAVA CRASH, %d for NATIVE CRASH, and %d for ANR\n",
                 jc.size(), nc.size(), anr.size());
-        for (IItem item : bugreport.getItems()) {
-            System.err.format("Got item with type %s\n", item.getType());
-        }
+
     }
 }
 

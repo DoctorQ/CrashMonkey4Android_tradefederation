@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
-import com.android.tradefed.util.brillopad.item.IItem;
+import com.android.tradefed.util.brillopad.item.ProcrankItem;
 
 import junit.framework.TestCase;
 
@@ -26,10 +24,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Unit tests for {@link ProcRankParser}
+ * Unit tests for {@link ProcrankParser}
  */
-public class ProcRankParserTest extends TestCase {
-    @SuppressWarnings("unchecked")
+public class ProcrankParserTest extends TestCase {
     public void testProcRankParser() {
         List<String> inputBlock = Arrays.asList(
                 "  PID      Vss      Rss      Pss      Uss  cmdline",
@@ -44,46 +41,36 @@ public class ProcRankParserTest extends TestCase {
                 "                          203624K  163604K  TOTAL",
                 "RAM: 731448K total, 415804K free, 9016K buffers, 108548K cached",
                 "[procrank: 1.6s elapsed]");
-        ProcRankParser parser = new ProcRankParser();
-        ItemList br = new ItemList();
-
-        parser.parseBlock(inputBlock, br);
-        List<IItem> items = br.getItems();
-        assertNotNull(items);
-        assertEquals(1, items.size());
-        assertTrue("Expected item of type GenericMapItem!", items.get(0) instanceof GenericMapItem);
-        assertEquals(ProcRankParser.SECTION_NAME, items.get(0).getType());
-
+        ProcrankParser parser = new ProcrankParser();
         Map<String, Integer> map;
-        Map<String, Map<String, Integer>> output =
-                (GenericMapItem<String, Map<String, Integer>>)items.get(0);
+        ProcrankItem procrank = parser.parse(inputBlock);
 
         // Ensures that only valid lines are parsed. Only 6 of the 11 lines under the header are
         // valid.
-        assertEquals(6, output.size());
+        assertEquals(6, procrank.size());
 
         // Make sure all expected rows are present, and do a diagonal check of values
-        map = output.get("system_server");
+        map = procrank.get("system_server");
         assertNotNull(map);
         assertEquals((Integer)178, map.get("PID"));
 
-        map = output.get("com.google.android.apps.maps");
+        map = procrank.get("com.google.android.apps.maps");
         assertNotNull(map);
         assertEquals((Integer)78128, map.get("Vss"));
 
-        map = output.get("com.android.browser");
+        map = procrank.get("com.android.browser");
         assertNotNull(map);
         assertEquals((Integer)61492, map.get("Rss"));
 
-        map = output.get("com.android.launcher");
+        map = procrank.get("com.android.launcher");
         assertNotNull(map);
         assertEquals((Integer)29629, map.get("Pss"));
 
-        map = output.get("android.process.acore");
+        map = procrank.get("android.process.acore");
         assertNotNull(map);
         assertEquals((Integer)22812, map.get("Uss"));
 
-        map = output.get("com.android.settings");
+        map = procrank.get("com.android.settings");
         assertNotNull(map);
         assertEquals((Integer)1236, map.get("PID"));
     }
