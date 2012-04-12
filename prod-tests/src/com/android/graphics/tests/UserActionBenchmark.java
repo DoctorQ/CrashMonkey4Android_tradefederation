@@ -62,7 +62,8 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
 
     private static final long START_TIMER = 2 * 60 * 1000; // 2 minutes
 
-    private static final String DEVICE_TEST_OUTPUT_FILE = "avgFrameRateOut.txt";
+    @Option(name = "test-output-filename", description = "The test output filename.")
+    private String mDeviceTestOutputFilename = "avgFrameRateOut.txt";
 
     // The time in ms to wait the scripted monkey finish.
     private static final int CMD_TIMEOUT = 60 * 60 * 1000;
@@ -110,7 +111,8 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
      */
     private void cleanResultFile() throws DeviceNotAvailableException {
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, DEVICE_TEST_OUTPUT_FILE));
+        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore,
+                mDeviceTestOutputFilename));
     }
 
     /**
@@ -122,7 +124,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
         File outputFile = null;
         InputStreamSource outputSource = null;
         try {
-            outputFile = mTestDevice.pullFileFromExternal(DEVICE_TEST_OUTPUT_FILE);
+            outputFile = mTestDevice.pullFileFromExternal(mDeviceTestOutputFilename);
 
             if (outputFile == null) {
                 return;
@@ -132,7 +134,7 @@ public class UserActionBenchmark implements IDeviceTest, IRemoteTest {
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(DEVICE_TEST_OUTPUT_FILE, LogDataType.TEXT, outputSource);
+            listener.testLog(mDeviceTestOutputFilename, LogDataType.TEXT, outputSource);
 
             // Parse the output file to upload aggregated metrics
             parseOutputFile(new FileInputStream(outputFile), listener);
