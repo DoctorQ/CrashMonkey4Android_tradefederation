@@ -76,6 +76,8 @@ public class Console extends Thread {
 
     protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
+    private static ConsoleReaderOutputStream sConsoleStream = null;
+
     protected ICommandScheduler mScheduler;
     protected ConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
@@ -164,11 +166,14 @@ public class Console extends Thread {
      * Return a new ConsoleReader, or {@code null} if an IOException occurs.  Note that this
      * function must be static so that we can run it before the superclass constructor.
      */
-    private static ConsoleReader getReader() {
+    protected static ConsoleReader getReader() {
         try {
-            final ConsoleReader reader = new ConsoleReader();
-            System.setOut(new PrintStream(new ConsoleReaderOutputStream(reader)));
-            return reader;
+            if (sConsoleStream == null) {
+                final ConsoleReader reader = new ConsoleReader();
+                sConsoleStream = new ConsoleReaderOutputStream(reader);
+                System.setOut(new PrintStream(sConsoleStream));
+            }
+            return sConsoleStream.getConsoleReader();
         } catch (IOException e) {
             System.err.format("Failed to initialize ConsoleReader: %s\n", e.getMessage());
             return null;
@@ -626,7 +631,23 @@ public class Console extends Thread {
      */
     private String getConsoleInput() throws IOException {
         if (mConsoleReader != null) {
-            return mConsoleReader.readLine(getConsolePrompt());
+            if (sConsoleStream != null) {
+                // While we're reading the console, the only tasks which will print to the console
+                // are asynchronous.  In particular, after this point, we assume that the last line
+                // on the screen is the command prompt.
+                sConsoleStream.setAsyncMode();
+            }
+
+            final String input = mConsoleReader.readLine(getConsolePrompt());
+
+            if (sConsoleStream != null) {
+                // The opposite of the above.  From here on out, we should expect that the
+                // command prompt is _not_ the most recent line on the screen.  In particular, while
+                // synchronous tasks are running, sConsoleStream will avoid redisplaying the command
+                // prompt.
+                sConsoleStream.setSyncMode();
+            }
+            return input;
         } else {
             return null;
         }
@@ -644,19 +665,8 @@ public class Console extends Thread {
      * @param output
      */
     protected void printLine(String output) {
-        if (mConsoleReader != null) {
-            try {
-                mConsoleReader.printString(output);
-                mConsoleReader.printNewline();
-            } catch (IOException e) {
-                // not guaranteed to work, but worth a try
-                System.err.println("Console failed to print a message to stdout: "
-                        + e.getMessage());
-            }
-        } else {
-            System.out.print(output);
-            System.out.println();
-        }
+        System.out.print(output);
+        System.out.println();
     }
 
     /**
@@ -765,6 +775,10 @@ public class Console extends Thread {
             printLine("Console received an unexpected exception (shown below); shutting down TF.");
             e.printStackTrace();
             mScheduler.shutdown();
+        } finally {
+            // Make sure that we don't quit with messages still in the buffers
+            System.err.flush();
+            System.out.flush();
         }
     }
 

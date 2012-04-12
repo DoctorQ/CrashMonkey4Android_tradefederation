@@ -36,13 +36,53 @@ public class ConsoleReaderOutputStream extends OutputStream {
     private static final String CR = "\r";
     private final ConsoleReader mConsoleReader;
 
+    /**
+     * We disable the prompt-shuffling behavior while synchronous, user-initiated tasks are running.
+     * Otherwise, we try to shuffle the prompt when none is displayed, and we end up clearing lines
+     * that shouldn't be cleared.
+     *
+     * @see setSyncMode()
+     * @see setAsyncMode()
+     */
+    private boolean mInAsyncMode = false;
+
     public ConsoleReaderOutputStream(ConsoleReader reader) {
         if (reader == null) throw new NullPointerException();
         mConsoleReader = reader;
     }
 
+    /**
+     * Set synchronous mode.  This occurs after the user has taken some action, such that the most
+     * recent line on the screen is guaranteed to _not_ be the command prompt.  In this case, we
+     * disable the prompt-shuffling behavior (which requires that the most recent line on the screen
+     * be the prompt)
+     */
+    public void setSyncMode() {
+        mInAsyncMode = false;
+    }
+
+    /**
+     * Set asynchronous mode.  This occurs immediately after we display the command prompt and begin
+     * waiting for user input.  In this mode, the most recent line on the screen is guaranteed to be
+     * the command prompt.  In particular, asynchronous tasks may attempt to print to the screen,
+     * and we will shuffle the prompt when they do so.
+     */
+    public void setAsyncMode() {
+        mInAsyncMode = true;
+    }
+
+    /**
+     * Get the ConsoleReader instance that we're using internally
+     */
+    public ConsoleReader getConsoleReader() {
+        return mConsoleReader;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void flush() {
+    public synchronized void flush() {
         try {
             mConsoleReader.flushConsole();
         } catch (IOException e) {
@@ -63,11 +103,14 @@ public class ConsoleReaderOutputStream extends OutputStream {
      * <p />
      * By doing so, we never skip any asynchronously-logged output, but we still keep the prompt and
      * the user's buffer as the last items on the screen.
+     * <p />
+     * FIXME: We should probably buffer output and only write full lines to the console.
      */
     @Override
-    public void write(byte[] b, int off, int len) throws IOException {
-        final boolean fullLine = b[off + len - 1] == '\n';
-        if (fullLine) {
+    public synchronized void write(byte[] b, int off, int len) throws IOException {
+        final boolean shufflePrompt = mInAsyncMode && (b[off + len - 1] == '\n');
+
+        if (shufflePrompt) {
             if (mConsoleReader.getTerminal().isANSISupported()) {
                 // use ANSI escape codes to clear the line and jump to the beginning
                 mConsoleReader.printString(ANSI_CR);
@@ -79,7 +122,7 @@ public class ConsoleReaderOutputStream extends OutputStream {
 
         mConsoleReader.printString(new String(b, off, len));
 
-        if (fullLine) {
+        if (shufflePrompt) {
             mConsoleReader.drawLine();
             mConsoleReader.flushConsole();
         }
@@ -89,7 +132,7 @@ public class ConsoleReaderOutputStream extends OutputStream {
     // FIXME: String.  As is, this method makes me cringe.  Especially since the first thing
     // FIXME: ConsoleReader does is convert it back into a char array :o(
     @Override
-    public void write(int b) throws IOException {
+    public synchronized void write(int b) throws IOException {
         char[] str = new char[] {(char)(b & 0xff)};
         mConsoleReader.printString(new String(str));
     }
