@@ -178,9 +178,11 @@ class TestDevice implements IManagedTestDevice {
      * Creates a {@link TestDevice}.
      *
      * @param device the associated {@link IDevice}
-     * @param recovery the {@link IDeviceRecovery} mechanism to use
+     * @param monitor the {@link IDeviceStateMonitor} mechanism to use
      */
     TestDevice(IDevice device, IDeviceStateMonitor monitor) {
+        throwIfNull(device);
+        throwIfNull(monitor);
         mIDevice = device;
         mMonitor = monitor;
     }
@@ -199,6 +201,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public void setOptions(TestDeviceOptions options) {
+        throwIfNull(options);
         mOptions = options;
     }
 
@@ -235,6 +238,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public void setIDevice(IDevice newDevice) {
+        throwIfNull(newDevice);
         IDevice currentDevice = mIDevice;
         if (!getIDevice().equals(newDevice)) {
             synchronized (currentDevice) {
@@ -1003,6 +1007,8 @@ class TestDevice implements IManagedTestDevice {
         private final FileListingService mService;
 
         FileQueryAction(FileEntry remoteFileEntry, FileListingService service) {
+            throwIfNull(remoteFileEntry);
+            throwIfNull(service);
             mRemoteFileEntry = remoteFileEntry;
             mService = service;
         }
@@ -1197,7 +1203,7 @@ class TestDevice implements IManagedTestDevice {
     private boolean performDeviceAction(String actionDescription, final DeviceAction action,
             int retryAttempts) throws DeviceNotAvailableException {
 
-        for (int i=0; i < retryAttempts +1; i++) {
+        for (int i = 0; i < retryAttempts + 1; i++) {
             try {
                 return action.run();
             } catch (TimeoutException e) {
@@ -2158,6 +2164,17 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Small helper function to throw an NPE if the passed arg is null.  This should be used when
+     * some value will be stored and used later, in which case it'll avoid hard-to-trace
+     * asynchronous NullPointerExceptions by throwing the exception synchronously.  This is not
+     * intended to be used where the NPE would be thrown synchronously -- just let the jvm take care
+     * of it in that case.
+     */
+    private void throwIfNull(Object obj) {
+        if (obj == null) throw new NullPointerException();
+    }
+
+    /**
      * Retrieve this device's recovery mechanism.
      * <p/>
      * Exposed for unit testing.
@@ -2171,6 +2188,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public void setRecovery(IDeviceRecovery recovery) {
+        throwIfNull(recovery);
         mRecovery = recovery;
     }
 
@@ -2179,6 +2197,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public void setRecoveryMode(RecoveryMode mode) {
+        throwIfNull(mRecoveryMode);
         mRecoveryMode = mode;
     }
 
