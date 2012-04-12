@@ -48,6 +48,11 @@ public class SmokeTest extends InstrumentationTest {
             "(text/xml/zip/gzip/png/unknown).  May be repeated.", importance = Importance.IF_UNSET)
     private Map<String, LogDataType> mUploadFilePatterns = new LinkedHashMap<String, LogDataType>();
 
+    @Option(name = "bugreport-device-wait-time", description = "How many seconds to wait for the " +
+            "device to become available so we can capture a bugreport.  Useful in case the smoke " +
+            "tests fail due to a device reboot.")
+    private int mDeviceWaitTime = 60;
+
     /**
      * {@inheritDoc}
      */
@@ -57,6 +62,7 @@ public class SmokeTest extends InstrumentationTest {
         // through to the bugListener, which will forward them (after collecting any necessary
         // bugreports) to the real Listener(s).
         final BugreportCollector bugListener = new BugreportCollector(listener, getDevice());
+        bugListener.setDeviceWaitTime(mDeviceWaitTime);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
         final ITestInvocationListener trimListener = new TrimListener(bugListener);
 
