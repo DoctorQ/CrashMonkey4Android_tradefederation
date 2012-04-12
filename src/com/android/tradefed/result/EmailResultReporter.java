@@ -59,6 +59,7 @@ public class EmailResultReporter extends CollectingTestListener implements
     private List<TestSummary> mSummaries = null;
     private Throwable mInvocationThrowable = null;
     private IEmail mMailer;
+    private boolean mHtml;
 
     /**
      * Create a {@link EmailResultReporter}
@@ -198,6 +199,21 @@ public class EmailResultReporter extends CollectingTestListener implements
         return bodyBuilder.toString();
     }
 
+    /**
+     * A method to set a flag indicating that the email body is in HTML rather than plain text
+     *
+     * This method must be called before the email body is generated
+     *
+     * @param html true if the body is html
+     */
+    protected void setHtml(boolean html) {
+        mHtml = html;
+    }
+
+    protected boolean isHtml() {
+        return mHtml;
+    }
+
     @Override
     public void invocationFailed(Throwable t) {
         mInvocationThrowable = t;
@@ -222,6 +238,7 @@ public class EmailResultReporter extends CollectingTestListener implements
         msg.setSender(mSender);
         msg.setSubject(generateEmailSubject());
         msg.setBody(generateEmailBody());
+        msg.setHtml(isHtml());
         Iterator<String> toAddress = mDestinations.iterator();
         while (toAddress.hasNext()) {
             msg.addTo(toAddress.next());

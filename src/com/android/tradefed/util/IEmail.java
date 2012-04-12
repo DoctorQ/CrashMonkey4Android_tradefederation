@@ -51,6 +51,7 @@ public interface IEmail {
         private String mSubject = null;
         private String mBody = null;
         private String mSender = null;
+        private boolean mHtml = false;
 
         public Message() {}
 
@@ -113,6 +114,14 @@ public interface IEmail {
 
         public String getSender() {
             return mSender;
+        }
+
+        public void setHtml(boolean html) {
+            mHtml = html;
+        }
+
+        public boolean isHtml() {
+            return mHtml;
         }
     }
 }

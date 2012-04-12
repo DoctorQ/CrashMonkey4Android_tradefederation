@@ -82,6 +82,10 @@ public class Email implements IEmail {
             cmd.add("-b");
             cmd.add(join(msg.getBcc(), ","));
         }
+        if (msg.isHtml()) {
+            cmd.add("-a");
+            cmd.add("Content-type: text/html;");
+        }
         if (msg.getCc() != null) {
             cmd.add("-c");
             cmd.add(join(msg.getCc(), ","));
