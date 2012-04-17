@@ -106,8 +106,9 @@ public class SdkAvdPreparer implements ITargetPreparer {
                 sdkBuild.getAndroidToolPath(), "list", "targets", "--compact");
         if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
             throw new TargetSetupError(String.format(
-                    "Unable to get list of SDK targets using %s. Result %s, err %s",
-                    sdkBuild.getAndroidToolPath(), result.getStatus(), result.getStderr()));
+                    "Unable to get list of SDK targets using %s. Result %s. stdout: %s, err: %s",
+                    sdkBuild.getAndroidToolPath(), result.getStatus(), result.getStdout(),
+                    result.getStderr()));
         }
         String[] targets = result.getStdout().split("\n");
         if (result.getStdout().trim().isEmpty() || targets.length == 0) {
