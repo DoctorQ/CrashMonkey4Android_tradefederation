@@ -78,6 +78,13 @@ public class SmokeTestFailureReporter extends TestFailureEmailResultReporter {
                     sb.append(String.format("%s#%s %s\n",
                             id.getClassName(), id.getTestName(),
                             describeStatus(result.getStatus())));
+
+                    final String trace = result.getStackTrace();
+                    if (trace != null) {
+                        sb.append("Stack trace:\n");
+                        sb.append(trace);
+                        sb.append("\n");
+                    }
                 }
             }
         }

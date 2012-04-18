@@ -50,7 +50,7 @@ public class SmokeTestFailureReporterTest extends TestCase {
 
     public void testSingleFail() throws Exception {
         final String expSubject = "git_master SmokeFAST failed on generic-userdebug @123456";
-        final String expBodyStart = "FooTest#testFoo failed\n\n";
+        final String expBodyStart = "FooTest#testFoo failed\nStack trace:\nthis is a trace\n";
 
         final Map<String, String> emptyMap = Collections.emptyMap();
         final TestIdentifier testId = new TestIdentifier("FooTest", "testFoo");
@@ -90,7 +90,7 @@ public class SmokeTestFailureReporterTest extends TestCase {
 
     public void testTwoPassOneFail() throws Exception {
         final String expSubject = "git_master SmokeFAST failed on generic-userdebug @123456";
-        final String expBodyStart = "FooTest#testFail failed\n\n";
+        final String expBodyStart = "FooTest#testFail failed\nStack trace:\nthis is a trace\n";
 
         final Map<String, String> emptyMap = Collections.emptyMap();
         final String trace = "this is a trace";
