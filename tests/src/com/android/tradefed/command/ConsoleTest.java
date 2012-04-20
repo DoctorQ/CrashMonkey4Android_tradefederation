@@ -32,6 +32,22 @@ public class ConsoleTest extends TestCase {
 
     private ICommandScheduler mMockScheduler;
     private Console mConsole;
+    private ProxyExceptionHandler mProxyExceptionHandler;
+
+    private static class ProxyExceptionHandler implements Thread.UncaughtExceptionHandler {
+        private Throwable mThrowable = null;
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            mThrowable = e;
+        }
+
+        public void verify() throws Throwable {
+            if (mThrowable != null) {
+                throw mThrowable;
+            }
+        }
+    }
 
     /**
      * {@inheritDoc}
@@ -47,18 +63,25 @@ public class ConsoleTest extends TestCase {
          * similar as the implementation.
          */
         mConsole = new Console(mMockScheduler, null);
+        mProxyExceptionHandler = new ProxyExceptionHandler();
+        mConsole.setUncaughtExceptionHandler(mProxyExceptionHandler);
      }
 
     /**
      * Test normal console run.
      */
-    public void testRun() throws InterruptedException {
+    public void testRun() throws Throwable {
         mMockScheduler.start();
+        mMockScheduler.await();
+        EasyMock.expectLastCall().anyTimes();
+
         EasyMock.replay(mMockScheduler);
+
         // non interactive mode needs some args to start
         mConsole.setArgs(new String[] {"help"});
         mConsole.start();
         mConsole.join();
+        mProxyExceptionHandler.verify();
         EasyMock.verify(mMockScheduler);
     }
 

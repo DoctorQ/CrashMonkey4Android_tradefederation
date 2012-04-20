@@ -47,6 +47,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -73,6 +74,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private ScheduledThreadPoolExecutor mCommandTimer;
     private RemoteClient mRemoteClient = null;
     private RemoteManager mRemoteManager = null;
+
+    /** latch used to notify other threads that this thread is running */
+    private final CountDownLatch mRunLatch;
 
     /**
      * Delay time in ms for adding a command back to the queue if it failed to allocate a device.
@@ -311,6 +315,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         // use a ScheduledThreadPoolExecutorTimer as a single-threaded timer. This class
         // is used instead of a java.util.Timer because it offers advanced shutdown options
         mCommandTimer = new ScheduledThreadPoolExecutor(1);
+        mRunLatch = new CountDownLatch(1);
     }
 
     /**
@@ -345,45 +350,63 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     @Override
     public void run() {
+        try {
+            // Notify other threads that we're running.
+            mRunLatch.countDown();
 
-        IDeviceManager manager = getDeviceManager();
-        while (!isShutdown()) {
-            ExecutableCommand cmd = dequeueConfigCommand();
-            if (cmd != null) {
-                ITestDevice device = manager.allocateDevice(0, cmd.getConfiguration()
-                        .getDeviceRequirements());
-                if (device != null) {
-                    // Spawn off a thread to perform the invocation
-                    InvocationThread invThread = startInvocation(manager, device, cmd);
-                    addInvocationThread(invThread);
-                    if (cmd.getCommandTracker().getCommandOptions().isLoopMode()) {
-                        addNewExecCommandToQueue(cmd.getCommandTracker());
+            IDeviceManager manager = getDeviceManager();
+            while (!isShutdown()) {
+                ExecutableCommand cmd = dequeueConfigCommand();
+                if (cmd != null) {
+                    ITestDevice device = manager.allocateDevice(0, cmd.getConfiguration()
+                            .getDeviceRequirements());
+                    if (device != null) {
+                        // Spawn off a thread to perform the invocation
+                        InvocationThread invThread = startInvocation(manager, device, cmd);
+                        addInvocationThread(invThread);
+                        if (cmd.getCommandTracker().getCommandOptions().isLoopMode()) {
+                            addNewExecCommandToQueue(cmd.getCommandTracker());
+                        }
+                    } else {
+                        // no device available for command, put back in queue
+                        // increment exec time to ensure fair scheduling among commands when devices
+                        // are scarce
+                        cmd.getCommandTracker().incrementExecTime(1);
+                        addExecCommandToQueue(cmd, NO_DEVICE_DELAY_TIME);
                     }
-                } else {
-                    // no device available for command, put back in queue
-                    // increment exec time to ensure fair scheduling among commands when devices are
-                    // scarce
-                    cmd.getCommandTracker().incrementExecTime(1);
-                    addExecCommandToQueue(cmd, NO_DEVICE_DELAY_TIME);
                 }
             }
+            CLog.i("Waiting for invocation threads to complete");
+            List<InvocationThread> threadListCopy;
+            synchronized (this) {
+                threadListCopy = new ArrayList<InvocationThread>(mInvocationThreads.size());
+                threadListCopy.addAll(mInvocationThreads);
+            }
+            for (Thread thread : threadListCopy) {
+                waitForThread(thread);
+            }
+            closeRemoteClient();
+            if (mRemoteManager != null) {
+                mRemoteManager.cancel();
+            }
+            exit(manager);
+            cleanUp();
+            CLog.logAndDisplay(LogLevel.INFO, "All done");
+        } finally {
+            // Make sure that we don't quit with messages still in the buffers
+            System.err.flush();
+            System.out.flush();
         }
-        CLog.i("Waiting for invocation threads to complete");
-        List<InvocationThread> threadListCopy;
-        synchronized (this) {
-            threadListCopy = new ArrayList<InvocationThread>(mInvocationThreads.size());
-            threadListCopy.addAll(mInvocationThreads);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void await() throws InterruptedException {
+        while (mRunLatch.getCount() > 0) {
+            mRunLatch.await();
         }
-        for (Thread thread : threadListCopy) {
-            waitForThread(thread);
-        }
-        closeRemoteClient();
-        if (mRemoteManager != null) {
-            mRemoteManager.cancel();
-        }
-        exit(manager);
-        cleanUp();
-        CLog.logAndDisplay(LogLevel.INFO, "All done");
     }
 
     private void closeRemoteClient() {
