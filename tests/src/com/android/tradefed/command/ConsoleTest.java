@@ -74,6 +74,7 @@ public class ConsoleTest extends TestCase {
         mMockScheduler.start();
         mMockScheduler.await();
         EasyMock.expectLastCall().anyTimes();
+        mMockScheduler.shutdown();  // after we discover that we can't read console input
 
         EasyMock.replay(mMockScheduler);
 
