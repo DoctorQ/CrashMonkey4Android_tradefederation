@@ -16,10 +16,10 @@
 
 package com.android.tradefed.testtype;
 
-import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 
 import java.util.ArrayList;
@@ -41,7 +41,7 @@ public class StubTest implements IShardableTest {
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        Log.logAndDisplay(LogLevel.INFO, "StubTest", "nothing to test!");
+        CLog.i("nothing to test!");
 
     }
 
@@ -52,8 +52,8 @@ public class StubTest implements IShardableTest {
             for (int i=0; i < mNumShards; i++) {
                 shards.add(new StubTest());
             }
-            Log.logAndDisplay(
-                    LogLevel.INFO, "StubTest", "splitting into " + mNumShards + " shards");
+            CLog.logAndDisplay(
+                    LogLevel.INFO, "splitting into %d shards", mNumShards);
             return shards;
         }
         return null;
