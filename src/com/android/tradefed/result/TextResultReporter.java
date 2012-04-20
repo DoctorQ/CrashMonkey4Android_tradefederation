@@ -39,8 +39,11 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
 
     private static final String REPORT_DIR_NAME = "output-file-path";
     @Option(name = REPORT_DIR_NAME, description =
-            "root file system path to directory to store logs")
+            "root file system path to directory to store logs. Ignored if --save-logs is set.")
     private File mReportDir = new File(System.getProperty("java.io.tmpdir"));
+
+    @Option(name = "save-logs", description = "save any logs to local disk.")
+    private boolean mSaveLogs = true;
 
     /**
      * Creates a {@link TextResultReporter}.
@@ -98,14 +101,16 @@ public class TextResultReporter extends InvocationToJUnitResultForwarder
      */
     @Override
     public void testLog(String dataName, LogDataType dataType, InputStreamSource dataStream) {
-        try {
-            File logFile = mLogFileSaver.saveLogData(dataName, dataType,
-                    dataStream.createInputStream());
-            CLog.logAndDisplay(LogLevel.INFO, "Saved %s log to %s", dataName,
-                    logFile.getAbsolutePath());
-        } catch (IOException e) {
-            CLog.e("Failed to save log data");
-            CLog.e(e);
+        if (mSaveLogs) {
+            try {
+                File logFile = mLogFileSaver.saveLogData(dataName, dataType,
+                        dataStream.createInputStream());
+                CLog.logAndDisplay(LogLevel.INFO, "Saved %s log to %s", dataName,
+                        logFile.getAbsolutePath());
+            } catch (IOException e) {
+                CLog.e("Failed to save log data");
+                CLog.e(e);
+            }
         }
     }
 }
