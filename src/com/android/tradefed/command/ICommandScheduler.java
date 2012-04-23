@@ -116,6 +116,11 @@ public interface ICommandScheduler {
      */
     public void join() throws InterruptedException;
 
+    /**
+     * Waits for scheduler to start running.
+     */
+    public void await() throws InterruptedException;
+
 
     // The following are optional management-related interfaces.
     /**

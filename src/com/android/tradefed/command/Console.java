@@ -74,7 +74,7 @@ public class Console extends Thread {
     protected static final String REMOVE_PATTERN = "remove";
     protected static final String DEBUG_PATTERN = "debug";
 
-    protected final static String LINE_SEPARATOR = System.getProperty("line.separator");
+    protected static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     private static ConsoleReaderOutputStream sConsoleStream = null;
 
@@ -707,15 +707,11 @@ public class Console extends Thread {
                 }
             }
 
+            // Wait for the CommandScheduler to start.  It will hold the JVM open (since the Console
+            // thread is a Daemon thread), and also we require it to have started so that we can
+            // start processing user input.
             mScheduler.start();
-
-            // Notify the main thread that the scheduler is started, and will hold the JVM open.
-            // This is necessary since the Console thread is a Daemon thread.  If not for this, the
-            // main thread would exit before we got a chance to #start() mScheduler, at which point
-            // the JVM would shut down immediately.
-            synchronized(this) {
-                notify();
-            }
+            mScheduler.await();
 
             String input = "";
             CaptureList groups = new CaptureList();
@@ -780,6 +776,10 @@ public class Console extends Thread {
             System.err.flush();
             System.out.flush();
         }
+    }
+
+    void awaitScheduler() throws InterruptedException {
+        mScheduler.await();
     }
 
     /**
@@ -855,10 +855,9 @@ public class Console extends Thread {
         console.setArgs(args);
         console.setDaemon(true);
         console.start();
-        synchronized(console) {
-            // Wait for the console to get started before we exit the main thread.  See full
-            // explanation near the top of #run()
-            console.wait();
-        }
+
+        // Wait for the CommandScheduler to get started before we exit the main thread.  See full
+        // explanation near the top of #run()
+        console.awaitScheduler();
     }
 }
