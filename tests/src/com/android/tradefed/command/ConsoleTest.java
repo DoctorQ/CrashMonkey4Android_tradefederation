@@ -33,6 +33,7 @@ public class ConsoleTest extends TestCase {
     private ICommandScheduler mMockScheduler;
     private Console mConsole;
     private ProxyExceptionHandler mProxyExceptionHandler;
+    private boolean mIsConsoleFunctional;
 
     private static class ProxyExceptionHandler implements Thread.UncaughtExceptionHandler {
         private Throwable mThrowable = null;
@@ -56,25 +57,54 @@ public class ConsoleTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         mMockScheduler = EasyMock.createStrictMock(ICommandScheduler.class);
+        mIsConsoleFunctional = false;
         /**
          * Note: Eclipse doesn't play nice with consoles allocated like {@code new ConsoleReader()}.
          * To make an actual ConsoleReader instance, you should likely use the four-arg
          * {@link jline.ConsoleReader} constructor and use {@link jline.UnsupportedTerminal} or
          * similar as the implementation.
          */
-        mConsole = new Console(mMockScheduler, null);
+        mConsole = new Console(mMockScheduler, null) {
+            @Override
+            boolean isConsoleFunctional() {
+                return mIsConsoleFunctional;
+            }
+        };
         mProxyExceptionHandler = new ProxyExceptionHandler();
         mConsole.setUncaughtExceptionHandler(mProxyExceptionHandler);
      }
 
     /**
-     * Test normal console run.
+     * Test normal Console run when system console is available
      */
-    public void testRun() throws Throwable {
+    public void testRun_withConsole() throws Throwable {
+        mIsConsoleFunctional = true;
+
         mMockScheduler.start();
         mMockScheduler.await();
         EasyMock.expectLastCall().anyTimes();
         mMockScheduler.shutdown();  // after we discover that we can't read console input
+
+        EasyMock.replay(mMockScheduler);
+
+        // non interactive mode needs some args to start
+        mConsole.setArgs(new String[] {"help"});
+        mConsole.start();
+        mConsole.join();
+        mProxyExceptionHandler.verify();
+        EasyMock.verify(mMockScheduler);
+    }
+
+    /**
+     * Test normal Console run when system console is _not_ available
+     */
+    public void testRun_noConsole() throws Throwable {
+        mIsConsoleFunctional = false;
+
+        mMockScheduler.start();
+        mMockScheduler.await();
+        EasyMock.expectLastCall().anyTimes();
+        mMockScheduler.shutdown();  // after we run the initial command and then immediately quit.
 
         EasyMock.replay(mMockScheduler);
 

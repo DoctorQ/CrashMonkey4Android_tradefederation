@@ -686,6 +686,15 @@ public class Console extends Thread {
     }
 
     /**
+     * Return whether we should expect the console to be usable.
+     * <p />
+     * Exposed for unit testing.
+     */
+    boolean isConsoleFunctional() {
+        return System.console() != null;
+    }
+
+    /**
      * The main method to launch the console. Will keep running until shutdown command is issued.
      *
      * @param args
@@ -697,12 +706,12 @@ public class Console extends Thread {
         try {
             // Check System.console() since jline doesn't seem to consistently know whether or not
             // the console is functional.
-            if (System.console() == null) {
+            if (!isConsoleFunctional()) {
                 if (arrrgs.isEmpty()) {
                     printLine("No commands for non-interactive mode; exiting.");
                     return;
                 } else {
-                    printLine("Running indefinitely in non-interactive mode.");
+                    printLine("Non-interactive mode: Running initial command then exiting.");
                     mShouldExit = true;
                 }
             }
@@ -727,7 +736,7 @@ public class Console extends Thread {
                         // Usually the result of getting EOF on the console
                         printLine("");
                         printLine("Received EOF; quitting...");
-                        mScheduler.shutdown();
+                        mShouldExit = true;
                         break;
                     }
 
@@ -770,8 +779,8 @@ public class Console extends Thread {
         } catch (Exception e) {
             printLine("Console received an unexpected exception (shown below); shutting down TF.");
             e.printStackTrace();
-            mScheduler.shutdown();
         } finally {
+            mScheduler.shutdown();
             // Make sure that we don't quit with messages still in the buffers
             System.err.flush();
             System.out.flush();
