@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,17 @@
 package com.android.tradefed.targetprep;
 
 /**
- * Thrown if the provided build fails to run.
+ * Thrown if a device fails to boot after being flashed with a build.
  */
 @SuppressWarnings("serial")
-public class BuildError extends Exception {
+public class DeviceFailedToBootError extends BuildError {
 
     /**
-     * Constructs a new (@link BuildError} with a detailed error message.
+     * Constructs a new (@link DeviceFailedToBootError} with a detailed error message.
      *
-     * @param reason an error message giving more details on the build error
+     * @param reason an error message giving more details about the boot failure
      */
-    public BuildError(String reason) {
+    public DeviceFailedToBootError(String reason) {
         super(reason);
     }
 }

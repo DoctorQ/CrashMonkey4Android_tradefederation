@@ -115,7 +115,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
             device.waitForDeviceAvailable(mDeviceBootTime);
         } catch (DeviceUnresponsiveException e) {
             // assume this is a build problem
-            throw new BuildError(String.format(
+            throw new DeviceFailedToBootError(String.format(
                     "Device %s did not become available after flashing %s",
                     device.getSerialNumber(), deviceBuild.getDeviceBuildId()));
         }

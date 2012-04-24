@@ -251,7 +251,8 @@ public class SdkAvdPreparer implements ITargetPreparer {
                 // ignore
             }
         }
-        throw new BuildError(String.format("Emulator for avd '%s' failed to boot.", avd));
+        throw new DeviceFailedToBootError(
+                String.format("Emulator for avd '%s' failed to boot.", avd));
     }
 
     /**
