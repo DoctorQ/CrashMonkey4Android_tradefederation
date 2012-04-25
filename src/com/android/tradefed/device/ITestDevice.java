@@ -27,6 +27,7 @@ import com.android.tradefed.util.CommandResult;
 import java.io.File;
 import java.io.InputStream;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Provides an reliable and slightly higher level API to a ddmlib {@link IDevice}.
@@ -770,5 +771,13 @@ public interface ITestDevice {
      * Set the {@link TestDeviceOptions} for the device
      */
     public void setOptions(TestDeviceOptions options);
+
+    /**
+     * Fetch the package names installed on the device.
+     *
+     * @return {@link Set} of {@link String} package names currently installed on the device.
+     * @throws DeviceNotAvailableException
+     */
+    public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException;
 
 }
