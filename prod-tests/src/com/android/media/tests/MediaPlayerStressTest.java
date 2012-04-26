@@ -179,7 +179,7 @@ public class MediaPlayerStressTest implements IDeviceTest, IRemoteTest {
                 // ignore
                 continue;
             } else {
-                Log.e(LOG_TAG, String.format("Got unmatched line: %s", line));
+                Log.d(LOG_TAG, String.format("Got unmatched line: %s", line));
                 continue;
             }
             runMetrics.put(key, capture.get(0).get(0));
