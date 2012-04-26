@@ -237,6 +237,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         runner.addInstrumentationArg("reconnect_ssid", mReconnectionSsid);
         runner.addInstrumentationArg("reconnect_password", mReconnectionPassword);
         runner.addInstrumentationArg("sleep_time", mIdleTime);
+        if (mWifiOnly) {
+            runner.addInstrumentationArg("wifi-only", String.valueOf(mWifiOnly));
+        }
 
         // Add bugreport listener for failed test
         BugreportCollector bugListener = new
