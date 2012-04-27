@@ -40,6 +40,8 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Unit tests for {@link TestDevice}.
@@ -952,6 +954,45 @@ public class TestDeviceTest extends TestCase {
         replayMocks();
         mRecoveryTestDevice.reboot();
         verifyMocks();
+    }
+
+    /**
+     * Unit test for {@link TestDevice#getInstalledPackageNames()}.
+     */
+    public void testgetInstalledPackageNames() throws Exception {
+        final String output = "package:com.android.wallpaper\n"
+                + "package:com.android.wallpaper.livepickler";
+        Set<String> expected = new HashSet<String>();
+        expected.add("com.android.wallpaper");
+        expected.add("com.android.wallpaper.livepickler");
+        assertgetInstalledPackageNames(output, expected);
+    }
+
+    /**
+     * Unit test for {@link TestDevice#getInstalledPackageNames()}.
+     * <p/>
+     * Test bad bad output.
+     */
+    public void testgetInstalledPackageNamesForBadOutput() throws Exception {
+        final String output = "junk output";
+        Set<String> expected = new HashSet<String>();
+        assertgetInstalledPackageNames(output, expected);
+    }
+
+    /**
+     * Helper method to verify the {@link TestDevice#getInstalledPackageNames()} method under
+     * different conditions.
+     *
+     * @param output the test output to inject
+     * @param expectedPackages the expected {@link Set} of packages to expect
+     */
+    private void assertgetInstalledPackageNames(final String output, Set<String> expectedPackages)
+            throws Exception {
+        final String expectedCmd = "pm list packages";
+        // expect shell command to be called, and return the test shell output
+        injectShellResponse(expectedCmd, output);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
+        assertEquals(expectedPackages, mTestDevice.getInstalledPackageNames());
     }
 }
 

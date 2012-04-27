@@ -21,11 +21,13 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * Empty implementation of {@link ITestDevice}.
@@ -626,5 +628,14 @@ public class StubTestDevice implements IManagedTestDevice {
     public boolean pushDir(File localDir, String deviceFilePath)
             throws DeviceNotAvailableException {
         return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException {
+        // ignore
+        return null;
     }
 }

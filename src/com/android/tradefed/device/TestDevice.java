@@ -59,7 +59,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,6 +78,8 @@ class TestDevice implements IManagedTestDevice {
     private static final String LOGCAT_CMD = "logcat -v threadtime";
     private static final String LOGCAT_DESC = "logcat";
     private static final String BUGREPORT_CMD = "bugreport";
+    private static final String LIST_PACKAGES_CMD = "pm list packages";
+    private static final Pattern PACKAGE_REGEX = Pattern.compile("package:(.*)");
     /**
      * Allow pauses of up to 2 minutes while receiving bugreport.  Note that dumpsys may pause up to
      * a minute while waiting for unresponsive components, but should bail after that minute, if it
@@ -2307,5 +2311,22 @@ class TestDevice implements IManagedTestDevice {
      */
     public boolean isEnableAdbRoot() {
         return mOptions.isEnableAdbRoot();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException {
+        Set<String> packages= new HashSet<String>();
+        String output = executeShellCommand(LIST_PACKAGES_CMD);
+        if (output != null) {
+            Matcher m = PACKAGE_REGEX.matcher(output);
+            while (m.find()) {
+                String packageName = m.group(1);
+                packages.add(packageName);
+            }
+        }
+        return packages;
     }
 }
