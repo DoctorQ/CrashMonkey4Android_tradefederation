@@ -268,8 +268,12 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
      */
     @Override
     public void cleanUp() {
-        mDeviceBuild.cleanUp();
-        mAppBuildInfo.cleanUp();
+        if (mDeviceBuild != null) {
+            mDeviceBuild.cleanUp();
+        }
+        if (mAppBuildInfo != null) {
+            mAppBuildInfo.cleanUp();
+        }
     }
 
     /**
