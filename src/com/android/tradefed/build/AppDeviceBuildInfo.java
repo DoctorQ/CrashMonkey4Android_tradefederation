@@ -244,15 +244,15 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
      * {@inheritDoc}
      */
     @Override
-    public void addAppPackageFile(File appPackageFile) {
-        mAppBuildInfo.addAppPackageFile(appPackageFile);
+    public void addAppPackageFile(File appPackageFile, String version) {
+        mAppBuildInfo.addAppPackageFile(appPackageFile, version);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public List<File> getAppPackageFiles() {
+    public List<VersionedFile> getAppPackageFiles() {
         return mAppBuildInfo.getAppPackageFiles();
     }
 

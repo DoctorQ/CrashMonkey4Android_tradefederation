@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.android.tradefed.build;
 
 import java.io.File;
-import java.util.List;
 
 /**
- *  * A {@link IBuildInfo} that represents an Android application and its test package(s).
+ * Data structure representing a file that has an associated version.
  */
-public interface IAppBuildInfo extends IBuildInfo {
+public class VersionedFile {
+    private final File mFile;
+    private final String mVersion;
 
-    /**
-     * Gets a copy of the set of local app apk file(s) and their versions.
-     */
-    public List<VersionedFile> getAppPackageFiles();
+    public VersionedFile(File file, String version) {
+        mFile = file;
+        mVersion = version;
+    }
 
-    /**
-     * Adds the local apk file and its associated version
-     */
-    public void addAppPackageFile(File appPackageFile, String version);
+    public File getFile() {
+        return mFile;
+    }
 
+    public String getVersion() {
+        return mVersion;
+    }
 }

@@ -28,7 +28,7 @@ import java.util.List;
  */
 public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
 
-    private List<File> mAppPackageFiles = new ArrayList<File>();
+    private List<VersionedFile> mAppPackageFiles = new ArrayList<VersionedFile>();
 
     /**
      * Creates a {@link AppBuildInfo}.
@@ -45,8 +45,8 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
      * {@inheritDoc}
      */
     @Override
-    public List<File> getAppPackageFiles() {
-        List<File> listCopy = new ArrayList<File>(mAppPackageFiles.size());
+    public List<VersionedFile> getAppPackageFiles() {
+        List<VersionedFile> listCopy = new ArrayList<VersionedFile>(mAppPackageFiles.size());
         listCopy.addAll(mAppPackageFiles);
         return listCopy;
     }
@@ -55,8 +55,8 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
      * {@inheritDoc}
      */
     @Override
-    public void addAppPackageFile(File appPackageFile) {
-        mAppPackageFiles.add(appPackageFile);
+    public void addAppPackageFile(File appPackageFile, String version) {
+        mAppPackageFiles.add(new VersionedFile(appPackageFile, version));
     }
 
     /**
@@ -64,8 +64,8 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
      */
     @Override
     public void cleanUp() {
-        for (File appPackageFile : mAppPackageFiles) {
-            appPackageFile.delete();
+        for (VersionedFile appPackageFile : mAppPackageFiles) {
+            appPackageFile.getFile().delete();
         }
         mAppPackageFiles.clear();
     }
@@ -78,13 +78,14 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
         AppBuildInfo copy = new AppBuildInfo(getBuildId(), getTestTag(), getBuildTargetName());
         copy.addAllBuildAttributes(this);
         try {
-            for (File origFile : mAppPackageFiles) {
+            for (VersionedFile origVerFile : mAppPackageFiles) {
                 // Only using createTempFile to create a unique dest filename
+                File origFile = origVerFile.getFile();
                 File copyFile = FileUtil.createTempFile(origFile.getName(),
                         FileUtil.getExtension(origFile.getName()));
                 copyFile.delete();
                 FileUtil.hardlinkFile(origFile, copyFile);
-                copy.addAppPackageFile(copyFile);
+                copy.addAppPackageFile(copyFile, origVerFile.getVersion());
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -94,5 +95,4 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
 
         return copy;
     }
-
 }

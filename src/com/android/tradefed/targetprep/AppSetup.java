@@ -18,12 +18,12 @@ package com.android.tradefed.targetprep;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IAppBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.build.VersionedFile;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -62,8 +62,8 @@ public class AppSetup implements ITargetPreparer {
             device.reboot();
         }
 
-        for (File apkFile : appBuild.getAppPackageFiles()) {
-            device.installPackage(apkFile, true);
+        for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
+            device.installPackage(apkFile.getFile(), true);
         }
     }
 

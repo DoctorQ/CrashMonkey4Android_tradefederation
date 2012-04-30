@@ -41,27 +41,6 @@ public class BuildInfo implements IBuildInfo {
     private String mDeviceSerial = null;
 
     /**
-     * Data structure containing the image file and related metadata
-     */
-    private static class VersionedFile {
-        private final File mFile;
-        private final String mVersion;
-
-        VersionedFile(File file, String version) {
-            mFile = file;
-            mVersion = version;
-        }
-
-        File getFile() {
-            return mFile;
-        }
-
-        String getVersion() {
-            return mVersion;
-        }
-    }
-
-    /**
      * Creates a {@link BuildInfo} using default attribute values.
      */
     public BuildInfo() {
