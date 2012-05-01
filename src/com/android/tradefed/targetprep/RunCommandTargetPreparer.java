@@ -39,7 +39,7 @@ public class RunCommandTargetPreparer implements ITargetPreparer {
             // If the command had any output, the executeShellCommand method will log it at the
             // VERBOSE level; so no need to do any logging from here.
             CLog.d("About to run command on device %s: %s", device.getSerialNumber(), cmd);
-            final String output = device.executeShellCommand(cmd);
+            device.executeShellCommand(cmd);
         }
     }
 }

@@ -31,6 +31,7 @@ public class InvocationFailureEmailResultReporterTest extends TestCase {
         /**
          * {@inheritDoc}
          */
+        @Override
         public InvocationStatus getInvocationStatus() {
             return mInvocationStatus;
         }

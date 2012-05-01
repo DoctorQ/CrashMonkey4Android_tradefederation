@@ -319,7 +319,6 @@ public class HttpHelperTest extends TestCase {
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings("unused")
         public HttpURLConnection createConnection(URL url, String method, String contentType)
                 throws IOException {
             return null;
@@ -329,7 +328,6 @@ public class HttpHelperTest extends TestCase {
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings("unused")
         InputStream getConnectionInputStream(HttpURLConnection conn) throws IOException {
             return mInputStream;
         }
@@ -338,7 +336,6 @@ public class HttpHelperTest extends TestCase {
          * {@inheritDoc}
          */
         @Override
-        @SuppressWarnings("unused")
         OutputStream getConnectionOutputStream(HttpURLConnection conn) throws IOException {
             return mOutputStream;
         }

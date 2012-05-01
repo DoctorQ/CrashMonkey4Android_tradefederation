@@ -15,9 +15,6 @@
  */
 package com.android.tradefed.device;
 
-import java.io.File;
-import java.io.IOException;
-
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
@@ -25,6 +22,9 @@ import com.android.tradefed.TestAppConstants;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.FileUtil;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Long running functional tests for {@link TestDevice} that verify an operation can be run

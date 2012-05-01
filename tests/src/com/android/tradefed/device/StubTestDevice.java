@@ -21,7 +21,6 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 

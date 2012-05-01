@@ -17,8 +17,8 @@ package com.android.tradefed.result;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
@@ -182,20 +182,6 @@ public class BugreportCollector implements ITestInvocationListener {
             return mSubPredicates.hashCode();
         }
     }
-
-    private Noun getNounFromPredicate(Predicate p) {
-        // FIXME: This is totally a hack, since it assumes knowledge about the structure of a
-        // FIXME: Predicate.  In particular, the Predicate class is probably more general than it
-        // FIXME: needs to be.
-        List<SubPredicate> spList = p.getPredicate();
-        for (SubPredicate sp : spList) {
-            if (sp != null && sp instanceof Noun) {
-                return (Noun) sp;
-            }
-        }
-        return null;
-    }
-
 
     // Now that the Predicate framework is done, actually start on the BugreportCollector class
     /**

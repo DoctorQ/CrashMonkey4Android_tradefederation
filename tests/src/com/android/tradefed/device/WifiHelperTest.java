@@ -30,11 +30,6 @@ public class WifiHelperTest extends TestCase {
     private ITestDevice mMockDevice;
     private WifiHelper mWifi;
 
-    private static final String NETCFG_WIFI_RESPONSE =
-        "lo       UP    127.0.0.1       255.0.0.0       0x00000049\r\n" +
-        "usb0     DOWN  0.0.0.0         0.0.0.0         0x00001002\r\n" +
-        "eth0     UP    192.168.1.1 255.255.254.0   0x00001043\r\n";
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
@@ -95,15 +90,6 @@ public class WifiHelperTest extends TestCase {
             "%s\r\n",
             state.name(), WifiHelper.SUCCESS_MARKER);
         injectShellResponse(statusQueryReturn);
-    }
-
-    private void injectWpaCliOKResponse() throws DeviceNotAvailableException {
-        final String response = String.format(
-            "Using interface 'eth0'\r\n" +
-            "OK\r\n" +
-            "%s\r\n",
-            WifiHelper.SUCCESS_MARKER);
-        injectShellResponse(response);
     }
 
     private void injectShellResponse(final String data) throws DeviceNotAvailableException {

@@ -94,9 +94,9 @@ public class ByteArrayList {
          *   So: k >= minCapacity / (size * growthFactor)
          *       k = ceil(minCapacity / size / growthFactor)
          */
-        int growthFactorMultiples = (int)Math.ceil((float)minCapacity / mGrowthFactor / curSize);
+        int growthFactorMultiples = (int)Math.ceil(minCapacity / mGrowthFactor / curSize);
         // newSize = oldSize * (growthFactor * k) >= minCapacity, from above
-        float newSize = (float)curSize * mGrowthFactor * growthFactorMultiples;
+        float newSize = curSize * mGrowthFactor * growthFactorMultiples;
         setSize((int)Math.ceil(newSize));
     }
 

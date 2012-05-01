@@ -78,12 +78,12 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         Assert.assertTrue(waitForBootComplete(mTestDevice, mBootTimeMs, mBootPoolTimeMs));
         long availableTime = System.currentTimeMillis();
 
-        long offlineDuration = onlineTime - startTime;
-        long unavailDuration = availableTime - startTime;
+        double offlineDuration = onlineTime - startTime;
+        double unavailDuration = availableTime - startTime;
         CLog.d("Reboot: %d millis until online, %d until available",
                 offlineDuration, unavailDuration);
-        runMetrics.put("online", Double.toString((double)offlineDuration/1000.0));
-        runMetrics.put("bootcomplete", Double.toString((double)unavailDuration/1000.0));
+        runMetrics.put("online", Double.toString(offlineDuration/1000.0));
+        runMetrics.put("bootcomplete", Double.toString(unavailDuration/1000.0));
 
         reportMetrics(listener, "boottime", runMetrics);
     }

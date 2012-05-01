@@ -31,6 +31,7 @@ public class TestFailureEmailResultReporterTest extends TestCase {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean hasFailedTests() {
             return mHasFailedTests;
         }

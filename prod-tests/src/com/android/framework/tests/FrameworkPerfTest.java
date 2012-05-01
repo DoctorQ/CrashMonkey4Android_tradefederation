@@ -18,7 +18,6 @@ package com.android.framework.tests;
 
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
-
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
@@ -27,17 +26,17 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.google.common.collect.ImmutableMap;
+
+import junit.framework.Assert;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-import junit.framework.Assert;
-
-import  com.google.common.collect.ImmutableMap;
+import java.util.regex.Pattern;
 
 /**
  * Test that measures the average latency of foreground and background

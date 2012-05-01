@@ -33,6 +33,7 @@ public class FailureEmailResultReporterTest extends TestCase {
         /**
          * {@inheritDoc}
          */
+        @Override
         public boolean hasFailedTests() {
             return mHasFailedTests;
         }
@@ -40,6 +41,7 @@ public class FailureEmailResultReporterTest extends TestCase {
         /**
          * {@inheritDoc}
          */
+        @Override
         public InvocationStatus getInvocationStatus() {
             return mInvocationStatus;
         }

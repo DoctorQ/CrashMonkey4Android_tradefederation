@@ -15,8 +15,8 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
+import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.result.BugreportCollector.Filter;
 import com.android.tradefed.result.BugreportCollector.Freq;

@@ -262,6 +262,7 @@ public class HttpHelper implements IHttpHelper {
             mException = e;
         }
 
+        @Override
         public void cancel() {
             // ignore
         }
@@ -283,6 +284,7 @@ public class HttpHelper implements IHttpHelper {
          * Perform a single GET request, storing the response or the associated exception in case of
          * error.
          */
+        @Override
         public boolean run() {
             try {
                 if (mIgnoreResult) {
@@ -321,6 +323,7 @@ public class HttpHelper implements IHttpHelper {
          * Perform a single POST request, storing the response or the associated exception in case
          * of error.
          */
+        @Override
         public boolean run() {
             InputStream inputStream = null;
             OutputStream outputStream = null;

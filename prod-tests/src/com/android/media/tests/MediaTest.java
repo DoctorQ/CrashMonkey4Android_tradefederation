@@ -16,12 +16,9 @@
 
 package com.android.media.tests;
 
-import java.util.regex.Matcher;
-
-import com.android.media.tests.VideoEditingMemoryTest;
-
-import junit.framework.Assert;
 import junit.framework.TestCase;
+
+import java.util.regex.Matcher;
 
 
 public class MediaTest extends TestCase {

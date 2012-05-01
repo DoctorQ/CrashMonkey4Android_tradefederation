@@ -83,10 +83,12 @@ public class KernelFlashPreparerTest extends TestCase {
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
 
         mFlashPreparer = new KernelFlashPreparer() {
+            @Override
             IRunUtil getRunUtil() {
                 return mMockRunUtil;
             }
 
+            @Override
             String getBootImgPath() {
                 return mBootImg.getAbsolutePath();
             }
@@ -139,6 +141,7 @@ public class KernelFlashPreparerTest extends TestCase {
      */
     public void testSetup_targetsetuperror() throws Exception {
         mFlashPreparer = new KernelFlashPreparer() {
+            @Override
             File createBootImage(File mkbootimg, File kernel, File ramdisk) throws IOException {
                 throw new IOException();
             }
@@ -261,6 +264,7 @@ public class KernelFlashPreparerTest extends TestCase {
      */
     private KernelFlashPreparer getStubBootPreparer() {
         return new KernelFlashPreparer() {
+            @Override
             File createBootImage(File mkbootimg, File kernel, File ramdisk) {
                 return mBootImg;
             }

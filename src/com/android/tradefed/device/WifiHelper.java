@@ -20,7 +20,6 @@ import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.StreamUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -396,27 +395,6 @@ public class WifiHelper implements IWifiHelper {
     }
 
     /**
-     * Calls wpa_cli and also checks output for OK or FAIL.
-     *
-     * @param cmd the wpa_cli command to run
-     * @return <code>true</code> if output contains OK, <code>false</code> if output does not
-     *         contain OK or it failed
-     * @throws DeviceNotAvailableException
-     */
-    private boolean callWpaCliChecked(String cmd) throws DeviceNotAvailableException {
-        WpaCliOutput output = callWpaCli(cmd);
-        if (!output.isSuccess()) {
-            return false;
-        }
-        for (String line: output.mOutputLines) {
-            if (line.equals("OK")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
      * Processes the output of a wpa_cli command.
      */
     private static class WpaCliOutput extends MultiLineReceiver {
@@ -477,7 +455,6 @@ public class WifiHelper implements IWifiHelper {
     private static class WifiUtilOutput extends MultiLineReceiver {
 
         private boolean mDidCommandComplete = false;
-        private boolean mIsCommandSuccess = true;
 
         private static final String INST_SUCCESS_MARKER = "INSTRUMENTATION_CODE: -1";
         private static final Pattern RESULT_PAT =
@@ -509,10 +486,6 @@ public class WifiHelper implements IWifiHelper {
                     mResult = resultMatcher.group(1);
                 }
             }
-        }
-
-        public boolean isSuccess() {
-            return mDidCommandComplete && mIsCommandSuccess;
         }
 
         /**

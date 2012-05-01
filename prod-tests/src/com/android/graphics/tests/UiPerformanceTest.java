@@ -29,6 +29,7 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -41,8 +42,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
 
 /**
  * Run UiPerformanceTest suite which measures the performance of

@@ -26,8 +26,6 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 

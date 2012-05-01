@@ -131,7 +131,7 @@ public class LogFileSaver implements ILogFileSaver {
             throws IOException {
         final String saneDataName = sanitizeFilename(dataName);
         // add underscore to end of data name to make generated name more readable
-        File logFile = FileUtil.createTempFile(dataName + "_", "." + dataType.getFileExt(),
+        File logFile = FileUtil.createTempFile(saneDataName + "_", "." + dataType.getFileExt(),
                 mRootDir);
         FileUtil.writeToFile(dataStream, logFile);
         Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
