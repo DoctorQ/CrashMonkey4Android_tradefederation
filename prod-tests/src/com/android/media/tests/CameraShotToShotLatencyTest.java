@@ -54,7 +54,7 @@ public class CameraShotToShotLatencyTest implements IDeviceTest, IRemoteTest {
 
     private static final String LATENCY_KEY_MEAN = "Shot2ShotLatencyMean";
     private static final String LATENCY_KEY_SD = "Shot2ShotLatencySD";
-    private static final String TEST_TAG = "CameraShotToShotLatencyTest";
+    private static final String TEST_RU = "CameraLatency";
 
     private final String mOutputPath = "mediaStressOut.txt";
     ITestDevice mTestDevice = null;
@@ -76,7 +76,7 @@ public class CameraShotToShotLatencyTest implements IDeviceTest, IRemoteTest {
         Assert.assertTrue(mTestDevice.runInstrumentationTests(runner, bugListener));
 
         Map<String, String> metrics = parseOutputFile();
-        reportMetrics(bugListener, TEST_TAG, metrics);
+        reportMetrics(bugListener, TEST_RU, metrics);
         cleanupDevice();
     }
 
