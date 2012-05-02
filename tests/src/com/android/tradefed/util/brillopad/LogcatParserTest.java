@@ -16,6 +16,7 @@
 
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
 
 import junit.framework.TestCase;
@@ -50,6 +51,8 @@ public class LogcatParserTest extends TestCase {
         assertEquals(1, logcat.getAnrs().size());
         assertEquals(312, logcat.getAnrs().get(0).getPid().intValue());
         assertEquals(366, logcat.getAnrs().get(0).getTid().intValue());
+        assertEquals("", logcat.getAnrs().get(0).getLastPreamble());
+        assertEquals("", logcat.getAnrs().get(0).getProcessPreamble());
         assertEquals(parseTime("2012-04-25 17:17:08.445"), logcat.getAnrs().get(0).getEventTime());
     }
 
@@ -71,6 +74,8 @@ public class LogcatParserTest extends TestCase {
         assertEquals(1, logcat.getJavaCrashes().size());
         assertEquals(3064, logcat.getJavaCrashes().get(0).getPid().intValue());
         assertEquals(3082, logcat.getJavaCrashes().get(0).getTid().intValue());
+        assertEquals("", logcat.getJavaCrashes().get(0).getLastPreamble());
+        assertEquals("", logcat.getJavaCrashes().get(0).getProcessPreamble());
         assertEquals(parseTime("2012-04-25 09:55:47.799"),
                 logcat.getJavaCrashes().get(0).getEventTime());
     }
@@ -93,6 +98,8 @@ public class LogcatParserTest extends TestCase {
         assertEquals(1, logcat.getNativeCrashes().size());
         assertEquals(115, logcat.getNativeCrashes().get(0).getPid().intValue());
         assertEquals(115, logcat.getNativeCrashes().get(0).getTid().intValue());
+        assertEquals("", logcat.getNativeCrashes().get(0).getLastPreamble());
+        assertEquals("", logcat.getNativeCrashes().get(0).getProcessPreamble());
         assertEquals(parseTime("2012-04-25 18:33:27.273"),
                 logcat.getNativeCrashes().get(0).getEventTime());
     }
@@ -216,6 +223,109 @@ public class LogcatParserTest extends TestCase {
         assertEquals(117, logcat.getNativeCrashes().get(1).getTid().intValue());
         assertEquals(parseTime("2012-04-25 09:55:47.799"),
                 logcat.getNativeCrashes().get(1).getEventTime());
+    }
+
+    /**
+     * Test that the preambles are set correctly if there's only partial preambles.
+     */
+    public void testParse_partial_preambles() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "04-25 09:15:47.799   123  3082 I tag: message 1",
+                "04-25 09:20:47.799  3064  3082 I tag: message 2",
+                "04-25 09:25:47.799   345  3082 I tag: message 3",
+                "04-25 09:30:47.799  3064  3082 I tag: message 4",
+                "04-25 09:35:47.799   456  3082 I tag: message 5",
+                "04-25 09:40:47.799  3064  3082 I tag: message 6",
+                "04-25 09:45:47.799   567  3082 I tag: message 7",
+                "04-25 09:50:47.799  3064  3082 I tag: message 8",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: java.lang.Exception",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method1(Class.java:1)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method2(Class.java:2)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method3(Class.java:3)");
+
+        List<String> expectedLastPreamble = Arrays.asList(
+                "04-25 09:15:47.799   123  3082 I tag: message 1",
+                "04-25 09:20:47.799  3064  3082 I tag: message 2",
+                "04-25 09:25:47.799   345  3082 I tag: message 3",
+                "04-25 09:30:47.799  3064  3082 I tag: message 4",
+                "04-25 09:35:47.799   456  3082 I tag: message 5",
+                "04-25 09:40:47.799  3064  3082 I tag: message 6",
+                "04-25 09:45:47.799   567  3082 I tag: message 7",
+                "04-25 09:50:47.799  3064  3082 I tag: message 8");
+
+        List<String> expectedProcPreamble = Arrays.asList(
+                "04-25 09:20:47.799  3064  3082 I tag: message 2",
+                "04-25 09:30:47.799  3064  3082 I tag: message 4",
+                "04-25 09:40:47.799  3064  3082 I tag: message 6",
+                "04-25 09:50:47.799  3064  3082 I tag: message 8");
+
+        LogcatItem logcat = new LogcatParser("2012").parse(lines);
+        assertNotNull(logcat);
+        assertEquals(parseTime("2012-04-25 09:15:47.799"), logcat.getStartTime());
+        assertEquals(parseTime("2012-04-25 09:55:47.799"), logcat.getStopTime());
+        assertEquals(1, logcat.getEvents().size());
+        assertEquals(1, logcat.getJavaCrashes().size());
+        assertEquals(3064, logcat.getJavaCrashes().get(0).getPid().intValue());
+        assertEquals(3082, logcat.getJavaCrashes().get(0).getTid().intValue());
+        assertEquals(ArrayUtil.join("\n", expectedLastPreamble),
+                logcat.getJavaCrashes().get(0).getLastPreamble());
+        assertEquals(ArrayUtil.join("\n", expectedProcPreamble),
+                logcat.getJavaCrashes().get(0).getProcessPreamble());
+        assertEquals(parseTime("2012-04-25 09:55:47.799"),
+                logcat.getJavaCrashes().get(0).getEventTime());
+    }
+
+    /**
+     * Test that the preambles are set correctly if there's only full preambles.
+     */
+    public void testParse_preambles() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "04-25 09:43:47.799  3064  3082 I tag: message 1",
+                "04-25 09:44:47.799   123  3082 I tag: message 2",
+                "04-25 09:45:47.799  3064  3082 I tag: message 3",
+                "04-25 09:46:47.799   234  3082 I tag: message 4",
+                "04-25 09:47:47.799  3064  3082 I tag: message 5",
+                "04-25 09:48:47.799   345  3082 I tag: message 6",
+                "04-25 09:49:47.799  3064  3082 I tag: message 7",
+                "04-25 09:50:47.799   456  3082 I tag: message 8",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: java.lang.Exception",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method1(Class.java:1)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method2(Class.java:2)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method3(Class.java:3)");
+
+        List<String> expectedLastPreamble = Arrays.asList(
+                "04-25 09:48:47.799   345  3082 I tag: message 6",
+                "04-25 09:49:47.799  3064  3082 I tag: message 7",
+                "04-25 09:50:47.799   456  3082 I tag: message 8");
+
+        List<String> expectedProcPreamble = Arrays.asList(
+                "04-25 09:45:47.799  3064  3082 I tag: message 3",
+                "04-25 09:47:47.799  3064  3082 I tag: message 5",
+                "04-25 09:49:47.799  3064  3082 I tag: message 7");
+
+        LogcatItem logcat = new LogcatParser("2012") {
+            int getLastPreambleSize() {
+                return 3;
+            }
+
+            int getProcPreambleSize() {
+                return 3;
+            }
+        }.parse(lines);
+
+        assertNotNull(logcat);
+        assertEquals(parseTime("2012-04-25 09:43:47.799"), logcat.getStartTime());
+        assertEquals(parseTime("2012-04-25 09:55:47.799"), logcat.getStopTime());
+        assertEquals(1, logcat.getEvents().size());
+        assertEquals(1, logcat.getJavaCrashes().size());
+        assertEquals(3064, logcat.getJavaCrashes().get(0).getPid().intValue());
+        assertEquals(3082, logcat.getJavaCrashes().get(0).getTid().intValue());
+        assertEquals(ArrayUtil.join("\n", expectedLastPreamble),
+                logcat.getJavaCrashes().get(0).getLastPreamble());
+        assertEquals(ArrayUtil.join("\n", expectedProcPreamble),
+                logcat.getJavaCrashes().get(0).getProcessPreamble());
+        assertEquals(parseTime("2012-04-25 09:55:47.799"),
+                logcat.getJavaCrashes().get(0).getEventTime());
     }
 
     /**
