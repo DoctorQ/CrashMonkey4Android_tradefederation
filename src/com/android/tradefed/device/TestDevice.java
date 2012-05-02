@@ -207,6 +207,8 @@ class TestDevice implements IManagedTestDevice {
     public void setOptions(TestDeviceOptions options) {
         throwIfNull(options);
         mOptions = options;
+        mMonitor.setDefaultOnlineTimeout(options.getOnlineTimeout());
+        mMonitor.setDefaultAvailableTimeout(options.getAvailableTimeout());
     }
 
     /**

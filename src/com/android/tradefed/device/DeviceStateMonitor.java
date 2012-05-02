@@ -46,12 +46,10 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
     private static final int MAX_OP_TIME = 10 * 1000;
 
     /** The  time in ms to wait for a device to be online. */
-    // TODO: make this configurable
-    private static final long DEFAULT_ONLINE_TIMEOUT = 1 * 60 * 1000;
+    private long mDefaultOnlineTimeout = 1 * 60 * 1000;
 
     /** The  time in ms to wait for a device to available. */
-    // TODO: make this configurable
-    private static final long DEFAULT_AVAILABLE_TIMEOUT = 6 * 60 * 1000;
+    private long mDefaultAvailableTimeout = 6 * 60 * 1000;
 
     private List<DeviceStateListener> mStateListeners;
     private IDeviceManager mMgr;
@@ -72,6 +70,22 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     IRunUtil getRunUtil() {
         return RunUtil.getDefault();
+    }
+
+    /**
+     * Set the time in ms to wait for a device to be online in {@link #waitForDeviceOnline()}.
+     */
+    @Override
+    public void setDefaultOnlineTimeout(long timeoutMs) {
+        mDefaultOnlineTimeout = timeoutMs;
+    }
+
+    /**
+     * Set the time in ms to wait for a device to be available in {@link #waitForDeviceAvailable()}.
+     */
+    @Override
+    public void setDefaultAvailableTimeout(long timeoutMs) {
+        mDefaultAvailableTimeout = timeoutMs;
     }
 
     /**
@@ -107,7 +121,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     @Override
     public IDevice waitForDeviceOnline() {
-        return waitForDeviceOnline(DEFAULT_ONLINE_TIMEOUT);
+        return waitForDeviceOnline(mDefaultOnlineTimeout);
     }
 
     /**
@@ -207,7 +221,7 @@ class DeviceStateMonitor implements IDeviceStateMonitor {
      */
     @Override
     public IDevice waitForDeviceAvailable() {
-        return waitForDeviceAvailable(DEFAULT_AVAILABLE_TIMEOUT);
+        return waitForDeviceAvailable(mDefaultAvailableTimeout);
     }
 
     /**

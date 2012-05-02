@@ -154,4 +154,14 @@ public interface IDeviceStateMonitor {
      */
     public boolean isAdbTcp();
 
+    /**
+     * Set the time in ms to wait for a device to be online in {@link #waitForDeviceOnline()}.
+     */
+    public void setDefaultOnlineTimeout(long timeoutMs);
+
+    /**
+     * Set the time in ms to wait for a device to be available in {@link #waitForDeviceAvailable()}.
+     */
+    public void setDefaultAvailableTimeout(long timeoutMs);
+
 }

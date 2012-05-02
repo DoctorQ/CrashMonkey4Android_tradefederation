@@ -51,6 +51,14 @@ public class TestDeviceOptions {
             + "format the filesystem and reboot after unencryption")
     private int mUnencryptRebootTimeout = 0;
 
+    @Option(name = "online-timeout", description = "default time in ms to wait for the device to "
+            + "be visible on adb.")
+    private long mOnlineTimeout = 1 * 60 * 1000;
+
+    @Option(name = "available-timeout", description = "default time in ms to wait for the device "
+            + "to be available aka fully boot.")
+    private long mAvailableTimeout = 6 * 60 * 1000;
+
     /**
      * @return the mEnableAdbRoot
      */
@@ -168,5 +176,19 @@ public class TestDeviceOptions {
      */
     public void setUnencryptRebootTimeout(int unencryptRebootTimeout) {
         mUnencryptRebootTimeout = unencryptRebootTimeout;
+    }
+
+    /**
+     * @return the default time in ms to to wait for a device to be online.
+     */
+    public long getOnlineTimeout() {
+        return mOnlineTimeout;
+    }
+
+    /**
+     * @return the default time in ms to to wait for a device to be available.
+     */
+    public long getAvailableTimeout() {
+        return mAvailableTimeout;
     }
 }
