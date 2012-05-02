@@ -15,76 +15,84 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
-import com.android.tradefed.util.brillopad.item.AnrItem;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
-import com.android.tradefed.util.brillopad.item.JavaCrashItem;
-import com.android.tradefed.util.brillopad.item.NativeCrashItem;
 
 import junit.framework.TestCase;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.List;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 /**
  * Functional tests for {@link BugreportParser}
  */
 public class BugreportParserFuncTest extends TestCase {
-    private static final File BR_FILE = new File("/tmp/bugreport.txt");
-
-/* FIXME: flesh this out with known bugreports
-    public void disable_testFullMockedParse() throws Exception {
-        BugreportParser parser = new BugreportParser();
-        ISectionParser mockSP = EasyMock.createStrictMock(ISectionParser.class);
-        parser.addSectionParser(mockSP, "------ MEMORY INFO .*");
-
-        // Set up expectations
-        EasyMock.expect(mockSP.parseBlock((List<String>)EasyMock.anyObject())).andReturn(null);
-        EasyMock.replay(mockSP);
-
-        if (!BR_FILE.exists()) {
-            fail(String.format("Full Parse test requires sample bugreport at %s", BR_FILE));
-        }
-
-        BufferedReader reader = new BufferedReader(new FileReader(BR_FILE));
-        parser.parse(reader);
-        EasyMock.verify(mockSP);
-    }
-*/
+    // FIXME: Make bugreport file configurable.
+    private static final String BUGREPORT_PATH = "/tmp/bugreport.txt";
 
     /**
-     * A "test" that is intended to force Brillopad to parse a bugreport found at {@code BR_FILE}.
-     * The purpose of this is to assist a developer in checking why a given bugreport file might not
-     * be parsed correctly by Brillopad.
-     * <p />
-     * Because the name doesn't start with "test", this method won't be picked up automatically by a
-     * JUnit test runner, and must be run by hand.  This is as intended.
+     * A test that is intended to force Brillopad to parse a bugreport. The purpose of this is to
+     * assist a developer in checking why a given bugreport file might not be parsed correctly by
+     * Brillopad.
      */
-    public void manualTestFullParse() throws Exception {
-        BugreportParser parser = new BugreportParser();
-
-        if (!BR_FILE.exists()) {
-            fail(String.format("Full Parse test requires sample bugreport at %s", BR_FILE));
+    public void testParse() {
+        InputStreamSource bugSource = null;
+        try {
+            bugSource = new SnapshotInputStreamSource(new FileInputStream(
+                    new File(BUGREPORT_PATH)));
+        } catch (FileNotFoundException e) {
+            fail(String.format("File not found at %s", BUGREPORT_PATH));
         }
-
-        InputStream bugStream = new FileInputStream(BR_FILE);
-        InputStreamSource bugSource = new SnapshotInputStreamSource(bugStream);
         BugreportItem bugreport = null;
         try {
-            bugreport = parser.parse(bugSource);
+            long start = System.currentTimeMillis();
+            bugreport = new BugreportParser().parse(bugSource);
+            long stop = System.currentTimeMillis();
+            CLog.e("Bugreport took %d ms to parse.", stop - start);
+        } catch (IOException e) {
+            fail(String.format("IOException: %s", e.toString()));
         } finally {
             bugSource.cancel();
         }
 
-        List<JavaCrashItem> jc = bugreport.getSystemLog().getJavaCrashes();
-        List<NativeCrashItem> nc = bugreport.getSystemLog().getNativeCrashes();
-        List<AnrItem> anr = bugreport.getSystemLog().getAnrs();
-        System.err.format("Got %d items for JAVA CRASH, %d for NATIVE CRASH, and %d for ANR\n",
-                jc.size(), nc.size(), anr.size());
+        assertNotNull(bugreport);
+        assertNotNull(bugreport.getTime());
 
+        assertNotNull(bugreport.getSystemProps());
+        assertTrue(bugreport.getSystemProps().size() > 0);
+
+        assertNotNull(bugreport.getMemInfo());
+        assertTrue(bugreport.getMemInfo().size() > 0);
+
+        assertNotNull(bugreport.getProcrank());
+        assertTrue(bugreport.getProcrank().size() > 0);
+
+        assertNotNull(bugreport.getSystemLog());
+        assertNotNull(bugreport.getSystemLog().getStartTime());
+        assertNotNull(bugreport.getSystemLog().getStopTime());
+
+        CLog.e("Stats for bugreport:\n" +
+                "  Time: %s\n" +
+                "  System Properties: %d items\n" +
+                "  Mem info: %d items\n" +
+                "  Procrank: %d items\n" +
+                "  System Log:\n" +
+                "    Start time: %s\n" +
+                "    Stop time: %s\n" +
+                "    %d ANR(s), %d Java Crash(es), %d Native Crash(es)",
+                bugreport.getTime(),
+                bugreport.getSystemProps().size(),
+                bugreport.getMemInfo().size(),
+                bugreport.getProcrank().size(),
+                bugreport.getSystemLog().getStartTime().toString(),
+                bugreport.getSystemLog().getStopTime().toString(),
+                bugreport.getSystemLog().getAnrs().size(),
+                bugreport.getSystemLog().getJavaCrashes().size(),
+                bugreport.getSystemLog().getNativeCrashes().size());
     }
 }
 

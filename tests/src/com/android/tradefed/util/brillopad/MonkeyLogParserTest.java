@@ -87,7 +87,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(4 * 60 * 1000 + 57 * 1000, monkeyLog.getTotalDuration().longValue());
         assertEquals(242130, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(539210, monkeyLog.getStopUptimeDuration().longValue());
-        assertTrue(monkeyLog.isFinished());
+        assertTrue(monkeyLog.getIsFinished());
         assertEquals(9900, monkeyLog.getIntermediateCount());
         assertEquals(10000, monkeyLog.getFinalCount().intValue());
         assertEquals(5, monkeyLog.getDroppedCount(DroppedCategory.KEYS).intValue());
@@ -191,7 +191,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(4 * 60 * 1000 + 14 * 1000, monkeyLog.getTotalDuration().longValue());
         assertEquals(216480, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(471370, monkeyLog.getStopUptimeDuration().longValue());
-        assertFalse(monkeyLog.isFinished());
+        assertFalse(monkeyLog.getIsFinished());
         assertEquals(5300, monkeyLog.getIntermediateCount());
         assertEquals(5322, monkeyLog.getFinalCount().intValue());
         assertNotNull(monkeyLog.getCrash());
@@ -262,7 +262,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(49 * 1000, monkeyLog.getTotalDuration().longValue());
         assertEquals(232650, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(282530, monkeyLog.getStopUptimeDuration().longValue());
-        assertFalse(monkeyLog.isFinished());
+        assertFalse(monkeyLog.getIsFinished());
         assertEquals(1600, monkeyLog.getIntermediateCount());
         assertEquals(1649, monkeyLog.getFinalCount().intValue());
         assertNotNull(monkeyLog.getCrash());

@@ -16,10 +16,15 @@
 package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.GenericLogcatItem;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -92,6 +97,14 @@ public class LogcatParser implements IParser {
     private LinkedList<String> mRingBuffer = new LinkedList<String>();
     private String mYear = null;
 
+    LogcatItem mLogcat = new LogcatItem();
+
+    Map<String, LogcatData> mDataMap = new HashMap<String, LogcatData>();
+    List<LogcatData> mDataList = new LinkedList<LogcatData>();
+
+    private Date mStartTime = null;
+    private Date mStopTime = null;
+
     /**
      * Constructor for {@link LogcatParser}.
      */
@@ -117,92 +130,130 @@ public class LogcatParser implements IParser {
     }
 
     /**
+     * Parse a logcat from a {@link BufferedReader} into an {@link LogcatItem} object.
+     *
+     * @param input a {@link BufferedReader}.
+     * @return The {@link LogcatItem}.
+     * @see #parse(List)
+     */
+    public LogcatItem parse(BufferedReader input) throws IOException {
+        String line;
+        while ((line = input.readLine()) != null) {
+            parseLine(line);
+        }
+        commit();
+
+        return mLogcat;
+    }
+
+    /**
+     * Parse a logcat from a {@link InputStreamSource} into an {@link LogcatItem} object.
+     *
+     * @param input a {@link InputStreamSource}.
+     * @return The {@link LogcatItem}.
+     * @see #parse(List)
+     */
+    public LogcatItem parse(InputStreamSource input) throws IOException {
+        InputStream stream = input.createInputStream();
+        return parse(new BufferedReader(new InputStreamReader(stream)));
+    }
+
+    /**
      * {@inheritDoc}
      *
      * @return The {@link LogcatItem}.
      */
     public LogcatItem parse(List<String> lines) {
-        LogcatItem logcat = new LogcatItem();
-
-        Map<String, LogcatData> dataMap = new HashMap<String, LogcatData>();
-        List<LogcatData> dataList = new LinkedList<LogcatData>();
-
-        Date startTime = null;
-        Date stopTime = null;
-
         for (String line : lines) {
-            Integer pid = null;
-            Integer tid = null;
-            Date time = null;
-            String level = null;
-            String tag = null;
-            String msg = null;
+            parseLine(line);
+        }
+        commit();
 
-            Matcher m = THREADTIME_LINE.matcher(line);
-            Matcher tm = TIME_LINE.matcher(line);
-            if (m.matches()) {
-                time = parseTime(m.group(1));
-                pid = Integer.parseInt(m.group(2));
-                tid = Integer.parseInt(m.group(3));
-                level = m.group(4);
-                tag = m.group(5);
-                msg = m.group(6);
-            } else if (tm.matches()) {
-                time = parseTime(tm.group(1));
-                level = tm.group(2);
-                tag = tm.group(3);
-                pid = Integer.parseInt(tm.group(4));
-                msg = tm.group(5);
-            } else {
-                CLog.w("Failed to parse line '%s'", line);
-                continue;
-            }
+        return mLogcat;
+    }
 
-            if (startTime == null) {
-                startTime = time;
-            }
-            stopTime = time;
+    /**
+     * Parse a line of input.
+     *
+     * @param line The line to parse
+     */
+    private void parseLine(String line) {
+        Integer pid = null;
+        Integer tid = null;
+        Date time = null;
+        String level = null;
+        String tag = null;
+        String msg = null;
 
-            // ANRs are split when START matches a line.  The newest entry is kept in the dataMap
-            // for quick lookup while all entries are added to the list.
-            if ("E".equals(level) && "ActivityManager".equals(tag)) {
-                String key = encodeLine(pid, tid, level, tag);
-                LogcatData data;
-                if (!dataMap.containsKey(key) || AnrParser.START.matcher(msg).matches()) {
-                    data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
-                            getProcPreamble(pid));
-                    dataMap.put(key, data);
-                    dataList.add(data);
-                } else {
-                    data = dataMap.get(key);
-                }
-                data.mLines.add(msg);
-            }
-
-            // PID and TID are enough to separate Java and native crashes.
-            if (("E".equals(level) && "AndroidRuntime".equals(tag)) ||
-                    ("I".equals(level) && "DEBUG".equals(tag))) {
-                String key = encodeLine(pid, tid, level, tag);
-                LogcatData data;
-                if (!dataMap.containsKey(key)) {
-                    data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
-                            getProcPreamble(pid));
-                    dataMap.put(key, data);
-                    dataList.add(data);
-                } else {
-                    data = dataMap.get(key);
-                }
-                data.mLines.add(msg);
-            }
-
-            // After parsing the line, add it the the buffer for the preambles.
-            mRingBuffer.add(line);
-            if (mRingBuffer.size() > MAX_BUFF_SIZE) {
-                mRingBuffer.removeFirst();
-            }
+        Matcher m = THREADTIME_LINE.matcher(line);
+        Matcher tm = TIME_LINE.matcher(line);
+        if (m.matches()) {
+            time = parseTime(m.group(1));
+            pid = Integer.parseInt(m.group(2));
+            tid = Integer.parseInt(m.group(3));
+            level = m.group(4);
+            tag = m.group(5);
+            msg = m.group(6);
+        } else if (tm.matches()) {
+            time = parseTime(tm.group(1));
+            level = tm.group(2);
+            tag = tm.group(3);
+            pid = Integer.parseInt(tm.group(4));
+            msg = tm.group(5);
+        } else {
+            CLog.w("Failed to parse line '%s'", line);
+            return;
         }
 
-        for (LogcatData data : dataList) {
+        if (mStartTime == null) {
+            mStartTime = time;
+        }
+        mStopTime = time;
+
+        // ANRs are split when START matches a line.  The newest entry is kept in the dataMap
+        // for quick lookup while all entries are added to the list.
+        if ("E".equals(level) && "ActivityManager".equals(tag)) {
+            String key = encodeLine(pid, tid, level, tag);
+            LogcatData data;
+            if (!mDataMap.containsKey(key) || AnrParser.START.matcher(msg).matches()) {
+                data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
+                        getProcPreamble(pid));
+                mDataMap.put(key, data);
+                mDataList.add(data);
+            } else {
+                data = mDataMap.get(key);
+            }
+            data.mLines.add(msg);
+        }
+
+        // PID and TID are enough to separate Java and native crashes.
+        if (("E".equals(level) && "AndroidRuntime".equals(tag)) ||
+                ("I".equals(level) && "DEBUG".equals(tag))) {
+            String key = encodeLine(pid, tid, level, tag);
+            LogcatData data;
+            if (!mDataMap.containsKey(key)) {
+                data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
+                        getProcPreamble(pid));
+                mDataMap.put(key, data);
+                mDataList.add(data);
+            } else {
+                data = mDataMap.get(key);
+            }
+            data.mLines.add(msg);
+        }
+
+        // After parsing the line, add it the the buffer for the preambles.
+        mRingBuffer.add(line);
+        if (mRingBuffer.size() > MAX_BUFF_SIZE) {
+            mRingBuffer.removeFirst();
+        }
+    }
+
+    /**
+     * Signal that the input has finished.
+     */
+    private void commit() {
+        for (LogcatData data : mDataList) {
             GenericLogcatItem item = null;
             if ("E".equals(data.mLevel) && "ActivityManager".equals(data.mTag)) {
                 CLog.v("Parsing ANR: %s", data.mLines);
@@ -220,13 +271,12 @@ public class LogcatParser implements IParser {
                 item.setTid(data.mTid);
                 item.setLastPreamble(data.mLastPreamble);
                 item.setProcessPreamble(data.mProcPreamble);
-                logcat.addEvent(item);
+                mLogcat.addEvent(item);
             }
         }
 
-        logcat.setStartTime(startTime);
-        logcat.setStopTime(stopTime);
-        return logcat;
+        mLogcat.setStartTime(mStartTime);
+        mLogcat.setStopTime(mStopTime);
     }
 
     /**

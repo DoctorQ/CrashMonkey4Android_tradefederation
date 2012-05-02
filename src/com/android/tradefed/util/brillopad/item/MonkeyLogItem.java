@@ -236,7 +236,7 @@ public class MonkeyLogItem extends GenericItem {
     /**
      * Get if the monkey run finished without crashing.
      */
-    public boolean isFinished() {
+    public boolean getIsFinished() {
         return (Boolean) getAttribute(IS_FINISHED);
     }
 
