@@ -393,7 +393,10 @@ public class BugreportCollector implements ITestInvocationListener {
             String desc = storedP.toString();
             // Try to generate a useful description
             if (test != null) {
-                final String testName = String.format("%s#%s", test.getClassName(),
+                // We use "__" instead of "#" here because of ambiguity in automatically making
+                // HTML links containing the "#" character -- it could just as easily be a real hash
+                // character as an HTML fragment specification.
+                final String testName = String.format("%s__%s", test.getClassName(),
                         test.getTestName());
                 switch (noun) {
                     case TESTCASE:
