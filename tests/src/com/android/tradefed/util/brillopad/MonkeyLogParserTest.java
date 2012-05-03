@@ -239,6 +239,25 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals("java.lang.Exception", ((JavaCrashItem) monkeyLog.getCrash()).getException());
     }
 
+    /**
+     * Test that the other date format can be parsed.
+     */
+    public void testAlternateDateFormat() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "# Tue Apr 24 17:05:50 PST 2012 - device uptime = 232.65: Monkey command used for this test:",
+                "adb shell monkey -p com.google.android.apps.maps  -c android.intent.category.SAMPLE_CODE -c android.intent.category.CAR_DOCK -c android.intent.category.LAUNCHER -c android.intent.category.MONKEY -c android.intent.category.INFO  --ignore-security-exceptions --throttle 100  -s 501 -v -v -v 10000 ",
+                "",
+                "# Tue Apr 24 17:06:40 PST 2012 - device uptime = 282.53: Monkey command ran for: 00:49 (mm:ss)",
+                "",
+                "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------",
+                "");
+
+        MonkeyLogItem monkeyLog = new MonkeyLogParser().parse(lines);
+        assertNotNull(monkeyLog);
+        assertEquals(parseTime("2012-04-24 17:05:50"), monkeyLog.getStartTime());
+        assertEquals(parseTime("2012-04-24 17:06:40"), monkeyLog.getStopTime());
+    }
+
     private Date parseTime(String timeStr) throws ParseException {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return formatter.parse(timeStr);
