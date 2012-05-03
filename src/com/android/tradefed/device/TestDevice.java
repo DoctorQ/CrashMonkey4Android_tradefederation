@@ -75,8 +75,6 @@ class TestDevice implements IManagedTestDevice {
 
     /** the default number of command retry attempts to perform */
     static final int MAX_RETRY_ATTEMPTS = 2;
-    private static final String LOGCAT_CMD = "logcat -v threadtime";
-    private static final String LOGCAT_DESC = "logcat";
     private static final String BUGREPORT_CMD = "bugreport";
     private static final String LIST_PACKAGES_CMD = "pm list packages";
     private static final Pattern PACKAGE_REGEX = Pattern.compile("package:(.*)");
@@ -122,7 +120,7 @@ class TestDevice implements IManagedTestDevice {
     private final IDeviceStateMonitor mMonitor;
     private TestDeviceState mState = TestDeviceState.ONLINE;
     private final ReentrantLock mFastbootLock = new ReentrantLock();
-    private LogCatReceiver mLogcatReceiver;
+    private LogcatReceiver mLogcatReceiver;
     private IFileEntry mRootFile = null;
     private boolean mFastbootEnabled = true;
 
@@ -1342,7 +1340,7 @@ class TestDevice implements IManagedTestDevice {
             CLog.d("Already capturing logcat for %s, ignoring", getSerialNumber());
             return;
         }
-        mLogcatReceiver = new LogCatReceiver();
+        mLogcatReceiver = createLogcatReceiver();
         mLogcatReceiver.start();
     }
 
@@ -1389,7 +1387,7 @@ class TestDevice implements IManagedTestDevice {
             // DeviceNotAvailableException for this method
             CollectingByteOutputReceiver receiver = new CollectingByteOutputReceiver();
             // add -d parameter to make this a non blocking call
-            getIDevice().executeShellCommand(LOGCAT_CMD + " -d", receiver);
+            getIDevice().executeShellCommand(LogcatReceiver.LOGCAT_CMD + " -d", receiver);
             output = receiver.getOutput();
         } catch (IOException e) {
             CLog.w("Failed to get logcat dump from %s: ", getSerialNumber(), e.getMessage());
@@ -1417,47 +1415,12 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Factory method to create a {@link LogCatReceiver}.
+     * Factory method to create a {@link LogcatReceiver}.
      * <p/>
      * Exposed for unit testing.
      */
-    LogCatReceiver createLogcatReceiver() {
-        return new LogCatReceiver();
-    }
-
-    /**
-     * A class used to capture the logcat. Will repeat the command as long as it is not canceled.
-     */
-    class LogCatReceiver {
-        private BackgroundDeviceAction mDeviceAction;
-        private LargeOutputReceiver mReceiver;
-
-        public LogCatReceiver() {
-            mReceiver = new LargeOutputReceiver(LOGCAT_DESC, getSerialNumber(),
-                    mOptions.getMaxLogcatFileSize());
-            // FIXME: remove mLogStartDelay. Currently delay starting logcat, as starting
-            // immediately after a device comes online has caused adb instability
-            mDeviceAction = new BackgroundDeviceAction(LOGCAT_CMD, LOGCAT_DESC, TestDevice.this,
-                    mReceiver, mLogStartDelay);
-        }
-
-        public void start() {
-            mDeviceAction.start();
-        }
-
-        public void stop() {
-            mDeviceAction.cancel();
-            mReceiver.cancel();
-            mReceiver.delete();
-        }
-
-        public InputStreamSource getLogcatData() {
-            return mReceiver.getData();
-        }
-
-        public void clear() {
-            mReceiver.clear();
-        }
+    LogcatReceiver createLogcatReceiver() {
+        return new LogcatReceiver(this, mOptions.getMaxLogcatFileSize(), mLogStartDelay);
     }
 
     /**

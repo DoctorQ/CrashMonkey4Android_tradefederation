@@ -23,7 +23,6 @@ import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
-import com.android.tradefed.device.TestDevice.LogCatReceiver;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
@@ -319,7 +318,7 @@ public class TestDeviceTest extends TestCase {
         final String input2 = "this is the second output of greater than 10 bytes.";
         final String input3 = "<10bytes";
         final Object notifier = new Object();
-        LogCatReceiver receiver = null;
+        LogcatReceiver receiver = null;
 
         // mock the call to get system build id
         EasyMock.expect(mMockIDevice.getProperty((String)EasyMock.anyObject())).andStubReturn("1");
