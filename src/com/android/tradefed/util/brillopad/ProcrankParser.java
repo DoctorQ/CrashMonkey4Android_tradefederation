@@ -13,13 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ILineParser;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
+import com.android.tradefed.util.brillopad.item.ProcrankItem;
 
 import java.util.HashMap;
 import java.util.List;
@@ -28,24 +25,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * A {@link ILineParser} to handle the Procrank section of the bugreport.  Memory values returned
- * are in units of kiloBytes
+ * A {@link IParser} to handle the output of {@code procrank}.  Memory values returned are in units
+ * of kilobytes.
  */
-public class ProcRankParser implements IBlockParser {
-    public static final String SECTION_NAME = "PROCRANK";
-
-    private int mNumFields = -1;
-    private String[] mFieldNames = null;
-
+public class ProcrankParser implements IParser {
     /** Match a memory amount, such as "12345K" */
     private static final Pattern NUMBER_PAT = Pattern.compile("(\\d+)([BKMGbkmg])?");
 
     /** Match the end of the Procrank table, determined by three sets of "------". */
     private static final Pattern END_PAT = Pattern.compile("^\\s+-{6}\\s+-{6}\\s+-{6}");
 
+    private int mNumFields = -1;
+    private String[] mFieldNames = null;
+
     /**
      * A utility function to parse a memory amount, such as "12345K", and return the number of
-     * kiloBytes that the amount represents.
+     * kilobytes that the amount represents.
      */
     private static Integer parseMem(String val) {
         Integer count = null;
@@ -74,11 +69,10 @@ public class ProcRankParser implements IBlockParser {
      * {@inheritDoc}
      */
     @Override
-    public void parseBlock(List<String> block, ItemList itemlist) {
-        GenericMapItem<String, Map<String, Integer>> output =
-                new GenericMapItem<String, Map<String, Integer>>(SECTION_NAME);
+    public ProcrankItem parse(List<String> lines) {
+        ProcrankItem item = new ProcrankItem();
 
-        for (String line : block) {
+        for (String line : lines) {
             // If we have reached the end.
             Matcher endMatcher = END_PAT.matcher(line);
             if (endMatcher.matches()) {
@@ -117,9 +111,10 @@ public class ProcRankParser implements IBlockParser {
                 CLog.w("Skipping line which contains invalid format: %s", line);
                 continue;
             }
-            output.put(cmdline, valueMap);
+            item.put(cmdline, valueMap);
         }
-        itemlist.addItem(output);
+
+        return item;
     }
 }
 

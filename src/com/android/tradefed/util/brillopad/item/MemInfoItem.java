@@ -16,20 +16,14 @@
 package com.android.tradefed.util.brillopad.item;
 
 /**
- * Stub item used for testing.
+ * An {@link IItem} used to store the memory info output.
  */
-public class StubAbstractItem extends AbstractItem {
-    private final static String[] ALLOWED_ATTRIBUTES = {"string", "integer"};
+public class MemInfoItem extends GenericMapItem<String, Integer> {
+    private static final long serialVersionUID = 2648395553885243585L;
 
-    StubAbstractItem() {
-        super(ALLOWED_ATTRIBUTES);
-    }
+    public static final String TYPE = "MEMORY INFO";
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public StubAbstractItem merge(IItem other) throws ConflictingItemException {
-        return null;
+    public MemInfoItem() {
+        super(TYPE);
     }
 }

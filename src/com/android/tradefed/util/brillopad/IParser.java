@@ -15,25 +15,24 @@
  */
 package com.android.tradefed.util.brillopad;
 
-// note: import used for javadoc
 import com.android.tradefed.util.brillopad.item.IItem;
 
 import java.util.List;
 
 /**
- * This interface defines the behavior for a block-oriented parser.  The parser will receive a block
- * of input that it should consider complete.  It should do whatever is necessary to parse the input
- * and commit the parsed data as arbitrarily many {@link IItem} instances in the passed
- * {@link ItemList}.  Furthermore, the parser should be robust against invalid input -- the input
- * format may drift over time.
+ * An interface which defines the behavior for a parser.  The parser will receive a block of data
+ * that it can consider complete.  It parses the input and returns a single {@link IItem} instance.
+ * Furthermore, the parser should be robust against invalid input -- the input format may drift over
+ * time.
  */
-public interface IBlockParser {
+public interface IParser {
 
     /**
-     * Parses a block of input, and stores the parsed {@link IItem}s in the passed {@link ItemList}.
-     * <p/>
-     * This method will be called at most once per parser instance.
+     * Parses a list of {@link String} objects and returns a {@link IItem}.
+     *
+     * @param lines A list of {@link String} objects.
+     * @return The parsed {@link IItem} object.
      */
-    public void parseBlock(List<String> input, ItemList itemlist);
+    public IItem parse(List<String> lines);
 }
 

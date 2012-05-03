@@ -13,22 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad.item;
 
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ItemList;
-
-import java.util.List;
+import java.util.Map;
 
 /**
- * A Section Parser intended to consume unknown sections of the bugreport
+ * An {@link IItem} used to procrank info.
  */
-public class NoopSectionParser implements IBlockParser {
-    public static final String SECTION_NAME = "unknown";
+public class ProcrankItem extends GenericMapItem<String, Map<String, Integer>> {
 
-    @Override
-    public void parseBlock(List<String> block, ItemList itemlist) {
-        // ignore
+    private static final long serialVersionUID = 8221576260029022888L;
+
+    public static final String TYPE = "PROCRANK";
+
+    public ProcrankItem() {
+        super(TYPE);
     }
 }
-

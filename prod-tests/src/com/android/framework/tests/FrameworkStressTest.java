@@ -30,12 +30,8 @@ import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.brillopad.BugreportParser;
-import com.android.tradefed.util.brillopad.ItemList;
-import com.android.tradefed.util.brillopad.item.GenericMapItem;
-import com.android.tradefed.util.brillopad.item.IItem;
-import com.android.tradefed.util.brillopad.section.syslog.AnrParser;
-import com.android.tradefed.util.brillopad.section.syslog.JavaCrashParser;
-import com.android.tradefed.util.brillopad.section.syslog.NativeCrashParser;
+import com.android.tradefed.util.brillopad.item.BugreportItem;
+import com.android.tradefed.util.brillopad.item.LogcatItem;
 
 import junit.framework.Assert;
 
@@ -82,7 +78,7 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
         mTestDevice.runInstrumentationTests(runner, collectingListener, listener);
         // Retrieve bugreport
         BugreportParser parser = new BugreportParser();
-        ItemList bugreport = null;
+        BugreportItem bugreport = null;
         InputStreamSource bugSource = mTestDevice.getBugreport();
 
         try {
@@ -96,27 +92,14 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
         }
 
         Map<String, String> stressTestMetrics = new HashMap<String, String>();
-        Integer numAnrs = 0;
-        Integer numJavaCrashes = 0;
-        Integer numNativeCrashes = 0;
         Integer numIterations = 0;
         Integer numSuccessfulIterations = 0;
 
-        IItem item = bugreport.getFirstItemByType(AnrParser.SECTION_NAME);
-        if (item != null) {
-            Map<String, String> output = (GenericMapItem<String, String>) item;
-            numAnrs = output.size();
-        }
-        item = bugreport.getFirstItemByType(JavaCrashParser.SECTION_NAME);
-        if (item != null) {
-            Map<String, String> output = (GenericMapItem<String, String>) item;
-            numJavaCrashes = output.size();
-        }
-        item = bugreport.getFirstItemByType(NativeCrashParser.SECTION_NAME);
-        if (item != null) {
-            Map<String, String> output = (GenericMapItem<String, String>) item;
-            numNativeCrashes = output.size();
-        }
+        LogcatItem systemLog = bugreport.getSystemLog();
+        Integer numAnrs = systemLog.getAnrs().size();
+        Integer numJavaCrashes = systemLog.getJavaCrashes().size();
+        Integer numNativeCrashes = systemLog.getNativeCrashes().size();
+
         // Fetch the last iteration count from the InstrumentationTestResult. We only expect to have
         // one test, and we take the result from the first test result.
         Collection<TestResult> testResults =

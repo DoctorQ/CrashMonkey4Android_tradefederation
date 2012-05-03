@@ -13,11 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad.section;
+package com.android.tradefed.util.brillopad;
 
-import com.android.tradefed.util.RegexTrie;
-import com.android.tradefed.util.brillopad.IBlockParser;
-import com.android.tradefed.util.brillopad.ItemList;
+import com.android.tradefed.util.brillopad.item.IItem;
 
 import junit.framework.TestCase;
 
@@ -35,13 +33,17 @@ public class AbstractSectionParserTest extends TestCase {
         super.setUp();
         mParser = new AbstractSectionParser() {
             @Override
-            public void addDefaultSectionParsers(RegexTrie<IBlockParser> parsers) {
-                // ignore
+            public IItem parse(List<String> lines) {
+                for (String line : lines) {
+                    parseLine(line);
+                }
+                commit();
+                return null;
             }
         };
     }
 
-    private static class FakeBlockParser implements IBlockParser {
+    private static class FakeBlockParser implements IParser {
         private String mExpected = null;
         private int mCalls = 0;
 
@@ -54,10 +56,11 @@ public class AbstractSectionParserTest extends TestCase {
         }
 
         @Override
-        public void parseBlock(List<String> input, ItemList itemlist) {
+        public IItem parse(List<String> input) {
             assertEquals(1, input.size());
             assertEquals("parseBlock() got unexpected input!", mExpected, input.get(0));
             mCalls += 1;
+            return null;
         }
     }
 
@@ -83,12 +86,12 @@ public class AbstractSectionParserTest extends TestCase {
             lines.add(String.format(lineFormat, i));
         }
 
-        mParser.parseBlock(lines, null);
+        mParser.parse(lines);
 
         // Verify that all the parsers were run
         for (int i = 0; i < nParsers; ++i) {
-            assertEquals(String.format("Parser %d has wrong call count!", i),
-                    1, parsers[i].getCalls());
+            assertEquals(String.format("Parser %d has wrong call count!", i), 1,
+                    parsers[i].getCalls());
         }
     }
 }

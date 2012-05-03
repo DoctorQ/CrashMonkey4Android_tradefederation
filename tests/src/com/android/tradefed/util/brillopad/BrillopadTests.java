@@ -16,11 +16,7 @@
 package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.testtype.DeviceTestSuite;
-import com.android.tradefed.util.brillopad.item.AbstractItemTest;
-import com.android.tradefed.util.brillopad.section.AbstractSectionParserTest;
-import com.android.tradefed.util.brillopad.section.MemInfoParserTest;
-import com.android.tradefed.util.brillopad.section.ProcRankParserTest;
-import com.android.tradefed.util.brillopad.section.SystemPropParserTest;
+import com.android.tradefed.util.brillopad.item.GenericItemTest;
 
 import junit.framework.Test;
 
@@ -33,18 +29,19 @@ public class BrillopadTests extends DeviceTestSuite {
 
     public BrillopadTests() {
         super();
-        addTestSuite(AbstractBlockParserTest.class);
+
+        addTestSuite(AbstractSectionParserTest.class);
+        addTestSuite(AnrParserTest.class);
         addTestSuite(BugreportParserTest.class);
-        addTestSuite(ItemListTest.class);
+        addTestSuite(JavaCrashParserTest.class);
+        addTestSuite(LogcatParserTest.class);
+        addTestSuite(MemInfoParserTest.class);
+        addTestSuite(NativeCrashParserTest.class);
+        addTestSuite(ProcrankParserTest.class);
+        addTestSuite(SystemPropsParserTest.class);
 
         // item
-        addTestSuite(AbstractItemTest.class);
-
-        // section
-        addTestSuite(AbstractSectionParserTest.class);
-        addTestSuite(MemInfoParserTest.class);
-        addTestSuite(ProcRankParserTest.class);
-        addTestSuite(SystemPropParserTest.class);
+        addTestSuite(GenericItemTest.class);
     }
 
     public static Test suite() {
