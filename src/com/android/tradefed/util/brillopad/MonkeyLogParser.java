@@ -17,9 +17,11 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.util.brillopad.item.AnrItem;
 import com.android.tradefed.util.brillopad.item.GenericLogcatItem;
 import com.android.tradefed.util.brillopad.item.MonkeyLogItem;
 import com.android.tradefed.util.brillopad.item.MonkeyLogItem.DroppedCategory;
+import com.android.tradefed.util.brillopad.item.TracesItem;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -37,15 +39,15 @@ import java.util.regex.Pattern;
  * A {@link IParser} to parse monkey logs.
  */
 public class MonkeyLogParser implements IParser {
-    private final static Pattern THROTTLE = Pattern.compile(
+    private static final Pattern THROTTLE = Pattern.compile(
             "adb shell monkey.* --throttle (\\d+).*");
-    private final static Pattern SEED_AND_TARGET_COUNT = Pattern.compile(
+    private static final Pattern SEED_AND_TARGET_COUNT = Pattern.compile(
             ":Monkey: seed=(\\d+) count=(\\d+)");
-    private final static Pattern SECURITY_EXCEPTIONS = Pattern.compile(
+    private static final Pattern SECURITY_EXCEPTIONS = Pattern.compile(
             "adb shell monkey.* --ignore-security-exceptions.*");
 
-    private final static Pattern PACKAGES = Pattern.compile(":AllowPackage: (\\S+)");
-    private final static Pattern CATEGORIES = Pattern.compile(":IncludeCategory: (\\S+)");
+    private static final Pattern PACKAGES = Pattern.compile(":AllowPackage: (\\S+)");
+    private static final Pattern CATEGORIES = Pattern.compile(":IncludeCategory: (\\S+)");
 
     private static final Pattern START_UPTIME = Pattern.compile(
             "# (.*) - device uptime = (\\d+\\.\\d+): Monkey command used for this test:");
@@ -53,28 +55,32 @@ public class MonkeyLogParser implements IParser {
             "# (.*) - device uptime = (\\d+\\.\\d+): Monkey command ran for: " +
             "(\\d+):(\\d+) \\(mm:ss\\)");
 
-    private final static Pattern INTERMEDIATE_COUNT = Pattern.compile(
+    private static final Pattern INTERMEDIATE_COUNT = Pattern.compile(
             "\\s+// Sending event #(\\d+)");
-    private final static Pattern FINISHED = Pattern.compile("// Monkey finished");
-    private final static Pattern FINAL_COUNT = Pattern.compile("Events injected: (\\d+)");
+    private static final Pattern FINISHED = Pattern.compile("// Monkey finished");
+    private static final Pattern FINAL_COUNT = Pattern.compile("Events injected: (\\d+)");
 
-    private final static Pattern DROPPED_KEYS = Pattern.compile(":Dropped: .*keys=(\\d+).*");
-    private final static Pattern DROPPED_POINTERS = Pattern.compile(
+    private static final Pattern DROPPED_KEYS = Pattern.compile(":Dropped: .*keys=(\\d+).*");
+    private static final Pattern DROPPED_POINTERS = Pattern.compile(
             ":Dropped: .*pointers=(\\d+).*");
-    private final static Pattern DROPPED_TRACKBALLS = Pattern.compile(
+    private static final Pattern DROPPED_TRACKBALLS = Pattern.compile(
             ":Dropped: .*trackballs=(\\d+).*");
-    private final static Pattern DROPPED_FLIPS = Pattern.compile(":Dropped: .*flips=(\\d+).*");
-    private final static Pattern DROPPED_ROTATIONS = Pattern.compile(
+    private static final Pattern DROPPED_FLIPS = Pattern.compile(":Dropped: .*flips=(\\d+).*");
+    private static final Pattern DROPPED_ROTATIONS = Pattern.compile(
             ":Dropped: .*rotations=(\\d+).*");
 
-    private final static Pattern ANR = Pattern.compile(
+    private static final Pattern ANR = Pattern.compile(
             "// NOT RESPONDING: (\\S+) \\(pid (\\d+)\\)");
-    private final static Pattern JAVA_CRASH = Pattern.compile(
+    private static final Pattern JAVA_CRASH = Pattern.compile(
             "// CRASH: (\\S+) \\(pid (\\d+)\\)");
+
+    private static final Pattern TRACES_START = Pattern.compile("anr traces:");
+    private static final Pattern TRACES_STOP = Pattern.compile("// anr traces status was \\d+");
 
     private boolean mMatchingAnr = false;
     private boolean mMatchingJavaCrash = false;
-    private List<String> mCrash = null;
+    private boolean mMatchingTraces = false;
+    private List<String> mBlock = null;
     private String mApp = null;
     private int mPid = 0;
 
@@ -126,6 +132,8 @@ public class MonkeyLogParser implements IParser {
      * Parse a line of input.
      */
     private void parseLine(String line) {
+        Matcher m;
+
         if (mMatchingAnr || mMatchingJavaCrash) {
             if (mMatchingJavaCrash) {
                 line = line.replace("// ", "");
@@ -133,9 +141,9 @@ public class MonkeyLogParser implements IParser {
             if ("".equals(line)) {
                 GenericLogcatItem crash;
                 if (mMatchingAnr) {
-                    crash = new AnrParser().parse(mCrash);
+                    crash = new AnrParser().parse(mBlock);
                 } else {
-                    crash = new JavaCrashParser().parse(mCrash);
+                    crash = new JavaCrashParser().parse(mBlock);
                 }
                 crash.setPid(mPid);
                 crash.setApp(mApp);
@@ -143,16 +151,35 @@ public class MonkeyLogParser implements IParser {
 
                 mMatchingAnr = false;
                 mMatchingJavaCrash = false;
-                mCrash = null;
+                mBlock = null;
                 mApp = null;
                 mPid = 0;
             } else {
-                mCrash.add(line);
+                mBlock.add(line);
             }
             return;
         }
 
-        Matcher m = THROTTLE.matcher(line);
+        if (mMatchingTraces) {
+            m = TRACES_STOP.matcher(line);
+            if (m.matches()) {
+                TracesItem traces = new TracesParser().parse(mBlock);
+
+                // Set the trace if the crash is an ANR and if the app for the crash and trace match
+                if (traces != null && traces.getApp() != null && traces.getStack() != null &&
+                        mMonkeyLog.getCrash() instanceof AnrItem &&
+                        traces.getApp().equals(mMonkeyLog.getCrash().getApp())) {
+                    ((AnrItem) mMonkeyLog.getCrash()).setTrace(traces.getStack());
+                }
+
+                mMatchingTraces = false;
+                mBlock = null;
+            } else {
+                mBlock.add(line);
+            }
+        }
+
+        m = THROTTLE.matcher(line);
         if (m.matches()) {
             mMonkeyLog.setThrottle(Integer.parseInt(m.group(1)));
         }
@@ -221,15 +248,20 @@ public class MonkeyLogParser implements IParser {
         if (m.matches()) {
             mApp = m.group(1);
             mPid = Integer.parseInt(m.group(2));
-            mCrash = new LinkedList<String>();
+            mBlock = new LinkedList<String>();
             mMatchingAnr = true;
         }
         m = JAVA_CRASH.matcher(line);
         if (m.matches()) {
             mApp = m.group(1);
             mPid = Integer.parseInt(m.group(2));
-            mCrash = new LinkedList<String>();
+            mBlock = new LinkedList<String>();
             mMatchingJavaCrash = true;
+        }
+        m = TRACES_START.matcher(line);
+        if (m.matches()) {
+            mBlock = new LinkedList<String>();
+            mMatchingTraces = true;
         }
     }
 

@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
 
 import junit.framework.TestCase;
@@ -79,6 +80,27 @@ public class BugreportParserTest extends TestCase {
                 "[gsm.version.ril-impl]: [android moto-ril-multimode 1.0]",
                 "",
                 "------ SECTION ------",
+                "",
+                "------ VM TRACES AT LAST ANR (/data/anr/traces.txt: 2012-04-25 17:17:08) ------",
+                "",
+                "",
+                "----- pid 2887 at 2012-04-25 17:17:08 -----",
+                "Cmd line: com.android.package",
+                "",
+                "DALVIK THREADS:",
+                "(mutexes: tll=0 tsl=0 tscl=0 ghl=0)",
+                "",
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)",
+                "",
+                "----- end 2887 -----",
+                "",
+                "------ SECTION ------",
                 "");
 
         BugreportItem bugreport = new BugreportParser().parse(lines);
@@ -95,6 +117,8 @@ public class BugreportParserTest extends TestCase {
         assertEquals(parseTime("2012-04-25 09:55:47.799"), bugreport.getSystemLog().getStartTime());
         assertEquals(parseTime("2012-04-25 18:33:27.273"), bugreport.getSystemLog().getStopTime());
         assertEquals(3, bugreport.getSystemLog().getEvents().size());
+        assertEquals(1, bugreport.getSystemLog().getAnrs().size());
+        assertNotNull(bugreport.getSystemLog().getAnrs().get(0).getTrace());
 
         assertNotNull(bugreport.getSystemProps());
         assertEquals(4, bugreport.getSystemProps().size());
@@ -119,6 +143,140 @@ public class BugreportParserTest extends TestCase {
         assertNotNull(bugreport.getSystemLog());
         assertEquals(parseTime("1999-01-01 01:02:03.000"), bugreport.getSystemLog().getStartTime());
         assertEquals(parseTime("1999-01-01 01:02:04.000"), bugreport.getSystemLog().getStopTime());
+    }
+
+    /**
+     * Test that the trace is set correctly if there is only one ANR.
+     */
+    public void testSetAnrTrace_single() {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 2012-04-25 20:45:10",
+                "========================================================",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "04-25 17:17:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.package",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:17:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "",
+                "------ VM TRACES AT LAST ANR (/data/anr/traces.txt: 2012-04-25 17:17:08) ------",
+                "",
+                "----- pid 2887 at 2012-04-25 17:17:08 -----",
+                "Cmd line: com.android.package",
+                "",
+                "DALVIK THREADS:",
+                "(mutexes: tll=0 tsl=0 tscl=0 ghl=0)",
+                "",
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)",
+                "",
+                "----- end 2887 -----",
+                "");
+
+        List<String> expectedStack = Arrays.asList(
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)");
+
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(1, bugreport.getSystemLog().getAnrs().size());
+        assertEquals(ArrayUtil.join("\n", expectedStack),
+                bugreport.getSystemLog().getAnrs().get(0).getTrace());
+    }
+
+    /**
+     * Test that the trace is set correctly if there are multiple ANRs.
+     */
+    public void testSetAnrTrace_multiple() {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 2012-04-25 20:45:10",
+                "========================================================",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "04-25 17:17:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.package",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:17:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "04-25 17:18:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.package",
+                "04-25 17:18:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:18:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:18:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "04-25 17:19:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.different.pacakge",
+                "04-25 17:19:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:19:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:19:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "",
+                "------ VM TRACES AT LAST ANR (/data/anr/traces.txt: 2012-04-25 17:18:08) ------",
+                "",
+                "----- pid 2887 at 2012-04-25 17:17:08 -----",
+                "Cmd line: com.android.package",
+                "",
+                "DALVIK THREADS:",
+                "(mutexes: tll=0 tsl=0 tscl=0 ghl=0)",
+                "",
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)",
+                "",
+                "----- end 2887 -----",
+                "");
+
+        List<String> expectedStack = Arrays.asList(
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)");
+
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(3, bugreport.getSystemLog().getAnrs().size());
+        assertNull(bugreport.getSystemLog().getAnrs().get(0).getTrace());
+        assertEquals(ArrayUtil.join("\n", expectedStack),
+                bugreport.getSystemLog().getAnrs().get(1).getTrace());
+        assertNull(bugreport.getSystemLog().getAnrs().get(2).getTrace());
+    }
+
+    /**
+     * Test that the trace is set correctly if there is not traces file.
+     */
+    public void testSetAnrTrace_no_traces() {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 2012-04-25 20:45:10",
+                "========================================================",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "04-25 17:17:08.445   312   366 E ActivityManager: ANR (application not responding) in process: com.android.package",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Reason: keyDispatchingTimedOut",
+                "04-25 17:17:08.445   312   366 E ActivityManager: Load: 0.71 / 0.83 / 0.51",
+                "04-25 17:17:08.445   312   366 E ActivityManager: 33% TOTAL: 21% user + 11% kernel + 0.3% iowait",
+                "",
+                "*** NO ANR VM TRACES FILE (/data/anr/traces.txt): No such file or directory",
+                "");
+
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(1, bugreport.getSystemLog().getAnrs().size());
+        assertNull(bugreport.getSystemLog().getAnrs().get(0).getTrace());
     }
 
     private Date parseTime(String timeStr) throws ParseException {

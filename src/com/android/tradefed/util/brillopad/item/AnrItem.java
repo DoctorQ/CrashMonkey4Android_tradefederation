@@ -47,6 +47,7 @@ public class AnrItem extends GenericLogcatItem {
     private static final String ACTIVITY = "ACTIVITY";
     private static final String REASON = "REASON";
     private static final String STACK = "STACK";
+    private static final String TRACE = "TRACE";
 
     private static final Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
         CpuUsageCategory.TOTAL.toString(),
@@ -56,7 +57,7 @@ public class AnrItem extends GenericLogcatItem {
         LoadCategory.LOAD_1.toString(),
         LoadCategory.LOAD_5.toString(),
         LoadCategory.LOAD_15.toString(),
-        ACTIVITY, REASON, STACK));
+        ACTIVITY, REASON, STACK, TRACE));
 
     /**
      * The constructor for {@link AnrItem}.
@@ -133,5 +134,19 @@ public class AnrItem extends GenericLogcatItem {
      */
     public void setStack(String stack) {
         setAttribute(STACK, stack);
+    }
+
+    /**
+     * Get the main trace for the ANR.
+     */
+    public String getTrace() {
+        return (String) getAttribute(TRACE);
+    }
+
+    /**
+     * Set the main trace for the ANR.
+     */
+    public void setTrace(String trace) {
+        setAttribute(TRACE, trace);
     }
 }

@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util.brillopad;
 
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.AnrItem;
 import com.android.tradefed.util.brillopad.item.JavaCrashItem;
 import com.android.tradefed.util.brillopad.item.MonkeyLogItem;
@@ -133,6 +134,27 @@ public class MonkeyLogParserTest extends TestCase {
                 "  10% 120/mediaserver: 6.8% user + 3.6% kernel / faults: 1189 minor",
                 "34% TOTAL: 19% user + 13% kernel + 0.2% iowait + 1% softirq",
                 "",
+                "procrank:",
+                "// procrank status was 0",
+                "anr traces:",
+                "",
+                "",
+                "----- pid 2887 at 2012-04-25 17:17:08 -----",
+                "Cmd line: com.google.android.youtube",
+                "",
+                "DALVIK THREADS:",
+                "(mutexes: tll=0 tsl=0 tscl=0 ghl=0)",
+                "",
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)",
+                "",
+                "----- end 2887 -----",
+                "// anr traces status was 0",
                 "** Monkey aborted due to error.",
                 "Events injected: 5322",
                 ":Sending rotation degree=0, persist=false",
@@ -144,6 +166,15 @@ public class MonkeyLogParserTest extends TestCase {
                 "",
                 "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------",
                 "");
+
+        List<String> expectedStack = Arrays.asList(
+                "\"main\" prio=5 tid=1 SUSPENDED",
+                "  | group=\"main\" sCount=1 dsCount=0 obj=0x00000001 self=0x00000001",
+                "  | sysTid=2887 nice=0 sched=0/0 cgrp=foreground handle=0000000001",
+                "  | schedstat=( 0 0 0 ) utm=5954 stm=1017 core=0",
+                "  at class.method1(Class.java:1)",
+                "  at class.method2(Class.java:2)",
+                "  at class.method2(Class.java:2)");
 
         MonkeyLogItem monkeyLog = new MonkeyLogParser().parse(lines);
         assertNotNull(monkeyLog);
@@ -168,6 +199,8 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals("com.google.android.youtube", monkeyLog.getCrash().getApp());
         assertEquals(3301, monkeyLog.getCrash().getPid().intValue());
         assertEquals("keyDispatchingTimedOut", ((AnrItem) monkeyLog.getCrash()).getReason());
+        assertEquals(ArrayUtil.join("\n", expectedStack),
+                ((AnrItem) monkeyLog.getCrash()).getTrace());
     }
 
     /**

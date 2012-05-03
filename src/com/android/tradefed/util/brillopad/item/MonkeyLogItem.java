@@ -37,25 +37,25 @@ public class MonkeyLogItem extends GenericItem {
         ROTATIONS
     }
 
-    private final static String TYPE = "MONKEY_LOG";
+    private static final String TYPE = "MONKEY_LOG";
 
-    private final static String START_TIME = "START_TIME";
-    private final static String STOP_TIME = "STOP_TIME";
-    private final static String PACKAGES = "PACKAGES";
-    private final static String CATEGORIES = "CATEGORIES";
-    private final static String THROTTLE = "THROTTLE";
-    private final static String SEED = "SEED";
-    private final static String TARGET_COUNT = "TARGET_COUNT";
-    private final static String IGNORE_SECURITY_EXCEPTIONS = "IGNORE_SECURITY_EXCEPTIONS";
-    private final static String TOTAL_DURATION = "TOTAL_TIME";
-    private final static String START_UPTIME_DURATION = "START_UPTIME";
-    private final static String STOP_UPTIME_DURATION = "STOP_UPTIME";
-    private final static String IS_FINISHED = "IS_FINISHED";
-    private final static String INTERMEDIATE_COUNT = "INTERMEDIATE_COUNT";
-    private final static String FINAL_COUNT = "FINAL_COUNT";
-    private final static String CRASH = "CRASH";
+    private static final String START_TIME = "START_TIME";
+    private static final String STOP_TIME = "STOP_TIME";
+    private static final String PACKAGES = "PACKAGES";
+    private static final String CATEGORIES = "CATEGORIES";
+    private static final String THROTTLE = "THROTTLE";
+    private static final String SEED = "SEED";
+    private static final String TARGET_COUNT = "TARGET_COUNT";
+    private static final String IGNORE_SECURITY_EXCEPTIONS = "IGNORE_SECURITY_EXCEPTIONS";
+    private static final String TOTAL_DURATION = "TOTAL_TIME";
+    private static final String START_UPTIME_DURATION = "START_UPTIME";
+    private static final String STOP_UPTIME_DURATION = "STOP_UPTIME";
+    private static final String IS_FINISHED = "IS_FINISHED";
+    private static final String INTERMEDIATE_COUNT = "INTERMEDIATE_COUNT";
+    private static final String FINAL_COUNT = "FINAL_COUNT";
+    private static final String CRASH = "CRASH";
 
-    private final static Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
+    private static final Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
             START_TIME, STOP_TIME, PACKAGES, CATEGORIES, THROTTLE, SEED, TARGET_COUNT,
             IGNORE_SECURITY_EXCEPTIONS, TOTAL_DURATION, START_UPTIME_DURATION, STOP_UPTIME_DURATION,
             IS_FINISHED, INTERMEDIATE_COUNT, FINAL_COUNT, CRASH,
