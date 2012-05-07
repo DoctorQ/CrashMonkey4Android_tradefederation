@@ -51,7 +51,7 @@ public class PanoramaBenchMarkTest implements IDeviceTest, IRemoteTest {
             Pattern.compile("(Total elapsed time:)\\s+(\\d+\\.\\d*)\\s+(seconds)");
 
     private static final String PANORAMA_TEST_KEY = "PanoramaElapsedTime";
-    private static final String TEST_TAG = "PanoramaBenchmarkTest";
+    private static final String TEST_TAG = "CameraLatency";
 
     /**
      * {@inheritDoc}
