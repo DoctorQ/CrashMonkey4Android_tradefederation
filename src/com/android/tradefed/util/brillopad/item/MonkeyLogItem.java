@@ -51,6 +51,7 @@ public class MonkeyLogItem extends GenericItem {
     private static final String START_UPTIME_DURATION = "START_UPTIME";
     private static final String STOP_UPTIME_DURATION = "STOP_UPTIME";
     private static final String IS_FINISHED = "IS_FINISHED";
+    private static final String NO_ACTIVITIES = "NO_ACTIVITIES";
     private static final String INTERMEDIATE_COUNT = "INTERMEDIATE_COUNT";
     private static final String FINAL_COUNT = "FINAL_COUNT";
     private static final String CRASH = "CRASH";
@@ -58,7 +59,7 @@ public class MonkeyLogItem extends GenericItem {
     private static final Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
             START_TIME, STOP_TIME, PACKAGES, CATEGORIES, THROTTLE, SEED, TARGET_COUNT,
             IGNORE_SECURITY_EXCEPTIONS, TOTAL_DURATION, START_UPTIME_DURATION, STOP_UPTIME_DURATION,
-            IS_FINISHED, INTERMEDIATE_COUNT, FINAL_COUNT, CRASH,
+            IS_FINISHED, NO_ACTIVITIES, INTERMEDIATE_COUNT, FINAL_COUNT, CRASH,
             DroppedCategory.KEYS.toString(),
             DroppedCategory.POINTERS.toString(),
             DroppedCategory.TRACKBALLS.toString(),
@@ -76,6 +77,7 @@ public class MonkeyLogItem extends GenericItem {
         setAttribute(THROTTLE, 0);
         setAttribute(IGNORE_SECURITY_EXCEPTIONS, false);
         setAttribute(IS_FINISHED, false);
+        setAttribute(NO_ACTIVITIES, false);
         setAttribute(INTERMEDIATE_COUNT, 0);
     }
 
@@ -246,6 +248,21 @@ public class MonkeyLogItem extends GenericItem {
     public void setIsFinished(boolean finished) {
         setAttribute(IS_FINISHED, finished);
     }
+
+    /**
+     * Get if the monkey run aborted due to no activies to run.
+     */
+    public boolean getNoActivities() {
+        return (Boolean) getAttribute(NO_ACTIVITIES);
+    }
+
+    /**
+     * Set if the monkey run aborted due to no activies to run.
+     */
+    public void setNoActivities(boolean noActivities) {
+        setAttribute(NO_ACTIVITIES, noActivities);
+    }
+
 
     /**
      * Get the intermediate count for the monkey run.

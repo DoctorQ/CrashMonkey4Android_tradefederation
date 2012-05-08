@@ -88,20 +88,25 @@ public class MonkeyLogParserFuncTest extends TestCase {
                 monkeyLog.getIgnoreSecurityExceptions()));
         sb.append(String.format("  Packages: %s\n", monkeyLog.getPackages()));
         sb.append(String.format("  Categories: %s\n", monkeyLog.getCategories()));
-        sb.append(String.format("  Status: finished=%b, final-count=%d, intermediate-count=%d\n",
-                monkeyLog.getIsFinished(), monkeyLog.getFinalCount(),
-                monkeyLog.getIntermediateCount()));
+        if (monkeyLog.getNoActivities()) {
+            sb.append("  Status: no-activities=true\n");
+        } else {
+            sb.append(String.format("  Status: finished=%b, final-count=%d, " +
+                    "intermediate-count=%d\n", monkeyLog.getIsFinished(), monkeyLog.getFinalCount(),
+                    monkeyLog.getIntermediateCount()));
+
+            sb.append("  Dropped events:");
+            for (DroppedCategory drop : DroppedCategory.values()) {
+                sb.append(String.format(" %s=%d,", drop.toString(),
+                        monkeyLog.getDroppedCount(drop)));
+            }
+            sb.deleteCharAt(sb.length()-1);
+            sb.append("\n");
+        }
         sb.append(String.format("  Run time: duration=%d ms, delta-uptime=%d (%d - %d) ms\n",
                 monkeyLog.getTotalDuration(),
                 monkeyLog.getStopUptimeDuration() - monkeyLog.getStartUptimeDuration(),
                 monkeyLog.getStopUptimeDuration(), monkeyLog.getStartUptimeDuration()));
-
-        sb.append("  Dropped events:");
-        for (DroppedCategory drop : DroppedCategory.values()) {
-            sb.append(String.format(" %s=%d,", drop.toString(), monkeyLog.getDroppedCount(drop)));
-        }
-        sb.deleteCharAt(sb.length()-1);
-        sb.append("\n");
 
         if (monkeyLog.getCrash() != null && monkeyLog.getCrash() instanceof AnrItem) {
             sb.append(String.format("  Stopped due to ANR\n"));
