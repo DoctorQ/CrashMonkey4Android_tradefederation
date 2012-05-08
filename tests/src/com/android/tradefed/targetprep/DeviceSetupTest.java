@@ -164,4 +164,13 @@ public class DeviceSetupTest extends TestCase {
             // expected
         }
     }
+
+    public void testBuildName() {
+        assertTrue("failed to verify IML74K", mDeviceSetup.isReleaseBuildName("IML74K"));
+        assertTrue("failed to verify GRJ90", mDeviceSetup.isReleaseBuildName("GRJ90"));
+        assertFalse("failed to reject MASTER", mDeviceSetup.isReleaseBuildName("MASTER"));
+        assertFalse("failed to reject 123456", mDeviceSetup.isReleaseBuildName("123456"));
+        assertFalse("failed to reject empty string", mDeviceSetup.isReleaseBuildName(""));
+        assertFalse("failed to reject random stuff", mDeviceSetup.isReleaseBuildName("!@#$%^&*("));
+    }
 }
