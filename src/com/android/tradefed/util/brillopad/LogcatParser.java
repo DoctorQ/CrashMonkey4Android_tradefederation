@@ -16,6 +16,7 @@
 package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.GenericLogcatItem;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
 
@@ -26,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -67,17 +69,27 @@ public class LogcatParser implements IParser {
         public Date mTime = null;
         public String mLevel = null;
         public String mTag = null;
+        public String mLastPreamble = null;
+        public String mProcPreamble = null;
         public List<String> mLines = new LinkedList<String>();
 
-        public LogcatData(Integer pid, Integer tid, Date time, String level, String tag) {
+        public LogcatData(Integer pid, Integer tid, Date time, String level, String tag,
+                String lastPreamble, String procPreamble) {
             mPid = pid;
             mTid = tid;
             mTime = time;
             mLevel = level;
             mTag = tag;
+            mLastPreamble = lastPreamble;
+            mProcPreamble = procPreamble;
         }
     }
 
+    private static final int MAX_BUFF_SIZE = 500;
+    private static final int MAX_LAST_PREAMBLE_SIZE = 15;
+    private static final int MAX_PROC_PREAMBLE_SIZE = 15;
+
+    private LinkedList<String> mRingBuffer = new LinkedList<String>();
     private String mYear = null;
 
     /**
@@ -157,7 +169,8 @@ public class LogcatParser implements IParser {
                 String key = encodeLine(pid, tid, level, tag);
                 LogcatData data;
                 if (!dataMap.containsKey(key) || AnrParser.START.matcher(msg).matches()) {
-                    data = new LogcatData(pid, tid, time, level, tag);
+                    data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
+                            getProcPreamble(pid));
                     dataMap.put(key, data);
                     dataList.add(data);
                 } else {
@@ -172,13 +185,20 @@ public class LogcatParser implements IParser {
                 String key = encodeLine(pid, tid, level, tag);
                 LogcatData data;
                 if (!dataMap.containsKey(key)) {
-                    data = new LogcatData(pid, tid, time, level, tag);
+                    data = new LogcatData(pid, tid, time, level, tag, getLastPreamble(),
+                            getProcPreamble(pid));
                     dataMap.put(key, data);
                     dataList.add(data);
                 } else {
                     data = dataMap.get(key);
                 }
                 data.mLines.add(msg);
+            }
+
+            // After parsing the line, add it the the buffer for the preambles.
+            mRingBuffer.add(line);
+            if (mRingBuffer.size() > MAX_BUFF_SIZE) {
+                mRingBuffer.removeFirst();
             }
         }
 
@@ -198,6 +218,8 @@ public class LogcatParser implements IParser {
                 item.setEventTime(data.mTime);
                 item.setPid(data.mPid);
                 item.setTid(data.mTid);
+                item.setLastPreamble(data.mLastPreamble);
+                item.setProcessPreamble(data.mProcPreamble);
                 logcat.addEvent(item);
             }
         }
@@ -239,5 +261,57 @@ public class LogcatParser implements IParser {
             CLog.e("Could not parse time string %s", timeStr);
             return null;
         }
+    }
+
+    /**
+     * Get the last {@value #MAX_LAST_PREAMBLE_SIZE} lines of logcat.
+     */
+    private String getLastPreamble() {
+        final int size = mRingBuffer.size();
+        List<String> preamble;
+        if (size > getLastPreambleSize()) {
+            preamble = mRingBuffer.subList(size - getLastPreambleSize(), size);
+        } else {
+            preamble = mRingBuffer;
+        }
+        return ArrayUtil.join("\n", preamble).trim();
+    }
+
+    /**
+     * Get the last {@value #MAX_PROC_PREAMBLE_SIZE} lines of logcat which match the given pid.
+     */
+    private String getProcPreamble(int pid) {
+        LinkedList<String> preamble = new LinkedList<String>();
+
+        ListIterator<String> li = mRingBuffer.listIterator(mRingBuffer.size());
+        while (li.hasPrevious()) {
+            String line = li.previous();
+
+            Matcher m = THREADTIME_LINE.matcher(line);
+            Matcher tm = TIME_LINE.matcher(line);
+            if ((m.matches() && pid == Integer.parseInt(m.group(2))) ||
+                    (tm.matches() && pid == Integer.parseInt(tm.group(4)))) {
+                preamble.addFirst(line);
+            }
+
+            if (preamble.size() == getProcPreambleSize()) {
+                return ArrayUtil.join("\n", preamble).trim();
+            }
+        }
+        return ArrayUtil.join("\n", preamble).trim();
+    }
+
+    /**
+     * Get the number of lines in the last preamble. Exposed for unit testing.
+     */
+    int getLastPreambleSize() {
+        return MAX_LAST_PREAMBLE_SIZE;
+    }
+
+    /**
+     * Get the number of lines in the process preamble. Exposed for unit testing.
+     */
+    int getProcPreambleSize() {
+        return MAX_PROC_PREAMBLE_SIZE;
     }
 }

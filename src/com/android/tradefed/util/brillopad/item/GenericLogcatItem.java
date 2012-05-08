@@ -29,9 +29,11 @@ public abstract class GenericLogcatItem extends GenericItem {
     private static final String PID = "PID";
     private static final String TID = "TID";
     private static final String APP = "APP";
+    private static final String LAST_PREAMBLE = "LAST_PREAMBLE";
+    private static final String PROC_PREAMBLE = "PROC_PREAMBLE";
 
     private static final Set<String> ATTRIBUTES = new HashSet<String>(Arrays.asList(
-            EVENT_TIME, PID, TID, APP));
+            EVENT_TIME, PID, TID, APP, LAST_PREAMBLE, PROC_PREAMBLE));
 
     /**
      * Constructor for {@link GenericLogcatItem}.
@@ -97,6 +99,34 @@ public abstract class GenericLogcatItem extends GenericItem {
      */
     public void setApp(String app) {
         setAttribute(APP, app);
+    }
+
+    /**
+     * Get the last preamble for of the event.
+     */
+    public String getLastPreamble() {
+        return (String) getAttribute(LAST_PREAMBLE);
+    }
+
+    /**
+     * Set the last preamble for of the event.
+     */
+    public void setLastPreamble(String preamble) {
+        setAttribute(LAST_PREAMBLE, preamble);
+    }
+
+    /**
+     * Get the process preamble for of the event.
+     */
+    public String getProcessPreamble() {
+        return (String) getAttribute(PROC_PREAMBLE);
+    }
+
+    /**
+     * Set the process preamble for of the event.
+     */
+    public void setProcessPreamble(String preamble) {
+        setAttribute(PROC_PREAMBLE, preamble);
     }
 
     /**

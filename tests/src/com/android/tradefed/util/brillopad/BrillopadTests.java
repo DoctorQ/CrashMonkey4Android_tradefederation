@@ -40,6 +40,7 @@ public class BrillopadTests extends DeviceTestSuite {
         addTestSuite(NativeCrashParserTest.class);
         addTestSuite(ProcrankParserTest.class);
         addTestSuite(SystemPropsParserTest.class);
+        addTestSuite(TracesParserTest.class);
 
         // item
         addTestSuite(GenericItemTest.class);

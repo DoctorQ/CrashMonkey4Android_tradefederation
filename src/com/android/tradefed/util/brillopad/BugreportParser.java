@@ -17,11 +17,13 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.util.brillopad.item.AnrItem;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
 import com.android.tradefed.util.brillopad.item.MemInfoItem;
 import com.android.tradefed.util.brillopad.item.ProcrankItem;
 import com.android.tradefed.util.brillopad.item.SystemPropsItem;
+import com.android.tradefed.util.brillopad.item.TracesItem;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,6 +46,7 @@ public class BugreportParser extends AbstractSectionParser {
     private static final String PROCRANK_SECTION_REGEX = "------ PROCRANK .*";
     private static final String SYSTEM_PROP_SECTION_REGEX = "------ SYSTEM PROPERTIES .*";
     private static final String SYSTEM_LOG_SECTION_REGEX = "------ SYSTEM LOG .*";
+    private static final String ANR_TRACES_SECTION_REGEX = "------ VM TRACES AT LAST ANR .*";
     private static final String NOOP_SECTION_REGEX = "------ .*";
 
     /**
@@ -122,6 +126,7 @@ public class BugreportParser extends AbstractSectionParser {
         addSectionParser(new MemInfoParser(), MEM_INFO_SECTION_REGEX);
         addSectionParser(new ProcrankParser(), PROCRANK_SECTION_REGEX);
         addSectionParser(new SystemPropsParser(), SYSTEM_PROP_SECTION_REGEX);
+        addSectionParser(new TracesParser(), ANR_TRACES_SECTION_REGEX);
         addSectionParser(mLogcatParser, SYSTEM_LOG_SECTION_REGEX);
         addSectionParser(new NoopParser(), NOOP_SECTION_REGEX);
     }
@@ -139,6 +144,29 @@ public class BugreportParser extends AbstractSectionParser {
             mBugreport.setProcrank((ProcrankItem) getSection(ProcrankItem.TYPE));
             mBugreport.setSystemLog((LogcatItem) getSection(LogcatItem.TYPE));
             mBugreport.setSystemProps((SystemPropsItem) getSection(SystemPropsItem.TYPE));
+
+            TracesItem traces = (TracesItem) getSection(TracesItem.TYPE);
+            if (traces != null && traces.getApp() != null && traces.getStack() != null &&
+                    mBugreport.getSystemLog() != null) {
+                addAnrTrace(mBugreport.getSystemLog().getAnrs(), traces.getApp(),
+                        traces.getStack());
+
+            }
+        }
+    }
+
+    /**
+     * Add the trace from {@link TracesItem} to the last seen {@link AnrItem} matching a given app.
+     */
+    private void addAnrTrace(List<AnrItem> anrs, String app, String trace) {
+        ListIterator<AnrItem> li = anrs.listIterator(anrs.size());
+
+        while (li.hasPrevious()) {
+            AnrItem anr = li.previous();
+            if (app.equals(anr.getApp())) {
+                anr.setTrace(trace);
+                return;
+            }
         }
     }
 
