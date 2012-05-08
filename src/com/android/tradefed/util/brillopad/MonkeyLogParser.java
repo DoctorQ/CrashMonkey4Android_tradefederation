@@ -47,12 +47,11 @@ public class MonkeyLogParser implements IParser {
     private final static Pattern PACKAGES = Pattern.compile(":AllowPackage: (\\S+)");
     private final static Pattern CATEGORIES = Pattern.compile(":IncludeCategory: (\\S+)");
 
-    private final static Pattern START_UPTIME = Pattern.compile(
-            "# (\\S+, \\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} \\S{2}) - " +
-            "device uptime = (\\d+\\.\\d+): Monkey command used for this test:");
-    private final static Pattern STOP_UPTIME = Pattern.compile(
-            "# (\\S+, \\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2} \\S{2}) - " +
-            "device uptime = (\\d+\\.\\d+): Monkey command ran for: (\\d+):(\\d+) \\(mm:ss\\)");
+    private static final Pattern START_UPTIME = Pattern.compile(
+            "# (.*) - device uptime = (\\d+\\.\\d+): Monkey command used for this test:");
+    private static final Pattern STOP_UPTIME = Pattern.compile(
+            "# (.*) - device uptime = (\\d+\\.\\d+): Monkey command ran for: " +
+            "(\\d+):(\\d+) \\(mm:ss\\)");
 
     private final static Pattern INTERMEDIATE_COUNT = Pattern.compile(
             "\\s+// Sending event #(\\d+)");
@@ -237,16 +236,25 @@ public class MonkeyLogParser implements IParser {
     /**
      * Parse the timestamp and return a date.
      *
-     * @param timeStr The timestamp in the format {@code E, MM/dd/yyyy hh:mm:ss a}.
+     * @param timeStr The timestamp in the format {@code E, MM/dd/yyyy hh:mm:ss a} or
+     * {@code EEE MMM dd HH:mm:ss zzz yyyy}.
      * @return The {@link Date}.
      */
     private Date parseTime(String timeStr) {
         try {
+            return new SimpleDateFormat("EEE MMM dd HH:mm:ss zzz yyyy").parse(timeStr);
+        } catch (ParseException e) {
+            CLog.v("Could not parse date %s with format EEE MMM dd HH:mm:ss zzz yyyy", timeStr);
+        }
+
+        try {
             return new SimpleDateFormat("E, MM/dd/yyyy hh:mm:ss a").parse(timeStr);
         } catch (ParseException e) {
-            CLog.e("Could not parse time string %s", timeStr);
-            return null;
+            CLog.v("Could not parse date %s with format E, MM/dd/yyyy hh:mm:ss a", timeStr);
         }
+
+        CLog.e("Could not parse date %s", timeStr);
+        return null;
     }
 
 }
