@@ -64,8 +64,9 @@ public class NativeCrashParser implements IParser {
                 stack.append("\n");
             }
         }
-
-        nc.setStack(stack.toString().trim());
+        if (nc != null) {
+            nc.setStack(stack.toString().trim());
+        }
         return nc;
     }
 }
