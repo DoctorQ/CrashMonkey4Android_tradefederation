@@ -89,6 +89,16 @@ public interface IEmail {
         public void setSubject(String subject) {
             mSubject = subject;
         }
+
+        public void setTos(String[] receipents){
+            int size = receipents.length;
+            if (mBccAddrs == null) {
+                mBccAddrs = new ArrayList<String>(size);
+            }
+            for (int i=0; i<size; i++){
+                mBccAddrs.add(receipents[i]);
+            }
+        }
         public void setBody(String body) {
             mBody = body;
         }
