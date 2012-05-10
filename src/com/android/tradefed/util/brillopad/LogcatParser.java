@@ -163,6 +163,7 @@ public class LogcatParser implements IParser {
      *
      * @return The {@link LogcatItem}.
      */
+    @Override
     public LogcatItem parse(List<String> lines) {
         for (String line : lines) {
             parseLine(line);
