@@ -295,6 +295,7 @@ public class MonkeyLogParserTest extends TestCase {
         // assertEquals(parseTime("2012-04-24 17:06:40"), monkeyLog.getStopTime());
     }
 
+    @SuppressWarnings("unused")
     private Date parseTime(String timeStr) throws ParseException {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return formatter.parse(timeStr);

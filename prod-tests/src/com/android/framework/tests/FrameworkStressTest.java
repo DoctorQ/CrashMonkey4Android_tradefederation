@@ -65,7 +65,6 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
     private static final String CURRENT_ITERATION_LABEL= "currentiterations";
 
     @Override
-    @SuppressWarnings("unchecked")
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         if (mSetupShellCommand != null) {

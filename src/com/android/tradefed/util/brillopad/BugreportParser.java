@@ -94,6 +94,7 @@ public class BugreportParser extends AbstractSectionParser {
      *
      * @return The {@link BugreportItem}.
      */
+    @Override
     public BugreportItem parse(List<String> lines) {
         setup();
         for (String line : lines) {

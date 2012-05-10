@@ -19,16 +19,17 @@ package com.android.media.tests;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
-
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.BugreportCollector;
-import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.ITestInvocationListener;
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+
+import junit.framework.Assert;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -38,11 +39,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
-
-import junit.framework.Assert;
+import java.util.regex.Pattern;
 
 /**
  * Camera zoom stress test that increments the camera's zoom level across the

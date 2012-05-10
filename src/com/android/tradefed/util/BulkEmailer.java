@@ -34,22 +34,22 @@ import java.io.IOException;
 public class BulkEmailer {
     @Option(name = "total-emails", description = "total number of emails to send",
             importance = Importance.IF_UNSET)
-    private final int mEmails = 0;
+    private int mEmails = 0;
 
     @Option(name = "recipients", description = "a comma separate list of recipient email addresses",
             importance = Importance.IF_UNSET)
-    private final String mRecipients = null;
+    private String mRecipients = null;
 
     @Option(name = "send-interval", description = "email send interval in milliseconds",
             importance = Importance.IF_UNSET)
-    private final int mInterval = 0;
+    private int mInterval = 0;
 
     @Option(name = "initial-burst", description = "initial burst of email to send",
             importance = Importance.IF_UNSET)
-    private final int mInitialBurst = 0;
+    private int mInitialBurst = 0;
 
     @Option(name = "sender", description = "the sender email.", importance = Importance.NEVER)
-    private final String mSender = "android.sync.battery.test@gmail.com";
+    private String mSender = "android.sync.battery.test@gmail.com";
 
     private static final String SUBJECT = "No emails to send";
     private static final String MESSAGE = "This is a test message!";

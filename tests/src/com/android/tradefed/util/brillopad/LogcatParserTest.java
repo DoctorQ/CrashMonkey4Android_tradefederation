@@ -304,10 +304,12 @@ public class LogcatParserTest extends TestCase {
                 "04-25 09:49:47.799  3064  3082 I tag: message 7");
 
         LogcatItem logcat = new LogcatParser("2012") {
+            @Override
             int getLastPreambleSize() {
                 return 3;
             }
 
+            @Override
             int getProcPreambleSize() {
                 return 3;
             }
