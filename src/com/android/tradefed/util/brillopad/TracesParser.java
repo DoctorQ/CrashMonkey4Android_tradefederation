@@ -81,6 +81,9 @@ public class TracesParser implements IParser {
                 return traces;
             }
         }
+        if (stack == null) {
+            return null;
+        }
         traces.setStack(stack.toString().trim());
         return traces;
     }
