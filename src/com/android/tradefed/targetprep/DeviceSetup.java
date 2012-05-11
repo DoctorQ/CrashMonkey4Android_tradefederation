@@ -28,6 +28,7 @@ import com.android.tradefed.log.LogUtil.CLog;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.regex.Pattern;
 
 /**
  * A {@link ITargetPreparer} that configures a device for testing based on provided {@link Option}s.
@@ -38,6 +39,8 @@ import java.util.Collection;
 public class DeviceSetup implements ITargetPreparer {
 
     private static final String LOG_TAG = "DeviceSetup";
+    private static final Pattern RELEASE_BUILD_NAME_PATTERN =
+            Pattern.compile("[A-Z]{3}\\d{2}[A-Z]?");
 
     @Option(name="wifi-network", description="the name of wifi network to connect to.")
     private String mWifiNetwork = null;
@@ -145,6 +148,8 @@ public class DeviceSetup implements ITargetPreparer {
                     device.getSerialNumber()));
         }
 
+        getFriendlyBuildName(device, buildInfo);
+
         configureSystemProperties(device);
 
         keepScreenOn(device);
@@ -158,6 +163,20 @@ public class DeviceSetup implements ITargetPreparer {
         device.clearErrorDialogs();
     }
 
+    /**
+     * Retrieves the friendly build name (ro.build.id) from device, and store it in buildinfo
+     *
+     * @param device
+     * @param buildInfo
+     * @throws DeviceNotAvailableException
+     */
+    private void getFriendlyBuildName(ITestDevice device, IBuildInfo buildInfo)
+            throws DeviceNotAvailableException {
+        String buildName = device.getProperty("ro.build.id");
+        if (isReleaseBuildName(buildName)) {
+            buildInfo.addBuildAttribute("friendly_name", buildName);
+        }
+    }
     /**
      * Configures device system properties.
      * <p/>
@@ -282,5 +301,9 @@ public class DeviceSetup implements ITargetPreparer {
                         device.getSerialNumber()));
             }
         }
+    }
+
+    protected boolean isReleaseBuildName(String name) {
+        return RELEASE_BUILD_NAME_PATTERN.matcher(name).matches();
     }
 }
