@@ -305,8 +305,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     public CommandScheduler() {
         initLogging();
 
-        // initialize the device manager
-        getDeviceManager().init();
+        initDeviceManager();
 
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
                 new ExecutableCommandComparator());
@@ -316,6 +315,32 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         // is used instead of a java.util.Timer because it offers advanced shutdown options
         mCommandTimer = new ScheduledThreadPoolExecutor(1);
         mRunLatch = new CountDownLatch(1);
+    }
+
+    /**
+     * Initialize the device manager, optionally using a global device filter if specified.
+     */
+    void initDeviceManager() {
+        // look for the environment variable that specifies a global config file
+        String globalConfigPath = System.getenv("TF_GLOBAL_CONFIG");
+        if (globalConfigPath != null) {
+            // TODO: the only config object we're interested in IDeviceSelectionOptions
+            // in future consider moving to a more specialized XML format rather than re-using
+            // configuration
+            try {
+                IConfiguration globalConfig = getConfigFactory().createConfigurationFromArgs(
+                        new String[] {globalConfigPath});
+                CLog.logAndDisplay(LogLevel.INFO, "Using global device filter config %s",
+                        globalConfigPath);
+                getDeviceManager().init(globalConfig.getDeviceRequirements());
+                return;
+            } catch (ConfigurationException e) {
+                CLog.e("Failed to read TF_GLOBAL_CONFIG file %s", globalConfigPath);
+                CLog.e(e);
+            }
+        }
+        // initialize the device manager with no global device filter
+        getDeviceManager().init();
     }
 
     /**
