@@ -751,6 +751,15 @@ public interface ITestDevice {
      */
     public boolean isAdbTcp();
 
+
+    /**
+     * @return <code>true</code> if device currently has adb root, <code>false</code> otherwise.
+     *
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public boolean isAdbRoot() throws DeviceNotAvailableException;
+
     /**
      * Switch device to adb-over-tcp mode.
      *
