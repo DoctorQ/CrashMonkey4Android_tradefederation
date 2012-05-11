@@ -22,6 +22,7 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.device.MockFileUtil;
+import com.android.tradefed.util.IRunUtil;
 
 import junit.framework.TestCase;
 
@@ -60,7 +61,12 @@ public class DefaultTestsZipInstallerTest extends TestCase {
                 files.add(SOME_PATH_2);
                 return files;
             };
-        };
+
+            @Override
+            IRunUtil getRunUtil() {
+                return EasyMock.createNiceMock(IRunUtil.class);
+            }
+         };
 
         mMockDevice = EasyMock.createMock(ITestDevice.class);
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
