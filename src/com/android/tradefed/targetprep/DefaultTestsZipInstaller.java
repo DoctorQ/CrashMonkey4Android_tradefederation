@@ -25,6 +25,8 @@ import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.util.Arrays;
@@ -147,9 +149,20 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             }
             CLog.d("Failed to delete dir %s on device %s on attempt %d of %d: stdout: %s",
                     fullEscapedPath, device.getSerialNumber(), i, RM_ATTEMPTS, result);
+            // do exponential backoff
+            getRunUtil().sleep(1000 * i * i);
         }
         throw new TargetSetupError(String.format("Failed to delete dir %s. rm output: %s",
                 fullEscapedPath, result));
+    }
+
+    /**
+     * Get the {@link IRunUtil} object to use.
+     * <p/>
+     * Exposed so unit tests can mock.
+     */
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 
     private static String buildRelPath(String... parts) {
