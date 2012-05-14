@@ -59,6 +59,8 @@ public class MonkeyLogParser implements IParser {
             "\\s+// Sending event #(\\d+)");
     private static final Pattern FINISHED = Pattern.compile("// Monkey finished");
     private static final Pattern FINAL_COUNT = Pattern.compile("Events injected: (\\d+)");
+    private static final Pattern NO_ACTIVITIES = Pattern.compile(
+            "\\*\\* No activities found to run, monkey aborted.");
 
     private static final Pattern DROPPED_KEYS = Pattern.compile(":Dropped: .*keys=(\\d+).*");
     private static final Pattern DROPPED_POINTERS = Pattern.compile(
@@ -223,6 +225,10 @@ public class MonkeyLogParser implements IParser {
         m = FINISHED.matcher(line);
         if (m.matches()) {
             mMonkeyLog.setIsFinished(true);
+        }
+        m = NO_ACTIVITIES.matcher(line);
+        if (m.matches()) {
+            mMonkeyLog.setNoActivities(true);
         }
         m = DROPPED_KEYS.matcher(line);
         if (m.matches()) {

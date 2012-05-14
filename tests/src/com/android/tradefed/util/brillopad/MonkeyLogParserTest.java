@@ -89,6 +89,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(242130, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(539210, monkeyLog.getStopUptimeDuration().longValue());
         assertTrue(monkeyLog.getIsFinished());
+        assertFalse(monkeyLog.getNoActivities());
         assertEquals(9900, monkeyLog.getIntermediateCount());
         assertEquals(10000, monkeyLog.getFinalCount().intValue());
         assertEquals(5, monkeyLog.getDroppedCount(DroppedCategory.KEYS).intValue());
@@ -194,6 +195,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(216480, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(471370, monkeyLog.getStopUptimeDuration().longValue());
         assertFalse(monkeyLog.getIsFinished());
+        assertFalse(monkeyLog.getNoActivities());
         assertEquals(5300, monkeyLog.getIntermediateCount());
         assertEquals(5322, monkeyLog.getFinalCount().intValue());
         assertNotNull(monkeyLog.getCrash());
@@ -266,6 +268,7 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals(232650, monkeyLog.getStartUptimeDuration().longValue());
         assertEquals(282530, monkeyLog.getStopUptimeDuration().longValue());
         assertFalse(monkeyLog.getIsFinished());
+        assertFalse(monkeyLog.getNoActivities());
         assertEquals(1600, monkeyLog.getIntermediateCount());
         assertEquals(1649, monkeyLog.getFinalCount().intValue());
         assertNotNull(monkeyLog.getCrash());
@@ -273,6 +276,51 @@ public class MonkeyLogParserTest extends TestCase {
         assertEquals("com.google.android.apps.maps", monkeyLog.getCrash().getApp());
         assertEquals(3161, monkeyLog.getCrash().getPid().intValue());
         assertEquals("java.lang.Exception", ((JavaCrashItem) monkeyLog.getCrash()).getException());
+    }
+
+    /**
+     * Test that a monkey can be parsed if there are no activities to run.
+     */
+    public void testParse_no_activities() throws ParseException {
+        List<String> lines = Arrays.asList(
+                "# Wednesday, 04/25/2012 01:37:12 AM - device uptime = 242.13: Monkey command used for this test:",
+                "adb shell monkey -p com.google.android.browser  -c android.intent.category.SAMPLE_CODE -c android.intent.category.CAR_DOCK -c android.intent.category.LAUNCHER -c android.intent.category.MONKEY -c android.intent.category.INFO  --ignore-security-exceptions --throttle 100  -s 528 -v -v -v 10000 ",
+                "",
+                ":Monkey: seed=528 count=10000",
+                ":AllowPackage: com.google.android.browser",
+                ":IncludeCategory: android.intent.category.LAUNCHER",
+                "** No activities found to run, monkey aborted.",
+                "",
+                "# Wednesday, 04/25/2012 01:42:09 AM - device uptime = 539.21: Monkey command ran for: 04:57 (mm:ss)",
+                "",
+                "----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+
+        MonkeyLogItem monkeyLog = new MonkeyLogParser().parse(lines);
+        assertNotNull(monkeyLog);
+        // FIXME: Add test back once time situation has been worked out.
+        // assertEquals(parseTime("2012-04-25 01:37:12"), monkeyLog.getStartTime());
+        // assertEquals(parseTime("2012-04-25 01:42:09"), monkeyLog.getStopTime());
+        assertEquals(1, monkeyLog.getPackages().size());
+        assertTrue(monkeyLog.getPackages().contains("com.google.android.browser"));
+        assertEquals(1, monkeyLog.getCategories().size());
+        assertTrue(monkeyLog.getCategories().contains("android.intent.category.LAUNCHER"));
+        assertEquals(100, monkeyLog.getThrottle());
+        assertEquals(528, monkeyLog.getSeed().intValue());
+        assertEquals(10000, monkeyLog.getTargetCount().intValue());
+        assertTrue(monkeyLog.getIgnoreSecurityExceptions());
+        assertEquals(4 * 60 * 1000 + 57 * 1000, monkeyLog.getTotalDuration().longValue());
+        assertEquals(242130, monkeyLog.getStartUptimeDuration().longValue());
+        assertEquals(539210, monkeyLog.getStopUptimeDuration().longValue());
+        assertFalse(monkeyLog.getIsFinished());
+        assertTrue(monkeyLog.getNoActivities());
+        assertEquals(0, monkeyLog.getIntermediateCount());
+        assertNull(monkeyLog.getFinalCount());
+        assertNull(monkeyLog.getDroppedCount(DroppedCategory.KEYS));
+        assertNull(monkeyLog.getDroppedCount(DroppedCategory.POINTERS));
+        assertNull(monkeyLog.getDroppedCount(DroppedCategory.TRACKBALLS));
+        assertNull(monkeyLog.getDroppedCount(DroppedCategory.FLIPS));
+        assertNull(monkeyLog.getDroppedCount(DroppedCategory.ROTATIONS));
+        assertNull(monkeyLog.getCrash());
     }
 
     /**
