@@ -1874,6 +1874,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * @{inheritDoc}
      */
+    @Override
     public boolean isAdbRoot() throws DeviceNotAvailableException {
         String output = executeShellCommand("id");
         return output.contains("uid=0(root)");
