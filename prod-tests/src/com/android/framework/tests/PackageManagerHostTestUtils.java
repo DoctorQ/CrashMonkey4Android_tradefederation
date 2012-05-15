@@ -22,7 +22,6 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
-
 import junit.framework.Assert;
 
 import java.io.File;
@@ -36,10 +35,13 @@ public class PackageManagerHostTestUtils extends Assert {
     private ITestDevice mDevice = null;
     private boolean mEmulatedExternalStorage = false;
 
-    // TODO: get this value from Android Environment instead of hardcoding
-    private static final String APP_PRIVATE_PATH = "/data/app-private/";
+    // TODO: get this value from Android Environment instead of hard coding
+    private static final String PRE_JB_APP_PRIVATE_PATH = "/data/app-private/";
+    private static final String JB_APP_PRIVATE_PATH = "/mnt/asec/";
     private static final String DEVICE_APP_PATH = "/data/app/";
     private static final String SDCARD_APP_PATH = "/mnt/secure/asec/";
+
+    private static String mAppPrivatePath = PRE_JB_APP_PRIVATE_PATH;
 
     private static final int MAX_WAIT_FOR_DEVICE_TIME = 120 * 1000;
 
@@ -57,10 +59,13 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Constructor takes the device to use
-     * @param device the {@link ITestDevice} to use when performing operations
+     * Constructor.
+     *
+     * @param device the {@link ITestDevice} to use when performing operations.
+     * @throws DeviceNotAvailableException
      */
-    public PackageManagerHostTestUtils(ITestDevice device) throws DeviceNotAvailableException {
+    public PackageManagerHostTestUtils(ITestDevice device)
+            throws DeviceNotAvailableException {
         mDevice = device;
         determineExternalStorageEmulation();
     }
@@ -71,7 +76,12 @@ public class PackageManagerHostTestUtils extends Assert {
      * @return path of forward-locked apps on the device
      */
     public static String getAppPrivatePath() {
-        return APP_PRIVATE_PATH;
+        return mAppPrivatePath;
+    }
+
+
+    public static void setAppPrivatePath(String path) {
+        mAppPrivatePath = path;
     }
 
     /**
@@ -242,7 +252,7 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method to determine if app was installed on SD card.
+     * Helper method to determine if app was installed as forward locked.
      *
      * @param packageName package name to check for
      * @return <code>true</code> if file exists, <code>false</code> otherwise.
@@ -250,7 +260,7 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public boolean doesAppExistAsForwardLocked(String packageName)
             throws DeviceNotAvailableException {
-        return doesRemoteFileExistContainingString(APP_PRIVATE_PATH, packageName);
+        return doesRemoteFileExistContainingString(mAppPrivatePath, packageName);
     }
 
     /**
@@ -443,6 +453,35 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
+     * Determine the location of the app private path.
+     *
+     * @param apkFile the {@link File} of test apk to determine packages' install path.
+     * @param pkgName the {@link String} pkgName of the test apk.
+     * @throws DeviceNotAvailableException
+     */
+    public void determinePrivateAppPath(File apkFile, String pkgName)
+            throws DeviceNotAvailableException {
+        String result = installFileForwardLocked(apkFile, true);
+        assertEquals(null, result);
+        waitForPackageManager();
+
+        // grep for package to make sure it is installed
+        assertTrue(doesPackageExist(pkgName));
+
+        // Determine path of secret path.
+        result = mDevice.executeShellCommand("pm path " + pkgName);
+        if (result.indexOf(PRE_JB_APP_PRIVATE_PATH) != -1) {
+            setAppPrivatePath(PRE_JB_APP_PRIVATE_PATH);
+        } else if (result.indexOf(JB_APP_PRIVATE_PATH) != -1) {
+            setAppPrivatePath(JB_APP_PRIVATE_PATH);
+        } else {
+            Assert.fail("Failed to locate private app path on device.");
+        }
+        CLog.d("Device private app path is: %s", getAppPrivatePath());
+        uninstallApp(pkgName);
+    }
+
+    /**
      * Returns whether the external storage is emulated or not.
      *
      * @return <code>true</code> if external storage is emulated, <code>false</code> otherwise.
@@ -450,7 +489,6 @@ public class PackageManagerHostTestUtils extends Assert {
     public boolean getIsExternalStorageEmulated() {
         return mEmulatedExternalStorage;
     }
-
 
     /**
      * Connect device to wifi.
