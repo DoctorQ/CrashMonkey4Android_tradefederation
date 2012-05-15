@@ -186,6 +186,24 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
+     * Test that {@link TestDevice#isAdbRoot()} for device without adb root.
+     */
+    public void testIsAdbRootForNonRoot() throws Exception {
+        injectShellResponse("id", "uid=2000(shell) gid=2000(shell)");
+        EasyMock.replay(mMockIDevice);
+        assertFalse(mTestDevice.isAdbRoot());
+    }
+
+    /**
+     * Test that {@link TestDevice#isAdbRoot()} for device with adb root.
+     */
+    public void testIsAdbRootForRoot() throws Exception {
+        injectShellResponse("id", "uid=0(root) gid=0(root)");
+        EasyMock.replay(mMockIDevice);
+        assertTrue(mTestDevice.isAdbRoot());
+    }
+
+    /**
      * Test {@link TestDevice#getProductType()} when device is in fastboot and IDevice has not
      * cached product type property
      */

@@ -637,4 +637,12 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isAdbRoot() throws DeviceNotAvailableException {
+        return false;
+    }
 }
