@@ -30,6 +30,7 @@ import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -51,7 +52,7 @@ import java.util.regex.Pattern;
  */
 public class WifiStressTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
-
+    private static long START_TIMER = 5 * 60 * 1000; //5 minutes
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME = "com.android.connectivitymanagertest";
     private static final String TEST_RUNNER_NAME = ".ConnectivityManagerStressTestRunner";
@@ -222,6 +223,7 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         setupTests();
         configDevice();
+        RunUtil.getDefault().sleep(START_TIMER);
         if (!mWifiOnly) {
             if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
                 mRadioHelper.getBugreport(standardListener);

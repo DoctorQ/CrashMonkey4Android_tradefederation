@@ -25,6 +25,7 @@ import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
@@ -36,6 +37,7 @@ import junit.framework.Assert;
 public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
     private ITestDevice mTestDevice = null;
 
+    private static long START_TIMER = 5 * 60 * 1000; //5 minutes
     // Define instrumentation test package and runner.
     private static final String TEST_PACKAGE_NAME =
         "com.android.connectivitymanagertest";
@@ -73,6 +75,7 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
         Assert.assertNotNull(mTestDevice);
         Assert.assertNotNull(mSsid);
         mRadioHelper = new RadioHelper(mTestDevice);
+        RunUtil.getDefault().sleep(START_TIMER);
         if (!mWifiOnly) {
             // capture a bugreport if activation or data setup failed
             if (!mRadioHelper.radioActivation() || !mRadioHelper.waitForDataSetup()) {
@@ -80,7 +83,6 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
                 return;
             }
         }
-
         // Add bugreport listener for bugreport after each test case fails
         BugreportCollector bugListener = new
             BugreportCollector(standardListener, mTestDevice);
