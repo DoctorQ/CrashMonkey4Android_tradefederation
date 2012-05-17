@@ -156,6 +156,103 @@ public class ArgsOptionParserTest extends TestCase {
     }
 
     /**
+     * An option source that exercises the {@link OptionUpdateRule}s.
+     */
+    private static class OptionUpdateRuleSource {
+
+        public static final String DEFAULT_VALUE = "5 default";
+        public static final String BIGGER_VALUE = "9 bigger";
+        public static final String SMALLER_VALUE = "0 smaller";
+
+        @Option(name = "default")
+        private String mDefaultOption = DEFAULT_VALUE;
+
+        @Option(name = "first", updateRule = OptionUpdateRule.FIRST)
+        private String mFirstOption = DEFAULT_VALUE;
+
+        @Option(name = "last", updateRule = OptionUpdateRule.LAST)
+        private String mLastOption = DEFAULT_VALUE;
+
+        @Option(name = "greatest", updateRule = OptionUpdateRule.GREATEST)
+        private String mGreatestOption = DEFAULT_VALUE;
+
+        @Option(name = "least", updateRule = OptionUpdateRule.LEAST)
+        private String mLeastOption = DEFAULT_VALUE;
+
+        @Option(name = "immutable", updateRule = OptionUpdateRule.IMMUTABLE)
+        private String mImmutableOption = DEFAULT_VALUE;
+
+        @Option(name = "null-immutable", updateRule = OptionUpdateRule.IMMUTABLE)
+        private String mNullImmutableOption = null;
+    }
+
+    /**
+     * Verify that {@link OptionUpdateRule}s work properly when the update compares to greater-than
+     * the default value.
+     */
+    public void testOptionUpdateRule_greater() throws Exception {
+        OptionUpdateRuleSource object = new OptionUpdateRuleSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String current = OptionUpdateRuleSource.DEFAULT_VALUE;
+        final String big = OptionUpdateRuleSource.BIGGER_VALUE;
+
+        parser.parse(new String[] {"--default", big, "--first", big, "--last", big,
+                "--greatest", big, "--least", big});
+        assertEquals(current, object.mFirstOption);
+        assertEquals(big, object.mLastOption);
+        assertEquals(big, object.mDefaultOption);  // default should be LAST
+        assertEquals(big, object.mGreatestOption);
+        assertEquals(current, object.mLeastOption);
+    }
+
+    /**
+     * Verify that {@link OptionUpdateRule}s work properly when the update compares to greater-than
+     * the default value.
+     */
+    public void testOptionUpdateRule_lesser() throws Exception {
+        OptionUpdateRuleSource object = new OptionUpdateRuleSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String current = OptionUpdateRuleSource.DEFAULT_VALUE;
+        final String small = OptionUpdateRuleSource.SMALLER_VALUE;
+
+        parser.parse(new String[] {"--default", small, "--first", small, "--last", small,
+                "--greatest", small, "--least", small});
+        assertEquals(current, object.mFirstOption);
+        assertEquals(small, object.mLastOption);
+        assertEquals(small, object.mDefaultOption);  // default should be LAST
+        assertEquals(current, object.mGreatestOption);
+        assertEquals(small, object.mLeastOption);
+    }
+
+    /**
+     * Verify that {@link OptionUpdateRule}s work properly when the update compares to greater-than
+     * the default value.
+     */
+    public void testOptionUpdateRule_immutable() throws Exception {
+        OptionUpdateRuleSource object = new OptionUpdateRuleSource();
+        ArgsOptionParser parser = new ArgsOptionParser(object);
+        final String update = OptionUpdateRuleSource.BIGGER_VALUE;
+
+        try {
+            parser.parse(new String[] {"--immutable", update});
+            fail("ConfigurationException not thrown when updating an IMMUTABLE option");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+
+        assertNull(object.mNullImmutableOption);
+        parser.parse(new String[] {"--null-immutable", update});
+        assertEquals(update, object.mNullImmutableOption);
+
+        try {
+            parser.parse(new String[] {"--null-immutable", update});
+            fail("ConfigurationException not thrown when updating an IMMUTABLE option");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
     * Test passing an empty argument list for an object that has one option specified.
     * <p/>
     * Expected that the option field should retain its default value.

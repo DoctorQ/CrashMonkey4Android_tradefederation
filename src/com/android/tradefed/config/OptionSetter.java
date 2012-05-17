@@ -303,7 +303,17 @@ public class OptionSetter {
                             field.getName(), optionName, optionSource.getClass().getName()));
                 }
             } else {
-                field.set(optionSource, value);
+                final Option option = field.getAnnotation(Option.class);
+                if (option == null) {
+                    // By virtue of us having gotten here, this should never happen.  But better
+                    // safe than sorry
+                    throw new ConfigurationException(String.format(
+                            "internal error: @Option annotation for field %s in class %s was " +
+                            "unexpectedly null",
+                            field.getName(), optionSource.getClass().getName()));
+                }
+                OptionUpdateRule rule = option.updateRule();
+                field.set(optionSource, rule.update(optionName, optionSource, field, value));
             }
         } catch (IllegalAccessException e) {
             throw new ConfigurationException(String.format(
@@ -421,6 +431,24 @@ public class OptionSetter {
                         "Option names cannot contain the namespace separator character '%c'",
                         option.name(), optionSource.getClass().getName(), NAMESPACE_SEPARATOR));
             }
+
+            // Make sure the source doesn't use GREATEST or LEAST for a non-Comparable field.
+            final Type type = field.getGenericType();
+            if ((type instanceof Class) && !(type instanceof ParameterizedType)) {
+                // Not a parameterized type
+                if ((option.updateRule() == OptionUpdateRule.GREATEST) ||
+                        (option.updateRule() == OptionUpdateRule.LEAST)) {
+                    Class cType = (Class) type;
+                    if (!(Comparable.class.isAssignableFrom(cType))) {
+                        throw new ConfigurationException(String.format(
+                                "Option '%s' in class '%s' attempts to use updateRule %s with " +
+                                "non-Comparable type '%s'.", option.name(),
+                                optionSource.getClass().getName(), option.updateRule(),
+                                field.getGenericType()));
+                    }
+                }
+            }
+
             addNameToMap(optionMap, optionSource, option.name(), field);
             addNamespacedOptionToMap(optionMap, optionSource, option.name(), field);
             if (option.shortName() != Option.NO_SHORT_NAME) {

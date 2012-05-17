@@ -83,4 +83,10 @@ public @interface Option {
      * </ul>
      */
      boolean mandatory() default false;
+
+    /**
+     * Controls the behavior when an option is specified multiple times.  Note that this rule is
+     * ignored completely for options that are {@link Collection}s or {@link Map}s.
+     */
+    OptionUpdateRule updateRule() default OptionUpdateRule.LAST;
 }
