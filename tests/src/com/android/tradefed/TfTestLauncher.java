@@ -32,6 +32,9 @@ import com.android.tradefed.util.RunUtil;
 
 import junit.framework.Assert;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * A {@link IRemoteTest} for running tests against a separate TF installation.
  * <p/>
@@ -43,6 +46,10 @@ public class TfTestLauncher implements IRemoteTest, IBuildReceiver {
     @Option(name = "max-run-time", description =
         "the maximum time in minutes to allow for a TF test run.")
     private int mMaxTfRunTimeMin = 20;
+
+    @Option(name = "remote-debug", description =
+            "start the TF java process in remote debug mode.")
+    private boolean mRemoteDebug = false;
 
     private IBuildInfo mBuildInfo;
 
@@ -58,14 +65,33 @@ public class TfTestLauncher implements IRemoteTest, IBuildReceiver {
         Assert.assertNotNull(mConfigName);
         IFolderBuildInfo tfBuild = (IFolderBuildInfo)mBuildInfo;
         String jarClasspath = FileUtil.getPath(tfBuild.getRootDir().getAbsolutePath(), "*");
+        List<String> args = new ArrayList<String>();
+        args.add("java");
+        if (mRemoteDebug) {
+            args.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=10088");
+        }
+        args.add("-cp");
+        args.add(jarClasspath);
+        args.add("com.android.tradefed.command.CommandRunner");
+        args.add(mConfigName);
+        args.add("-n");
+        args.add("--build-id");
+        args.add(mBuildInfo.getBuildId());
+        args.add("--test-tag");
+        args.add(mBuildInfo.getTestTag());
+        args.add("--build-target");
+        args.add(mBuildInfo.getBuildTargetName());
+        if (mBuildInfo.getBuildBranch() != null) {
+            args.add("--branch");
+            args.add(mBuildInfo.getBuildBranch());
+        }
+        if (mBuildInfo.getBuildFlavor() != null) {
+            args.add("--build-flavor");
+            args.add(mBuildInfo.getBuildFlavor());
+        }
+
         CommandResult result = getRunUtil().runTimedCmd(mMaxTfRunTimeMin * 60 * 1000,
-                "java",
-                //"-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=10088",
-                "-cp", jarClasspath,
-                "com.android.tradefed.command.CommandRunner", mConfigName, "-n", "--build-id",
-                mBuildInfo.getBuildId(), "--test-tag",
-                mBuildInfo.getTestTag(),
-                "--build-target",mBuildInfo.getBuildTargetName());
+                args.toArray(new String[0]));
         if (result.getStatus().equals(CommandStatus.SUCCESS)) {
             Log.logAndDisplay(LogLevel.INFO, "TfTestLauncher",
                     String.format("Successfully ran TF tests for build %s. stdout: %s\n, stderr: %s",
