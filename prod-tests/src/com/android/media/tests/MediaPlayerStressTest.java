@@ -96,6 +96,8 @@ public class MediaPlayerStressTest implements IDeviceTest, IRemoteTest {
 
         BugreportCollector bugListener = new BugreportCollector(listener,
                 mTestDevice);
+        bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
+        bugListener.setDescriptiveName("media_player_stress_test");
         bugListener.addPredicate(new BugreportCollector.Predicate(
                 Relation.AFTER, Freq.EACH, Noun.TESTRUN));
 
