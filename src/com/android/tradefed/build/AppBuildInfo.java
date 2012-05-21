@@ -81,7 +81,7 @@ public class AppBuildInfo extends BuildInfo implements IAppBuildInfo {
             for (VersionedFile origVerFile : mAppPackageFiles) {
                 // Only using createTempFile to create a unique dest filename
                 File origFile = origVerFile.getFile();
-                File copyFile = FileUtil.createTempFile(origFile.getName(),
+                File copyFile = FileUtil.createTempFile(FileUtil.getBaseName(origFile.getName()),
                         FileUtil.getExtension(origFile.getName()));
                 copyFile.delete();
                 FileUtil.hardlinkFile(origFile, copyFile);
