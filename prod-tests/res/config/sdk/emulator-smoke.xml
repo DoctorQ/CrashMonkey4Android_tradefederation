@@ -14,14 +14,6 @@
      limitations under the License.
 -->
 <configuration description="Creates an avd, and launches emulator from a local sdk">
-    <option name="new-emulator" value="true" />
     <build_provider class="com.android.tradefed.build.LocalSdkBuildProvider" />
-    <target_preparer class="com.android.tradefed.targetprep.SdkAvdPreparer" />
-    <test class="com.android.sdk.tests.EmulatorSmokeTest" />
-    <test class="com.android.sdk.tests.EmulatorTests" />
-    <test class="com.android.continuous.SmokeTest" >
-        <option name="package" value="com.android.smoketest.tests" />
-        <option name="runner" value="com.android.smoketest.SmokeTestRunner" />
-        <option name="capture-file-pattern" key="/data/anr/traces.txt" value="text" />
-    </test>
+    <include name="sdk/emulator-smoke-common" />
 </configuration>
