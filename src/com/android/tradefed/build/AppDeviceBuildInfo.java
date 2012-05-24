@@ -34,6 +34,20 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
     }
 
     /**
+     * @return the {@link IDeviceBuildInfo} for the device.
+     */
+    public IDeviceBuildInfo getDeviceBuildInfo() {
+        return mDeviceBuild;
+    }
+
+    /**
+     * @return the {@link IAppBuildInfo} for the application.
+     */
+    public IAppBuildInfo getAppBuildInfo() {
+        return mAppBuildInfo;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
