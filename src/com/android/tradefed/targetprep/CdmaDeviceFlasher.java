@@ -87,7 +87,7 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
             // We need to flash these partitions: userdata, system, boot, radio, recovery
             // Flash userdata. system, boot, radio, recovery remain
             flashUserData(device, deviceBuild);
-            eraseCache(device);
+            wipeCache(device);
 
             // Flash baseband. system, boot, recovery remain
             mShouldFlashBaseband = true;
@@ -101,7 +101,7 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         } else {
             // Do the standard thing
             flashUserData(device, deviceBuild);
-            eraseCache(device);
+            wipeCache(device);
             checkAndFlashSystem(device, systemBuildId, deviceBuild);
             device.reboot();
         }

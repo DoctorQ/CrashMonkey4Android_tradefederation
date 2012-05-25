@@ -21,6 +21,7 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 
 import java.io.File;
 import java.util.Arrays;
@@ -114,6 +115,14 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
 
     /**
      * {@inheritDoc}
+     */
+    @Override
+    public void overrideDeviceOptions(ITestDevice device) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
      * <p>
      * This implementation only supports {@link IDeviceFlasher.UserDataFlashOption#TESTS_ZIP}
      * and {@link UserDataFlashOption.RETAIN} as a valid options
@@ -123,12 +132,12 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
         List<UserDataFlashOption> supported = Arrays.asList(
                 UserDataFlashOption.TESTS_ZIP, UserDataFlashOption.RETAIN);
         if (!supported.contains(flashOption)) {
-      throw new IllegalArgumentException(flashOption
-          + " not supported. This implementation only supports flashing " + supported.toString());
+            throw new IllegalArgumentException(flashOption
+                    + " not supported. This implementation only supports flashing "
+                    + supported.toString());
         }
         mFlashOption = flashOption;
     }
-
 
     /**
      * {@inheritDoc}

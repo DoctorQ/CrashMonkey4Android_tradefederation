@@ -94,6 +94,7 @@ public class DeviceFlashPreparerTest extends TestCase {
      */
     private void doSetupExpectations() throws TargetSetupError, DeviceNotAvailableException {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        mMockFlasher.overrideDeviceOptions(mMockDevice);
         mMockFlasher.setForceSystemFlash(false);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
@@ -123,6 +124,7 @@ public class DeviceFlashPreparerTest extends TestCase {
      */
     public void testSetup_buildError() throws Exception {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
+        mMockFlasher.overrideDeviceOptions(mMockDevice);
         mMockFlasher.setForceSystemFlash(false);
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
