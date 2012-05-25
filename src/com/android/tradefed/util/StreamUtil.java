@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.util;
 
+import com.android.tradefed.result.InputStreamSource;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
@@ -37,10 +39,47 @@ public class StreamUtil {
     }
 
     /**
+     * Retrieves a {@link String} from an {@link InputStreamSource}.
+     *
+     * @param source the {@link InputStreamSource}
+     * @return a {@link String} containing the stream contents
+     * @throws IOException if failure occurred reading the stream
+     */
+    public static String getStringFromSource(InputStreamSource source) throws IOException {
+        final InputStream stream = source.createInputStream();
+        final String contents;
+        try {
+            contents = getStringFromStream(stream);
+        } finally {
+            closeStream(stream);
+        }
+        return contents;
+    }
+
+    /**
+     * Retrieves a {@link ByteArrayList} from an {@link InputStreamSource}.
+     *
+     * @param source the {@link InputStreamSource}
+     * @return a {@link ByteArrayList} containing the stream contents
+     * @throws IOException if failure occurred reading the stream
+     */
+    public static ByteArrayList getByteArrayListFromSource(InputStreamSource source)
+            throws IOException {
+        final InputStream stream = source.createInputStream();
+        final ByteArrayList contents;
+        try {
+            contents = getByteArrayListFromStream(stream);
+        } finally {
+            closeStream(stream);
+        }
+        return contents;
+    }
+
+    /**
      * Retrieves a {@link String} from a character stream.
      *
      * @param stream the {@link InputStream}
-     * @return the {@link String} containing the stream contents
+     * @return a {@link String} containing the stream contents
      * @throws IOException if failure occurred reading the stream
      */
     public static String getStringFromStream(InputStream stream) throws IOException {
