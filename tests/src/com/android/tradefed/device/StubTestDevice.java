@@ -172,6 +172,33 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
+    public boolean getUseFastbootErase() {
+        // ignore
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setUseFastbootErase(boolean useFastbootErase) {
+        // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CommandResult fastbootWipePartition(String partition)
+            throws DeviceNotAvailableException {
+        // ignore
+        return new CommandResult();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean enableAdbRoot() throws DeviceNotAvailableException {
         // ignore
         return true;

@@ -44,6 +44,14 @@ public interface IDeviceFlasher {
     }
 
     /**
+     * Override options for a device. Used to override default option values if the defaults are not
+     * supported by a particular device.
+     *
+     * @param device
+     */
+    public void overrideDeviceOptions(ITestDevice device);
+
+    /**
      * Sets the mechanism by which the flasher can retrieve resource files for flashing.
      *
      * @param resourceRetriever the {@link IFlashingResourcesRetriever} to use

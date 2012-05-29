@@ -52,7 +52,6 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         "specify if system should always be flashed even if already running desired build.")
     private boolean mForceSystemFlash = false;
 
-
     /**
      * Sets the device boot time
      * <p/>
@@ -102,6 +101,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         IDeviceBuildInfo deviceBuild = (IDeviceBuildInfo)buildInfo;
         device.setRecoveryMode(RecoveryMode.ONLINE);
         IDeviceFlasher flasher = createFlasher(device);
+        flasher.overrideDeviceOptions(device);
         flasher.setUserDataFlashOption(mUserDataFlashOption);
         flasher.setForceSystemFlash(mForceSystemFlash);
         preEncryptDevice(device, flasher);

@@ -47,6 +47,10 @@ public class TestDeviceOptions {
             "time in ms to wait for a device to reboot to full system.")
     private int mRebootTimeout = 2 * 60 * 1000;
 
+    @Option(name = "use-fastboot-erase", description =
+            "use fastboot erase instead of fastboot format to wipe partitions")
+    private boolean mUseFastbootErase = false;
+
     @Option(name = "unencrypt-reboot-timeout", description = "time in ms to wait for the device to "
             + "format the filesystem and reboot after unencryption")
     private int mUnencryptRebootTimeout = 0;
@@ -160,6 +164,21 @@ public class TestDeviceOptions {
      */
     public void setRebootTimeout(int mRebootTimeout) {
         this.mRebootTimeout = mRebootTimeout;
+    }
+
+    /**
+     * @return whether to use fastboot erase instead of fastboot format to wipe partitions.
+     */
+    public boolean getUseFastbootErase() {
+        return mUseFastbootErase;
+    }
+
+    /**
+     * @param useFastbootErase whether to use fastboot erase instead of fastboot format to wipe
+     * partitions.
+     */
+    public void setUseFastbootErase(boolean useFastbootErase) {
+        mUseFastbootErase = useFastbootErase;
     }
 
     /**

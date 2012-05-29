@@ -268,6 +268,40 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * Get whether to use fastboot erase or fastboot format to wipe a partition on the device.
+     *
+     * @return {@code true} if fastboot erase will be used or {@code false} if fastboot format will
+     * be used.
+     * @see #fastbootWipePartition(String)
+     */
+    public boolean getUseFastbootErase();
+
+    /**
+     * Set whether to use fastboot erase or fastboot format to wipe a partition on the device.
+     *
+     * @param useFastbootErase {@code true} if fastboot erase should be used or {@code false} if
+     * fastboot format should be used.
+     * @see #fastbootWipePartition(String)
+     */
+    public void setUseFastbootErase(boolean useFastbootErase);
+
+    /**
+     * Helper method which wipes a partition for the device.
+     * <p/>
+     * If {@link #getUseFastbootErase()} is {@code true}, then fastboot erase will be used to wipe
+     * the partition. The device must then create a filesystem the next time the device boots.
+     * Otherwise, fastboot format is used which will create a new filesystem on the device.
+     * <p/>
+     * Expected to be used when device is already in fastboot mode.
+     *
+     * @param partition the partition to wipe
+     * @return the CommandResult containing output of command
+     * @throws DeviceNotAvailableException if connection with device is lost and cannot be
+     * recovered.
+     */
+    public CommandResult fastbootWipePartition(String partition) throws DeviceNotAvailableException;
+
+    /**
      * Runs instrumentation tests, and provides device recovery.
      * <p/>
      * If connection with device is lost before test run completes, and recovery succeeds, all
@@ -630,7 +664,8 @@ public interface ITestDevice {
      * Unencrypts the device.
      * <p/>
      * Unencrypting the device may cause device to be wiped and may reboot device. This method will
-     * block until device is available and ready for testing.
+     * block until device is available and ready for testing.  Requires fastboot inorder to wipe the
+     * userdata partition.
      *
      * @return <code>true</code> if successful.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be

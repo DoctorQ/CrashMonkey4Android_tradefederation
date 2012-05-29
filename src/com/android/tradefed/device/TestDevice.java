@@ -1122,6 +1122,35 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean getUseFastbootErase() {
+        return mOptions.getUseFastbootErase();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setUseFastbootErase(boolean useFastbootErase) {
+        mOptions.setUseFastbootErase(useFastbootErase);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CommandResult fastbootWipePartition(String partition)
+            throws DeviceNotAvailableException {
+        if (mOptions.getUseFastbootErase()) {
+            return executeLongFastbootCommand("erase", partition);
+        } else {
+            return executeLongFastbootCommand("format", partition);
+        }
+    }
+
+    /**
      * Evaluate the given fastboot result to determine if recovery mode needs to be entered
      *
      * @param fastbootResult the {@link CommandResult} from a fastboot command
@@ -1936,6 +1965,15 @@ class TestDevice implements IManagedTestDevice {
 
         CLog.i("Unencrypting device %s", getSerialNumber());
 
+        // If the device supports fastboot format, then we're done.
+        if (!mOptions.getUseFastbootErase()) {
+            rebootIntoBootloader();
+            fastbootWipePartition("userdata");
+            reboot();
+
+            return true;
+        }
+
         // Determine if we need to format partition instead of wipe.
         boolean format = false;
         String output = executeShellCommand("vdc volume list");
@@ -1951,7 +1989,7 @@ class TestDevice implements IManagedTestDevice {
         }
 
         rebootIntoBootloader();
-        executeLongFastbootCommand("erase", "userdata");
+        fastbootWipePartition("userdata");
 
         // If the device requires time to format the filesystem after fastboot erase userdata, wait
         // for the device to reboot a second time.

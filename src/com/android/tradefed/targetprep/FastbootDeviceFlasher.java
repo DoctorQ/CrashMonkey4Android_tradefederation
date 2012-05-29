@@ -97,7 +97,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         checkAndFlashBootloader(device, deviceBuild);
         checkAndFlashBaseband(device, deviceBuild);
         flashUserData(device, deviceBuild);
-        eraseCache(device);
+        wipeCache(device);
         checkAndFlashSystem(device, systemBuildId, deviceBuild);
     }
 
@@ -115,15 +115,17 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     }
 
     /**
-     * Erase the specified partition with `fastboot erase <name>`
+     * Wipe the specified partition with `fastboot erase &lt;name&gt;`
      *
      * @param device the {@link ITestDevice} to operate on
-     * @param partition the name of the partition to be erased
+     * @param partition the name of the partition to be wiped
      */
-    protected void erasePartition(ITestDevice device, String partition)
+    protected void wipePartition(ITestDevice device, String partition)
             throws DeviceNotAvailableException, TargetSetupError {
-        CLog.d("fastboot erase %s", partition);
-        executeLongFastbootCmd(device, "erase", partition);
+        String wipeMethod = device.getUseFastbootErase() ? "erase" : "format";
+        CLog.d("fastboot %s %s", wipeMethod, partition);
+        CommandResult result = device.fastbootWipePartition(partition);
+        handleFastbootResult(device, result, wipeMethod, partition);
     }
 
     /**
@@ -330,20 +332,20 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     }
 
     /**
-     * Erase the cache partition on device.
+     * Wipe the cache partition on device.
      *
      * @param device the {@link ITestDevice} to flash
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash cache
      */
-    protected void eraseCache(ITestDevice device) throws DeviceNotAvailableException,
+    protected void wipeCache(ITestDevice device) throws DeviceNotAvailableException,
             TargetSetupError {
         // only wipe cache if user data is being wiped
         if (!mUserDataFlashOption.equals(UserDataFlashOption.RETAIN)) {
-            CLog.i("Erasing cache on %s", device.getSerialNumber());
-            erasePartition(device, "cache");
+            CLog.i("Wiping cache on %s", device.getSerialNumber());
+            wipePartition(device, "cache");
         } else {
-            CLog.d("Skipping cache erase on %s", device.getSerialNumber());
+            CLog.d("Skipping cache wipe on %s", device.getSerialNumber());
         }
     }
 
@@ -367,7 +369,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
             case FORCE_WIPE:  // intentional fallthrough
             case WIPE:
                 CLog.i("Wiping userdata %s", device.getSerialNumber());
-                erasePartition(device, "userdata");
+                wipePartition(device, "userdata");
                 break;
 
             case TESTS_ZIP:
@@ -526,6 +528,14 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         } else {
             return result.getStdout();
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void overrideDeviceOptions(ITestDevice device) {
+        // ignore
     }
 
     /**
