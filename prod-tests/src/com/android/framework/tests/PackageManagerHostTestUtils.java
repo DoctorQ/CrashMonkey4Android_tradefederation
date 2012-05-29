@@ -38,6 +38,7 @@ public class PackageManagerHostTestUtils extends Assert {
     // TODO: get this value from Android Environment instead of hard coding
     private static final String PRE_JB_APP_PRIVATE_PATH = "/data/app-private/";
     private static final String JB_APP_PRIVATE_PATH = "/mnt/asec/";
+    private static final String JB_ASEC_PRIVATE_PATH = "/data/app-asec/";
     private static final String DEVICE_APP_PATH = "/data/app/";
     private static final String SDCARD_APP_PATH = "/mnt/secure/asec/";
 
@@ -79,7 +80,6 @@ public class PackageManagerHostTestUtils extends Assert {
         return mAppPrivatePath;
     }
 
-
     public static void setAppPrivatePath(String path) {
         mAppPrivatePath = path;
     }
@@ -103,22 +103,22 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method to run tests and return the listener that collected the results.
+     * Helper method to run tests and return the listener that collected the
+     * results. For the optional params, pass null to use the default values.
      *
-     * For the optional params, pass null to use the default values.
-
      * @param pkgName Android application package for tests
      * @param className (optional) The class containing the method to test
      * @param methodName (optional) The method in the class of which to test
-     * @param runnerName (optional) The name of the TestRunner of the test on the device to be run
-     * @param params (optional) Any additional parameters to pass into the Test Runner
-
+     * @param runnerName (optional) The name of the TestRunner of the test on
+     *            the device to be run
+     * @param params (optional) Any additional parameters to pass into the Test
+     *            Runner
      * @return the {@link CollectingTestRunListener}
      * @throws DeviceNotAvailableException
      */
     private CollectingTestListener doRunTests(String pkgName, String className,
             String methodName, String runnerName, Map<String, String> params)
-                    throws DeviceNotAvailableException  {
+            throws DeviceNotAvailableException {
         IRemoteAndroidTestRunner testRunner = new RemoteAndroidTestRunner(pkgName, runnerName,
                 mDevice.getIDevice());
 
@@ -139,42 +139,46 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Runs the specified packages tests, and returns whether all tests passed or not.
+     * Runs the specified packages tests, and returns whether all tests passed
+     * or not.
      *
      * @param pkgName Android application package for tests
      * @param className The class containing the method to test
      * @param methodName The method in the class of which to test
-     * @param runnerName The name of the TestRunner of the test on the device to be run
+     * @param runnerName The name of the TestRunner of the test on the device to
+     *            be run
      * @param params Any additional parameters to pass into the Test Runner
      * @return true if test passed, false otherwise.
      * @throws DeviceNotAvailableException
      */
     public boolean runDeviceTestsDidAllTestsPass(String pkgName, String className,
             String methodName, String runnerName, Map<String, String> params)
-                    throws DeviceNotAvailableException  {
+            throws DeviceNotAvailableException {
         CollectingTestListener listener = doRunTests(pkgName, className, methodName,
                 runnerName, params);
         return !listener.hasFailedTests();
     }
 
     /**
-     * Runs the specified packages tests, and returns whether all tests passed or not.
+     * Runs the specified packages tests, and returns whether all tests passed
+     * or not.
      *
      * @param pkgName Android application package for tests
-
      * @return true if every test passed, false otherwise.
      * @throws DeviceNotAvailableException
      */
     public boolean runDeviceTestsDidAllTestsPass(String pkgName)
-            throws DeviceNotAvailableException   {
+            throws DeviceNotAvailableException {
         CollectingTestListener listener = doRunTests(pkgName, null, null, null, null);
         return !listener.hasFailedTests();
     }
 
     /**
      * Helper method to install a file
+     *
      * @param localFile the {@link File} to install
-     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @param reinstall set to <code>true</code> if re-install of app should be
+     *            performed
      * @throws DeviceNotAvailableException
      */
     public void installFile(final File localFile, final boolean replace)
@@ -187,7 +191,8 @@ public class PackageManagerHostTestUtils extends Assert {
      * Helper method to install a file to device as forward locked.
      *
      * @param apkFile the {@link File} to install
-     * @param replace set to <code>true</code> if re-install of app should be performed
+     * @param replace set to <code>true</code> if re-install of app should be
+     *            performed
      * @throws DeviceNotAvailableException if communication with device is lost
      */
     public String installFileForwardLocked(final File apkFile, final boolean replace)
@@ -196,7 +201,32 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method to determine if file exists on the device containing a given string.
+     * Helper method to install an encrypted apk to the device.
+     *
+     * @param apkFile the {@link File} to install
+     * @param replace set to <code>true</code> if re-install of app should be
+     *            performed
+     * @param algorithm the encryption algorithm used for the encrypted apk
+     * @param iv the initialization vector used for the encrypted apk
+     * @param encryptionKey the encryption key used for the encrypted apk
+     * @param macAlgorithm the mac algorithm used
+     * @param macKey the mac key used
+     * @param macTag the mac tag used
+     * @return
+     * @throws DeviceNotAvailableException
+     */
+    public String installFileEncrypted(final File apkFile, final boolean replace,
+            final String algorithm, final String iv, final String encryptionKey,
+            final String macAlgorithm, final String macKey, final String macTag)
+            throws DeviceNotAvailableException {
+        return mDevice.installPackage(apkFile, replace, "-l", "--algo", algorithm, "--iv", iv,
+                "--key", encryptionKey, "--macalgo", macAlgorithm,
+                "--mackey", macKey, "--tag", macTag);
+    }
+
+    /**
+     * Helper method to determine if file exists on the device containing a
+     * given string.
      *
      * @param destPath the absolute path of the file
      * @return <code>true</code> if file exists containing given string,
@@ -214,7 +244,6 @@ public class PackageManagerHostTestUtils extends Assert {
      *
      * @param packageName the Android manifest package to check.
      * @return <code>true</code> if package exists, <code>false</code> otherwise
-
      * @throws DeviceNotAvailableException
      */
     public boolean doesPackageExist(String packageName) throws DeviceNotAvailableException {
@@ -242,7 +271,8 @@ public class PackageManagerHostTestUtils extends Assert {
      */
     public boolean doesAppExistOnSDCard(String packageName) throws DeviceNotAvailableException {
 
-        // if we're using emulated storage, the SDcard path is actually the device's normal app path
+        // if we're using emulated storage, the SDcard path is actually the
+        // device's normal app path
         if (getIsExternalStorageEmulated()) {
             return doesRemoteFileExistContainingString(DEVICE_APP_PATH, packageName);
         }
@@ -274,15 +304,15 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method for installing an app to wherever is specified in its manifest, and
-     * then verifying the app was installed onto SD Card.
+     * Helper method for installing an app to wherever is specified in its
+     * manifest, and then verifying the app was installed onto SD Card.
      * <p/>
      * Assumes adb is running as root in device under test.
      *
      * @param the path of the apk to install
      * @param the name of the package
-     * @param <code>true</code> if the app should be overwritten, <code>false</code> otherwise
-
+     * @param <code>true</code> if the app should be overwritten,
+     *        <code>false</code> otherwise
      * @throws DeviceNotAvailableException
      */
     public void installAppAndVerifyExistsOnSDCard(File apkPath, String pkgName, boolean overwrite)
@@ -305,18 +335,19 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method for installing an app to wherever is specified in its manifest, and
-     * then verifying the app was installed onto device.
+     * Helper method for installing an app to wherever is specified in its
+     * manifest, and then verifying the app was installed onto device.
      * <p/>
      * Assumes adb is running as root in device under test.
      *
      * @param apkFile the {@link File} of the apk to install
      * @param the name of the package
-     * @param <code>true</code> if the app should be overwritten, <code>false</code> otherwise
+     * @param <code>true</code> if the app should be overwritten,
+     *        <code>false</code> otherwise
      * @throws DeviceNotAvailableException
      */
     public void installAppAndVerifyExistsOnDevice(File apkFile, String pkgName, boolean overwrite)
-            throws  DeviceNotAvailableException {
+            throws DeviceNotAvailableException {
         // Start with a clean slate if we're not overwriting
         if (!overwrite) {
             // cleanup test app just in case it already exists
@@ -335,15 +366,15 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method for installing an app as forward-locked, and
-     * then verifying the app was installed in the proper forward-locked location.
+     * Helper method for installing an app as forward-locked, and then verifying
+     * the app was installed in the proper forward-locked location.
      * <p/>
      * Assumes adb is running as root in device under test.
      *
      * @param apkFile the {@link File} of the apk to install
      * @param pkgName the name of the package
      * @param overwrite <code>true</code> if the app should be overwritten,
-     * <code>false</code> otherwise
+     *            <code>false</code> otherwise
      * @throws Exception if failed to install app
      */
     public void installFwdLockedAppAndVerifyExists(File apkFile,
@@ -366,6 +397,74 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
+     * Helper method for installing an encrypted apk and then verifies the
+     * package exists.
+     * <p/>
+     * Assumes adb is running as root in device under test.
+     *
+     * @param apkFile the {@link File} of the apk to install
+     * @param pkgName the name of the package
+     * @param overwrite <code>true</code> if the app should be overwritten,
+     *            <code>false</code> otherwise
+     * @param algorithm the encryption algorithm used for the encrypted apk
+     * @param iv the initialization vector used for the encrypted apk
+     * @param encryptionKey the encryption key used for the encrypted apk
+     * @param macAlgorithm the mac algorithm used
+     * @param macKey the mac key used
+     * @param macTag the mac tag used
+     * @throws DeviceNotAvailableException
+     */
+    public void installEncryptedAppAndVerifyExists(File apkFile, String pkgName, boolean overwrite,
+            final String algorithm, final String iv, final String encryptionKey,
+            final String macAlgorithm, final String macKey, final String macTag)
+            throws DeviceNotAvailableException {
+        // Start with a clean slate if we're not overwriting
+        if (!overwrite) {
+            // cleanup test app just in case it already exists
+            mDevice.uninstallPackage(pkgName);
+            // grep for package to make sure its not installed
+            assertFalse(doesPackageExist(pkgName));
+        }
+        String result = installFileEncrypted(apkFile, overwrite, algorithm, iv, encryptionKey,
+                macAlgorithm, macKey, macTag);
+        assertEquals(null, result);
+        waitForPackageManager();
+
+        // grep for package to make sure it is installed
+        assertTrue(doesPackageExist(pkgName));
+    }
+
+    /**
+     * Helper method to ensure that the encrypted apk and asec file are stored in the correct
+     * location.
+     * <p/>
+     * Assumes adb is running as root in device under test.
+     *
+     * @param packageName the name of the package
+     * @param externalStorage {@link boolean} whether the file is stored to external sd card.
+     *
+     * @return true if the app is indeed encrypted, false otherwise.
+     *
+     * @throws DeviceNotAvailableException
+     */
+    public boolean appExistsAsEncrypted(String packageName, boolean externalStorage)
+            throws DeviceNotAvailableException {
+        // getIsExternalStorageEmulated()
+        if (externalStorage) {
+            if (doesRemoteFileExistContainingString(JB_APP_PRIVATE_PATH, packageName) &&
+                    doesRemoteFileExistContainingString(SDCARD_APP_PATH, packageName)) {
+                return true;
+            }
+        } else {
+            if (doesRemoteFileExistContainingString(JB_APP_PRIVATE_PATH, packageName) &&
+                    doesRemoteFileExistContainingString(JB_ASEC_PRIVATE_PATH, packageName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Helper method for uninstalling an app.
      * <p/>
      * Assumes adb is running as root in device under test.
@@ -382,9 +481,9 @@ public class PackageManagerHostTestUtils extends Assert {
 
     /**
      * Sets the device's install location preference.
-     *
      * <p/>
      * Assumes adb is running as root in device under test.
+     *
      * @throws DeviceNotAvailableException
      */
     public void setDevicePreferredInstallLocation(InstallLocPreference pref)
@@ -407,9 +506,9 @@ public class PackageManagerHostTestUtils extends Assert {
 
     /**
      * Gets the device's install location preference.
-     *
      * <p/>
      * Assumes adb is running as root in device under test.
+     *
      * @throws DeviceNotAvailableException
      */
     public InstallLocPreference getDevicePreferredInstallLocation()
@@ -428,10 +527,10 @@ public class PackageManagerHostTestUtils extends Assert {
 
     /**
      * Determines whether the device is using emulated external storage.
-     *
      * <p/>
-     * Sets mEmulatedExternalStorage based on the result
-     * Assumes adb is running as root in device under test.
+     * Sets mEmulatedExternalStorage based on the result Assumes adb is running
+     * as root in device under test.
+     *
      * @throws DeviceNotAvailableException
      */
     private void determineExternalStorageEmulation()
@@ -455,7 +554,8 @@ public class PackageManagerHostTestUtils extends Assert {
     /**
      * Determine the location of the app private path.
      *
-     * @param apkFile the {@link File} of test apk to determine packages' install path.
+     * @param apkFile the {@link File} of test apk to determine packages'
+     *            install path.
      * @param pkgName the {@link String} pkgName of the test apk.
      * @throws DeviceNotAvailableException
      */
@@ -484,7 +584,8 @@ public class PackageManagerHostTestUtils extends Assert {
     /**
      * Returns whether the external storage is emulated or not.
      *
-     * @return <code>true</code> if external storage is emulated, <code>false</code> otherwise.
+     * @return <code>true</code> if external storage is emulated,
+     *         <code>false</code> otherwise.
      */
     public boolean getIsExternalStorageEmulated() {
         return mEmulatedExternalStorage;
@@ -492,6 +593,7 @@ public class PackageManagerHostTestUtils extends Assert {
 
     /**
      * Connect device to wifi.
+     *
      * @param device
      * @param wifiNetwork
      * @param wifiPsk
