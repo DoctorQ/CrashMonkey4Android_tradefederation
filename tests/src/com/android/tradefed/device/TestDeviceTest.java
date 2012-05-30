@@ -22,9 +22,11 @@ import com.android.ddmlib.ShellCommandUnresponsiveException;
 import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.tradefed.device.ITestDevice.MountPointInfo;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
@@ -39,7 +41,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -58,6 +62,29 @@ public class TestDeviceTest extends TestCase {
     private IWifiHelper mMockWifi;
 
     /**
+     * A {@link TestDevice} that is suitable for running tests against
+     */
+    private class TestableTestDevice extends TestDevice {
+        public TestableTestDevice() {
+            super(mMockIDevice, mMockMonitor);
+        }
+
+        @Override
+        public void postBootSetup() {
+            // too annoying to mock out postBootSetup actions everyone, so do nothing
+        }
+
+        @Override
+        IRunUtil getRunUtil() {
+            return mMockRunUtil;
+        }
+
+        @Override
+        void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -70,26 +97,6 @@ public class TestDeviceTest extends TestCase {
         mMockMonitor = EasyMock.createMock(IDeviceStateMonitor.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
         mMockWifi = EasyMock.createMock(IWifiHelper.class);
-
-        class TestableTestDevice extends TestDevice {
-            public TestableTestDevice() {
-                super(mMockIDevice, mMockMonitor);
-            }
-
-            @Override
-            public void postBootSetup() {
-                // too annoying to mock out postBootSetup actions everyone, so do nothing
-            }
-
-            @Override
-            IRunUtil getRunUtil() {
-                return mMockRunUtil;
-            }
-
-            @Override
-            void doReboot() throws DeviceNotAvailableException, UnsupportedOperationException {
-            }
-        }
 
         // A TestDevice with a no-op recoverDevice() implementation
         mTestDevice = new TestableTestDevice() {
@@ -994,6 +1001,122 @@ public class TestDeviceTest extends TestCase {
         final String output = "junk output";
         Set<String> expected = new HashSet<String>();
         assertgetInstalledPackageNames(output, expected);
+    }
+
+    /**
+     * Unit test to make sure that the simple convenience constructor for
+     * {@link ITestDevice#MountPointInfo} works as expected.
+     */
+    public void testMountInfo_simple() throws Exception {
+        List<String> empty = Collections.emptyList();
+        MountPointInfo info = new MountPointInfo("filesystem", "mountpoint", "type", empty);
+        assertEquals("filesystem", info.filesystem);
+        assertEquals("mountpoint", info.mountpoint);
+        assertEquals("type", info.type);
+        assertEquals(empty, info.options);
+    }
+
+    /**
+     * Unit test to make sure that the mount-option-parsing convenience constructor for
+     * {@link ITestDevice#MountPointInfo} works as expected.
+     */
+    public void testMountInfo_parseOptions() throws Exception {
+        MountPointInfo info = new MountPointInfo("filesystem", "mountpoint", "type", "rw,relatime");
+        assertEquals("filesystem", info.filesystem);
+        assertEquals("mountpoint", info.mountpoint);
+        assertEquals("type", info.type);
+
+        // options should be parsed
+        assertNotNull(info.options);
+        assertEquals(2, info.options.size());
+        assertEquals("rw", info.options.get(0));
+        assertEquals("relatime", info.options.get(1));
+    }
+
+    /**
+     * A unit test to ensure {@link TestDevice#getMountPointInfo()} works as expected.
+     */
+    public void testGetMountPointInfo() throws Exception {
+        ITestDevice dvc = new TestableTestDevice() {
+            @Override
+            public String executeShellCommand(String cmd) {
+                assertEquals("cat /proc/mounts", cmd);
+                return ArrayUtil.join("\r\n",
+                        "rootfs / rootfs ro,relatime 0 0",
+                        "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
+                        "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
+                        "proc /proc proc rw,relatime 0 0",
+                        "sysfs /sys sysfs rw,relatime 0 0",
+                        "none /acct cgroup rw,relatime,cpuacct 0 0",
+                        "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                        "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                        "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
+                        "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
+                            "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
+                            "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
+                            "utf8,errors=remount-ro 0 0",
+                        "tmpfs /storage/sdcard0/.android_secure tmpfs " +
+                            "ro,relatime,size=0k,mode=000 0 0");
+            }
+        };
+
+        List<MountPointInfo> info = dvc.getMountPointInfo();
+        assertEquals(11, info.size());
+
+        // spot-check
+        MountPointInfo mpi = info.get(0);
+        assertEquals("rootfs", mpi.filesystem);
+        assertEquals("/", mpi.mountpoint);
+        assertEquals("rootfs", mpi.type);
+        assertEquals(2, mpi.options.size());
+        assertEquals("ro", mpi.options.get(0));
+        assertEquals("relatime", mpi.options.get(1));
+
+        mpi = info.get(9);
+        assertEquals("/dev/block/vold/179:3", mpi.filesystem);
+        assertEquals("/mnt/secure/asec", mpi.mountpoint);
+        assertEquals("vfat", mpi.type);
+        assertEquals(16, mpi.options.size());
+        assertEquals("dirsync", mpi.options.get(1));
+        assertEquals("errors=remount-ro", mpi.options.get(15));
+    }
+
+    /**
+     * A unit test to ensure {@link TestDevice#getMountPointInfo(String)} works as expected.
+     */
+    public void testGetMountPointInfo_filter() throws Exception {
+        ITestDevice dvc = new TestableTestDevice() {
+            @Override
+            public String executeShellCommand(String cmd) {
+                assertEquals("cat /proc/mounts", cmd);
+                return ArrayUtil.join("\r\n",
+                        "rootfs / rootfs ro,relatime 0 0",
+                        "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
+                        "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
+                        "proc /proc proc rw,relatime 0 0",
+                        "sysfs /sys sysfs rw,relatime 0 0",
+                        "none /acct cgroup rw,relatime,cpuacct 0 0",
+                        "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                        "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                        "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
+                        "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
+                            "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
+                            "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
+                            "utf8,errors=remount-ro 0 0",
+                        "tmpfs /storage/sdcard0/.android_secure tmpfs " +
+                            "ro,relatime,size=0k,mode=000 0 0");
+            }
+        };
+
+        MountPointInfo mpi = dvc.getMountPointInfo("/mnt/secure/asec");
+        assertEquals("/dev/block/vold/179:3", mpi.filesystem);
+        assertEquals("/mnt/secure/asec", mpi.mountpoint);
+        assertEquals("vfat", mpi.type);
+        assertEquals(16, mpi.options.size());
+        assertEquals("dirsync", mpi.options.get(1));
+        assertEquals("errors=remount-ro", mpi.options.get(15));
+
+        assertNull(dvc.getMountPointInfo("/a/mountpoint/too/far"));
     }
 
     /**

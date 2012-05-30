@@ -827,6 +827,36 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    public List<MountPointInfo> getMountPointInfo() throws DeviceNotAvailableException {
+        final String mountInfo = executeShellCommand("cat /proc/mounts");
+        final String[] mountInfoLines = mountInfo.split("\r\n");
+        List<MountPointInfo> list = new ArrayList<MountPointInfo>(mountInfoLines.length);
+
+        for (String line : mountInfoLines) {
+            // We ignore the last two fields
+            // /dev/block/mtdblock4 /cache yaffs2 rw,nosuid,nodev,relatime 0 0
+            final String[] parts = line.split("\\s+", 5);
+            list.add(new MountPointInfo(parts[0], parts[1], parts[2], parts[3]));
+        }
+
+        return list;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public MountPointInfo getMountPointInfo(String mountpoint) throws DeviceNotAvailableException {
+        // The overhead of parsing all of the lines should be minimal
+        List<MountPointInfo> mountpoints = getMountPointInfo();
+        for (MountPointInfo info : mountpoints) {
+            if (mountpoint.equals(info.mountpoint)) return info;
+        }
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException {
         String[] pathComponents = path.split(FileListingService.FILE_SEPARATOR);
