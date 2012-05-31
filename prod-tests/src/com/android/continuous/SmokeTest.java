@@ -50,6 +50,15 @@ public class SmokeTest extends InstrumentationTest {
     private int mDeviceWaitTime = 60;
 
     /**
+     * Simple constructor that disables an incompatible runmode from the superclass
+     */
+    public SmokeTest() {
+        super();
+        // Re-run mode doesn't work properly with Smoke
+        setRerunMode(false);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
