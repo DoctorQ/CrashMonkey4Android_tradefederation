@@ -128,8 +128,9 @@ class ConfigurationXmlParser {
                 throwException(String.format("Missing class attribute for object %s",
                         objectTypeName));
             }
-            mConfigDef.addConfigObjectDef(objectTypeName, className);
-            mCurrentConfigObject = className;
+            int classCount = mConfigDef.addConfigObjectDef(objectTypeName, className);
+            mCurrentConfigObject = String.format("%s%c%d", className,
+                    OptionSetter.NAMESPACE_SEPARATOR, classCount);
         }
 
         private void throwException(String reason) throws SAXException {

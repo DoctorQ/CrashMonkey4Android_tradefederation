@@ -17,6 +17,8 @@
 package com.android.tradefed.config;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,8 @@ public class ConfigurationDef {
     private final Map<String, List<String>> mObjectClassMap;
     /** a list of option name/value pairs. */
     private final List<OptionDef> mOptionList;
+    /** a cache of the frequency of every classname */
+    private final Map<String, Integer> mClassFrequency;
 
     static class OptionDef {
         final String name;
@@ -58,6 +62,7 @@ public class ConfigurationDef {
         // use LinkedHashMap to keep objects in same order they were added.
         mObjectClassMap = new LinkedHashMap<String, List<String>>();
         mOptionList = new ArrayList<OptionDef>();
+        mClassFrequency = new HashMap<String, Integer>();
     }
 
     /**
@@ -79,14 +84,25 @@ public class ConfigurationDef {
      *
      * @param typeName the config object type name
      * @param className the class name of the config object
+     * @return the number of times this className has appeared in this {@link ConfigurationDef},
+     *         including this time.  Because all {@link ConfigurationDef} methods return these
+     *         classes with a constant ordering, this index can serve as a unique identifier for the
+     *         just-added instance of <code>clasName</code>.
      */
-    void addConfigObjectDef(String typeName, String className) {
+    int addConfigObjectDef(String typeName, String className) {
         List<String> classList = mObjectClassMap.get(typeName);
         if (classList == null) {
             classList = new ArrayList<String>();
             mObjectClassMap.put(typeName, classList);
         }
         classList.add(className);
+
+        // Increment and store count for this className
+        Integer freq = mClassFrequency.get(className);
+        freq = freq == null ? 1 : freq + 1;
+        mClassFrequency.put(className, freq);
+
+        return freq;
     }
 
     /**

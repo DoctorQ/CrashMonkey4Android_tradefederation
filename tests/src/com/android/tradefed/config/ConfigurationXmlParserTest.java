@@ -52,7 +52,7 @@ public class ConfigurationXmlParserTest extends TestCase {
         assertEquals(configName, configDef.getName());
         assertEquals("desc", configDef.getDescription());
         assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(0));
-        assertEquals("junit.framework.TestCase:opName", configDef.getOptionList().get(0).name);
+        assertEquals("junit.framework.TestCase:1:opName", configDef.getOptionList().get(0).name);
         assertEquals("val", configDef.getOptionList().get(0).value);
     }
 
@@ -74,6 +74,33 @@ public class ConfigurationXmlParserTest extends TestCase {
         // the non-namespaced option value should be used
         assertEquals("opName", configDef.getOptionList().get(0).name);
         assertEquals("val", configDef.getOptionList().get(0).value);
+    }
+
+    /**
+     * Test parsing xml with repeated type/class pairs
+     */
+    public void testParse_multiple() throws ConfigurationException {
+        final String normalConfig =
+            "<configuration description=\"desc\" >\n" +
+            "  <test class=\"junit.framework.TestCase\">\n" +
+            "    <option name=\"opName\" value=\"val1\" />\n" +
+            "  </test>\n" +
+            "  <test class=\"junit.framework.TestCase\">\n" +
+            "    <option name=\"opName\" value=\"val2\" />\n" +
+            "  </test>\n" +
+            "</configuration>";
+        final String configName = "config";
+        ConfigurationDef configDef = xmlParser.parse(configName, getStringAsStream(normalConfig));
+        assertEquals(configName, configDef.getName());
+        assertEquals("desc", configDef.getDescription());
+
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(0));
+        assertEquals("junit.framework.TestCase:1:opName", configDef.getOptionList().get(0).name);
+        assertEquals("val1", configDef.getOptionList().get(0).value);
+
+        assertEquals("junit.framework.TestCase", configDef.getObjectClassMap().get("test").get(1));
+        assertEquals("junit.framework.TestCase:2:opName", configDef.getOptionList().get(1).name);
+        assertEquals("val2", configDef.getOptionList().get(1).value);
     }
 
     /**

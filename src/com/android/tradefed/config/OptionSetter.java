@@ -16,7 +16,7 @@
 
 package com.android.tradefed.config;
 
-import com.android.ddmlib.Log;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
 import com.google.common.base.Objects;
 
@@ -403,10 +403,22 @@ public class OptionSetter {
      * @throws ConfigurationException if any {@link Option} are incorrectly specified
      */
     private Map<String, OptionFieldsForName> makeOptionMap() throws ConfigurationException {
+        final Map<String, Integer> freqMap = new HashMap<String, Integer>(mOptionSources.size());
         final Map<String, OptionFieldsForName> optionMap =
                 new HashMap<String, OptionFieldsForName>();
-        for (Object objectSource: mOptionSources) {
-            addOptionsForObject(objectSource, optionMap);
+        for (Object objectSource : mOptionSources) {
+            final String className = objectSource.getClass().getName();
+
+            // Keep track of how many times we've seen this className.  This assumes that we
+            // maintain the optionSources in a universally-knowable order internally (which we do --
+            // they remain in the order in which they were passed to the constructor).  Thus, the
+            // index can serve as a unique identifier for each instance of className as long as
+            // other upstream classes use the same 1-based ordered numbering scheme.
+            Integer index = freqMap.get(className);
+            index = index == null ? 1 : index + 1;
+            freqMap.put(className, index);
+
+            addOptionsForObject(objectSource, optionMap, index);
         }
         return optionMap;
     }
@@ -417,11 +429,13 @@ public class OptionSetter {
      *
      * @param optionSource
      * @param optionMap
-     * @param optionClass
+     * @param index The unique index of this instance of the optionSource class.  Should equal the
+     *              number of instances of this class that we've already seen, plus 1.
      * @throws ConfigurationException
      */
     private void addOptionsForObject(Object optionSource,
-            Map<String, OptionFieldsForName> optionMap) throws ConfigurationException {
+            Map<String, OptionFieldsForName> optionMap, Integer index)
+            throws ConfigurationException {
         Collection<Field> optionFields = getOptionFieldsForClass(optionSource.getClass());
         for (Field field : optionFields) {
             final Option option = field.getAnnotation(Option.class);
@@ -450,17 +464,17 @@ public class OptionSetter {
             }
 
             addNameToMap(optionMap, optionSource, option.name(), field);
-            addNamespacedOptionToMap(optionMap, optionSource, option.name(), field);
+            addNamespacedOptionToMap(optionMap, optionSource, option.name(), field, index);
             if (option.shortName() != Option.NO_SHORT_NAME) {
                 addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()), field);
                 addNamespacedOptionToMap(optionMap, optionSource,
-                        String.valueOf(option.shortName()), field);
+                        String.valueOf(option.shortName()), field, index);
             }
             if (isBooleanField(field)) {
                 // add the corresponding "no" option to make boolean false
                 addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
                 addNamespacedOptionToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(),
-                        field);
+                        field, index);
             }
         }
     }
@@ -593,14 +607,12 @@ public class OptionSetter {
             field.setAccessible(true);
             return field.get(optionObject);
         } catch (IllegalArgumentException e) {
-            Log.w(LOG_TAG, String.format(
-                    "Could not read value for field %s in class %s. Reason: %s", field.getName(),
-                    optionObject.getClass().getName(), e));
+            CLog.w("Could not read value for field %s in class %s. Reason: %s", field.getName(),
+                    optionObject.getClass().getName(), e);
             return null;
         } catch (IllegalAccessException e) {
-            Log.w(LOG_TAG, String.format(
-                    "Could not read value for field %s in class %s. Reason: %s", field.getName(),
-                    optionObject.getClass().getName(), e));
+            CLog.w("Could not read value for field %s in class %s. Reason: %s", field.getName(),
+                    optionObject.getClass().getName(), e);
             return null;
         }
     }
@@ -660,17 +672,31 @@ public class OptionSetter {
 
     /**
      * Adds the namespaced versions of the option to the map
+     *
+     * @see {@link #makeOptionMap()} for details on the enumeration scheme
      */
     private void addNamespacedOptionToMap(Map<String, OptionFieldsForName> optionMap,
-            Object optionSource, String name, Field field) throws ConfigurationException {
+            Object optionSource, String name, Field field, int index)
+            throws ConfigurationException {
+        final String className = optionSource.getClass().getName();
+
         if (optionSource.getClass().isAnnotationPresent(OptionClass.class)) {
             final OptionClass classAnnotation = optionSource.getClass().getAnnotation(
                     OptionClass.class);
             addNameToMap(optionMap, optionSource, String.format("%s%c%s", classAnnotation.alias(),
                     NAMESPACE_SEPARATOR, name), field);
         }
+
+        // Allows use of a className-delimited namespace.
+        // Example option name: com.fully.qualified.ClassName:option-name
         addNameToMap(optionMap, optionSource, String.format("%s%c%s",
-                optionSource.getClass().getName(), NAMESPACE_SEPARATOR, name), field);
+                className, NAMESPACE_SEPARATOR, name), field);
+
+        // Allows use of an enumerated namespace, to enable options to map to specific instances of
+        // a className, rather than just to all instances of that particular className.
+        // Example option name: com.fully.qualified.ClassName:2:option-name
+        addNameToMap(optionMap, optionSource, String.format("%s%c%d%c%s",
+                className, NAMESPACE_SEPARATOR, index, NAMESPACE_SEPARATOR, name), field);
     }
 
     private abstract static class Handler {
