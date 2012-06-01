@@ -927,6 +927,19 @@ public class TestDeviceTest extends TestCase {
     @SuppressWarnings("unchecked")
     private void injectShellResponse(final String expectedCommand, final String response)
             throws Exception {
+        injectShellResponse(expectedCommand, response, false);
+    }
+
+    /**
+     * Helper method to build a response to a executeShellCommand call
+     *
+     * @param expectedCommand the shell command to expect or null to skip verification of command
+     * @param response the response to simulate
+     * @param asStub whether to set a single expectation or a stub expectation
+     */
+    @SuppressWarnings("unchecked")
+    private void injectShellResponse(final String expectedCommand, final String response,
+            boolean asStub) throws Exception {
         IAnswer shellAnswer = new IAnswer() {
             @Override
             public Object answer() throws Throwable {
@@ -947,7 +960,11 @@ public class TestDeviceTest extends TestCase {
                     EasyMock.anyInt());
 
         }
-        EasyMock.expectLastCall().andAnswer(shellAnswer);
+        if (asStub) {
+            EasyMock.expectLastCall().andStubAnswer(shellAnswer);
+        } else {
+            EasyMock.expectLastCall().andAnswer(shellAnswer);
+        }
     }
 
     /**
@@ -1037,30 +1054,25 @@ public class TestDeviceTest extends TestCase {
      * A unit test to ensure {@link TestDevice#getMountPointInfo()} works as expected.
      */
     public void testGetMountPointInfo() throws Exception {
-        ITestDevice dvc = new TestableTestDevice() {
-            @Override
-            public String executeShellCommand(String cmd) {
-                assertEquals("cat /proc/mounts", cmd);
-                return ArrayUtil.join("\r\n",
-                        "rootfs / rootfs ro,relatime 0 0",
-                        "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
-                        "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
-                        "proc /proc proc rw,relatime 0 0",
-                        "sysfs /sys sysfs rw,relatime 0 0",
-                        "none /acct cgroup rw,relatime,cpuacct 0 0",
-                        "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
-                        "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
-                        "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
-                        "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
-                            "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
-                            "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
-                            "utf8,errors=remount-ro 0 0",
-                        "tmpfs /storage/sdcard0/.android_secure tmpfs " +
-                            "ro,relatime,size=0k,mode=000 0 0");
-            }
-        };
-
-        List<MountPointInfo> info = dvc.getMountPointInfo();
+        injectShellResponse("cat /proc/mounts", ArrayUtil.join("\r\n",
+                "rootfs / rootfs ro,relatime 0 0",
+                "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
+                "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
+                "proc /proc proc rw,relatime 0 0",
+                "sysfs /sys sysfs rw,relatime 0 0",
+                "none /acct cgroup rw,relatime,cpuacct 0 0",
+                "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
+                "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
+                    "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
+                    "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
+                    "utf8,errors=remount-ro 0 0",
+                "tmpfs /storage/sdcard0/.android_secure tmpfs " +
+                    "ro,relatime,size=0k,mode=000 0 0"));
+        replayMocks();
+        List<MountPointInfo> info = mTestDevice.getMountPointInfo();
+        verifyMocks();
         assertEquals(11, info.size());
 
         // spot-check
@@ -1085,30 +1097,25 @@ public class TestDeviceTest extends TestCase {
      * A unit test to ensure {@link TestDevice#getMountPointInfo(String)} works as expected.
      */
     public void testGetMountPointInfo_filter() throws Exception {
-        ITestDevice dvc = new TestableTestDevice() {
-            @Override
-            public String executeShellCommand(String cmd) {
-                assertEquals("cat /proc/mounts", cmd);
-                return ArrayUtil.join("\r\n",
-                        "rootfs / rootfs ro,relatime 0 0",
-                        "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
-                        "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
-                        "proc /proc proc rw,relatime 0 0",
-                        "sysfs /sys sysfs rw,relatime 0 0",
-                        "none /acct cgroup rw,relatime,cpuacct 0 0",
-                        "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
-                        "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
-                        "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
-                        "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
-                            "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
-                            "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
-                            "utf8,errors=remount-ro 0 0",
-                        "tmpfs /storage/sdcard0/.android_secure tmpfs " +
-                            "ro,relatime,size=0k,mode=000 0 0");
-            }
-        };
-
-        MountPointInfo mpi = dvc.getMountPointInfo("/mnt/secure/asec");
+        injectShellResponse("cat /proc/mounts", ArrayUtil.join("\r\n",
+                "rootfs / rootfs ro,relatime 0 0",
+                "tmpfs /dev tmpfs rw,nosuid,relatime,mode=755 0 0",
+                "devpts /dev/pts devpts rw,relatime,mode=600 0 0",
+                "proc /proc proc rw,relatime 0 0",
+                "sysfs /sys sysfs rw,relatime 0 0",
+                "none /acct cgroup rw,relatime,cpuacct 0 0",
+                "tmpfs /mnt/asec tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                "tmpfs /mnt/obb tmpfs rw,relatime,mode=755,gid=1000 0 0",
+                "none /dev/cpuctl cgroup rw,relatime,cpu 0 0",
+                "/dev/block/vold/179:3 /mnt/secure/asec vfat rw,dirsync,nosuid,nodev," +
+                    "noexec,relatime,uid=1000,gid=1015,fmask=0702,dmask=0702," +
+                    "allow_utime=0020,codepage=cp437,iocharset=iso8859-1,shortname=mixed," +
+                    "utf8,errors=remount-ro 0 0",
+                "tmpfs /storage/sdcard0/.android_secure tmpfs " +
+                    "ro,relatime,size=0k,mode=000 0 0"),
+                true /* asStub */);
+        replayMocks();
+        MountPointInfo mpi = mTestDevice.getMountPointInfo("/mnt/secure/asec");
         assertEquals("/dev/block/vold/179:3", mpi.filesystem);
         assertEquals("/mnt/secure/asec", mpi.mountpoint);
         assertEquals("vfat", mpi.type);
@@ -1116,7 +1123,7 @@ public class TestDeviceTest extends TestCase {
         assertEquals("dirsync", mpi.options.get(1));
         assertEquals("errors=remount-ro", mpi.options.get(15));
 
-        assertNull(dvc.getMountPointInfo("/a/mountpoint/too/far"));
+        assertNull(mTestDevice.getMountPointInfo("/a/mountpoint/too/far"));
     }
 
     /**
