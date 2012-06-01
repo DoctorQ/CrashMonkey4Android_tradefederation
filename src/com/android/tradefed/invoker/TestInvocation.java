@@ -65,7 +65,6 @@ public class TestInvocation implements ITestInvocation {
     static final String DEVICE_LOG_NAME = "device_logcat";
     static final String BUILD_ERROR_BUGREPORT_NAME = "build_error_bugreport";
 
-    private ITestDevice mDevice = null;
     private String mStatus = "(not invoked)";
 
     /**
@@ -105,7 +104,6 @@ public class TestInvocation implements ITestInvocation {
     public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
             throws DeviceNotAvailableException {
         try {
-            mDevice = device;
             mStatus = "fetching build";
             config.getLogOutput().init();
             getLogRegistry().registerLogger(config.getLogOutput());
@@ -194,6 +192,7 @@ public class TestInvocation implements ITestInvocation {
                         config.getBuildProvider()));
                 shardConfig.setTestInvocationListener(new ShardListener(resultCollector));
                 shardConfig.setLogOutput(config.getLogOutput().clone());
+                shardConfig.setCommandOptions(config.getCommandOptions().clone());
                 // use the same {@link ITargetPreparer}, {@link IDeviceRecovery} etc as original
                 // config
                 rescheduler.scheduleConfig(shardConfig);
@@ -367,6 +366,7 @@ public class TestInvocation implements ITestInvocation {
                     resumeConfig.setTestInvocationListener(new ResumeResultForwarder(
                             config.getTestInvocationListeners(), elapsedTime));
                     resumeConfig.setLogOutput(config.getLogOutput().clone());
+                    resumeConfig.setCommandOptions(config.getCommandOptions().clone());
                     boolean canReschedule = rescheduler.scheduleConfig(resumeConfig);
                     if (!canReschedule) {
                         CLog.i("Cannot reschedule resumed config for build %s. Cleaning up build.",
@@ -468,10 +468,6 @@ public class TestInvocation implements ITestInvocation {
 
     @Override
     public String toString() {
-        String devString = "(none)";
-        if (mDevice != null) {
-            devString = mDevice.getSerialNumber();
-        }
-        return String.format("Device %s: %s", devString, mStatus);
+        return mStatus;
     }
 }

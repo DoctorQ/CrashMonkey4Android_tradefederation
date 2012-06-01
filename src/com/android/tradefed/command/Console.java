@@ -384,7 +384,9 @@ public class Console extends Thread {
                 "%s help:" + LINE_SEPARATOR +
                 "\ts[tack]            Dump the stack traces of all threads" + LINE_SEPARATOR +
                 "\tl[ogs]             Dump the logs of all invocations to files" + LINE_SEPARATOR +
-                "\tc[onfig] <config>  Dump the content of the specified config" + LINE_SEPARATOR,
+                "\tc[onfig] <config>  Dump the content of the specified config" + LINE_SEPARATOR +
+                "\tcommandQueue       Dump the contents of the commmand execution queue" +
+                LINE_SEPARATOR,
                 DUMP_PATTERN));
 
         commandHelp.put(RUN_PATTERN, String.format(
@@ -428,12 +430,7 @@ public class Console extends Thread {
         trie.put(new Runnable() {
                     @Override
                     public void run() {
-                        Collection<String> invs = mScheduler.listInvocations();
-                        int counter = 1;
-
-                        for (String inv : invs) {
-                            printLine(String.format("Invocation %d: %s", counter++, inv));
-                        }
+                        mScheduler.displayInvocationsInfo(new PrintWriter(System.out, true));
                     }
                 }, LIST_PATTERN, "i(?:nvocations)?");
         trie.put(new Runnable() {
@@ -446,12 +443,7 @@ public class Console extends Thread {
         trie.put(new Runnable() {
                     @Override
                     public void run() {
-                        Collection<String> commands = mScheduler.listCommands();
-                        int counter = 1;
-
-                        for (String cmd : commands) {
-                            printLine(String.format("Command %d: %s", counter++, cmd));
-                        }
+                        mScheduler.displayCommandsInfo(new PrintWriter(System.out, true));
                     }
                 }, LIST_PATTERN, "c(?:ommands)?");
         trie.put(new Runnable() {
@@ -484,6 +476,13 @@ public class Console extends Thread {
             }
         };
         trie.put(dumpConfigRun, DUMP_PATTERN, "c(?:onfig?)?", "(.*)");
+
+        trie.put(new Runnable() {
+            @Override
+            public void run() {
+                mScheduler.displayCommandQueue(new PrintWriter(System.out, true));
+            }
+        }, DUMP_PATTERN, "commandQueue");
 
 
         // Run commands

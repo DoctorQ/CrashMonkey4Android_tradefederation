@@ -15,8 +15,11 @@
  */
 package com.android.tradefed.command;
 
+import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
+import com.android.tradefed.config.OptionCopier;
+import com.android.tradefed.log.LogUtil.CLog;
 
 /**
  * Implementation of {@link ICommandOptions}.
@@ -118,5 +121,16 @@ public class CommandOptions implements ICommandOptions {
     @Override
     public long getMinLoopTime() {
         return mMinLoopTime;
+    }
+
+    @Override
+    public ICommandOptions clone() {
+        CommandOptions clone = new CommandOptions();
+        try {
+            OptionCopier.copyOptions(this, clone);
+        } catch (ConfigurationException e) {
+            CLog.e("failed to clone command options", e);
+        }
+        return clone;
     }
 }

@@ -53,4 +53,10 @@ public interface ICommandOptions {
      */
     public void setLoopMode(boolean loopMode);
 
+    /**
+     * Creates a copy of the {@link ICommandOptions} object.
+     * @return
+     */
+    public ICommandOptions clone();
+
 }
