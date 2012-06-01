@@ -26,6 +26,7 @@ import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -453,6 +454,22 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     @Override
     public String getMountPoint(String mountName) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<MountPointInfo> getMountPointInfo() throws DeviceNotAvailableException {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public MountPointInfo getMountPointInfo(String mountpoint) throws DeviceNotAvailableException {
         return null;
     }
 

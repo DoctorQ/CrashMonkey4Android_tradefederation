@@ -26,7 +26,9 @@ import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -47,6 +49,44 @@ public interface ITestDevice {
          * mounted.
          */
         AVAILABLE
+    }
+
+    /**
+     * A simple struct class to store information about a single mountpoint
+     */
+    public static class MountPointInfo {
+        public String filesystem;
+        public String mountpoint;
+        public String type;
+        public List<String> options;
+
+        /** Simple constructor */
+        public MountPointInfo() {}
+
+        /**
+         * Convenience constructor to set all members
+         */
+        public MountPointInfo(String filesystem, String mountpoint, String type,
+                List<String> options) {
+            this.filesystem = filesystem;
+            this.mountpoint = mountpoint;
+            this.type = type;
+            this.options = options;
+        }
+
+        public MountPointInfo(String filesystem, String mountpoint, String type, String optString) {
+            this(filesystem, mountpoint, type, splitMountOptions(optString));
+        }
+
+        public static List<String> splitMountOptions(String options) {
+            List<String> list = Arrays.asList(options.split(","));
+            return list;
+        }
+
+        public String toString() {
+            return String.format("%s %s %s %s", this.filesystem, this.mountpoint, this.type,
+                    this.options);
+        }
     }
 
     /**
@@ -372,6 +412,23 @@ public interface ITestDevice {
      * @see {@link IDevice#getMountPoint(String)}
      */
     public String getMountPoint(String mountName);
+
+    /**
+     * Returns a parsed version of the information in /proc/mounts on the device
+     *
+     * @return A {@link List<MountPointInfo>} containing the information in "/proc/mounts"
+     */
+    public List<MountPointInfo> getMountPointInfo() throws DeviceNotAvailableException;
+
+    /**
+     * Returns a {@link MountPointInfo} corresponding to the specified mountpoint path, or
+     * <code>null</code> if that path has nothing mounted or otherwise does not appear in
+     * /proc/mounts as a mountpoint.
+     *
+     * @return A {@link List<MountPointInfo>} containing the information in "/proc/mounts"
+     * @see {@link getMountPointInfo()}
+     */
+    public MountPointInfo getMountPointInfo(String mountpoint) throws DeviceNotAvailableException;
 
     /**
      * Retrieves a bugreport from the device.
