@@ -18,6 +18,7 @@ package com.android.tradefed.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -89,15 +90,14 @@ public interface IEmail {
         public void setSubject(String subject) {
             mSubject = subject;
         }
-
-        public void setTos(String[] receipents){
-            int size = receipents.length;
-            if (mToAddrs == null) {
-                mToAddrs= new ArrayList<String>(size);
-            }
-            for (int i=0; i<size; i++){
-                mToAddrs.add(receipents[i]);
-            }
+        /**
+         * Set the recipients. All previously added recipients will be replaced.
+         * {@see #addTo(String)} to add to the recipients list.
+         *
+         * @param recipients an array of recipient email addresses
+         */
+        public void setTos(String[] recipients){
+            mToAddrs = Arrays.asList(recipients);
         }
         public void setBody(String body) {
             mBody = body;
