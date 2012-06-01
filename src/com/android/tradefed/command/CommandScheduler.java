@@ -183,6 +183,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         @Override
         public boolean scheduleConfig(IConfiguration config) {
+            // force loop mode to off, otherwise each rescheduled config will be treated as
+            // a new command and added back to queue
+            config.getCommandOptions().setLoopMode(false);
             ExecutableCommand rescheduledCmd = new ExecutableCommand(mCmdTracker, config);
             return addExecCommandToQueue(rescheduledCmd, 0);
         }
