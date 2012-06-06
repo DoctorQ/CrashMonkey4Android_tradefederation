@@ -148,8 +148,6 @@ public class DeviceSetup implements ITargetPreparer {
                     device.getSerialNumber()));
         }
 
-        getFriendlyBuildName(device, buildInfo);
-
         configureSystemProperties(device);
 
         keepScreenOn(device);
@@ -163,20 +161,6 @@ public class DeviceSetup implements ITargetPreparer {
         device.clearErrorDialogs();
     }
 
-    /**
-     * Retrieves the friendly build name (ro.build.id) from device, and store it in buildinfo
-     *
-     * @param device
-     * @param buildInfo
-     * @throws DeviceNotAvailableException
-     */
-    private void getFriendlyBuildName(ITestDevice device, IBuildInfo buildInfo)
-            throws DeviceNotAvailableException {
-        String buildName = device.getProperty("ro.build.id");
-        if (isReleaseBuildName(buildName)) {
-            buildInfo.addBuildAttribute("friendly_name", buildName);
-        }
-    }
     /**
      * Configures device system properties.
      * <p/>
