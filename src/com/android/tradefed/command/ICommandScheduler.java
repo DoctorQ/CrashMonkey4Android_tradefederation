@@ -19,7 +19,7 @@ package com.android.tradefed.command;
 import com.android.tradefed.config.IConfigurationFactory;
 import com.android.tradefed.invoker.ITestInvocation;
 
-import java.util.Collection;
+import java.io.PrintWriter;
 
 /**
  * A scheduler for running TradeFederation commands.
@@ -121,15 +121,12 @@ public interface ICommandScheduler {
      */
     public void await() throws InterruptedException;
 
-
-    // The following are optional management-related interfaces.
     /**
-     * Get a list of current invocations.
+     * Displays a list of current invocations.
      *
-     * @return A list of {@link ITestInvocation} descriptions, or {@code null} if none
-     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     * @param printWriter the {@link PrintWriter} to output to.
      */
-    public Collection<String> listInvocations() throws UnsupportedOperationException;
+    public void displayInvocationsInfo(PrintWriter printWriter);
 
     /**
      * Stop a running invocation.
@@ -140,12 +137,18 @@ public interface ICommandScheduler {
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException;
 
     /**
-     * Get a list of current commands.
+     * Output a list of current commands.
      *
-     * @return A list of current commands, pre-serialized
-     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     * @param printWriter the {@link PrintWriter} to output to.
      */
-    public Collection<String> listCommands() throws UnsupportedOperationException;
+    public void displayCommandsInfo(PrintWriter printWriter);
+
+    /**
+     * Output detailed debug info on state of command execution queue.
+     *
+     * @param printWriter
+     */
+    public void displayCommandQueue(PrintWriter printWriter);
 
     /**
      * Starts a socket to listen to remote commands.
