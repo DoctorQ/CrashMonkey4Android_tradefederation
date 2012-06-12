@@ -874,6 +874,13 @@ public interface ITestDevice {
     public void setOptions(TestDeviceOptions options);
 
     /**
+     * Fetch the test options for the device.
+     *
+     * @return {@link TestDeviceOptions} related to the device under test.
+     */
+    public TestDeviceOptions getOptions();
+
+    /**
      * Fetch the package names installed on the device.
      *
      * @return {@link Set} of {@link String} package names currently installed on the device.
