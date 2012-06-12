@@ -2366,4 +2366,12 @@ class TestDevice implements IManagedTestDevice {
         }
         return packages;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public TestDeviceOptions getOptions() {
+        return mOptions;
+    }
 }

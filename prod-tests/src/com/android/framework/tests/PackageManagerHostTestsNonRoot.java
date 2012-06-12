@@ -63,7 +63,7 @@ public class PackageManagerHostTestsNonRoot extends DeviceTestCase {
 
         // If device is currently in adb root, reboot.
         if (getDevice().isAdbRoot()) {
-            TestDeviceOptions options = new TestDeviceOptions();
+            TestDeviceOptions options = getDevice().getOptions();
             options.setEnableAdbRoot(false);
             getDevice().setOptions(options);
             getDevice().reboot();
