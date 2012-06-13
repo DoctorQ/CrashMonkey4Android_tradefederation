@@ -97,8 +97,9 @@ public class PackageManagerHostTestsNonRoot extends DeviceTestCase {
     }
 
     /**
-     * Ensure that normal install of apk on non-rooted device works. Also ensures we are unable to
-     * grab the apk from the device if non-rooted. Assumes that we are running adb as non root.
+     * Ensure that normal install of apk on non-rooted device works. Also
+     * ensures we are unable to grab the apk from the device if non-rooted.
+     * Assumes that we are running adb as non root.
      *
      * @throws Exception
      */
@@ -112,6 +113,56 @@ public class PackageManagerHostTestsNonRoot extends DeviceTestCase {
             mPMHostUtils.installEncryptedAppAndVerifyExists(
                     getTestAppFilePath(SIMPLE_ENCRYPTED_APK), SIMPLE_PKG, true,
                     ENCRYPTION_ALGO, ENCRYPTION_IV, ENCRYPTION_KEY, MAC_ALGO, MAC_KEY, MAC_TAG);
+
+            // Unable to ls /data/app-asec
+            Assert.assertFalse(mPMHostUtils.doesRemoteFileExistContainingString(ASEC_PRIVATE_PATH,
+                    SIMPLE_PKG));
+            // Able to ls /mnt/asec/
+            Assert.assertTrue(mPMHostUtils.doesRemoteFileExistContainingString(APP_PRIVATE_PATH,
+                    SIMPLE_PKG));
+
+            // Able to pull the resource file from asec
+            String remoteResourceFile = findRemoteFilePath(APP_PRIVATE_PATH, SIMPLE_PKG, "res.zip");
+            Assert.assertNotNull(remoteResourceFile);
+            Assert.assertTrue(getDevice().doesFileExist(remoteResourceFile));
+            File res = getDevice().pullFile(remoteResourceFile);
+            Assert.assertNotNull(res);
+
+            // However, unable to pull apk file from asec
+            String remoteApkFile = findRemoteFilePath(APP_PRIVATE_PATH, SIMPLE_PKG, ".apk");
+            Assert.assertNotNull(remoteApkFile);
+            Assert.assertTrue(getDevice().doesFileExist(remoteApkFile));
+            File apk = null;
+            try {
+                apk = getDevice().pullFile(remoteApkFile);
+            } catch (Exception e) {
+                // Expect to fail.
+            }
+            Assert.assertNull(apk);
+        } finally {
+            mPMHostUtils.uninstallApp(SIMPLE_PKG);
+        }
+    }
+
+    /**
+     * Ensure that the permissions of the encrypted apk remains the same following a
+     * reboot.
+     *
+     * @throws Exception
+     */
+    public void testEncryptedApkForNonRootReboot() throws Exception {
+        try {
+            // cleanup test app just in case it was accidently installed
+            getDevice().uninstallPackage(SIMPLE_PKG);
+
+            mPMHostUtils.waitForPackageManager();
+            // Install app
+            mPMHostUtils.installEncryptedAppAndVerifyExists(
+                    getTestAppFilePath(SIMPLE_ENCRYPTED_APK), SIMPLE_PKG, true,
+                    ENCRYPTION_ALGO, ENCRYPTION_IV, ENCRYPTION_KEY, MAC_ALGO, MAC_KEY, MAC_TAG);
+
+            // Reboot device.
+            getDevice().reboot();
 
             // Unable to ls /data/app-asec
             Assert.assertFalse(mPMHostUtils.doesRemoteFileExistContainingString(ASEC_PRIVATE_PATH,
