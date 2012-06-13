@@ -767,13 +767,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Clears all {@link ExecutableCommand} not currently executing.
      */
-    private synchronized void clearWaitingCommands() {
+    private void clearWaitingCommands() {
         mCommandQueue.clear();
-        ListIterator<ExecutableCommand> cmdIter = mAllCommands.listIterator();
-        while (cmdIter.hasNext()) {
-            ExecutableCommand cmd = cmdIter.next();
-            if (!cmd.getState().equals(CommandState.EXECUTING)) {
-                cmdIter.remove();
+        synchronized (mAllCommands) {
+            ListIterator<ExecutableCommand> cmdIter = mAllCommands.listIterator();
+            while (cmdIter.hasNext()) {
+                ExecutableCommand cmd = cmdIter.next();
+                if (!cmd.getState().equals(CommandState.EXECUTING)) {
+                    cmdIter.remove();
+                }
             }
         }
     }
