@@ -21,7 +21,6 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 
 import java.io.File;
 import java.util.Arrays;

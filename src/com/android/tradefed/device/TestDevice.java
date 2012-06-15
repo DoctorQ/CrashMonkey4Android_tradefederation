@@ -827,6 +827,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public List<MountPointInfo> getMountPointInfo() throws DeviceNotAvailableException {
         final String mountInfo = executeShellCommand("cat /proc/mounts");
         final String[] mountInfoLines = mountInfo.split("\r\n");
@@ -845,6 +846,7 @@ class TestDevice implements IManagedTestDevice {
     /**
      * {@inheritDoc}
      */
+    @Override
     public MountPointInfo getMountPointInfo(String mountpoint) throws DeviceNotAvailableException {
         // The overhead of parsing all of the lines should be minimal
         List<MountPointInfo> mountpoints = getMountPointInfo();
