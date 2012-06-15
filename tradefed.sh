@@ -43,35 +43,32 @@ fi
 
 # check debug flag and set up remote debugging
 if [ -n "${TF_DEBUG}" ]; then
-  if [ -z "${TF_DEBUG_PORT}" ]; then
-    TF_DEBUG_PORT=10088
-  fi
-  RDBG_FLAG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${TF_DEBUG_PORT}
+    if [ -z "${TF_DEBUG_PORT}" ]; then
+        TF_DEBUG_PORT=10088
+    fi
+    RDBG_FLAG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${TF_DEBUG_PORT}
 fi
 
-# check if in Android build env
-if [ ! -z ${ANDROID_BUILD_TOP} ]; then
-    HOST=`uname`
-    if [ "$HOST" == "Linux" ]; then
-        OS="linux-x86"
-    elif [ "$HOST" == "Darwin" ]; then
-        OS="darwin-x86"
-    else
-        echo "Unrecognized OS"
-        exit
-    fi;
-    # ddmlib-prebuilt is still in standard dir
-    ddmlib_path=$ANDROID_BUILD_TOP/out/host/$OS/framework/ddmlib-prebuilt.jar
-    checkFile $ddmlib_path
-    # add all jars in tradefed out dir
-    tf_path=$ANDROID_BUILD_TOP/out/host/$OS/tradefed/\*
-else
-    TF_ROOT_PATH=$(dirname $0)
-    # assume downloaded TF, look for jars in same directory as script
-    # sanity check - ensure ddmlib-prebuilt is there
-    checkFile $TF_ROOT_PATH/ddmlib-prebuilt.jar
-    tf_path=$TF_ROOT_PATH/\*
-fi;
+# first try to find TF jars in same dir as this script
+CUR_DIR=$(dirname $0)
+if [ -f "${CUR_DIR}/tradefed.jar" ]; then
+    tf_path=${CUR_DIR}/\*
+elif [ ! -z "${ANDROID_BUILD_TOP}" ]; then
+    # in an Android build env, tradefed.sh should be in
+    # out/host/$OS/bin and tradefed.jar should be in
+    # out/host/$OS/tradefed
+    if [ -f "${CUR_DIR}/../tradefed/tradefed.jar" ]; then
+      tf_path=$CUR_DIR/../tradefed/\*
+      # ddmlib-prebuilt is still in standard output dir
+      ddmlib_path=${CUR_DIR}/../framework/ddmlib-prebuilt.jar
+    fi
+fi
+
+if [ -z "${tf_path}" ]; then
+    echo "Could not find tradefed jar files"
+    exit
+fi
+
 
 java $RDBG_FLAG \
   -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"
