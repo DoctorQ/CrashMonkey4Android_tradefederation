@@ -147,9 +147,11 @@ public class MonkeyLogParser implements IParser {
                 } else {
                     crash = new JavaCrashParser().parse(mBlock);
                 }
-                crash.setPid(mPid);
-                crash.setApp(mApp);
-                mMonkeyLog.setCrash(crash);
+                if (crash != null) {
+                    crash.setPid(mPid);
+                    crash.setApp(mApp);
+                    mMonkeyLog.setCrash(crash);
+                }
 
                 mMatchingAnr = false;
                 mMatchingJavaCrash = false;
