@@ -46,29 +46,30 @@ if [ -n "${TF_DEBUG}" ]; then
     if [ -z "${TF_DEBUG_PORT}" ]; then
         TF_DEBUG_PORT=10088
     fi
-    RDBG_FLAG=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${TF_DEBUG_PORT}
+    RDBG_FLAG="-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=${TF_DEBUG_PORT}"
 fi
 
 # first try to find TF jars in same dir as this script
-CUR_DIR=$(dirname $0)
+CUR_DIR=$(dirname "$0")
 if [ -f "${CUR_DIR}/tradefed.jar" ]; then
-    tf_path=${CUR_DIR}/\*
-elif [ ! -z "${ANDROID_BUILD_TOP}" ]; then
-    # in an Android build env, tradefed.sh should be in
-    # out/host/$OS/bin and tradefed.jar should be in
-    # out/host/$OS/tradefed
-    if [ -f "${CUR_DIR}/../tradefed/tradefed.jar" ]; then
-      tf_path=$CUR_DIR/../tradefed/\*
-      # ddmlib-prebuilt is still in standard output dir
-      ddmlib_path=${CUR_DIR}/../framework/ddmlib-prebuilt.jar
+    tf_path="${CUR_DIR}/*"
+elif [ ! -z "${ANDROID_HOST_OUT}" ]; then
+    # in an Android build env, tradefed.jar should be in
+    # $ANDROID_HOST_OUT/tradefed/
+    if [ -f "${ANDROID_HOST_OUT}/tradefed/tradefed.jar" ]; then
+        # We intentionally pass the asterisk through without shell expansion
+        tf_path="${ANDROID_HOST_OUT}/tradefed/*"
+        # ddmlib-prebuilt is in the framework subdir
+        ddmlib_path="${ANDROID_HOST_OUT}/framework/ddmlib-prebuilt.jar"
     fi
 fi
 
 if [ -z "${tf_path}" ]; then
-    echo "Could not find tradefed jar files"
+    echo "ERROR: Could not find tradefed jar files"
     exit
 fi
 
 
-java $RDBG_FLAG \
-  -cp $ddmlib_path:$tf_path com.android.tradefed.command.Console "$@"
+# Note: must leave ${RDBG_FLAG} unquoted so that it goes away when unset
+java ${RDBG_FLAG} \
+  -cp "${ddmlib_path}:${tf_path}" com.android.tradefed.command.Console "$@"
