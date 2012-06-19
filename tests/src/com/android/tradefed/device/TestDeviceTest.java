@@ -924,7 +924,6 @@ public class TestDeviceTest extends TestCase {
      * @param expectedCommand the shell command to expect or null to skip verification of command
      * @param response the response to simulate
      */
-    @SuppressWarnings("unchecked")
     private void injectShellResponse(final String expectedCommand, final String response)
             throws Exception {
         injectShellResponse(expectedCommand, response, false);
