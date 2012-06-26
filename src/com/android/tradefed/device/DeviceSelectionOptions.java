@@ -335,7 +335,7 @@ public class DeviceSelectionOptions implements IDeviceSelection {
                 return false;
             }
         }
-        if (emulatorRequested() && !device.isEmulator()) {
+        if ((emulatorRequested() || stubEmulatorRequested()) && !device.isEmulator()) {
             return false;
         }
         if (deviceRequested() && device.isEmulator()) {
