@@ -708,6 +708,10 @@ public class Console extends Thread {
             if (!isConsoleFunctional()) {
                 if (arrrgs.isEmpty()) {
                     printLine("No commands for non-interactive mode; exiting.");
+                    // FIXME: need to run the scheduler here so that the things blocking on it
+                    // FIXME: will be released.
+                    mScheduler.start();
+                    mScheduler.await();
                     return;
                 } else {
                     printLine("Non-interactive mode: Running initial command then exiting.");
