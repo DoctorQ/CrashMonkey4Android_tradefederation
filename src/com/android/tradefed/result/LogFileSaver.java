@@ -15,7 +15,6 @@
  */
 package com.android.tradefed.result;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.FileUtil;
@@ -38,8 +37,7 @@ import java.util.zip.ZipOutputStream;
  */
 public class LogFileSaver implements ILogFileSaver {
 
-    private static final int BUFFER_SIZE = 64*1024;
-    private static final String LOG_TAG = "LogFileSaver";
+    private static final int BUFFER_SIZE = 64 * 1024;
     private File mRootDir;
 
     /**
@@ -56,12 +54,11 @@ public class LogFileSaver implements ILogFileSaver {
         try {
             mRootDir = FileUtil.createTempDir("inv_", buildDir);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Unable to create unique directory in %s",
-                    buildDir.getAbsolutePath()));
-            Log.e(LOG_TAG, e);
+            CLog.e("Unable to create unique directory in %s", buildDir.getAbsolutePath());
+            CLog.e(e);
             mRootDir = buildDir;
         }
-        Log.i(LOG_TAG, String.format("Using log file directory %s", mRootDir.getAbsolutePath()));
+        CLog.i("Using log file directory %s", mRootDir.getAbsolutePath());
     }
 
     /**
@@ -102,15 +99,15 @@ public class LogFileSaver implements ILogFileSaver {
             if (buildReportDir.isDirectory()) {
                 return buildReportDir;
             } else {
-                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. File " +
-                        "already exists.", buildReportDir.getAbsolutePath()));
+                CLog.w("Cannot create build-specific output dir %s. File already exists.",
+                        buildReportDir.getAbsolutePath());
             }
         } else {
             if (FileUtil.mkdirsRWX(buildReportDir)) {
                 return buildReportDir;
             } else {
-                Log.w(LOG_TAG, String.format("Cannot create build-specific output dir %s. Failed" +
-                        " to create directory.", buildReportDir.getAbsolutePath()));
+                CLog.w("Cannot create build-specific output dir %s. Failed to create directory.",
+                        buildReportDir.getAbsolutePath());
             }
         }
         return rootDir;
@@ -134,7 +131,7 @@ public class LogFileSaver implements ILogFileSaver {
         File logFile = FileUtil.createTempFile(saneDataName + "_", "." + dataType.getFileExt(),
                 mRootDir);
         FileUtil.writeToFile(dataStream, logFile);
-        Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
+        CLog.i("Saved log file %s", logFile.getAbsolutePath());
         return logFile;
     }
 
@@ -160,7 +157,7 @@ public class LogFileSaver implements ILogFileSaver {
                     logFile), BUFFER_SIZE));
             outStream.putNextEntry(new ZipEntry(saneDataName + "." + dataType.getFileExt()));
             StreamUtil.copyStreams(bufInput, outStream);
-            Log.i(LOG_TAG, String.format("Saved log file %s", logFile.getAbsolutePath()));
+            CLog.i("Saved log file %s", logFile.getAbsolutePath());
             return logFile;
         } finally {
             StreamUtil.closeStream(bufInput);
