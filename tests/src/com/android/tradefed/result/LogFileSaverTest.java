@@ -33,6 +33,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -103,6 +106,28 @@ public class LogFileSaverTest extends TestCase {
         assertEquals(buildId, buildDir.getName());
         // ensure parent directory is rootDir
         assertEquals(0, mRootDir.compareTo(buildDir.getParentFile()));
+    }
+
+    /**
+     * Test that retention file creation
+     */
+    @SuppressWarnings("deprecation")
+    public void testGetFileDir_retention() throws IOException, ParseException {
+        final String buildId = "88888";
+        final String branch = "somebranch";
+        IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
+        EasyMock.expect(mockBuild.getBuildBranch()).andReturn(branch).anyTimes();
+        EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.replay(mockBuild);
+        ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir, 1);
+        File retentionFile = new File(saver.getFileDir(), LogFileSaver.RETENTION_FILE_NAME);
+        assertTrue(retentionFile.isFile());
+        String timestamp = StreamUtil.getStringFromStream(new FileInputStream(retentionFile));
+        SimpleDateFormat formatter = new SimpleDateFormat(LogFileSaver.RETENTION_DATE_FORMAT);
+        Date retentionDate = formatter.parse(timestamp);
+        Date currentDate = new Date();
+        int expectedDay = currentDate.getDay() == 6 ? 0 :  currentDate.getDay() + 1;
+        assertEquals(expectedDay, retentionDate.getDay());
     }
 
     /**
