@@ -204,6 +204,10 @@ public class TestDeviceOptions {
         return mOnlineTimeout;
     }
 
+    public void setOnlineTimeout(long onlineTimeout) {
+        mOnlineTimeout = onlineTimeout;
+    }
+
     /**
      * @return the default time in ms to to wait for a device to be available.
      */
