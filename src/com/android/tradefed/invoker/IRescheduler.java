@@ -32,4 +32,12 @@ public interface IRescheduler {
      */
     boolean scheduleConfig(IConfiguration config);
 
+    /**
+     * Reschedule the command for future execution.
+     *
+     * @return <code>true</code> if command was successfully rescheduled. <code>false</code>
+     * otherwise
+     */
+    boolean rescheduleCommand();
+
 }

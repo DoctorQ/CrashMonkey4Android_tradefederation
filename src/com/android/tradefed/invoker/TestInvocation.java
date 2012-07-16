@@ -20,8 +20,6 @@ import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.BuildRetrievalError;
 import com.android.tradefed.build.ExistingBuildProvider;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.build.IBuildProvider;
-import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
@@ -41,6 +39,7 @@ import com.android.tradefed.testtype.IBuildReceiver;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
+import com.android.tradefed.testtype.IRetriableTest;
 import com.android.tradefed.testtype.IShardableTest;
 
 import junit.framework.Test;
@@ -163,7 +162,8 @@ public class TestInvocation implements ITestInvocation {
      * <p/>
      * A successful shard action renders the current config empty, and invocation should not proceed.
      *
-     * @see {@link IShardableTest}, {@link IRescheduler}
+     * @see IShardableTest
+     * @see IRescheduler
      *
      * @param config the current {@link IConfiguration}.
      * @param info the {@link IBuildInfo} to test
@@ -261,7 +261,6 @@ public class TestInvocation implements ITestInvocation {
      *
      * @throws DeviceNotAvailableException
      * @throws IOException if log could not be created
-     * @throws ConfigurationException
      */
     private void performInvocation(IConfiguration config, ITestDevice device, IBuildInfo info,
             IRescheduler rescheduler) throws DeviceNotAvailableException, IOException {
@@ -282,19 +281,18 @@ public class TestInvocation implements ITestInvocation {
             CLog.w("Build %s failed on device %s. Reason: %s", info.getBuildId(),
                     device.getSerialNumber(), e.toString());
             takeBugreport(device, config.getTestInvocationListeners());
-            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
+            reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");
             CLog.e(e);
-            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
+            reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
         } catch (DeviceNotAvailableException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Invocation did not complete due to device %s becoming not available. " +
                     "Reason: %s", device.getSerialNumber(), e.getMessage());
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
-                reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(),
-                        info);
+                reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
             } else {
                 CLog.i("Rescheduled failed invocation for resume");
             }
@@ -302,8 +300,11 @@ public class TestInvocation implements ITestInvocation {
         } catch (RuntimeException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Unexpected exception when running invocation: %s", e.toString());
-            reportFailure(e, config.getTestInvocationListeners(), config.getBuildProvider(), info);
+            reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
             throw e;
+        } catch (AssertionError e) {
+            CLog.w("Caught AssertionError while running invocation: ", e.toString());
+            reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
         } finally {
             mStatus = "done running tests";
             try {
@@ -327,7 +328,6 @@ public class TestInvocation implements ITestInvocation {
      * @param config
      * @param device
      * @param info
-     * @throws IOException if logger fails to initialize
      */
     private void startInvocation(IConfiguration config, ITestDevice device, IBuildInfo info) {
         logStartInvocation(info, device);
@@ -345,7 +345,7 @@ public class TestInvocation implements ITestInvocation {
     /**
      * Attempt to reschedule the failed invocation to resume where it left off.
      * <p/>
-     * @see {@link IResumableTest}
+     * @see IResumableTest
      *
      * @param config
      * @return <code>true</code> if invocation was resumed successfully
@@ -383,13 +383,20 @@ public class TestInvocation implements ITestInvocation {
     }
 
     private void reportFailure(Throwable exception, List<ITestInvocationListener> listeners,
-            IBuildProvider buildProvider, IBuildInfo info) {
-
+            IConfiguration config, IBuildInfo info, IRescheduler rescheduler) {
         for (ITestInvocationListener listener : listeners) {
             listener.invocationFailed(exception);
         }
         if (!(exception instanceof BuildError)) {
-            buildProvider.buildNotTested(info);
+            config.getBuildProvider().buildNotTested(info);
+
+            for (IRemoteTest test : config.getTests()) {
+                if (!config.getCommandOptions().isLoopMode() && test instanceof IRetriableTest &&
+                        ((IRetriableTest) test).isRetriable()) {
+                    rescheduler.rescheduleCommand();
+                    return;
+                }
+            }
         }
     }
 
@@ -449,9 +456,8 @@ public class TestInvocation implements ITestInvocation {
      *
      * @param device the {@link ITestDevice} to run tests on
      * @param buildInfo the {@link BuildInfo} describing the build target
-     * @param tests the {@link Test}s to run
-     * @param listeners the {@link ITestInvocationListener}s that listens for test results in real
-     *            time
+     * @param config the {@link IConfiguration} to run
+     * @param rescheduler the {@link IRescheduler} used to reschedule the test.
      * @throws DeviceNotAvailableException
      */
     private void runTests(ITestDevice device, IBuildInfo buildInfo, IConfiguration config,

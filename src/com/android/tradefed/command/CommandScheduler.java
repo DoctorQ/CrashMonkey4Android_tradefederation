@@ -259,12 +259,34 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             ExecutableCommand rescheduledCmd = createExecutableCommand(mCmdTracker, config, true);
             return addExecCommandToQueue(rescheduledCmd, 0);
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean rescheduleCommand() {
+            try {
+                IConfiguration config = getConfigFactory().createConfigurationFromArgs(
+                        mCmdTracker.getArgs());
+                ExecutableCommand execCmd = createExecutableCommand(mCmdTracker, config, true);
+                return addExecCommandToQueue(execCmd, 0);
+            } catch (ConfigurationException e) {
+                // FIXME: do this with jline somehow for ANSI support
+                // note: make sure not to log (aka record) this line, as (args) may contain
+                // passwords.
+                System.out.println(String.format("Error while processing args: %s",
+                        Arrays.toString(mCmdTracker.getArgs())));
+                System.out.println(e.getMessage());
+                System.out.println();
+                return false;
+            }
+        }
     }
 
     /**
      * Comparator for {@link ExecutableCommand}.
      * <p/>
-     * Delegates to {@link CommandTrackerComparator).
+     * Delegates to {@link CommandTrackerTimeComparator}.
      */
     private static class ExecutableCommandComparator implements Comparator<ExecutableCommand> {
         CommandTrackerTimeComparator mTrackerComparator = new CommandTrackerTimeComparator();
@@ -639,8 +661,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * Get the poll time to wait to retrieve a command to execute.
      * <p/>
      * Exposed so unit tests can mock.
-     *
-     * @return
      */
     long getCommandPollTimeMs() {
         return 1000;

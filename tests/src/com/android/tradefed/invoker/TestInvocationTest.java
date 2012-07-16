@@ -41,6 +41,7 @@ import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.testtype.IResumableTest;
+import com.android.tradefed.testtype.IRetriableTest;
 
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -399,6 +400,31 @@ public class TestInvocationTest extends TestCase {
     }
 
     /**
+     * Test the invoke scenario for a {@link IRetriableTest}.
+     *
+     * @throws Exception if unexpected error occurs
+     */
+    public void testInvoke_retry() throws Exception {
+        AssertionError exception = new AssertionError();
+        IRetriableTest test = EasyMock.createMock(IRetriableTest.class);
+        test.run((ITestInvocationListener)EasyMock.anyObject());
+        EasyMock.expectLastCall().andThrow(exception);
+        EasyMock.expect(test.isRetriable()).andReturn(Boolean.TRUE);
+        mStubConfiguration.getCommandOptions().setLoopMode(false);
+        IRescheduler mockRescheduler = EasyMock.createMock(IRescheduler.class);
+        EasyMock.expect(mockRescheduler.rescheduleCommand()).andReturn(EasyMock.anyBoolean());
+        setupMockFailureListeners(exception);
+        mMockBuildProvider.buildNotTested(mMockBuildInfo);
+        setupNormalInvoke(test);
+        EasyMock.replay(mockRescheduler);
+        mTestInvocation.invoke(mMockDevice, mStubConfiguration, mockRescheduler);
+
+        EasyMock.verify(mockRescheduler);
+        verifyMocks(test);
+        verifySummaryListener();
+    }
+
+    /**
      * Set up expected conditions for normal run up to the part where tests are run.
      *
      * @param test the {@link Test} to use.
@@ -437,12 +463,12 @@ public class TestInvocationTest extends TestCase {
      * However note that, across all listeners, any getSummary call will precede all putSummary
      * calls.
      */
-    private void setupMockListeners(InvocationStatus status, Exception exception) {
+    private void setupMockListeners(InvocationStatus status, Throwable throwable) {
         // invocationStarted
         mMockTestListener.invocationStarted(mMockBuildInfo);
         mMockSummaryListener.invocationStarted(mMockBuildInfo);
 
-        if (exception instanceof BuildError) {
+        if (throwable instanceof BuildError) {
             mMockTestListener.testLog(EasyMock.eq(TestInvocation.BUILD_ERROR_BUGREPORT_NAME),
                     EasyMock.eq(LogDataType.TEXT), (InputStreamSource)EasyMock.anyObject());
             mMockSummaryListener.testLog(EasyMock.eq(TestInvocation.BUILD_ERROR_BUGREPORT_NAME),
@@ -451,8 +477,8 @@ public class TestInvocationTest extends TestCase {
 
         // invocationFailed
         if (!status.equals(InvocationStatus.SUCCESS)) {
-            mMockTestListener.invocationFailed(EasyMock.eq(exception));
-            mMockSummaryListener.invocationFailed(EasyMock.eq(exception));
+            mMockTestListener.invocationFailed(EasyMock.eq(throwable));
+            mMockSummaryListener.invocationFailed(EasyMock.eq(throwable));
         }
 
         // testLog (mMockTestListener)
@@ -480,8 +506,8 @@ public class TestInvocationTest extends TestCase {
         setupMockListeners(InvocationStatus.SUCCESS, null);
     }
 
-    private void setupMockFailureListeners(Exception exception) {
-        setupMockListeners(InvocationStatus.FAILED, exception);
+    private void setupMockFailureListeners(Throwable throwable) {
+        setupMockListeners(InvocationStatus.FAILED, throwable);
     }
 
     private void verifySummaryListener() {

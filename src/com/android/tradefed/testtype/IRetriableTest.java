@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 The Android Open Source Project
+ * Copyright (C) 2012 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.invoker;
-
-import com.android.tradefed.config.IConfiguration;
+package com.android.tradefed.testtype;
 
 /**
- * A stub implementation of a {@link IRescheduler}.
+ * A {@link IRemoteTest} that supports retrying if the test aborted before completion.
  */
-public class StubRescheduler implements IRescheduler {
+public interface IRetriableTest extends IRemoteTest{
 
     /**
-     * {@inheritDoc}
+     * @return {@code true} if the test is currently retriable.
      */
-    @Override
-    public boolean scheduleConfig(IConfiguration config) {
-        return false;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean rescheduleCommand() {
-        return false;
-    }
+    public boolean isRetriable();
 }
