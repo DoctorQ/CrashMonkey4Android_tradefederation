@@ -29,20 +29,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+
 
 /**
  * A helper for {@link ITestInvocationListener}'s that will save log data to a file
  */
 public class LogFileSaver implements ILogFileSaver {
 
-    static final String RETENTION_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss zzz";
-    static final String RETENTION_FILE_NAME = ".retention";
     private static final int BUFFER_SIZE = 64 * 1024;
     private File mRootDir;
 
@@ -65,7 +62,7 @@ public class LogFileSaver implements ILogFileSaver {
         try {
             mRootDir = FileUtil.createTempDir("inv_", buildDir);
             if (logRetentionDays != null && logRetentionDays > 0) {
-                writeRetentionFile(mRootDir, logRetentionDays);
+                new RetentionFileSaver().writeRetentionFile(mRootDir, logRetentionDays);
             }
         } catch (IOException e) {
             CLog.e("Unable to create unique directory in %s. Attempting to use tmp dir instead",
@@ -232,22 +229,5 @@ public class LogFileSaver implements ILogFileSaver {
     @Override
     public InputStream createInputStreamFromFile(File logFile) throws IOException {
         return new BufferedInputStream(new FileInputStream(logFile), BUFFER_SIZE);
-    }
-
-    /**
-     * Creates a .retention file in given dir with timestamp == current + logRetentionDays
-     */
-    private void writeRetentionFile(File dir, Integer logRetentionDays) {
-        try {
-            long deleteTimeEpoch = System.currentTimeMillis() + logRetentionDays * 24 * 60 * 60
-                    * 1000;
-            Date date = new Date(deleteTimeEpoch);
-            SimpleDateFormat formatter = new SimpleDateFormat(RETENTION_DATE_FORMAT);
-            File retentionFile = new File(dir, RETENTION_FILE_NAME);
-            FileUtil.writeToFile(formatter.format(date), retentionFile);
-        } catch (IOException e) {
-            CLog.e("Unable to create retention file in directory in %s", dir.getAbsolutePath());
-            CLog.e(e);
-        }
     }
 }

@@ -132,10 +132,10 @@ public class LogFileSaverTest extends TestCase {
         EasyMock.expect(mockBuild.getTestTag()).andReturn(testtag).anyTimes();
         EasyMock.replay(mockBuild);
         ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir, 1);
-        File retentionFile = new File(saver.getFileDir(), LogFileSaver.RETENTION_FILE_NAME);
+        File retentionFile = new File(saver.getFileDir(), RetentionFileSaver.RETENTION_FILE_NAME);
         assertTrue(retentionFile.isFile());
         String timestamp = StreamUtil.getStringFromStream(new FileInputStream(retentionFile));
-        SimpleDateFormat formatter = new SimpleDateFormat(LogFileSaver.RETENTION_DATE_FORMAT);
+        SimpleDateFormat formatter = new SimpleDateFormat(RetentionFileSaver.RETENTION_DATE_FORMAT);
         Date retentionDate = formatter.parse(timestamp);
         Date currentDate = new Date();
         int expectedDay = currentDate.getDay() == 6 ? 0 :  currentDate.getDay() + 1;
