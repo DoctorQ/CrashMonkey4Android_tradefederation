@@ -20,7 +20,9 @@
         <option name="apk-name" value="TradeFedTestApp.apk" />
         <option name="apk-name" value="TradeFedUiTestApp.apk" />
     </target_preparer>
-    <test class="com.android.tradefed.testtype.HostTest" />
+    <test class="com.android.tradefed.testtype.HostTest" >
+        <option name="class" value="com.android.tradefed.FuncTests" />
+    </test>
     <logger class="com.android.tradefed.log.FileLogger" >
         <option name="log-level-display" value="debug" />
     </logger>
