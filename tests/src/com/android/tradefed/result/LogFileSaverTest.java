@@ -65,13 +65,18 @@ public class LogFileSaverTest extends TestCase {
     public void testGetFileDir() throws IOException {
         final String buildId = "88888";
         final String branch = "somebranch";
+        final String testtag = "sometest";
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
         EasyMock.expect(mockBuild.getBuildBranch()).andReturn(branch).anyTimes();
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.expect(mockBuild.getTestTag()).andReturn(testtag).anyTimes();
         EasyMock.replay(mockBuild);
         ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir);
         File generatedDir = saver.getFileDir();
-        File buildDir = generatedDir.getParentFile();
+        File tagDir = generatedDir.getParentFile();
+        // ensure a directory with name == testtag is parent of generated directory
+        assertEquals(testtag, tagDir.getName());
+        File buildDir = tagDir.getParentFile();
         // ensure a directory with name == build number is parent of generated directory
         assertEquals(buildId, buildDir.getName());
         // ensure a directory with name == branch is parent of generated directory
@@ -85,9 +90,9 @@ public class LogFileSaverTest extends TestCase {
         File newgeneratedDir = newsaver.getFileDir();
         // ensure a new dir is created
         assertTrue(generatedDir.compareTo(newgeneratedDir) != 0);
-        // verify buildDir is reused
-        File newbuildDir = newgeneratedDir.getParentFile();
-        assertEquals(0, buildDir.compareTo(newbuildDir));
+        // verify tagDir is reused
+        File newTagDir = newgeneratedDir.getParentFile();
+        assertEquals(0, tagDir.compareTo(newTagDir));
     }
 
     /**
@@ -95,13 +100,18 @@ public class LogFileSaverTest extends TestCase {
      */
     public void testGetFileDir_nobranch() throws IOException {
         final String buildId = "88888";
+        final String testtag = "sometest";
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
         EasyMock.expect(mockBuild.getBuildBranch()).andReturn(null).anyTimes();
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.expect(mockBuild.getTestTag()).andReturn(testtag).anyTimes();
         EasyMock.replay(mockBuild);
         ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir);
         File generatedDir = saver.getFileDir();
-        File buildDir = generatedDir.getParentFile();
+        File tagDir = generatedDir.getParentFile();
+        // ensure a directory with name == testtag is parent of generated directory
+        assertEquals(testtag, tagDir.getName());
+        File buildDir = tagDir.getParentFile();
         // ensure a directory with name == build number is parent of generated directory
         assertEquals(buildId, buildDir.getName());
         // ensure parent directory is rootDir
@@ -115,9 +125,11 @@ public class LogFileSaverTest extends TestCase {
     public void testGetFileDir_retention() throws IOException, ParseException {
         final String buildId = "88888";
         final String branch = "somebranch";
+        final String testtag = "sometest";
         IBuildInfo mockBuild = EasyMock.createMock(IBuildInfo.class);
         EasyMock.expect(mockBuild.getBuildBranch()).andReturn(branch).anyTimes();
         EasyMock.expect(mockBuild.getBuildId()).andReturn(buildId).anyTimes();
+        EasyMock.expect(mockBuild.getTestTag()).andReturn(testtag).anyTimes();
         EasyMock.replay(mockBuild);
         ILogFileSaver saver = new LogFileSaver(mockBuild, mRootDir, 1);
         File retentionFile = new File(saver.getFileDir(), LogFileSaver.RETENTION_FILE_NAME);

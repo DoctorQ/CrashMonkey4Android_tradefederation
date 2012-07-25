@@ -16,6 +16,7 @@
 package com.android.tradefed.result;
 
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.command.FatalHostError;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
@@ -29,6 +30,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
@@ -47,7 +49,9 @@ public class LogFileSaver implements ILogFileSaver {
     /**
      * Creates a {@link LogFileSaver}.
      * <p/>
-     * Construct a unique file system directory in rootDir/branch/build_id/uniqueDir
+     * Construct a unique file system directory in rootDir/branch/build_id/testTag/uniqueDir
+     * <p/>
+     * If directory creation fails, will use a temp directory.
      *
      * @param buildInfo the {@link IBuildInfo}
      * @param rootDir the root file system path
@@ -60,15 +64,26 @@ public class LogFileSaver implements ILogFileSaver {
         // now create unique directory within the buildDir
         try {
             mRootDir = FileUtil.createTempDir("inv_", buildDir);
+            if (logRetentionDays != null && logRetentionDays > 0) {
+                writeRetentionFile(mRootDir, logRetentionDays);
+            }
         } catch (IOException e) {
-            CLog.e("Unable to create unique directory in %s", buildDir.getAbsolutePath());
+            CLog.e("Unable to create unique directory in %s. Attempting to use tmp dir instead",
+                    buildDir.getAbsolutePath());
             CLog.e(e);
-            mRootDir = buildDir;
-        }
-        if (logRetentionDays != null && logRetentionDays > 0) {
-            writeRetentionFile(mRootDir, logRetentionDays);
+            // try to create one in a tmp location instead
+            mRootDir = createTempDir();
         }
         CLog.i("Using log file directory %s", mRootDir.getAbsolutePath());
+    }
+
+    private File createTempDir() {
+        try {
+            return FileUtil.createTempDir("inv_");
+        } catch (IOException e) {
+            // uh oh, this can't be good, abort tradefed
+            throw new FatalHostError("Cannot create tmp directory.", e);
+        }
     }
 
     /**
@@ -110,12 +125,14 @@ public class LogFileSaver implements ILogFileSaver {
      */
     private File createBuildDir(IBuildInfo buildInfo, File rootDir) {
         File buildReportDir;
+        ArrayList<String> pathSegments = new ArrayList<String>();
         if (buildInfo.getBuildBranch() != null) {
-            buildReportDir = FileUtil.getFileForPath(rootDir, buildInfo.getBuildBranch(),
-                    buildInfo.getBuildId());
-        } else {
-            buildReportDir = FileUtil.getFileForPath(rootDir, buildInfo.getBuildId());
+            pathSegments.add(buildInfo.getBuildBranch());
         }
+        pathSegments.add(buildInfo.getBuildId());
+        pathSegments.add(buildInfo.getTestTag());
+        buildReportDir = FileUtil.getFileForPath(rootDir, pathSegments.toArray(new String[] {}));
+
         // if buildReportDir already exists and is a directory - use it.
         if (buildReportDir.exists()) {
             if (buildReportDir.isDirectory()) {
