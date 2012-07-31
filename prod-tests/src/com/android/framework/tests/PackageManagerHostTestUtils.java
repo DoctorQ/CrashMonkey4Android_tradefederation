@@ -19,6 +19,7 @@ package com.android.framework.tests;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.IFileEntry;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
@@ -36,11 +37,11 @@ public class PackageManagerHostTestUtils extends Assert {
     private boolean mEmulatedExternalStorage = false;
 
     // TODO: get this value from Android Environment instead of hard coding
-    private static final String PRE_JB_APP_PRIVATE_PATH = "/data/app-private/";
-    private static final String JB_APP_PRIVATE_PATH = "/mnt/asec/";
-    private static final String JB_ASEC_PRIVATE_PATH = "/data/app-asec/";
-    private static final String DEVICE_APP_PATH = "/data/app/";
-    private static final String SDCARD_APP_PATH = "/mnt/secure/asec/";
+    public static final String PRE_JB_APP_PRIVATE_PATH = "/data/app-private/";
+    public static final String JB_APP_PRIVATE_PATH = "/mnt/asec/";
+    public static final String JB_ASEC_PRIVATE_PATH = "/data/app-asec/";
+    public static final String DEVICE_APP_PATH = "/data/app/";
+    public static final String SDCARD_APP_PATH = "/mnt/secure/asec/";
 
     private static String mAppPrivatePath = PRE_JB_APP_PRIVATE_PATH;
 
@@ -435,16 +436,15 @@ public class PackageManagerHostTestUtils extends Assert {
     }
 
     /**
-     * Helper method to ensure that the encrypted apk and asec file are stored in the correct
-     * location.
+     * Helper method to ensure that the encrypted apk and asec file are stored
+     * in the correct location.
      * <p/>
      * Assumes adb is running as root in device under test.
      *
      * @param packageName the name of the package
-     * @param externalStorage {@link boolean} whether the file is stored to external sd card.
-     *
+     * @param externalStorage {@link boolean} whether the file is stored to
+     *            external sd card.
      * @return true if the app is indeed encrypted, false otherwise.
-     *
      * @throws DeviceNotAvailableException
      */
     public boolean appExistsAsEncrypted(String packageName, boolean externalStorage)
@@ -613,5 +613,51 @@ public class PackageManagerHostTestUtils extends Assert {
             }
         }
         return false;
+    }
+
+    /**
+     * Ensure that the file's permissions matches expectation.
+     *
+     * @param remoteFilePath {@link String} the remote path for the file to check.
+     * @param expectedPerms {@link String} expected permissions.
+     * @return true if the permissions for a given file matches, false otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    public boolean checkFilePermissions(String remoteFilePath, String expectedPerms)
+            throws DeviceNotAvailableException {
+        IFileEntry file = mDevice.getFileEntry(remoteFilePath);
+        return file.getPermissions().equals(expectedPerms);
+    }
+
+    /**
+     * Ensure that the file's owner matches expectation.
+     *
+     * @param remoteFilePath {@link String} the remote path for the file to check.
+     * @param expectedOwner {@link String} the expected owner.
+     * @return true if the owner for a given file matches, false otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    public boolean checkFileOwnerName(String remoteFilePath, String expectedOwner)
+            throws DeviceNotAvailableException {
+        //TODO: uncomment this, when we have support from ddmlib.
+        //IFileEntry file = mDevice.getFileEntry(remoteFilePath);
+        // return file.getOwner().equals(expectedOwner)
+        return true;
+    }
+
+    /**
+     * Ensure that the file's group matches expectation
+     *
+     * @param remoteFilePath {@link String} the remote path for the file to check.
+     * @param expectedGroup {@link String} the expected group.
+     * @return true if the group for a given file matches, false otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    public boolean checkFileGroupName(String remoteFilePath, String expectedGroup)
+            throws DeviceNotAvailableException {
+        //TODO: uncomment this, when we have support from ddmlib.
+        //IFileEntry file = mDevice.getFileEntry(remoteFilePath);
+        // return file.getGroup().equals(expectedOwner)
+        return true;
     }
 }
