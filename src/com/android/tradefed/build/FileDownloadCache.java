@@ -17,6 +17,7 @@ package com.android.tradefed.build;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.command.FatalHostError;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
@@ -134,7 +135,13 @@ public class FileDownloadCache {
      */
     private void addFiles(File dir, Stack<String> relPathSegments,
             List<FilePair> cacheEntryList) {
-        for (File childFile : dir.listFiles()) {
+
+        File[] fileList = dir.listFiles();
+        if (fileList == null) {
+            CLog.e("Unable to list files in cache dir %s", dir.getAbsolutePath());
+            return;
+        }
+        for (File childFile : fileList) {
             if (childFile.isDirectory()) {
                 relPathSegments.push(childFile.getName());
                 addFiles(childFile, relPathSegments, cacheEntryList);
