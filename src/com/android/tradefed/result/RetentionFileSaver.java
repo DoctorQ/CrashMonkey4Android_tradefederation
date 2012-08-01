@@ -35,10 +35,10 @@ public class RetentionFileSaver {
     /**
      * Creates a .retention file in given dir with timestamp == current + logRetentionDays
      */
-    public void writeRetentionFile(File dir, Integer logRetentionDays) {
+    public void writeRetentionFile(File dir, int logRetentionDays) {
         try {
-            long deleteTimeEpoch = System.currentTimeMillis() + logRetentionDays * 24 * 60 * 60
-                    * 1000;
+            long deleteTimeEpoch = System.currentTimeMillis() + (long)logRetentionDays * 24 * 60 *
+                    60 * 1000;
             Date date = new Date(deleteTimeEpoch);
             SimpleDateFormat formatter = new SimpleDateFormat(RETENTION_DATE_FORMAT);
             File retentionFile = new File(dir, RETENTION_FILE_NAME);
