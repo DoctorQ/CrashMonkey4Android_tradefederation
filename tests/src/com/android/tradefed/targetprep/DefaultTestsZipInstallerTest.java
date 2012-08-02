@@ -110,6 +110,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+        EasyMock.expect(mMockDevice.executeShellCommand("stop installd")).andReturn("");
 
         // turtle!  (to make sure filesystem is writable)
         EasyMock.expect(mMockDevice.pushString((String) EasyMock.anyObject(),
@@ -153,6 +154,7 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+        EasyMock.expect(mMockDevice.executeShellCommand("stop installd")).andReturn("");
 
         // turtle!  (to make sure filesystem is writable)
         EasyMock.expect(mMockDevice.pushString((String) EasyMock.anyObject(),

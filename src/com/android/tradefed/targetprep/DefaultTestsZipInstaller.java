@@ -81,6 +81,8 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
 
         // Stop the runtime, so it doesn't notice us mucking with the filesystem
         device.executeShellCommand("stop");
+        // Stop installd to prevent it from writing to /data/data
+        device.executeShellCommand("stop installd");
         deleteData(device);
 
         CLog.d("Syncing test files/apks");
