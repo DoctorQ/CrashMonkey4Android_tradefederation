@@ -83,10 +83,16 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
     private static final int MANY_APPS_END = 100;
     private static final String MANY_APPS_PKG_PREFIX = "com.appsonsd.mytests.External49kb_";
     private static final String MANY_APPS_APK_PREFIX = "External49kb_";
+    private static final int DEFAULT_ITERATION_COUNT = 100;
 
     @Option(name = "app-repository-path", description =
-            "path to the app repository containing large apks", importance = Importance.IF_UNSET)
+            "path to the app repository containing large apks.", importance = Importance.IF_UNSET)
     private File mAppRepositoryPath = null;
+
+    @Option(name = "stress-iteration-count", description =
+            "Number of iterations to run the package manager stress test for.",
+            importance = Importance.IF_UNSET)
+    private int mIterationCount = DEFAULT_ITERATION_COUNT;
 
     @Override
     protected void setUp() throws Exception {
@@ -143,7 +149,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
         CLog.i("Test updating an app on the SD card stays on the SD card");
         // cleanup test app just in case it was already exists
         mPMHostUtils.uninstallApp(EXTERNAL_LOC_PKG);
-        for (int i = 0; i < 500; ++i) {
+        for (int i = 0; i < mIterationCount; ++i) {
             CLog.i("Installing app %s (%d)", EXTERNAL_LOC_PKG, i);
             try {
                 // install the app
@@ -167,7 +173,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testInstallManyLargeAppsOnSD() throws Exception {
-        CLog.i("Test installing 20 large apps onto the sd card");
+        CLog.i("Test installing %d large apps onto the sd card", LARGE_APPS.length);
         try {
             // Install all the large apps
             for (int i = 0; i < LARGE_APPS.length; ++i) {
@@ -203,7 +209,7 @@ public class PackageManagerStressHostTests extends DeviceTestCase {
      * Assumes adb is running as root in device under test.
      */
     public void testInstallManyAppsOnSD() throws Exception {
-        CLog.i("Test installing 500 small apps onto SD");
+        CLog.i("Test installing %d small apps onto SD", MANY_APPS_END);
         try {
             for (int i = MANY_APPS_START; i <= MANY_APPS_END; ++i) {
                 String currentPkgName = String.format("%s%d", MANY_APPS_PKG_PREFIX, i);
