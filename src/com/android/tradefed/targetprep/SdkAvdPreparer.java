@@ -57,6 +57,9 @@ public class SdkAvdPreparer implements ITargetPreparer {
     @Option(name = "launch-attempts", description = "max number of attempts to launch emulator")
     private int mLaunchAttempts = 1;
 
+    @Option(name = "sdcard-size", description = "capacity of the SD card")
+    private String mSdcardSize = "10M";
+
     private final IRunUtil mRunUtil;
     private final IDeviceManager mDeviceManager;
 
@@ -170,7 +173,7 @@ public class SdkAvdPreparer implements ITargetPreparer {
         CLog.d("Creating avd for target %s with name %s", target, target);
         CommandResult result = mRunUtil.runTimedCmdWithInput(ANDROID_TIMEOUT_MS, cmdInput,
                 sdkBuild.getAndroidToolPath(), "create", "avd", "--target", target, "--name",
-                target, "--sdcard", "10M", "--force");
+                target, "--sdcard", mSdcardSize, "--force");
         if (!result.getStatus().equals(CommandStatus.SUCCESS) || result.getStdout() == null ||
                 !result.getStdout().contains(successPattern)) {
             // stdout usually doesn't contain useful data, so don't want to add it to the
