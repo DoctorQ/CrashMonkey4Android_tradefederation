@@ -159,4 +159,12 @@ class FileEntryWrapper implements IFileEntry {
     public String getDate() {
         return mFileEntry.getDate();
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getPermissions() {
+        return mFileEntry.getPermissions();
+    }
 }

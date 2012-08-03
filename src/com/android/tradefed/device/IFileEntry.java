@@ -75,6 +75,11 @@ public interface IFileEntry {
     public String getDate();
 
     /**
+     * Wrapper for {@link FileEntry#getPermissions()}.
+     */
+    public String getPermissions();
+
+    /**
      * Returns the children of a {@link IFileEntry}.
      * <p/>
      * Basically a synchronous wrapper for
