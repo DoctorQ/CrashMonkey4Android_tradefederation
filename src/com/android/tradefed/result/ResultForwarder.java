@@ -19,6 +19,7 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -27,12 +28,20 @@ import java.util.Map;
  */
 public class ResultForwarder implements ITestInvocationListener {
 
-    private final List<ITestInvocationListener> mListeners;
+    private List<ITestInvocationListener> mListeners;
+
+    /**
+     * Create a {@link ResultForwarder} with deferred listener setting.  Intended only for use by
+     * subclasses.
+     */
+    protected ResultForwarder() {
+        mListeners = Collections.emptyList();
+    }
 
     /**
      * Create a {@link ResultForwarder}.
      *
-     * @param listeners the real {@link ITestInvocationListener} to forward results to
+     * @param listeners the real {@link ITestInvocationListener}s to forward results to
      */
     public ResultForwarder(List<ITestInvocationListener> listeners) {
         mListeners = listeners;
@@ -41,9 +50,27 @@ public class ResultForwarder implements ITestInvocationListener {
     /**
      * Alternate variable arg constructor for {@link ResultForwarder}.
      *
-     * @param listeners the real {@link ITestInvocationListener} to forward results to
+     * @param listeners the real {@link ITestInvocationListener}s to forward results to
      */
     public ResultForwarder(ITestInvocationListener... listeners) {
+        mListeners = Arrays.asList(listeners);
+    }
+
+    /**
+     * Set the listeners after construction.  Intended only for use by subclasses.
+     *
+     * @param listeners the real {@link ITestInvocationListener}s to forward results to
+     */
+    protected void setListeners(List<ITestInvocationListener> listeners) {
+        mListeners = listeners;
+    }
+
+    /**
+     * Set the listeners after construction.  Intended only for use by subclasses.
+     *
+     * @param listeners the real {@link ITestInvocationListener}s to forward results to
+     */
+    protected void setListeners(ITestInvocationListener... listeners) {
         mListeners = Arrays.asList(listeners);
     }
 
