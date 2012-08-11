@@ -17,4 +17,4 @@
 # A simple helper script that runs the Trade Federation functional tests
 
 tfdir=`dirname $0`/..
-$tfdir/tradefed.sh run singleCommand tf/func "$@"
+$tfdir/tradefed.sh run singleCommand host --class com.android.tradefed.FuncTests "$@"

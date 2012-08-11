@@ -383,12 +383,4 @@ class StubDevice implements IDevice {
             AdbCommandRejectedException, IOException {
         // ignore
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public String getName() {
-        return null;
-    }
 }

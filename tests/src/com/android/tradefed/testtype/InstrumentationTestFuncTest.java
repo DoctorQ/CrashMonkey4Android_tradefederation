@@ -62,7 +62,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
     public void testRun() throws DeviceNotAvailableException {
         Log.i(LOG_TAG, "testRun");
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.PASSED_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.PASSED_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.PASSED_TEST_METHOD);
         mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
@@ -82,7 +82,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testRun_testFailed");
 
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.FAILED_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.FAILED_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.FAILED_TEST_METHOD);
         mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
@@ -105,7 +105,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testRun_testCrash");
 
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.CRASH_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.CRASH_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.CRASH_TEST_METHOD);
         mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
@@ -129,7 +129,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
 
         final int timeout = 1000;
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.TIMEOUT_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setTestTimeout(timeout);
@@ -154,7 +154,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testRun_deviceReboot");
 
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.TIMEOUT_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
         mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
@@ -207,7 +207,7 @@ public class InstrumentationTestFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testRun_deviceRuntimeReset");
 
         TestIdentifier expectedTest = new TestIdentifier(TestAppConstants.TESTAPP_CLASS,
-                TestAppConstants.TIMEOUT_TEST_METHOD, getDevice().getIDevice().getName());
+                TestAppConstants.TIMEOUT_TEST_METHOD);
         mInstrumentationTest.setClassName(TestAppConstants.TESTAPP_CLASS);
         mInstrumentationTest.setMethodName(TestAppConstants.TIMEOUT_TEST_METHOD);
         mMockListener.testRunStarted(TestAppConstants.TESTAPP_PACKAGE, 1);
