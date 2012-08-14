@@ -18,6 +18,7 @@ package com.android.tradefed.targetprep;
 
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
+import com.android.tradefed.build.SdkBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -85,14 +86,56 @@ public class SdkAvdPreparer implements ITargetPreparer {
             DeviceNotAvailableException, BuildError {
         Assert.assertTrue("Provided build is not a ISdkBuildInfo",
                 buildInfo instanceof ISdkBuildInfo);
-        ISdkBuildInfo sdkBuild = (ISdkBuildInfo)buildInfo;
-        String[] targets = getSdkTargets(sdkBuild);
-        setAndroidSdkHome(sdkBuild);
-        String target = findTargetToLaunch(targets);
-        String avd = createAvdForTarget(sdkBuild, target);
-        launchEmulatorForAvd(sdkBuild, device, avd);
+        ISdkBuildInfo sdkBuildInfo = (ISdkBuildInfo)buildInfo;
+        launchEmulatorForAvd(sdkBuildInfo, device, createAvd(sdkBuildInfo));
     }
 
+    /**
+     * Finds SDK target based on the {@link ISdkBuildInfo}, creates AVD for
+     * this target and returns its name.
+     *
+     * @param sdkBuildInfo the {@link ISdkBuildInfo}
+     * @return the created AVD name
+     * @throws TargetSetupError if could not get targets
+     * @throws BuildError if failed to create the AVD
+     */
+    public String createAvd(ISdkBuildInfo sdkBuildInfo)
+          throws TargetSetupError, BuildError {
+        String[] targets = getSdkTargets(sdkBuildInfo);
+        setAndroidSdkHome(sdkBuildInfo);
+        String target = findTargetToLaunch(targets);
+        return createAvdForTarget(sdkBuildInfo, target);
+    }
+
+    /**
+     * Launch an emulator for given avd, and wait for it to become available.
+     *
+     * @param avd the avd to launch
+     * @throws DeviceNotAvailableException
+     * @throws TargetSetupError if could not get targets
+     * @throws BuildError if emulator fails to boot
+     */
+    public void launchEmulatorForAvd(ISdkBuildInfo sdkBuild, ITestDevice device, String avd)
+            throws DeviceNotAvailableException, TargetSetupError, BuildError {
+        if (!device.getDeviceState().equals(TestDeviceState.NOT_AVAILABLE)) {
+            CLog.w("Emulator %s is already running, killing", device.getSerialNumber());
+            mDeviceManager.killEmulator(device);
+        }
+        List<String> emulatorArgs = new ArrayList<String>(Arrays.asList(
+                sdkBuild.getEmulatorToolPath(), "-avd", avd));
+
+        if (!mWindow) {
+            emulatorArgs.add("-no-window");
+        }
+        launchEmulator(device, avd, emulatorArgs);
+        if (!device.getIDevice().getAvdName().equals(avd)) {
+            // not good. Either emulator isn't reporting its avd name properly, or somehow
+            // the wrong emulator launched. Treat as a BuildError
+            throw new BuildError(String.format(
+                    "Emulator booted with incorrect avd name '%s'. Expected: '%s'.",
+                    device.getIDevice().getAvdName(), avd));
+        }
+    }
 
     /**
      * Gets the list of sdk targets from the given sdk.
@@ -155,12 +198,13 @@ public class SdkAvdPreparer implements ITargetPreparer {
     }
 
     /**
-     * Create an AVD for given SDK target
+     * Create an AVD for given SDK target.
      *
      * @param sdkBuild the {@link ISdkBuildInfo}
      * @param target the SDK target name
      * @return the created AVD name
-     * @throws TargetSetupError if failed to create the AVD
+     * @throws BuildError if failed to create the AVD
+     *
      */
     private String createAvdForTarget(ISdkBuildInfo sdkBuild, String target)
             throws BuildError {
@@ -183,36 +227,6 @@ public class SdkAvdPreparer implements ITargetPreparer {
                     result.getStderr()));
         }
         return target;
-    }
-
-    /**
-     * Launch an emulator for given avd, and wait for it to become available.
-     *
-     * @param avd the avd to launch
-     * @throws DeviceNotAvailableException
-     * @throws TargetSetupError
-     * @throws BuildError if emulator fails to boot
-     */
-    private void launchEmulatorForAvd(ISdkBuildInfo sdkBuild, ITestDevice device, String avd)
-            throws DeviceNotAvailableException, TargetSetupError, BuildError {
-        if (!device.getDeviceState().equals(TestDeviceState.NOT_AVAILABLE)) {
-            CLog.w("Emulator %s is already running, killing", device.getSerialNumber());
-            mDeviceManager.killEmulator(device);
-        }
-        List<String> emulatorArgs = new ArrayList<String>(Arrays.asList(
-                sdkBuild.getEmulatorToolPath(), "-avd", avd));
-
-        if (!mWindow) {
-            emulatorArgs.add("-no-window");
-        }
-        launchEmulator(device, avd, emulatorArgs);
-        if (!device.getIDevice().getAvdName().equals(avd)) {
-            // not good. Either emulator isn't reporting its avd name properly, or somehow
-            // the wrong emulator launched. Treat as a BuildError
-            throw new BuildError(String.format(
-                    "Emulator booted with incorrect avd name '%s'. Expected: '%s'.",
-                    device.getIDevice().getAvdName(), avd));
-        }
     }
 
     /**
@@ -256,7 +270,7 @@ public class SdkAvdPreparer implements ITargetPreparer {
     }
 
     /**
-     * Sets the number of launch attempts to perform
+     * Sets the number of launch attempts to perform.
      *
      * @param mLaunchAttempts
      */
