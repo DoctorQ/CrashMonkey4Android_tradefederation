@@ -61,6 +61,9 @@ public class SdkAvdPreparer implements ITargetPreparer {
     @Option(name = "sdcard-size", description = "capacity of the SD card")
     private String mSdcardSize = "10M";
 
+    @Option(name = "gpu", description = "launch emulator with GPU on")
+    private boolean mGpu = false;
+
     private final IRunUtil mRunUtil;
     private final IDeviceManager mDeviceManager;
 
@@ -130,6 +133,12 @@ public class SdkAvdPreparer implements ITargetPreparer {
         if (!mWindow) {
             emulatorArgs.add("-no-window");
         }
+
+        if (mGpu) {
+            emulatorArgs.add("-gpu");
+            emulatorArgs.add("on");
+        }
+
         launchEmulator(device, avd, emulatorArgs);
         if (!device.getIDevice().getAvdName().equals(avd)) {
             // not good. Either emulator isn't reporting its avd name properly, or somehow
