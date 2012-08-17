@@ -77,7 +77,8 @@ tradefed_dist_test_apk_files := $(foreach m, $(tradefed_dist_test_apks), $(TARGE
 tradefed_dist_files := \
     $(tradefed_dist_host_jar_files) \
     $(tradefed_dist_test_apk_files) \
-    $(tradefed_dist_host_exe_files)
+    $(tradefed_dist_host_exe_files) \
+    external/emma/lib/emma.jar
 
 tradefed_dist_intermediates := $(call intermediates-dir-for,PACKAGING,tradefed_dist,HOST,COMMON)
 tradefed_dist_zip := $(tradefed_dist_intermediates)/tradefed.zip
@@ -94,4 +95,3 @@ $(call dist-for-goals, tradefed_dist, $(tradefed_dist_zip))
 dist: tradefed_dist
 
 endif  # tradefed in $(TARGET_BUILD_APPS)
-

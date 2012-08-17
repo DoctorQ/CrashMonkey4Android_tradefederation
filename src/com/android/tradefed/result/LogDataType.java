@@ -25,6 +25,7 @@ public enum LogDataType {
     PNG("png", true, false),
     ZIP("zip", true, false),
     GZIP("gz", true, false),
+    COVERAGE("ec", false, false),  /* Emma coverage file */
     UNKNOWN("dat", false, false);
 
     private final String mFileExt;
