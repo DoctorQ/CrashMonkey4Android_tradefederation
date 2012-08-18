@@ -150,6 +150,15 @@ public class SdkAvdPreparer implements ITargetPreparer {
     }
 
     /**
+     * Sets programmatically whether the gpu should be on or off.
+     *
+     * @param gpu
+     */
+    public void setGpu(boolean gpu) {
+        mGpu = gpu;
+    }
+
+    /**
      * Gets the list of sdk targets from the given sdk.
      *
      * @param sdkBuild
