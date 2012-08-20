@@ -18,7 +18,6 @@ package com.android.tradefed.targetprep;
 
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
-import com.android.tradefed.build.SdkBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -31,11 +30,11 @@ import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
-import junit.framework.Assert;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import junit.framework.Assert;
 
 /**
  * A {@link ITargetPreparer} that will create an avd and launch an emulator

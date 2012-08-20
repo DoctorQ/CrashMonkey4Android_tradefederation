@@ -21,7 +21,6 @@ import com.android.tradefed.build.ISdkBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
-import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
@@ -31,13 +30,11 @@ import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.testtype.IBuildReceiver;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
-
-import junit.framework.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import junit.framework.Assert;
 
 public class EmulatorStartupMetricsTest implements IDeviceTest, IRemoteTest, IBuildReceiver {
 
