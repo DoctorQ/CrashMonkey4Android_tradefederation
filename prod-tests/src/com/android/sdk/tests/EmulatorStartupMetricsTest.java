@@ -18,6 +18,7 @@ package com.android.sdk.tests;
 
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.ISdkBuildInfo;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.IDeviceManager;
@@ -43,6 +44,9 @@ public class EmulatorStartupMetricsTest implements IDeviceTest, IRemoteTest, IBu
     private ITestDevice mTestDevice = null;
     private ISdkBuildInfo mBuildInfo = null;
 
+    @Option(name = "gpu", description = "launch emulator with GPU on")
+    private boolean mGpu = false;
+
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
 
@@ -50,6 +54,8 @@ public class EmulatorStartupMetricsTest implements IDeviceTest, IRemoteTest, IBu
         Assert.assertNotNull(mBuildInfo);
 
         SdkAvdPreparer sdkAvdPreparer = new SdkAvdPreparer();
+        sdkAvdPreparer.setGpu(mGpu);
+
         Map<String, String> runMetrics = new HashMap<String, String>();
 
         try {
