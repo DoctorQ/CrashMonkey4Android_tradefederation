@@ -272,4 +272,13 @@ public interface IConfiguration {
      */
     public void printCommandUsage(boolean importantOnly, PrintStream out)
             throws ConfigurationException;
+
+    /**
+     * Validate option values.
+     * <p/>
+     * Currently this will just validate that all mandatory options have been set
+     *
+     * @throws ConfigurationException if config is not valid
+     */
+    public void validateOptions() throws ConfigurationException;
 }

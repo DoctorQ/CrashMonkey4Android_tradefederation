@@ -606,6 +606,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } else if (config.getCommandOptions().isDryRunMode()) {
                 CLog.v("Dry run mode; not adding command: %s", Arrays.toString(args));
             } else {
+                config.validateOptions();
                 CommandTracker cmdTracker = createCommandTracker(args, listener);
                 ExecutableCommand cmdInstance = createExecutableCommand(cmdTracker, config, false);
                 cmdTracker.incrementExecTime(totalExecTime);

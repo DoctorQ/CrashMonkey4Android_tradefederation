@@ -156,6 +156,7 @@ public class CommandSchedulerTest extends TestCase {
         setCreateConfigExpectations(args, 1);
         mCmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
+        mMockConfiguration.validateOptions();
         replayMocks();
         mScheduler.addCommand(args, mCmdListener);
         mScheduler.start();
@@ -169,14 +170,23 @@ public class CommandSchedulerTest extends TestCase {
      * Test {@link CommandScheduler#run()} when one config has been added in dry-run mode
      */
     public void testRun_dryRun() throws Exception {
-        String[] args = new String[] {"--dry-run"};
+        String[] dryRunArgs = new String[] {"--dry-run"};
         mCommandOptions.setDryRunMode(true);
         mMockManager.setNumDevices(2);
-        setCreateConfigExpectations(args, 1);
-        mCmdListener.setExpectedCalls(0);
+        setCreateConfigExpectations(dryRunArgs, 1);
+
+        // add a second command, to verify the first dry-run command did not get added
+        String[] args2 = new String[] {};
+        setCreateConfigExpectations(args2, 1);
+        setExpectedInvokeCalls(1);
+        mMockConfiguration.validateOptions();
+        mCmdListener.setExpectedCalls(1);
 
         replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
+        assertFalse(mScheduler.addCommand(dryRunArgs, mCmdListener));
+        // the same config object is being used, so clear its state
+        mCommandOptions.setDryRunMode(false);
+        assertTrue(mScheduler.addCommand(args2, mCmdListener));
         mScheduler.start();
         waitForCommandStartedCalls();
         mScheduler.shutdown();
@@ -221,6 +231,7 @@ public class CommandSchedulerTest extends TestCase {
             // wait for invocation to be executed twice
             mCmdListener.setExpectedCalls(2);
             setExpectedInvokeCalls(2);
+            mMockConfiguration.validateOptions();
             replayMocks();
             mScheduler.addCommand(args, mCmdListener);
             mScheduler.start();
@@ -259,6 +270,7 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);
+        mMockConfiguration.validateOptions();
         replayMocks();
         mScheduler.addCommand(args, mCmdListener);
         mScheduler.start();
@@ -282,6 +294,8 @@ public class CommandSchedulerTest extends TestCase {
         mDeviceOptions.addSerial(dev.getSerialNumber());
         mCmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
+        mMockConfiguration.validateOptions();
+        mMockConfiguration.validateOptions();
         replayMocks();
         mScheduler.addCommand(args, mCmdListener);
         mScheduler.addCommand(args, mCmdListener);
@@ -311,6 +325,8 @@ public class CommandSchedulerTest extends TestCase {
         NotifyingCommandListener cmdListener = new NotifyingCommandListener();
         cmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
+        mMockConfiguration.validateOptions();
+        mMockConfiguration.validateOptions();
         replayMocks();
         mScheduler.addCommand(args, cmdListener);
         mScheduler.addCommand(args, cmdListener);
@@ -332,6 +348,7 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);
+        mMockConfiguration.validateOptions();
         final IConfiguration rescheduledConfig = EasyMock.createMock(IConfiguration.class);
         EasyMock.expect(rescheduledConfig.getCommandOptions()).andStubReturn(mCommandOptions);
         EasyMock.expect(rescheduledConfig.getDeviceRequirements()).andStubReturn(
@@ -389,7 +406,7 @@ public class CommandSchedulerTest extends TestCase {
     private void setCreateConfigExpectations(String[] args, int times)
             throws ConfigurationException {
         EasyMock.expect(
-                mMockConfigFactory.createConfigurationFromArgs(EasyMock.eq(args)))
+                mMockConfigFactory.createConfigurationFromArgs(EasyMock.aryEq(args)))
                 .andReturn(mMockConfiguration)
                 .times(times);
         EasyMock.expect(mMockConfiguration.getCommandOptions()).andStubReturn(mCommandOptions);

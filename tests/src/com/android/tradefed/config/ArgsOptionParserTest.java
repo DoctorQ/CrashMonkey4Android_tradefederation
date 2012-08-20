@@ -519,8 +519,10 @@ public class ArgsOptionParserTest extends TestCase {
     public void testMandatoryOption_noDefault() throws Exception {
         MandatoryOptionSourceNoDefault object = new MandatoryOptionSourceNoDefault();
         ArgsOptionParser parser = new ArgsOptionParser(object);
+        // expect success
+        parser.parse(new String[] {});
         try {
-            parser.parse(new String[] {});
+            parser.validateMandatoryOptions();
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
@@ -530,8 +532,9 @@ public class ArgsOptionParserTest extends TestCase {
     public void testMandatoryOption_null() throws Exception {
         MandatoryOptionSourceNull object = new MandatoryOptionSourceNull();
         ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {});
         try {
-            parser.parse(new String[] {});
+            parser.validateMandatoryOptions();
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
@@ -541,8 +544,9 @@ public class ArgsOptionParserTest extends TestCase {
     public void testMandatoryOption_emptyCollection() throws Exception {
         MandatoryOptionSourceEmptyCollection object = new MandatoryOptionSourceEmptyCollection();
         ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {});
         try {
-            parser.parse(new String[] {});
+            parser.validateMandatoryOptions();
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
@@ -552,8 +556,9 @@ public class ArgsOptionParserTest extends TestCase {
     public void testMandatoryOption_emptyMap() throws Exception {
         MandatoryOptionSourceEmptyMap object = new MandatoryOptionSourceEmptyMap();
         ArgsOptionParser parser = new ArgsOptionParser(object);
+        parser.parse(new String[] {});
         try {
-            parser.parse(new String[] {});
+            parser.validateMandatoryOptions();
             fail("ConfigurationException not thrown");
         } catch (ConfigurationException e) {
             // expected
