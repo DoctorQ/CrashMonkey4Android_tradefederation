@@ -23,6 +23,7 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +33,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
@@ -50,6 +52,10 @@ public class FileUtil {
     private static final long MIN_DISK_SPACE_MB = 100;
     /** The min disk space in bytes */
     private static final long MIN_DISK_SPACE = MIN_DISK_SPACE_MB * 1024 * 1024;
+
+    private static final char[] SIZE_SPECIFIERS = {
+            ' ', 'K', 'M', 'G', 'T'
+    };
 
     /**
      * Thrown if usable disk space is below minimum threshold.
@@ -303,6 +309,24 @@ public class FileUtil {
     }
 
     /**
+     * A helper method for reading string data from a file
+     *
+     * @param sourceFile the file to read from
+     * @throws IOException
+     * @throws FileNotFoundException
+     */
+    public static String readStringFromFile(File sourceFile) throws IOException {
+        FileInputStream is = null;
+        try {
+            // no need to buffer since StreamUtil does
+            is = new FileInputStream(sourceFile);
+            return StreamUtil.getStringFromStream(is);
+        } finally {
+            StreamUtil.closeStream(is);
+        }
+    }
+
+    /**
      * A helper method for writing string data to file
      *
      * @param inputString the input {@link String}
@@ -486,6 +510,30 @@ public class FileUtil {
             } catch (IOException e) {
                 // ignore
             }
+        }
+    }
+
+    /**
+     * Helper method to create a gzipped version of a single file.
+     *
+     * @param file the original file
+     * @param gzipFile the file to place compressed contents in
+     * @throws IOException
+     */
+    public static void gzipFile(File file, File gzipFile) throws IOException {
+        GZIPOutputStream out = null;
+        try {
+            FileOutputStream fileStream = new FileOutputStream(gzipFile);
+            out = new GZIPOutputStream(new BufferedOutputStream(fileStream, 64 * 1024));
+            writeToStream(file, out);
+        } catch (IOException e) {
+            gzipFile.delete();
+            throw e;
+        } catch (RuntimeException e) {
+            gzipFile.delete();
+            throw e;
+        } finally {
+            StreamUtil.closeStream(out);
         }
     }
 
@@ -699,5 +747,62 @@ public class FileUtil {
             }
         }
         return dirs;
+    }
+
+    /**
+     * Convert the given file size in bytes to a more readable format in X.Y[KMGT] format.
+     *
+     * @param size file size in bytes
+     * @return descriptive string of file size
+     */
+    public static String convertToReadableSize(long sizelong) {
+
+        double size = sizelong;
+        for (int i = 0; i < SIZE_SPECIFIERS.length; i++) {
+            if (size < 1024) {
+                return String.format("%.1f%c", size, SIZE_SPECIFIERS[i]);
+            }
+            size /= 1024f;
+        }
+        throw new IllegalArgumentException(String.format(
+                "Passed a file size of %d, I cannot count that high", size));
+    }
+
+    /**
+     * The inverse of {@link #convertToReadableSize(long)}. Converts the readable format described
+     * in {@link #convertToReadableSize(long)} to a byte value.
+     *
+     * @param sizeString the string description of the size.
+     * @return the size in bytes
+     * @throws IllegalArgumentException if cannot recognize size
+     */
+    public static long convertSizeToBytes(String sizeString) throws IllegalArgumentException {
+        if (sizeString.isEmpty()) {
+            throw new IllegalArgumentException("invalid empty string");
+        }
+        char sizeSpecifier = sizeString.charAt(sizeString.length()-1);
+        long multiplier = findMultiplier(sizeSpecifier);
+        try {
+            String numberString = sizeString;
+            if (multiplier != 1) {
+                // strip off last char
+                numberString = sizeString.substring(0, sizeString.length()-1);
+            }
+            return multiplier * Long.parseLong(numberString);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException(String.format("Unrecognized size %s", sizeString));
+        }
+    }
+
+    private static long findMultiplier(char sizeSpecifier) {
+        long multiplier = 1;
+        for (int i=1; i < SIZE_SPECIFIERS.length; i++) {
+            multiplier *= 1024;
+            if (sizeSpecifier == SIZE_SPECIFIERS[i]) {
+                return multiplier;
+            }
+        }
+        // not found
+        return 1;
     }
 }

@@ -20,6 +20,7 @@ import com.android.tradefed.util.FileUtil;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -32,6 +33,8 @@ public class RetentionFileSaver {
     static final String RETENTION_DATE_FORMAT = "yyyy-MM-dd HH:mm:ss zzz";
     static final String RETENTION_FILE_NAME = ".retention";
 
+    private static final SimpleDateFormat sFormatter = new SimpleDateFormat(RETENTION_DATE_FORMAT);
+
     /**
      * Creates a .retention file in given dir with timestamp == current + logRetentionDays
      */
@@ -40,12 +43,31 @@ public class RetentionFileSaver {
             long deleteTimeEpoch = System.currentTimeMillis() + (long)logRetentionDays * 24 * 60 *
                     60 * 1000;
             Date date = new Date(deleteTimeEpoch);
-            SimpleDateFormat formatter = new SimpleDateFormat(RETENTION_DATE_FORMAT);
             File retentionFile = new File(dir, RETENTION_FILE_NAME);
-            FileUtil.writeToFile(formatter.format(date), retentionFile);
+            FileUtil.writeToFile(sFormatter.format(date), retentionFile);
         } catch (IOException e) {
             CLog.e("Unable to create retention file in directory in %s", dir.getAbsolutePath());
             CLog.e(e);
         }
+    }
+
+    public boolean shouldDelete(File retentionFile) {
+        if (!retentionFile.isFile() || !retentionFile.getName().equals(RETENTION_FILE_NAME)) {
+            CLog.w("%s is not a retention file", retentionFile.getAbsolutePath());
+            return false;
+        }
+        String timestamp;
+        try {
+            timestamp = FileUtil.readStringFromFile(retentionFile);
+            Date retentionDate = sFormatter.parse(timestamp);
+            return new Date().after(retentionDate);
+        } catch (IOException e) {
+            CLog.e("Unable to read retention file %s", retentionFile.getAbsolutePath());
+            CLog.e(e);
+        } catch (ParseException e) {
+            CLog.e("Unable to read timestamp in retention file %s", retentionFile.getAbsolutePath());
+            CLog.e(e);
+        }
+        return false;
     }
 }
