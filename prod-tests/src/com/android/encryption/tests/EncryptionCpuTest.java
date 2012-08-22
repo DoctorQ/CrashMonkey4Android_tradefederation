@@ -372,7 +372,7 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
                 mTestDevice.runInstrumentationTests(runner);
             } finally {
                 stopLogging(listener);
-                mTestDevice.executeShellCommand("rm -r /sdcard/DCIM/*");
+                mTestDevice.executeShellCommand("rm -r ${EXTERNAL_STORAGE}/DCIM/*");
             }
         }
     }

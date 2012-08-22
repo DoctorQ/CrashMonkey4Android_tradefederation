@@ -250,10 +250,10 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
     private String mInternalTestDir = "/data/fio/data";
 
     @Option(name="media-test-dir", description="The directory used for media benchmarks.")
-    private String mMediaTestDir = "/sdcard/fio";
+    private String mMediaTestDir = "${EXTERNAL_STORAGE}/fio";
 
     @Option(name="external-test-dir", description="The directory used for external benchmarks.")
-    private String mExternalTestDir = "/sdcard/fio";
+    private String mExternalTestDir = "${EXTERNAL_STORAGE}/fio";
 
     @Option(name="collect-yaffs-logs", description="Collect yaffs logs before and after tests")
     private Boolean mCollectYaffsLogs = false;
