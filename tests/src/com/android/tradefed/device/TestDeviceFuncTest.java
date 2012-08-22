@@ -279,9 +279,24 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     /**
      * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
      */
-    public void testSyncFiles() throws IOException, DeviceNotAvailableException {
+    public void testSyncFiles_normal() throws Exception {
+        doTestSyncFiles(mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE));
+    }
+
+    /**
+     * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
+     * <p />
+     * This variant of the test uses "${EXTERNAL_STORAGE}" in the pathname.
+     */
+    public void testSyncFiles_extStorageVariable() throws Exception {
+        doTestSyncFiles("${EXTERNAL_STORAGE}");
+    }
+
+    /**
+     * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
+     */
+    public void doTestSyncFiles(String externalStorePath) throws Exception {
         String expectedDeviceFilePath = null;
-        String externalStorePath = null;
 
         // create temp dir with one temp file
         File tmpDir = FileUtil.createTempDir("tmp");
@@ -289,7 +304,6 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             File tmpFile = createTempTestFile(tmpDir);
             // set last modified to 10 minutes ago
             tmpFile.setLastModified(System.currentTimeMillis() - 10*60*1000);
-            externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
             assertNotNull(externalStorePath);
             expectedDeviceFilePath = String.format("%s/%s/%s", externalStorePath,
                     tmpDir.getName(), tmpFile.getName());
@@ -325,8 +339,8 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             assertTrue(tmpFileContents.contains(testString));
         } finally {
             if (expectedDeviceFilePath != null && externalStorePath != null) {
-                mTestDevice.executeShellCommand(String.format("rm -r %s/%s", externalStorePath,
-                        expectedDeviceFilePath));
+                // note that expectedDeviceFilePath has externalStorePath prepended at definition
+                mTestDevice.executeShellCommand(String.format("rm -r %s", expectedDeviceFilePath));
             }
             FileUtil.recursiveDelete(tmpDir);
         }

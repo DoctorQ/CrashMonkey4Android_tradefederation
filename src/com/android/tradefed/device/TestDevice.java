@@ -958,7 +958,8 @@ class TestDevice implements IManagedTestDevice {
         }
         // get the real destination path. This is done because underlying syncService.push
         // implementation will add localFileDir.getName() to destination path
-        deviceFilePath = String.format("%s/%s", deviceFilePath, localFileDir.getName());
+        deviceFilePath = String.format("%s/%s", interpolatePathVariables(deviceFilePath),
+                localFileDir.getName());
         if (!doesFileExist(deviceFilePath)) {
             executeShellCommand(String.format("mkdir %s", deviceFilePath));
         }
