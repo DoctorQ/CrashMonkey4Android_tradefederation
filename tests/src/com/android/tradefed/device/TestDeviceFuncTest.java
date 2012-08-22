@@ -103,7 +103,7 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     /**
      * Push and then pull a file from device, and verify contents are as expected.
      */
-    public void testPushPull() throws IOException, DeviceNotAvailableException {
+    public void testPushPull_normal() throws IOException, DeviceNotAvailableException {
         Log.i(LOG_TAG, "testPushPull");
         File tmpFile = null;
         File tmpDestFile = null;
@@ -111,7 +111,43 @@ public class TestDeviceFuncTest extends DeviceTestCase {
 
         try {
             tmpFile = createTempTestFile(null);
-            String externalStorePath =  mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            String externalStorePath = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            assertNotNull(externalStorePath);
+            deviceFilePath = String.format("%s/%s", externalStorePath, "tmp_testPushPull.txt");
+            // ensure file does not already exist
+            mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
+            assertFalse(String.format("%s exists", deviceFilePath),
+                    mTestDevice.doesFileExist(deviceFilePath));
+
+            assertTrue(mTestDevice.pushFile(tmpFile, deviceFilePath));
+            assertTrue(mTestDevice.doesFileExist(deviceFilePath));
+            tmpDestFile = FileUtil.createTempFile("tmp", "txt");
+            assertTrue(mTestDevice.pullFile(deviceFilePath, tmpDestFile));
+            assertTrue(compareFiles(tmpFile, tmpDestFile));
+        } finally {
+            if (tmpDestFile != null) {
+                tmpDestFile.delete();
+            }
+            if (deviceFilePath != null) {
+                mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
+            }
+        }
+    }
+
+    /**
+     * Push and then pull a file from device, and verify contents are as expected.
+     * <p />
+     * This variant of the test uses "${EXTERNAL_STORAGE}" in the pathname.
+     */
+    public void testPushPull_extStorageVariable() throws IOException, DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testPushPull");
+        File tmpFile = null;
+        File tmpDestFile = null;
+        String deviceFilePath = null;
+
+        try {
+            tmpFile = createTempTestFile(null);
+            String externalStorePath = "${EXTERNAL_STORAGE}";
             assertNotNull(externalStorePath);
             deviceFilePath = String.format("%s/%s", externalStorePath, "tmp_testPushPull.txt");
             // ensure file does not already exist

@@ -625,7 +625,7 @@ class TestDevice implements IManagedTestDevice {
                 boolean status = false;
                 try {
                     syncService = getIDevice().getSyncService();
-                    syncService.pullFile(remoteFilePath,
+                    syncService.pullFile(interpolatePathVariables(remoteFilePath),
                             localFile.getAbsolutePath(), SyncService.getNullProgressMonitor());
                     status = true;
                 } catch (SyncException e) {
@@ -671,6 +671,20 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Helper function that watches for the string "${EXTERNAL_STORAGE}" and replaces it with the
+     * pathname of the EXTERNAL_STORAGE mountpoint.  Specifically intended to be used for pathnames
+     * that are being passed to SyncService, which does not support variables inside of filenames.
+     */
+    String interpolatePathVariables(String path) {
+        final String esString = "${EXTERNAL_STORAGE}";
+        if (path.contains(esString)) {
+            final String esPath = getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            path = path.replace(esString, esPath);
+        }
+        return path;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -685,7 +699,8 @@ class TestDevice implements IManagedTestDevice {
                 try {
                     syncService = getIDevice().getSyncService();
                     syncService.pushFile(localFile.getAbsolutePath(),
-                        remoteFilePath, SyncService.getNullProgressMonitor());
+                        interpolatePathVariables(remoteFilePath),
+                        SyncService.getNullProgressMonitor());
                     status = true;
                 } catch (SyncException e) {
                     CLog.w("Failed to push %s to %s on device %s. Message %s",
