@@ -538,4 +538,12 @@ public class Configuration implements IConfiguration {
             Object configObject) throws ConfigurationException {
         return ArgsOptionParser.getOptionHelp(importantOnly, configObject);
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void validateOptions() throws ConfigurationException {
+        new ArgsOptionParser(getAllConfigurationObjects()).validateMandatoryOptions();
+    }
 }

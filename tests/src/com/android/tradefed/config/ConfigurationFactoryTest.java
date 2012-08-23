@@ -106,6 +106,17 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
+     * Test calling {@link ConfigurationFactory#getConfiguration(String)} with config that has
+     * unset mandatory options.
+     * <p/>
+     * Expect this to succeed, since mandatory option validation no longer happens at configuration
+     * instantiation time.
+     */
+    public void testCreateConfigurationFromArgs_mandatory() throws ConfigurationException {
+        assertNotNull(mFactory.createConfigurationFromArgs(new String[] {"mandatory-config"}));
+    }
+
+    /**
      * Test passing empty arg list to
      * {@link ConfigurationFactory#createConfigurationFromArgs(String[])}.
      */

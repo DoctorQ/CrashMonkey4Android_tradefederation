@@ -178,6 +178,19 @@ public class ArgsOptionParser extends OptionSetter {
         return parseOptions(args.listIterator());
     }
 
+    /**
+     * Validates that all fields marked as {@link Option#mandatory()} have been set.
+     * @throws ConfigurationException
+     */
+    public void validateMandatoryOptions() throws ConfigurationException {
+        // Make sure that all mandatory options have been specified
+        List<String> missingOptions = new ArrayList<String>(getUnsetMandatoryOptions());
+        if (!missingOptions.isEmpty()) {
+            throw new ConfigurationException(String.format("Found missing mandatory options: %s",
+                    ArrayUtil.join(", ", missingOptions)));
+        }
+    }
+
     private List<String> parseOptions(ListIterator<String> args) throws ConfigurationException {
         final List<String> leftovers = new ArrayList<String>();
 
@@ -198,13 +211,6 @@ public class ArgsOptionParser extends OptionSetter {
                 leftovers.add(arg);
                 break;
             }
-        }
-
-        // Make sure that all mandatory options have been specified
-        List<String> missingOptions = new ArrayList<String>(getUnsetMandatoryOptions());
-        if (!missingOptions.isEmpty()) {
-            throw new ConfigurationException(String.format("Found missing mandatory options: %s",
-                    ArrayUtil.join(", ", missingOptions)));
         }
 
         // Package up the leftovers.
