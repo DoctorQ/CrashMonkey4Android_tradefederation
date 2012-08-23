@@ -54,9 +54,14 @@ public class PanoramaBenchMarkTest implements IDeviceTest, IRemoteTest {
         Assert.assertNotNull(mTestDevice);
 
         String dataStore = mTestDevice.getMountPoint(IDevice.MNT_DATA);
+        String externalStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+
+        mTestDevice.executeShellCommand(String.format("chmod 777 %s/local/tmp/panorama_bench",
+                dataStore));
+
         String shellOutput = mTestDevice.executeShellCommand(
-                String.format("panorama_bench %s/panorama_input/test %s/panorama.ppm",
-                dataStore, dataStore));
+                String.format("%s/local/tmp/panorama_bench %s/panorama_input/test %s/panorama.ppm",
+                dataStore, externalStore, externalStore));
 
         String[] lines = shellOutput.split("\n");
 
@@ -100,8 +105,8 @@ public class PanoramaBenchMarkTest implements IDeviceTest, IRemoteTest {
      *         something happened while deleting files
      */
     private void cleanupDevice() throws DeviceNotAvailableException {
-        String dataStore = mTestDevice.getMountPoint(IDevice.MNT_DATA);
-        mTestDevice.executeShellCommand(String.format("rm -r %s/panorama_input", dataStore));
+        String externalStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+        mTestDevice.executeShellCommand(String.format("rm -r %s/panorama_input", externalStore));
     }
 
     /**
