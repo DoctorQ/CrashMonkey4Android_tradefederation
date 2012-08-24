@@ -89,6 +89,14 @@ class StubDevice implements IDevice {
      * {@inheritDoc}
      */
     @Override
+    public String getName() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Client getClient(String applicationName) {
         return null;
     }
