@@ -114,6 +114,15 @@ public class RunUtil implements IRunUtil {
     @Override
     public CommandResult runTimedCmdWithInput(final long timeout, String input,
             final String... command) {
+        return runTimedCmdWithInput(timeout, input, ArrayUtil.list(command));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public CommandResult runTimedCmdWithInput(final long timeout, String input,
+            final List<String> command) {
         final CommandResult result = new CommandResult();
         IRunUtil.IRunnableResult osRunnable = new RunnableResult(result, input,
                 createProcessBuilder(command));
