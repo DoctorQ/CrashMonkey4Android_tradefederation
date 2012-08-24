@@ -277,6 +277,36 @@ public class TestDeviceFuncTest extends DeviceTestCase {
     }
 
     /**
+     * Make sure that we can correctly index directories that have a symlink in the middle.  This
+     * verifies a ddmlib bugfix which added/fixed this functionality.
+     */
+    public void testListSymlinkDir() throws Exception {
+        final String extStore = "/data/local";
+
+        // Clean up after potential failed run
+        mTestDevice.executeShellCommand(String.format("rm %s/testdir", extStore));
+        mTestDevice.executeShellCommand(String.format("rm %s/testdir2/foo.txt", extStore));
+        mTestDevice.executeShellCommand(String.format("rmdir %s/testdir2", extStore));
+
+        try {
+            assertEquals("",
+                    mTestDevice.executeShellCommand(String.format("mkdir %s/testdir2",
+                    extStore)));
+            assertEquals("", mTestDevice.executeShellCommand(
+                    String.format("touch %s/testdir2/foo.txt", extStore)));
+            assertEquals("",
+                    mTestDevice.executeShellCommand(String.format("ln -s %s/testdir2 %s/testdir",
+                    extStore, extStore)));
+
+            assertNotNull(mTestDevice.getFileEntry(String.format("%s/testdir/foo.txt", extStore)));
+        } finally {
+            mTestDevice.executeShellCommand(String.format("rm %s/testdir", extStore));
+            mTestDevice.executeShellCommand(String.format("rm %s/testdir2/foo.txt", extStore));
+            mTestDevice.executeShellCommand(String.format("rmdir %s/testdir2", extStore));
+        }
+    }
+
+    /**
      * Test syncing a single file using {@link TestDevice#syncFiles(File, String)}.
      */
     public void testSyncFiles_normal() throws Exception {
