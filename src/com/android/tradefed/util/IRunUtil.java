@@ -96,6 +96,17 @@ public interface IRunUtil {
     CommandResult runTimedCmdWithInput(long timeout, String input, String... command);
 
     /**
+     * Helper method to execute a system command that requires stdin input, and aborting if it
+     * takes longer than a specified time.
+     *
+     * @param timeout maximum time to wait in ms
+     * @param input the stdin input to pass to process
+     * @param command {@link List} containing the system command and optionally arguments to exec
+     * @return a {@link CommandResult} containing result from command run
+     */
+    CommandResult runTimedCmdWithInput(long timeout, String input, List<String> command);
+
+    /**
      * Helper method to execute a system command asynchronously.
      * <p/>
      * Will return immediately after launching command.

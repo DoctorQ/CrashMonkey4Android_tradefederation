@@ -25,13 +25,12 @@ import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.TestDeviceState;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import junit.framework.Assert;
@@ -62,6 +61,9 @@ public class SdkAvdPreparer implements ITargetPreparer {
 
     @Option(name = "gpu", description = "launch emulator with GPU on")
     private boolean mGpu = false;
+
+    @Option(name = "abi", description = "abi to select for the avd")
+    private String mAbi = null;
 
     private final IRunUtil mRunUtil;
     private final IDeviceManager mDeviceManager;
@@ -126,8 +128,7 @@ public class SdkAvdPreparer implements ITargetPreparer {
             CLog.w("Emulator %s is already running, killing", device.getSerialNumber());
             mDeviceManager.killEmulator(device);
         }
-        List<String> emulatorArgs = new ArrayList<String>(Arrays.asList(
-                sdkBuild.getEmulatorToolPath(), "-avd", avd));
+        List<String> emulatorArgs = ArrayUtil.list(sdkBuild.getEmulatorToolPath(), "-avd", avd);
 
         if (!mWindow) {
             emulatorArgs.add("-no-window");
@@ -232,9 +233,18 @@ public class SdkAvdPreparer implements ITargetPreparer {
         final String cmdInput = "no\r\n";
         final String successPattern = String.format("Created AVD '%s'", target);
         CLog.d("Creating avd for target %s with name %s", target, target);
-        CommandResult result = mRunUtil.runTimedCmdWithInput(ANDROID_TIMEOUT_MS, cmdInput,
-                sdkBuild.getAndroidToolPath(), "create", "avd", "--target", target, "--name",
-                target, "--sdcard", mSdcardSize, "--force");
+
+        List<String> avdCommand = ArrayUtil.list(sdkBuild.getAndroidToolPath(),
+              "create", "avd", "--target", target, "--name", target, "--sdcard",
+              mSdcardSize, "--force");
+
+        if (mAbi != null) {
+            avdCommand.add("--abi");
+            avdCommand.add(mAbi);
+        }
+
+        CommandResult result = mRunUtil.runTimedCmdWithInput(ANDROID_TIMEOUT_MS,
+              cmdInput, avdCommand);
         if (!result.getStatus().equals(CommandStatus.SUCCESS) || result.getStdout() == null ||
                 !result.getStdout().contains(successPattern)) {
             // stdout usually doesn't contain useful data, so don't want to add it to the
