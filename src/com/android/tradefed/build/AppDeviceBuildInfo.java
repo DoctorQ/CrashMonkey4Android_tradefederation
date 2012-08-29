@@ -13,7 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.android.tradefed.build;
+
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.File;
 import java.util.List;
@@ -294,13 +297,30 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
      * {@inheritDoc}
      */
     @Override
+    public File getFile(String name) {
+        File deviceFileRecord = mDeviceBuild.getFile(name);
+        File appFileRecord = mAppBuildInfo.getFile(name);
+        if (deviceFileRecord != null && appFileRecord != null) {
+            CLog.e("Found duplicate file records for %s in DeviceBuildInfo and AppBuildInfo", name);
+            return null;
+        } else if (deviceFileRecord != null) {
+            return deviceFileRecord;
+        } else {
+            return appFileRecord;
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public IBuildInfo clone() {
         AppDeviceBuildInfo copy = new AppDeviceBuildInfo(getBuildId(), getTestTag(),
                 getBuildTargetName());
         copy.addAllBuildAttributes(this);
-        IDeviceBuildInfo deviceBuildClone = (IDeviceBuildInfo)mDeviceBuild.clone();
+        IDeviceBuildInfo deviceBuildClone = (IDeviceBuildInfo) mDeviceBuild.clone();
         copy.setDeviceBuild(deviceBuildClone);
-        IAppBuildInfo appBuildClone = (IAppBuildInfo)mAppBuildInfo.clone();
+        IAppBuildInfo appBuildClone = (IAppBuildInfo) mAppBuildInfo.clone();
         copy.setAppBuild(appBuildClone);
         return copy;
     }

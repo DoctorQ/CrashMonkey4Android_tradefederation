@@ -19,12 +19,15 @@ package com.android.tradefed.testtype;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.FileInputStreamSource;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.result.TestRunResult;
+import com.android.tradefed.util.FileUtil;
+
 import junit.framework.Assert;
 
 import java.io.File;
@@ -59,24 +62,34 @@ public class CodeCoverageTest extends InstrumentationTest {
         // Run instrumentation tests.
         super.run(new ResultForwarder(listener, testCoverageFile));
 
-        // If coverage file path was not set explicitly before test run, fetch it from the
+        // If coverage file path was not set explicitly before test run, fetch
+        // it from the
         // instrumentation out.
         if (mCoverageFile == null) {
             mCoverageFile = fetchCoverageFilePath(testCoverageFile);
         }
-
+        CLog.d("Coverage file at %s", mCoverageFile);
         File coverageFile = null;
-        Assert.assertTrue("Missing coverage file.", getDevice().doesFileExist(mCoverageFile));
-        coverageFile = getDevice().pullFile(mCoverageFile);
-        if (coverageFile != null) {
-            FileInputStreamSource source = new FileInputStreamSource(coverageFile);
-            listener.testLog(getPackageName() + "_runtime_coverage", LogDataType.COVERAGE, source);
-            source.cancel();
+        try {
+            Assert.assertTrue("Missing coverage file.", getDevice().doesFileExist(mCoverageFile));
+            coverageFile = getDevice().pullFile(mCoverageFile);
+            if (coverageFile != null) {
+                CLog.d("coverage file from device: %s", coverageFile.getAbsolutePath());
+                FileInputStreamSource source = new FileInputStreamSource(coverageFile);
+                listener.testLog(getPackageName() + "_runtime_coverage", LogDataType.COVERAGE,
+                        source);
+                source.cancel();
+            }
+        } finally {
+            if (coverageFile != null) {
+                FileUtil.deleteFile(coverageFile);
+            }
         }
     }
 
     /**
      * Fetch the runtime coverage file path from instrumentation test metrics.
+     *
      * @return
      */
     private String fetchCoverageFilePath(CollectingTestListener listener) {
