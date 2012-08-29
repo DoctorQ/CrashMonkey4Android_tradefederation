@@ -16,12 +16,12 @@
 
 package com.android.tradefed.result;
 
-import com.android.tradefed.build.AppDeviceBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -40,9 +40,8 @@ import java.util.zip.ZipFile;
  */
 @OptionClass(alias = "code-coverage-reporter")
 public class CodeCoverageReporter extends StubTestInvocationListener {
-    @Option(name = "coverage-metadata-file", description =
-            "The path of the Emma coverage meta data file used to generate the report.",
-            mandatory = true)
+    @Option(name = "coverage-metadata-file-path", description =
+            "The path of the Emma coverage meta data file used to generate the report.")
     private String mCoverageMetaFilePath = null;
 
     @Option(name = "coverage-output-path", description =
@@ -50,7 +49,12 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
             mandatory = true)
     private String mReportRootPath = null;
 
+    @Option(name = "coverage-metadata-label", description =
+            "The label of the Emma coverage meta data zip file inside the IBuildInfo.")
+    private String mCoverageMetaZipFileName = "emma_meta.zip";
+
     static private int REPORT_GENERATION_TIMEOUT_MS = 3 * 60 * 1000;
+
 
     private IBuildInfo mBuildInfo;
     private ILogFileSaver mLogFileSaver;
@@ -94,6 +98,9 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
 
         // We want to save all other files in the same directory as the report.
         mLogFileSaver = new LogFileSaver(mReportOutputPath);
+
+        CLog.d("ReportOutputPath %s", mReportOutputPath.getAbsolutePath());
+        CLog.d("LogfileSaver file dir %s", mLogFileSaver.getFileDir().getAbsolutePath());
     }
 
     /**
@@ -120,17 +127,23 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
     }
 
     private void fetchAppropriateMetaDataFile() {
-        File coverageZipFile = mBuildInfo.getFile("coverage");
-        Assert.assertNotNull("Failed to get the coverage metadata zipfile.", coverageZipFile);
+        File coverageZipFile = mBuildInfo.getFile(mCoverageMetaZipFileName);
+        CLog.d("Coverage zip file: %s", coverageZipFile.getAbsolutePath());
 
-        // Unzip files and keep the one we want.
+        Assert.assertNotNull("Failed to get the coverage metadata zipfile.", coverageZipFile);
         try {
             mLocalTmpDir = FileUtil.createTempDir("emma-meta");
             ZipFile zipFile = new ZipFile(coverageZipFile);
             FileUtil.extractZip(zipFile, mLocalTmpDir);
-            File coverageMetaFile = new File(mLocalTmpDir, mCoverageMetaFilePath);
+            File coverageMetaFile;
+            if (mCoverageMetaFilePath == null) {
+                coverageMetaFile = FileUtil.findFile(mLocalTmpDir, "coverage.em");
+            } else {
+                coverageMetaFile = new File(mLocalTmpDir, mCoverageMetaFilePath);
+            }
             if (coverageMetaFile.exists()) {
                 mCoverageMetaFile = coverageMetaFile;
+                CLog.d("Coverage meta data file %s", mCoverageMetaFile.getAbsolutePath());
             }
         } catch (IOException e) {
             CLog.e(e);
@@ -142,19 +155,21 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         String buildId = mBuildInfo.getBuildId();
         File branchPath = new File(rootPath, branchName);
         File buildIdPath = new File(branchPath, buildId);
+        FileUtil.mkdirsRWX(buildIdPath);
         return buildIdPath;
     }
 
     private void generateCoverageReport(File coverageFile, File metaFile) {
         Assert.assertNotNull("Could not find a valid coverage file.", coverageFile);
-        Assert.assertNotNull("Could not find a valid meta data coverage file.", coverageFile);
+        Assert.assertNotNull("Could not find a valid meta data coverage file.", metaFile);
         // Assume emma.jar is in the path.
-        String cmd = String.format("java -cp emma.jar emma report -r html -in %s -in %s " +
-                "-Dreport.html.out.file=%s/index.html",
-                coverageFile.getAbsolutePath(),
-                metaFile.getAbsolutePath(), mReportOutputPath.getAbsolutePath());
-        IRunUtil run_util = RunUtil.getDefault();
-        CommandResult result = run_util.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
-        CLog.d(result.getStdout());
+        String cmd[] = {"java", "-cp", "emma.jar", "emma", "report", "-r", "html", "-in",
+                coverageFile.getAbsolutePath(), "-in", metaFile.getAbsolutePath(),
+                "-Dreport.html.out.file=" + mReportOutputPath.getAbsolutePath() + "/index.html"};
+        IRunUtil runUtil = RunUtil.getDefault();
+        CommandResult result = runUtil.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
+        if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
+            CLog.d("Failed to generate coverage report for .");
+        }
     }
 }

@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.command.FatalHostError;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -391,10 +392,12 @@ public class FileUtil {
     public static void extractZip(ZipFile zipFile, File destDir) throws IOException {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         while (entries.hasMoreElements()) {
+
             ZipEntry entry = entries.nextElement();
             File childFile = new File(destDir, entry.getName());
+            childFile.getParentFile().mkdirs();
             if (entry.isDirectory()) {
-                childFile.mkdirs();
+                continue;
             } else {
                 FileUtil.writeToFile(zipFile.getInputStream(entry), childFile);
             }
