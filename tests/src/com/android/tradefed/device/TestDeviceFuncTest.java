@@ -143,13 +143,15 @@ public class TestDeviceFuncTest extends DeviceTestCase {
         Log.i(LOG_TAG, "testPushPull");
         File tmpFile = null;
         File tmpDestFile = null;
+        File tmpDestFile2 = null;
         String deviceFilePath = null;
+        final String filename = "tmp_testPushPull.txt";
 
         try {
             tmpFile = createTempTestFile(null);
             String externalStorePath = "${EXTERNAL_STORAGE}";
             assertNotNull(externalStorePath);
-            deviceFilePath = String.format("%s/%s", externalStorePath, "tmp_testPushPull.txt");
+            deviceFilePath = String.format("%s/%s", externalStorePath, filename);
             // ensure file does not already exist
             mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
             assertFalse(String.format("%s exists", deviceFilePath),
@@ -160,9 +162,16 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             tmpDestFile = FileUtil.createTempFile("tmp", "txt");
             assertTrue(mTestDevice.pullFile(deviceFilePath, tmpDestFile));
             assertTrue(compareFiles(tmpFile, tmpDestFile));
+
+            tmpDestFile2 = mTestDevice.pullFileFromExternal(filename);
+            assertNotNull(tmpDestFile2);
+            assertTrue(compareFiles(tmpFile, tmpDestFile2));
         } finally {
             if (tmpDestFile != null) {
                 tmpDestFile.delete();
+            }
+            if (tmpDestFile2 != null) {
+                tmpDestFile2.delete();
             }
             if (deviceFilePath != null) {
                 mTestDevice.executeShellCommand(String.format("rm %s", deviceFilePath));
