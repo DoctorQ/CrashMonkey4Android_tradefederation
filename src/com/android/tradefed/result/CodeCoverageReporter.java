@@ -55,6 +55,7 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
 
     static private int REPORT_GENERATION_TIMEOUT_MS = 3 * 60 * 1000;
 
+    static public String XML_REPORT_NAME = "report.xml";
 
     private IBuildInfo mBuildInfo;
     private ILogFileSaver mLogFileSaver;
@@ -62,7 +63,20 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
     private File mLocalTmpDir = null;
     private File mCoverageFile = null;
     private File mCoverageMetaFile = null;
+    private File mXMLReportFile = null;
     private File mReportOutputPath = null;
+
+    public void setMetaZipFilePath(String filePath) {
+        mCoverageMetaFilePath = filePath;
+    }
+
+    public void setReportRootPath(String rootPath) {
+        mReportRootPath = rootPath;
+    }
+
+    public void setMetaZipFileName(String filename) {
+        mCoverageMetaZipFileName = filename;
+    }
 
     /**
      * {@inheritDoc}
@@ -86,6 +100,10 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         return null;
     }
 
+    public File getXMLReportFile() {
+        return mXMLReportFile;
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -95,6 +113,7 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
 
         // Append build and branch information to output directory.
         mReportOutputPath = generateReportLocation(mReportRootPath);
+        mXMLReportFile = new File(mReportOutputPath, XML_REPORT_NAME);
 
         // We want to save all other files in the same directory as the report.
         mLogFileSaver = new LogFileSaver(mReportOutputPath);
@@ -112,7 +131,8 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         generateReport();
     }
 
-    private void generateReport() {
+    public void generateReport() {
+        CLog.d("Generating report for code coverage");
         fetchAppropriateMetaDataFile();
 
         generateCoverageReport(mCoverageFile, mCoverageMetaFile);
@@ -163,9 +183,12 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         Assert.assertNotNull("Could not find a valid coverage file.", coverageFile);
         Assert.assertNotNull("Could not find a valid meta data coverage file.", metaFile);
         // Assume emma.jar is in the path.
-        String cmd[] = {"java", "-cp", "emma.jar", "emma", "report", "-r", "html", "-in",
-                coverageFile.getAbsolutePath(), "-in", metaFile.getAbsolutePath(),
-                "-Dreport.html.out.file=" + mReportOutputPath.getAbsolutePath() + "/index.html"};
+        String cmd[] = {
+                "java", "-cp", "emma.jar", "emma", "report", "-r", "html", "-r", "xml",
+                "-in", coverageFile.getAbsolutePath(), "-in", metaFile.getAbsolutePath(),
+                "-Dreport.html.out.file=" + mReportOutputPath.getAbsolutePath() + "/index.html",
+                "-Dreport.xml.out.file=" + mReportOutputPath.getAbsolutePath() + "/report.xml"
+        };
         IRunUtil runUtil = RunUtil.getDefault();
         CommandResult result = runUtil.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
         if (!result.getStatus().equals(CommandStatus.SUCCESS)) {

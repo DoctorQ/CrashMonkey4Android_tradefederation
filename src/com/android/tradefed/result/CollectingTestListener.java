@@ -71,6 +71,13 @@ public class CollectingTestListener implements ITestInvocationListener {
     }
 
     /**
+     * Set the build info.
+     */
+    public void setBuildInfo(IBuildInfo buildInfo) {
+        mBuildInfo = buildInfo;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
