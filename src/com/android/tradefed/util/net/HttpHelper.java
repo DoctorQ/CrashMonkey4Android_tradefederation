@@ -209,9 +209,9 @@ public class HttpHelper implements IHttpHelper {
      * {@inheritDoc}
      */
     @Override
-    public String doPostWithRetry(String url, String postData) throws IOException,
-            DataSizeException {
-        PostRequestRunnable runnable = new PostRequestRunnable(url, postData);
+    public String doPostWithRetry(String url, String postData, String contentType)
+            throws IOException, DataSizeException {
+        PostRequestRunnable runnable = new PostRequestRunnable(url, postData, contentType);
         if (getRunUtil().runEscalatingTimedRetry(getOpTimeout(), getInitialPollInterval(),
                 getMaxPollInterval(), getMaxTime(), runnable)) {
             return runnable.getResponse();
@@ -224,6 +224,15 @@ public class HttpHelper implements IHttpHelper {
         } else {
             throw new IOException("POST request could not be completed");
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String doPostWithRetry(String url, String postData) throws IOException,
+            DataSizeException {
+        return doPostWithRetry(url, postData, null);
     }
 
     /**
@@ -314,9 +323,11 @@ public class HttpHelper implements IHttpHelper {
      */
     private class PostRequestRunnable extends RequestRunnable {
         String mPostData;
-        public PostRequestRunnable(String url, String postData) {
+        String mContentType;
+        public PostRequestRunnable(String url, String postData, String contentType) {
             super(url);
             mPostData = postData;
+            mContentType = contentType;
         }
 
         /**
@@ -329,7 +340,7 @@ public class HttpHelper implements IHttpHelper {
             OutputStream outputStream = null;
             OutputStreamWriter outputStreamWriter = null;
             try {
-                HttpURLConnection conn = createConnection(new URL(getUrl()), "POST", null);
+                HttpURLConnection conn = createConnection(new URL(getUrl()), "POST", mContentType);
 
                 outputStream = getConnectionOutputStream(conn);
                 outputStreamWriter = new OutputStreamWriter(outputStream);
