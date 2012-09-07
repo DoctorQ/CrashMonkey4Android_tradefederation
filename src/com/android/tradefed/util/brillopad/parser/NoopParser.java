@@ -13,26 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad;
+package com.android.tradefed.util.brillopad.parser;
 
 import com.android.tradefed.util.brillopad.item.IItem;
 
 import java.util.List;
 
 /**
- * An interface which defines the behavior for a parser.  The parser will receive a block of data
- * that it can consider complete.  It parses the input and returns a single {@link IItem} instance.
- * Furthermore, the parser should be robust against invalid input -- the input format may drift over
- * time.
+ * A {@link IParser} that consumes nothing.
  */
-public interface IParser {
-
+public class NoopParser implements IParser {
     /**
-     * Parses a list of {@link String} objects and returns a {@link IItem}.
-     *
-     * @param lines A list of {@link String} objects.
-     * @return The parsed {@link IItem} object.
+     * {@inheritDoc}
      */
-    public IItem parse(List<String> lines);
+    @Override
+    public IItem parse(List<String> block) {
+        // ignore
+        return null;
+    }
 }
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.android.tradefed.util.brillopad;
+package com.android.tradefed.util.brillopad.parser;
 
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.brillopad.item.BugreportItem;

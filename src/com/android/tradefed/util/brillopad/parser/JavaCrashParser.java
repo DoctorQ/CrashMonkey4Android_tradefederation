@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.android.tradefed.util.brillopad;
+package com.android.tradefed.util.brillopad.parser;
 
 import com.android.tradefed.util.brillopad.item.JavaCrashItem;
 
