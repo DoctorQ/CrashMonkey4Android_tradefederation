@@ -123,10 +123,8 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         }
 
         // Process procrank information and post it to the dashboard
-        item = bugreport.getProcrank();
-        if (item != null) {
-            Map <String, Map<String, Integer>> procRankMap = (ProcrankItem) item;
-            parseProcRankMap(listener, procRankMap);
+        if (bugreport.getProcrank() != null) {
+            parseProcRankMap(listener, bugreport.getProcrank());
         }
     }
 
@@ -167,7 +165,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
      *            section
      */
     void parseProcRankMap(ITestInvocationListener listener,
-            Map<String, Map<String, Integer>> procRankMap) {
+            ProcrankItem procrank) {
         // final maps for pss, rss, and uss.
         Map<String, String> pssOutput = new HashMap<String, String>();
         Map<String, String> rssOutput = new HashMap<String, String>();
@@ -179,29 +177,22 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
         Integer rssTotal = 0;
         Integer ussTotal = 0;
 
-        for (Map.Entry<String, Map<String, Integer>> entry : procRankMap.entrySet()) {
-            // Skip empty processes.
-            if (entry.getKey() == null)
-                continue;
-            if (entry.getKey().length() == 0)
-                continue;
-
+        for (Integer pid : procrank.getPids()) {
             numProcess++;
-            Map<String, Integer> valueMap = entry.getValue();
-            Integer pss = valueMap.get("Pss");
-            Integer rss = valueMap.get("Rss");
-            Integer uss = valueMap.get("Uss");
+            Integer pss = procrank.getPss(pid);
+            Integer rss = procrank.getRss(pid);
+            Integer uss = procrank.getUss(pid);
             if (pss != null) {
                 pssTotal += pss;
-                pssOutput.put(entry.getKey(), pss.toString());
+                pssOutput.put(procrank.getProcessName(pid), pss.toString());
             }
             if (rss != null) {
                 rssTotal += rss;
-                rssOutput.put(entry.getKey(), rss.toString());
+                rssOutput.put(procrank.getProcessName(pid), rss.toString());
             }
             if (uss != null) {
                 ussTotal += pss;
-                ussOutput.put(entry.getKey(), uss.toString());
+                ussOutput.put(procrank.getProcessName(pid), uss.toString());
             }
         }
         // Add aggregation data.

@@ -69,7 +69,7 @@ public class BugreportParserFuncTest extends TestCase {
         assertTrue(bugreport.getMemInfo().size() > 0);
 
         assertNotNull(bugreport.getProcrank());
-        assertTrue(bugreport.getProcrank().size() > 0);
+        assertTrue(bugreport.getProcrank().getPids().size() > 0);
 
         assertNotNull(bugreport.getSystemLog());
         assertNotNull(bugreport.getSystemLog().getStartTime());
@@ -87,7 +87,7 @@ public class BugreportParserFuncTest extends TestCase {
                 bugreport.getTime(),
                 bugreport.getSystemProps().size(),
                 bugreport.getMemInfo().size(),
-                bugreport.getProcrank().size(),
+                bugreport.getProcrank().getPids().size(),
                 bugreport.getSystemLog().getStartTime().toString(),
                 bugreport.getSystemLog().getStopTime().toString(),
                 bugreport.getSystemLog().getAnrs().size(),

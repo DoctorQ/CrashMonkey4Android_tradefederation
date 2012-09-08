@@ -19,6 +19,8 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.brillopad.item.AnrItem;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
+import com.android.tradefed.util.brillopad.item.GenericLogcatItem;
+import com.android.tradefed.util.brillopad.item.IItem;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
 import com.android.tradefed.util.brillopad.item.MemInfoItem;
 import com.android.tradefed.util.brillopad.item.ProcrankItem;
@@ -145,6 +147,17 @@ public class BugreportParser extends AbstractSectionParser {
             mBugreport.setProcrank((ProcrankItem) getSection(ProcrankItem.TYPE));
             mBugreport.setSystemLog((LogcatItem) getSection(LogcatItem.TYPE));
             mBugreport.setSystemProps((SystemPropsItem) getSection(SystemPropsItem.TYPE));
+
+            if (mBugreport.getSystemLog() != null && mBugreport.getProcrank() != null) {
+                for (IItem item : mBugreport.getSystemLog().getEvents()) {
+                    if (item instanceof GenericLogcatItem &&
+                            ((GenericLogcatItem) item).getApp() == null) {
+                        GenericLogcatItem logcatItem = (GenericLogcatItem) item;
+                        logcatItem.setApp(mBugreport.getProcrank().getProcessName(
+                                logcatItem.getPid()));
+                    }
+                }
+            }
 
             TracesItem traces = (TracesItem) getSection(TracesItem.TYPE);
             if (traces != null && traces.getApp() != null && traces.getStack() != null &&
