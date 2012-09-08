@@ -26,6 +26,7 @@ import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+
 import junit.framework.Assert;
 
 import java.io.File;
@@ -104,6 +105,14 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         return mXMLReportFile;
     }
 
+    public File getReportOutputPath() {
+        return mReportOutputPath;
+    }
+
+    public File getHTMLReportFile() {
+        return new File(mReportOutputPath, "index.html");
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -113,7 +122,10 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
 
         // Append build and branch information to output directory.
         mReportOutputPath = generateReportLocation(mReportRootPath);
+        CLog.d("ReportOutputPath: %s", mReportOutputPath);
+
         mXMLReportFile = new File(mReportOutputPath, XML_REPORT_NAME);
+        CLog.d("ReportOutputPath: %s", mXMLReportFile);
 
         // We want to save all other files in the same directory as the report.
         mLogFileSaver = new LogFileSaver(mReportOutputPath);
@@ -192,7 +204,7 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         IRunUtil runUtil = RunUtil.getDefault();
         CommandResult result = runUtil.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
         if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
-            CLog.d("Failed to generate coverage report for .");
+            CLog.d("Failed to generate coverage report for %s.", coverageFile.getAbsolutePath());
         }
     }
 }
