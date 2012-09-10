@@ -27,11 +27,11 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.brillopad.BugreportParser;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
 import com.android.tradefed.util.brillopad.item.IItem;
 import com.android.tradefed.util.brillopad.item.MemInfoItem;
 import com.android.tradefed.util.brillopad.item.ProcrankItem;
+import com.android.tradefed.util.brillopad.parser.BugreportParser;
 
 import junit.framework.Assert;
 

@@ -29,9 +29,9 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.brillopad.BugreportParser;
 import com.android.tradefed.util.brillopad.item.BugreportItem;
 import com.android.tradefed.util.brillopad.item.LogcatItem;
+import com.android.tradefed.util.brillopad.parser.BugreportParser;
 
 import junit.framework.Assert;
 

@@ -16,6 +16,9 @@
 package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.util.brillopad.parser.BugreportParserFuncTest;
+import com.android.tradefed.util.brillopad.parser.LogcatParserFuncTest;
+import com.android.tradefed.util.brillopad.parser.MonkeyLogParserFuncTest;
 
 import junit.framework.Test;
 

@@ -17,6 +17,17 @@ package com.android.tradefed.util.brillopad;
 
 import com.android.tradefed.testtype.DeviceTestSuite;
 import com.android.tradefed.util.brillopad.item.GenericItemTest;
+import com.android.tradefed.util.brillopad.parser.AbstractSectionParserTest;
+import com.android.tradefed.util.brillopad.parser.AnrParserTest;
+import com.android.tradefed.util.brillopad.parser.BugreportParserTest;
+import com.android.tradefed.util.brillopad.parser.JavaCrashParserTest;
+import com.android.tradefed.util.brillopad.parser.LogcatParserTest;
+import com.android.tradefed.util.brillopad.parser.MemInfoParserTest;
+import com.android.tradefed.util.brillopad.parser.MonkeyLogParserTest;
+import com.android.tradefed.util.brillopad.parser.NativeCrashParserTest;
+import com.android.tradefed.util.brillopad.parser.ProcrankParserTest;
+import com.android.tradefed.util.brillopad.parser.SystemPropsParserTest;
+import com.android.tradefed.util.brillopad.parser.TracesParserTest;
 
 import junit.framework.Test;
 
