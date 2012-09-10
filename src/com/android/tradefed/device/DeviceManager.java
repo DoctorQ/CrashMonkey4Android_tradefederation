@@ -809,7 +809,14 @@ public class DeviceManager implements IDeviceManager {
         synchronized (this) {
             checkInit();
             Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
-            Collections.addAll(visibleDeviceSet, mAdbBridge.getDevices());
+            List<IDevice> allDeviceCopy = ArrayUtil.list(mAdbBridge.getDevices());
+
+            for (IDevice device : allDeviceCopy) {
+                // ignore devices not matching global filter
+                if (mGlobalDeviceFilter.matches(device)) {
+                    visibleDeviceSet.add(device);
+                }
+            }
 
             for (ITestDevice device : mAllocatedDeviceMap.values()) {
                 deviceMap.put(device.getIDevice(), "Allocated");
