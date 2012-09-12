@@ -51,6 +51,10 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     @Option(name="boot-poll-time-ms", description="Delay in ms between polls for device to boot.")
     private static final long mBootPoolTimeMs = 500;
 
+    @Option(name="post-boot-delay-ms",
+            description="Delay in ms after boot complete before taking the bugreport.")
+    private static final long mPostBootDelayMs = 60000;
+
     ITestDevice mTestDevice = null;
 
     @Override
@@ -97,6 +101,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
             throws DeviceNotAvailableException {
         // Make sure the device is available and settled, before getting bugreport.
         mTestDevice.waitForDeviceAvailable();
+        RunUtil.getDefault().sleep(mPostBootDelayMs);
         BugreportParser parser = new BugreportParser();
         BugreportItem bugreport = null;
         // Retrieve bugreport
