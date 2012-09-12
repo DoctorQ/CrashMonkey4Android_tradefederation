@@ -1017,11 +1017,15 @@ public class PackageManagerHostTests extends DeviceTestCase {
             assert (mPMHostUtils.appExistsAsEncrypted(SIMPLE_PKG, true /*reinstall*/));
             mPMHostUtils.installAppAndVerifyExistsOnDevice(getTestAppFilePath(SIMPLE_APK),
                     SIMPLE_PKG, true);
+            // The library is store in symlink at /data/app-lib
             File appFileDir = new File("/data/data", SIMPLE_PKG);
             String libFilePath = new File(appFileDir, "lib").getAbsolutePath();
-            Assert.assertTrue(mPMHostUtils.checkFilePermissions(libFilePath, "drwxr-xr-x"));
+            Assert.assertTrue(mPMHostUtils.checkFilePermissions(libFilePath, "lrwxrwxrwx"));
             Assert.assertTrue(mPMHostUtils.checkFileGroupName(libFilePath, "system"));
             Assert.assertTrue(mPMHostUtils.checkFileOwnerName(libFilePath, "system"));
+            // Make sure the app is in the shared directory.
+            Assert.assertTrue(mPMHostUtils.doesRemoteFileExistContainingString(
+                    "/data/app-lib", SIMPLE_PKG));
         }
         // cleanup test app
         finally {
