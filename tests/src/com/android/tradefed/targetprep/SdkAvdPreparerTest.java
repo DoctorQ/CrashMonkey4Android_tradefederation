@@ -207,15 +207,10 @@ public class SdkAvdPreparerTest extends TestCase {
      * Configure the mock objects to deliver specific response for the 'android create avd ...'
      * call.
      */
+    @SuppressWarnings("unchecked")
     private void setCreateAvdResponse(CommandResult result) {
-        // expect 9 string arguments after "android". Ugh, mocking var args is fun
         EasyMock.expect(mMockRunUtil.runTimedCmdWithInput(EasyMock.anyLong(),
-                (String)EasyMock.anyObject(), EasyMock.eq(ANDROID_TOOL),
-                (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject(), (String)EasyMock.anyObject(),
-                (String)EasyMock.anyObject())).andReturn(result);
+             (String)EasyMock.anyObject(), (List<String>)EasyMock.anyObject())).andReturn(result);
     }
 
     private void replayMocks() {
