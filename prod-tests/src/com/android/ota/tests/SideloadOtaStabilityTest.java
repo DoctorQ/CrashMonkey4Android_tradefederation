@@ -228,6 +228,7 @@ public class SideloadOtaStabilityTest implements IDeviceTest, IBuildReceiver,
         } finally {
             Map<String, String> metrics = new HashMap<String, String>(1);
             metrics.put("iterations", Integer.toString(actualIterations));
+            metrics.put("failed_iterations", Integer.toString(mIterations - actualIterations));
             long endTime = System.currentTimeMillis() - startTime;
             listener.testRunEnded(endTime, metrics);
         }
