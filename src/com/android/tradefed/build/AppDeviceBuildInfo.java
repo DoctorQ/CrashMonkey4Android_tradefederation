@@ -17,6 +17,7 @@
 package com.android.tradefed.build;
 
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.NullUtil;
 
 import java.io.File;
 import java.util.List;
@@ -298,17 +299,43 @@ public class AppDeviceBuildInfo extends BuildInfo implements IDeviceBuildInfo, I
      */
     @Override
     public File getFile(String name) {
+        File localRecord = super.getFile(name);
         File deviceFileRecord = mDeviceBuild.getFile(name);
         File appFileRecord = mAppBuildInfo.getFile(name);
-        if (deviceFileRecord != null && appFileRecord != null) {
-            CLog.e("Found duplicate file records for %s in DeviceBuildInfo and AppBuildInfo", name);
+
+        if (NullUtil.countNonNulls(localRecord, deviceFileRecord, appFileRecord) > 1) {
+            CLog.e("Found duplicate records while fetching file with name \"%s\"", name);
             return null;
+        } else if (localRecord != null) {
+            return localRecord;
         } else if (deviceFileRecord != null) {
             return deviceFileRecord;
         } else {
             return appFileRecord;
         }
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getVersion(String name) {
+        String localFileVersion = super.getVersion(name);
+        String deviceFileVersion = mDeviceBuild.getVersion(name);
+        String appFileVersion = mAppBuildInfo.getVersion(name);
+
+        if (NullUtil.countNonNulls(localFileVersion, deviceFileVersion, appFileVersion) > 1) {
+            CLog.e("Found duplicate records while fetching file version for \"%s\"", name);
+            return null;
+        } else if (localFileVersion != null) {
+            return localFileVersion;
+        } else if (deviceFileVersion != null) {
+            return deviceFileVersion;
+        } else {
+            return appFileVersion;
+        }
+    }
+
 
     /**
      * {@inheritDoc}
