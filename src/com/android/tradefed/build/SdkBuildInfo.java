@@ -33,6 +33,8 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
     private File mAdtDir = null;
     private File mSdkDir = null;
     private boolean mDeleteSdkDirParent;
+    private static final boolean isWindows = System.getProperty("os.name") != null
+          && System.getProperty("os.name").startsWith("Windows");
 
     private static final int ANDROID_TIMEOUT_MS = 15*1000;
 
@@ -141,7 +143,8 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
         if (getSdkDir() == null) {
             throw new IllegalStateException("sdk dir is not set");
         }
-        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools", "android");
+        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools",
+                  getAndroidExecutableName());
     }
 
     /**
@@ -177,7 +180,8 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
         if (getSdkDir() == null) {
             throw new IllegalStateException("sdk dir is not set");
         }
-        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools", "emulator");
+        return FileUtil.getPath(getSdkDir().getAbsolutePath(), "tools",
+                  getEmulatorExecutableName());
     }
 
     /**
@@ -202,5 +206,27 @@ public class SdkBuildInfo extends BuildInfo implements ISdkBuildInfo {
                 file.setExecutable(true, true);
             }
         }
+    }
+
+    /**
+     * Helper method to return appropriate android executable
+     * filename based on current OS.
+     */
+    private String getAndroidExecutableName() {
+        if (isWindows) {
+            return "android.bat";
+        }
+        return "android";
+    }
+
+    /**
+     * Helper method to return appropriate emulator executable
+     * filename based on current OS.
+     */
+    private String getEmulatorExecutableName() {
+        if (isWindows) {
+            return "emulator.exe";
+        }
+        return "emulator";
     }
  }
