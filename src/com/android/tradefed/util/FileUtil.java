@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import com.android.ddmlib.Log;
 import com.android.tradefed.command.FatalHostError;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -104,6 +105,33 @@ public class FileUtil {
         }
 
         return file.isDirectory();
+    }
+
+    public static boolean chmodRWXRecursively(File file) {
+        boolean success = true;
+        if (!file.setExecutable(true, false)) {
+            CLog.w("Failed to set %s executable.", file.getAbsolutePath());
+            success = false;
+        }
+        if (!file.setWritable(true, false)) {
+            CLog.w("Failed to set %s writable.", file.getAbsolutePath());
+            success = false;
+        }
+        if (!file.setReadable(true, false)) {
+            CLog.w("Failed to set %s readable", file.getAbsolutePath());
+            success = false;
+        }
+
+        if (file.isDirectory()) {
+            File[] childs = file.listFiles();
+            for(File child : childs) {
+                if (!chmodRWXRecursively(child)) {
+                    success = false;
+                }
+            }
+
+        }
+        return success;
     }
 
     public static boolean chmod(File file, String perms) {

@@ -26,7 +26,6 @@ import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
-
 import junit.framework.Assert;
 
 import java.io.File;
@@ -198,6 +197,7 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         String cmd[] = {
                 "java", "-cp", "emma.jar", "emma", "report", "-r", "html", "-r", "xml",
                 "-in", coverageFile.getAbsolutePath(), "-in", metaFile.getAbsolutePath(),
+                "-Dreport.html.out.encoding=UTF-8",
                 "-Dreport.html.out.file=" + mReportOutputPath.getAbsolutePath() + "/index.html",
                 "-Dreport.xml.out.file=" + mReportOutputPath.getAbsolutePath() + "/report.xml"
         };
@@ -205,6 +205,13 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         CommandResult result = runUtil.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
         if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
             CLog.d("Failed to generate coverage report for %s.", coverageFile.getAbsolutePath());
+        } else {
+            // Make the report world readable.
+            boolean setPerms = FileUtil.chmodRWXRecursively(mReportOutputPath);
+            if (!setPerms) {
+                CLog.w("Failed to set %s to be world accessible.",
+                        mReportOutputPath.getAbsolutePath());
+            }
         }
     }
 }
