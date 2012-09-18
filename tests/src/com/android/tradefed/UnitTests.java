@@ -84,6 +84,7 @@ import com.android.tradefed.util.ConditionPriorityBlockingQueueTest;
 import com.android.tradefed.util.EmailTest;
 import com.android.tradefed.util.FileUtilTest;
 import com.android.tradefed.util.MultiMapTest;
+import com.android.tradefed.util.NullUtilTest;
 import com.android.tradefed.util.QuotationAwareTokenizerTest;
 import com.android.tradefed.util.RegexTrieTest;
 import com.android.tradefed.util.RunUtilTest;
@@ -190,6 +191,7 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(EmailTest.class);
         addTestSuite(FileUtilTest.class);
         addTestSuite(MultiMapTest.class);
+        addTestSuite(NullUtilTest.class);
         addTestSuite(QuotationAwareTokenizerTest.class);
         addTestSuite(RegexTrieTest.class);
         addTestSuite(RunUtilTest.class);
