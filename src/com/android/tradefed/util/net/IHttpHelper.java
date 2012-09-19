@@ -132,6 +132,23 @@ public interface IHttpHelper {
             DataSizeException;
 
     /**
+     * Performs a POST HTTP request method for a given URL and returns it as a {@link String},
+     * retrying upon failure.
+     * <p>
+     * Because remote contents are loaded into memory, this method should only be used for
+     * relatively small data sizes.
+     * </p>
+     * @param url the URL
+     * @param postData the data to be posted once the connection is open
+     * @param contentType the content type. For example, "text/html".
+     * @return the {@link String} remote contents
+     * @throws IOException if failed to retrieve data
+     * @throws DataSizeException if retrieved data is > {@link #MAX_DATA_SIZE}
+     */
+    public String doPostWithRetry(String url, String postData, String contentType)
+            throws IOException, DataSizeException;
+
+    /**
      * Create a to given url.
      *
      * @param url the {@link URL} to connect to.
