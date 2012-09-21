@@ -58,7 +58,7 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
             Pattern.compile("^send message (\\d+) out of (\\d+)");
     private static final String INSERT_COMMAND =
             "sqlite3 /data/data/com.android.providers.settings/databases/settings.db "
-            + "\"INSERT INTO secure (name, value) values (\'%s\',\'%s\');\"";
+            + "\"INSERT INTO global (name, value) values (\'%s\',\'%s\');\"";
     private String mOutputFile = "result.txt";
 
     @Option(name="recipient",
