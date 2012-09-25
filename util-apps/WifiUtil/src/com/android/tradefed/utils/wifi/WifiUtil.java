@@ -165,8 +165,12 @@ public class WifiUtil extends Instrumentation {
             } else if ("removeAllNetworks".equals(method)) {
                 boolean success = true;
                 List<WifiConfiguration> netlist = mWifiManager.getConfiguredNetworks();
-                for (WifiConfiguration config : netlist) {
-                    success &= mWifiManager.removeNetwork(config.networkId);
+                if (netlist == null) {
+                    success = false;
+                } else {
+                    for (WifiConfiguration config : netlist) {
+                        success &= mWifiManager.removeNetwork(config.networkId);
+                    }
                 }
 
                 result.putBoolean("result", success);
