@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.tests;
 
-import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.config.Option;
@@ -42,6 +41,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -69,6 +69,8 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     private static final String HCIDUMP_CMD = "hcidump -Xt";
     private static final String HCIDUMP_DESC = "hcidump";
     private static final long HCIDUMP_LOG_SIZE = 4 * 1024 * 1024; // 4 MB.
+    private static final String BTSNOOP_CONF_FILE = "/etc/bluetooth/bt_stack.conf";
+    private static final String BTSNOOP_LOG_FILE = "btsnoop_hci.log";
 
     /**
      * Generic string for running the instrumentation on the second device. Completed with:
@@ -280,8 +282,12 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
             description="Pair passkey for the input device.")
     private String mInputPairPasskey = null;
 
-    @Option(name="log-hcidump", description="Record the hcidump data. Works on ICS and after.")
-    private boolean mLogHcidump = true;
+    @Option(name="log-btsnoop", description="Record the btsnoop trace. Works with the bluedroid " +
+            "stack.")
+    private boolean mLogBtsnoop = true;
+
+    @Option(name="log-hcidump", description="Record the hcidump data. Works with the bluez stack.")
+    private boolean mLogHcidump = false;
 
     @Option(name = "test-timeout", description =
             "Maximum time in ms that an individual test is allowed to run.")
@@ -461,6 +467,13 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
         Assert.assertNotNull(mTestDevice);
         setupTests();
 
+        if (mLogBtsnoop) {
+            if (!enableBtsnoopLogging()) {
+                CLog.e("Unable to enable btsnoop trace logging");
+                throw new DeviceNotAvailableException();
+            }
+        }
+
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(mTestClassName);
@@ -528,6 +541,29 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
 
             // Log the output file
             logOutputFile(t, listener);
+            if (mLogBtsnoop) {
+                File logFile = null;
+                InputStreamSource logSource = null;
+                try {
+                    logFile = mTestDevice.pullFileFromExternal(BTSNOOP_LOG_FILE);
+                    if (logFile != null) {
+                        CLog.d("Sending %d byte file %s into the logosphere!", logFile.length(),
+                                logFile);
+                        logSource = new SnapshotInputStreamSource(new FileInputStream(logFile));
+                        listener.testLog(String.format("%s_btsnoop", t.mTestName),
+                                LogDataType.UNKNOWN, logSource);
+                    }
+                } catch (IOException e) {
+                    CLog.e("Got an IO Exception: %s", e);
+                } finally {
+                    if (logFile != null) {
+                        logFile.delete();
+                    }
+                    if (logSource != null) {
+                        logSource.cancel();
+                    }
+                }
+            }
             if (mLogHcidump) {
                 listener.testLog(String.format("%s_hcidump", t.mTestName), LogDataType.TEXT,
                         mHcidumpCommand.getHcidump());
@@ -539,11 +575,46 @@ public class BluetoothStressTest implements IDeviceTest, IRemoteTest {
     }
 
     /**
+     * Enable btsnoop logging by changing the BtSnoopLogOutput line in /etc/bluetooth/bt_stack.conf
+     * to true.
+     */
+    private boolean enableBtsnoopLogging() throws DeviceNotAvailableException {
+        File confFile = mTestDevice.pullFile(BTSNOOP_CONF_FILE);
+        if (confFile == null) {
+            return false;
+        }
+
+        BufferedReader confReader = null;
+        try {
+            confReader = new BufferedReader(new FileReader(confFile));
+            StringBuilder newConf = new StringBuilder();
+            String line;
+            while ((line = confReader.readLine()) != null) {
+                if (line.startsWith("BtSnoopLogOutput=")) {
+                    newConf.append("BtSnoopLogOutput=true\n");
+                } else {
+                    newConf.append(line).append("\n");
+                }
+            }
+            mTestDevice.executeAdbCommand("remount");
+            return mTestDevice.pushString(newConf.toString(), BTSNOOP_CONF_FILE);
+        } catch (IOException e) {
+            return false;
+        } finally {
+            confFile.delete();
+            StreamUtil.close(confReader);
+        }
+    }
+
+    /**
      * Clean up the tmp output file from previous test runs
      */
     private void cleanOutputFile() throws DeviceNotAvailableException {
-        String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
-        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, OUTPUT_PATH));
+        mTestDevice.executeShellCommand(String.format("rm ${EXTERNAL_STORAGE}/%s", OUTPUT_PATH));
+        if (mLogBtsnoop) {
+            mTestDevice.executeShellCommand(String.format("rm ${EXTERNAL_STORAGE}/%s",
+                    BTSNOOP_LOG_FILE));
+        }
     }
 
     /**
