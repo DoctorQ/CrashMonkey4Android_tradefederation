@@ -111,16 +111,26 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
-    public void enableWifi() throws DeviceNotAvailableException {
-        mDevice.executeShellCommand("svc wifi enable");
+    public void enableWifi() throws DeviceNotAvailableException, TargetSetupError {
+        final String output = mDevice.executeShellCommand("svc wifi enable");
+        if (!output.matches("^\\s*$")) {
+            // We expect empty, possibly with whitespace
+            throw new TargetSetupError(String.format(
+                    "Failed to enable wifi; `svc wifi enable` returned \"%s\"", output));
+        }
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void disableWifi() throws DeviceNotAvailableException {
-        mDevice.executeShellCommand("svc wifi disable");
+    public void disableWifi() throws DeviceNotAvailableException, TargetSetupError {
+        final String output = mDevice.executeShellCommand("svc wifi disable");
+        if (!output.matches("^\\s*$")) {
+            // We expect empty, possibly with whitespace
+            throw new TargetSetupError(String.format(
+                    "Failed to disable wifi; `svc wifi disable` returned \"%s\"", output));
+        }
     }
 
     /**

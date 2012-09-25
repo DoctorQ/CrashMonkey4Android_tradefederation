@@ -17,6 +17,7 @@
 package com.android.tradefed.device;
 
 import com.android.tradefed.device.WifiHelper.WifiState;
+import com.android.tradefed.targetprep.TargetSetupError;
 
 /**
  * Helper interface for manipulating wifi services on device.
@@ -28,14 +29,14 @@ interface IWifiHelper {
      *
      * @throws DeviceNotAvailableException
      */
-    void enableWifi() throws DeviceNotAvailableException;
+    void enableWifi() throws DeviceNotAvailableException, TargetSetupError;
 
     /**
      * Disables wifi state on device.
      *
      * @throws DeviceNotAvailableException
      */
-    void disableWifi() throws DeviceNotAvailableException;
+    void disableWifi() throws DeviceNotAvailableException, TargetSetupError;
 
     /**
      * Waits until one of the expected wifi states occurs.
