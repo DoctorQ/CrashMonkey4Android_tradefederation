@@ -47,32 +47,14 @@ public class ProcrankParserTest extends TestCase {
 
         // Ensures that only valid lines are parsed. Only 6 of the 11 lines under the header are
         // valid.
-        assertEquals(6, procrank.size());
+        assertEquals(6, procrank.getPids().size());
 
         // Make sure all expected rows are present, and do a diagonal check of values
-        map = procrank.get("system_server");
-        assertNotNull(map);
-        assertEquals((Integer)178, map.get("PID"));
-
-        map = procrank.get("com.google.android.apps.maps");
-        assertNotNull(map);
-        assertEquals((Integer)78128, map.get("Vss"));
-
-        map = procrank.get("com.android.browser");
-        assertNotNull(map);
-        assertEquals((Integer)61492, map.get("Rss"));
-
-        map = procrank.get("com.android.launcher");
-        assertNotNull(map);
-        assertEquals((Integer)29629, map.get("Pss"));
-
-        map = procrank.get("android.process.acore");
-        assertNotNull(map);
-        assertEquals((Integer)22812, map.get("Uss"));
-
-        map = procrank.get("com.android.settings");
-        assertNotNull(map);
-        assertEquals((Integer)1236, map.get("PID"));
+        assertEquals((Integer) 87136, procrank.getVss(178));
+        assertEquals((Integer) 77996, procrank.getRss(1313));
+        assertEquals((Integer) 33122, procrank.getPss(3247));
+        assertEquals((Integer) 28360, procrank.getUss(334));
+        assertEquals("android.process.acore", procrank.getProcessName(2072));
     }
 }
 

@@ -111,7 +111,7 @@ public class BugreportParserTest extends TestCase {
         assertEquals(5, bugreport.getMemInfo().size());
 
         assertNotNull(bugreport.getProcrank());
-        assertEquals(3, bugreport.getProcrank().size());
+        assertEquals(3, bugreport.getProcrank().getPids().size());
 
         assertNotNull(bugreport.getSystemLog());
         assertEquals(parseTime("2012-04-25 09:55:47.799"), bugreport.getSystemLog().getStartTime());
@@ -277,6 +277,40 @@ public class BugreportParserTest extends TestCase {
         assertNotNull(bugreport.getSystemLog());
         assertEquals(1, bugreport.getSystemLog().getAnrs().size());
         assertNull(bugreport.getSystemLog().getAnrs().get(0).getTrace());
+    }
+
+    /**
+     * Test that app names from logcat events are populated by matching the logcat PIDs with the
+     * PIDs from the logcat.
+     */
+    public void testSetAppsFromProcrank() {
+        List<String> lines = Arrays.asList(
+                "========================================================",
+                "== dumpstate: 2012-04-25 20:45:10",
+                "========================================================",
+                "------ PROCRANK (procrank) ------",
+                "  PID      Vss      Rss      Pss      Uss  cmdline",
+                " 3064   87136K   81684K   52829K   50012K  com.android.package",
+                "                          ------   ------  ------",
+                "                          203624K  163604K  TOTAL",
+                "RAM: 731448K total, 415804K free, 9016K buffers, 108548K cached",
+                "[procrank: 1.6s elapsed]",
+                "------ SYSTEM LOG (logcat -v threadtime -d *:v) ------",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: java.lang.Exception",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method1(Class.java:1)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method2(Class.java:2)",
+                "04-25 09:55:47.799  3064  3082 E AndroidRuntime: \tat class.method3(Class.java:3)",
+                "04-25 09:55:47.799  3065  3083 E AndroidRuntime: java.lang.Exception",
+                "04-25 09:55:47.799  3065  3083 E AndroidRuntime: \tat class.method1(Class.java:1)",
+                "04-25 09:55:47.799  3065  3083 E AndroidRuntime: \tat class.method2(Class.java:2)",
+                "04-25 09:55:47.799  3065  3083 E AndroidRuntime: \tat class.method3(Class.java:3)");
+
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+        assertNotNull(bugreport.getSystemLog());
+        assertEquals(2, bugreport.getSystemLog().getJavaCrashes().size());
+        assertEquals("com.android.package",
+                bugreport.getSystemLog().getJavaCrashes().get(0).getApp());
+        assertNull(bugreport.getSystemLog().getJavaCrashes().get(1).getApp());
     }
 
     private Date parseTime(String timeStr) throws ParseException {

@@ -15,12 +15,9 @@
  */
 package com.android.tradefed.util.brillopad.parser;
 
-import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.brillopad.item.ProcrankItem;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,41 +26,16 @@ import java.util.regex.Pattern;
  * of kilobytes.
  */
 public class ProcrankParser implements IParser {
-    /** Match a memory amount, such as "12345K" */
-    private static final Pattern NUMBER_PAT = Pattern.compile("(\\d+)([BKMGbkmg])?");
+
+    /** Match a valid line, such as:
+     * " 1313   78128K   77996K   48603K   45812K  com.google.android.apps.maps" */
+    private static final Pattern LINE_PAT = Pattern.compile(
+            "\\s*(\\d+)\\s+" + /* PID [1] */
+            "(\\d+)K\\s+(\\d+)K\\s+(\\d+)K\\s+(\\d+)K\\s+" + /* Vss Rss Pss Uss [2-5] */
+            "(\\S+)" /* process name [6] */);
 
     /** Match the end of the Procrank table, determined by three sets of "------". */
     private static final Pattern END_PAT = Pattern.compile("^\\s+-{6}\\s+-{6}\\s+-{6}");
-
-    private int mNumFields = -1;
-    private String[] mFieldNames = null;
-
-    /**
-     * A utility function to parse a memory amount, such as "12345K", and return the number of
-     * kilobytes that the amount represents.
-     */
-    private static Integer parseMem(String val) {
-        Integer count = null;
-        Matcher m = NUMBER_PAT.matcher(val);
-        if (m.matches()) {
-            count = Integer.parseInt(m.group(1));
-            String suffix = m.group(2);
-            if (suffix == null) {
-                return count;
-            }
-            suffix = suffix.toLowerCase();
-            if ("b".equals(suffix)) {
-                count /= 1024;
-            } else if ("k".equals(suffix)) {
-                // nothing to do
-            } else if ("m".equals(suffix)) {
-                count *= 1024;
-            } else if ("g".equals(suffix)) {
-                count *= 1024 * 1024;
-            }
-        }
-        return count;
-    }
 
     /**
      * {@inheritDoc}
@@ -76,42 +48,15 @@ public class ProcrankParser implements IParser {
             // If we have reached the end.
             Matcher endMatcher = END_PAT.matcher(line);
             if (endMatcher.matches()) {
-                break;
+                return item;
             }
 
-            // Trim leading whitespace so that split() works properly
-            line = line.replaceFirst("^\\s+", "");
-            if (mFieldNames == null) {
-                // try to parse a header
-                mFieldNames = line.split("\\s+");
-                mNumFields = mFieldNames.length;
-                continue;
+            Matcher m = LINE_PAT.matcher(line);
+            if (m.matches()) {
+                item.addProcrankLine(Integer.parseInt(m.group(1)), m.group(6),
+                        Integer.parseInt(m.group(2)), Integer.parseInt(m.group(3)),
+                        Integer.parseInt(m.group(4)), Integer.parseInt(m.group(5)));
             }
-
-            String[] fields = line.split("\\s+", mNumFields);
-            if (fields.length != mNumFields) {
-                CLog.w("Skipping line which contains invalid format: %s", line);
-                continue;
-            }
-            String cmdline = fields[fields.length - 1];
-            Map<String, Integer> valueMap = new HashMap<String, Integer>();
-            boolean validLine = true;
-            for (int i = 0; i < mNumFields - 1 && i < fields.length; ++i) {
-                // FIXME: it's not correct to send PID through this, but in practice it works
-                Integer value = parseMem(fields[i]);
-                if (value == null) {
-                    validLine = false;
-                    break;
-                } else{
-                    valueMap.put(mFieldNames[i], value);
-                }
-            }
-            // If line contains unparsable values, skip it.
-            if (!validLine) {
-                CLog.w("Skipping line which contains invalid format: %s", line);
-                continue;
-            }
-            item.put(cmdline, valueMap);
         }
 
         return item;
