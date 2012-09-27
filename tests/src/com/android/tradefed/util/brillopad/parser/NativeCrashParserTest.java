@@ -145,4 +145,29 @@ public class NativeCrashParserTest extends TestCase {
                 nc.getFingerprint());
         assertEquals(ArrayUtil.join("\n", lines), nc.getStack());
     }
+
+    /**
+     * Test that both types of native crash app lines are parsed.
+     */
+    public void testParseApp() {
+        List<String> lines = Arrays.asList(
+                "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***",
+                "Build fingerprint: 'google/soju/crespo:4.0.4/IMM76D/299849:userdebug/test-keys'",
+                "pid: 2058, tid: 2523  >>> com.google.android.browser <<<",
+                "signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 00000000");
+
+        NativeCrashItem nc = new NativeCrashParser().parse(lines);
+        assertNotNull(nc);
+        assertEquals("com.google.android.browser", nc.getApp());
+
+        lines = Arrays.asList(
+                "*** *** *** *** *** *** *** *** *** *** *** *** *** *** *** ***",
+                "Build fingerprint: 'google/soju/crespo:4.0.4/IMM76D/299849:userdebug/test-keys'",
+                "pid: 2058, tid: 2523, name: com.google.android.browser  >>> com.google.android.browser <<<",
+                "signal 11 (SIGSEGV), code 1 (SEGV_MAPERR), fault addr 00000000");
+
+        nc = new NativeCrashParser().parse(lines);
+        assertNotNull(nc);
+        assertEquals("com.google.android.browser", nc.getApp());
+    }
 }
