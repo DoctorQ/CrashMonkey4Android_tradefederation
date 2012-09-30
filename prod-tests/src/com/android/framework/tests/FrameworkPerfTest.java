@@ -26,6 +26,8 @@ import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
 import com.google.common.collect.ImmutableMap;
 
 import junit.framework.Assert;
@@ -48,7 +50,8 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
     private static final String TEST_RUNNER_NAME = "android.test.InstrumentationTestRunner";
     private static final Pattern METRICS_PATTERN =
             Pattern.compile("(\\d+\\.\\d+),(\\d+),(\\d+),(\\d+\\.\\d+),(\\d+),(\\d+)");
-    private static final int PERF_TIMEOUT = 30*60*1000; //30 minutes timeout
+    private static final int PERF_TIMEOUT = 30 * 60 * 1000; //30 minutes timeout
+    private static final int PRE_TEST_SLEEP_MS = 30 *1000; //30s sleep prior to test start
 
     private static final String LAYOUT = "framework_perf_layout";
     private static final String SCHEDULING = "framework_perf_scheduling";
@@ -125,6 +128,8 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
 
+        getDevice().reboot();
+        getRunUtil().sleep(PRE_TEST_SLEEP_MS);
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setMaxtimeToOutputResponse(PERF_TIMEOUT);
@@ -201,5 +206,9 @@ public class FrameworkPerfTest implements IRemoteTest, IDeviceTest {
                 listener.testRunEnded(0, sectionMetrics);
             }
         }
+    }
+
+    IRunUtil getRunUtil() {
+        return RunUtil.getDefault();
     }
 }
