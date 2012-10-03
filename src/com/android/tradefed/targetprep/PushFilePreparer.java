@@ -16,6 +16,7 @@
 
 package com.android.tradefed.targetprep;
 
+import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
@@ -51,6 +52,10 @@ public class PushFilePreparer implements ITargetPreparer {
     @Option(name="abort-on-push-failure", description=
             "If false, continue if pushes fail.  If true, abort the Invocation on any failure.")
     private boolean mAbortOnFailure = true;
+
+    @Option(name="trigger-media-scan", description=
+            "After pushing files, trigger a media scan of external storage on device.")
+    private boolean mTriggerMediaScan = false;
 
     /**
      * Set abort on failure.  Exposed for testing.
@@ -123,6 +128,13 @@ public class PushFilePreparer implements ITargetPreparer {
 
         for (String command : mPostPushCommands) {
             device.executeShellCommand(command);
+        }
+
+        if (mTriggerMediaScan) {
+            // send a MEDIA_MOUNTED broadcast
+            device.executeShellCommand(String.format(
+                    "am broadcast -a android.intent.action.MEDIA_MOUNTED -d file://%s",
+                    device.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE)));
         }
     }
 }
