@@ -124,6 +124,15 @@ public class ArgsOptionParserTest extends TestCase {
     }
 
     /**
+     * Option source whose options shouldn't end up in the global namespace
+     */
+    @OptionClass(alias = "ngos", global_namespace = false)
+    private static class NonGlobalOptionSource {
+        @Option(name = "option")
+        Boolean mOption = null;
+    }
+
+    /**
      * Option source with mandatory options
      */
     private static class MandatoryOptionSourceNoDefault {
@@ -247,6 +256,59 @@ public class ArgsOptionParserTest extends TestCase {
         try {
             parser.parse(new String[] {"--null-immutable", update});
             fail("ConfigurationException not thrown when updating an IMMUTABLE option");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Setting an option with a namespace alias should work fine
+     */
+    public void testNonGlobalOptionSource_alias() throws Exception {
+        NonGlobalOptionSource source = new NonGlobalOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(source);
+
+        assertNull(source.mOption);
+        parser.parse(new String[] {"--ngos:option"});
+        assertTrue(source.mOption);
+        parser.parse(new String[] {"--ngos:no-option"});
+        assertFalse(source.mOption);
+    }
+
+    /**
+     * Setting an option with a classname namespace should work fine
+     */
+    public void testNonGlobalOptionSource_className() throws Exception {
+        NonGlobalOptionSource source = new NonGlobalOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(source);
+
+        assertNull(source.mOption);
+        parser.parse(new String[] {String.format("--%s:option", source.getClass().getName())});
+        assertTrue(source.mOption);
+        parser.parse(new String[] {String.format("--%s:no-option", source.getClass().getName())});
+        assertFalse(source.mOption);
+    }
+
+    /**
+     * Setting an option without a namespace should fail
+     */
+    public void testNonGlobalOptionSource_global() throws Exception {
+        NonGlobalOptionSource source = new NonGlobalOptionSource();
+        ArgsOptionParser parser = new ArgsOptionParser(source);
+
+        assertNull(source.mOption);
+        try {
+            parser.parse(new String[] {"--option"});
+            fail("ConfigurationException not thrown when assigning a global option to an @Option " +
+                    "field in a non-global-namespace class");
+        } catch (ConfigurationException e) {
+            // expected
+        }
+
+        try {
+            parser.parse(new String[] {"--no-option"});
+            fail("ConfigurationException not thrown when assigning a global option to an @Option " +
+                    "field in a non-global-namespace class");
         } catch (ConfigurationException e) {
             // expected
         }

@@ -462,16 +462,31 @@ public class OptionSetter {
                 }
             }
 
-            addNameToMap(optionMap, optionSource, option.name(), field);
+            // Allow classes to opt out of the global Option namespace
+            boolean addToGlobalNamespace = true;
+            if (optionSource.getClass().isAnnotationPresent(OptionClass.class)) {
+                final OptionClass classAnnotation = optionSource.getClass().getAnnotation(
+                        OptionClass.class);
+                addToGlobalNamespace = classAnnotation.global_namespace();
+            }
+
+            if (addToGlobalNamespace) {
+                addNameToMap(optionMap, optionSource, option.name(), field);
+            }
             addNamespacedOptionToMap(optionMap, optionSource, option.name(), field, index);
             if (option.shortName() != Option.NO_SHORT_NAME) {
-                addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()), field);
+                if (addToGlobalNamespace) {
+                    addNameToMap(optionMap, optionSource, String.valueOf(option.shortName()),
+                            field);
+                }
                 addNamespacedOptionToMap(optionMap, optionSource,
                         String.valueOf(option.shortName()), field, index);
             }
             if (isBooleanField(field)) {
                 // add the corresponding "no" option to make boolean false
-                addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
+                if (addToGlobalNamespace) {
+                    addNameToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(), field);
+                }
                 addNamespacedOptionToMap(optionMap, optionSource, BOOL_FALSE_PREFIX + option.name(),
                         field, index);
             }
