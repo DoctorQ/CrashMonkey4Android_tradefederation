@@ -19,10 +19,13 @@ package com.android.tradefed.command;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
@@ -83,6 +86,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
     /** latch used to notify other threads that this thread is running */
     private final CountDownLatch mRunLatch;
+
+    /** class to encapsulate global options */
+    private final GlobalOptionStore mGlobalOptions;
 
     /**
      * Delay time in ms for adding a command back to the queue if it failed to allocate a device.
@@ -410,6 +416,24 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     /**
+     * A simple class to encapsulate global TF settings.
+     * <p />
+     * Every field should have a reasonable default value, as the defaults will be used as-is unless
+     * they are overridden.
+     */
+    @OptionClass(alias = "global", global_namespace = false)
+    public static class GlobalOptionStore {
+        // FIXME: add global help
+        @Option(name = "device-monitor", description = "Fully-qualified classname of the " +
+                "IDeviceMonitor to use for monitoring device state")
+        private String mDeviceMonitorName = null;
+
+        public String getDeviceMonitorName() {
+            return mDeviceMonitorName;
+        }
+    }
+
+    /**
      * Creates a {@link CommandScheduler}.
      * <p />
      * Note: logging is initialized here. We assume that {@link CommandScheduler#start} will be
@@ -418,9 +442,23 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * instantiated but not started.
      */
     public CommandScheduler() {
+        this(new GlobalOptionStore());
+    }
+
+    /**
+     * Creates a {@link CommandScheduler}.
+     * <p />
+     * Note: logging is initialized here. We assume that {@link CommandScheduler#start} will be
+     * called, so that we can clean logs up at the end of the {@link CommandScheduler#run} method.
+     * In particular, this means that a leak will result if a {@link CommandScheduler} instance is
+     * instantiated but not started.
+     */
+    public CommandScheduler(GlobalOptionStore globalOpts) {
+        mGlobalOptions = globalOpts;
+
         initLogging();
 
-        initDeviceManager();
+        initDeviceManager(mGlobalOptions.getDeviceMonitorName());
 
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
                 new ExecutableCommandComparator());
@@ -435,7 +473,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Initialize the device manager, optionally using a global device filter if specified.
      */
-    void initDeviceManager() {
+    void initDeviceManager(String deviceMonitorClassName) {
+        // FIXME: merge the GLOBAL CONFIG stuff with GlobalOptionState
         // look for the environment variable that specifies a global config file
         String globalConfigPath = System.getenv("TF_GLOBAL_CONFIG");
         if (globalConfigPath != null) {
@@ -447,7 +486,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                         new String[] {globalConfigPath});
                 CLog.logAndDisplay(LogLevel.INFO, "Using global device filter config %s",
                         globalConfigPath);
-                getDeviceManager().init(globalConfig.getDeviceRequirements());
+                getDeviceManager(deviceMonitorClassName).init(globalConfig.getDeviceRequirements());
                 return;
             } catch (ConfigurationException e) {
                 CLog.e("Failed to read TF_GLOBAL_CONFIG file %s", globalConfigPath);
@@ -455,7 +494,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         }
         // initialize the device manager with no global device filter
-        getDeviceManager().init();
+        getDeviceManager(deviceMonitorClassName).init();
     }
 
     /**
@@ -474,6 +513,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
+    }
+
+    /**
+     * Factory method for getting a reference to the {@link IDeviceManager}
+     *
+     * @return the {@link IDeviceManager} to use
+     */
+    IDeviceManager getDeviceManager(String deviceMonitorClassName) {
+        return DeviceManager.getInstance(deviceMonitorClassName);
     }
 
     /**

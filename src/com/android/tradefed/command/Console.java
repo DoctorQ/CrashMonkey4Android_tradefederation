@@ -17,6 +17,7 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.command.CommandScheduler.GlobalOptionStore;
 import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
@@ -82,7 +83,7 @@ public class Console extends Thread {
     protected ConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
     private boolean mShouldExit = false;
-    private String[] mMainArgs = new String[] {};
+    private List<String> mMainArgs = new ArrayList<String>(0);
 
     /** A convenience type for List<List<String>> */
     @SuppressWarnings("serial")
@@ -181,18 +182,17 @@ public class Console extends Thread {
      }
 
     protected Console() {
-        this(new CommandScheduler(), getReader());
+        this(getReader());
     }
 
     /**
-     * Create a {@link Console} with given scheduler and console reader.
+     * Create a {@link Console} with provided console reader.
      * Also, set up console command handling.
      * <p/>
      * Exposed for unit testing
      */
-    Console(ICommandScheduler scheduler, ConsoleReader reader) {
+    Console(ConsoleReader reader) {
         super();
-        mScheduler = scheduler;
         mConsoleReader = reader;
 
         List<String> genericHelp = new LinkedList<String>();
@@ -200,6 +200,10 @@ public class Console extends Thread {
         addDefaultCommands(mCommandTrie, genericHelp, commandHelp);
         setCustomCommands(mCommandTrie, genericHelp, commandHelp);
         generateHelpListings(mCommandTrie, genericHelp, commandHelp);
+    }
+
+    void setCommandScheduler(ICommandScheduler scheduler) {
+        mScheduler = scheduler;
     }
 
     /**
@@ -700,7 +704,12 @@ public class Console extends Thread {
      */
     @Override
     public void run() {
-        List<String> arrrgs = Arrays.asList(mMainArgs);
+        List<String> arrrgs = mMainArgs;
+
+        // Fallback, in case this isn't set already
+        if (mScheduler == null) {
+            mScheduler = new CommandScheduler();
+        }
 
         try {
             // Check System.console() since jline doesn't seem to consistently know whether or not
@@ -848,11 +857,12 @@ public class Console extends Thread {
      *
      * @param mainArgs the arguments
      */
-    public void setArgs(String[] mainArgs) {
+    public void setArgs(List<String> mainArgs) {
         mMainArgs = mainArgs;
     }
 
-    public static void main(final String[] mainArgs) throws InterruptedException {
+    public static void main(final String[] mainArgs) throws InterruptedException,
+            ConfigurationException {
         Console console = new Console();
         startConsole(console, mainArgs);
     }
@@ -863,8 +873,28 @@ public class Console extends Thread {
      * @param console the {@link Console} to start
      * @param args the command line arguments
      */
-    public static void startConsole(Console console, String[] args) throws InterruptedException {
-        console.setArgs(args);
+    public static void startConsole(Console console, String[] args) throws InterruptedException,
+            ConfigurationException {
+        // Parse global TF options
+        GlobalOptionStore globalOpts = new GlobalOptionStore();
+        List<String> nonGlobalArgs;
+        try {
+            ArgsOptionParser globalOptParse = new ArgsOptionParser(globalOpts);
+            nonGlobalArgs = globalOptParse.parse(args);
+        } catch (ConfigurationException e) {
+            // Ignore the exception for now, until we have better error-handling
+            System.out.println("WARNING! WARNING! WARNING!");
+            System.out.println("Encountered ConfigurationException while parsing global options: " +
+                    e.getMessage());
+            System.out.println("In the future, this exception will be fatal.  Please report this " +
+                    "to TF maintainers.");
+            System.out.println("END OF WARNING");
+            System.out.println("");
+            nonGlobalArgs = Arrays.asList(args);
+        }
+
+        console.setArgs(nonGlobalArgs);
+        console.setCommandScheduler(new CommandScheduler(globalOpts));
         console.setDaemon(true);
         console.start();
 

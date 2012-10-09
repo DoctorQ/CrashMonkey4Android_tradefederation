@@ -64,12 +64,13 @@ public class ConsoleTest extends TestCase {
          * {@link jline.ConsoleReader} constructor and use {@link jline.UnsupportedTerminal} or
          * similar as the implementation.
          */
-        mConsole = new Console(mMockScheduler, null) {
+        mConsole = new Console(null) {
             @Override
             boolean isConsoleFunctional() {
                 return mIsConsoleFunctional;
             }
         };
+        mConsole.setCommandScheduler(mMockScheduler);
         mProxyExceptionHandler = new ProxyExceptionHandler();
         mConsole.setUncaughtExceptionHandler(mProxyExceptionHandler);
      }
@@ -88,7 +89,7 @@ public class ConsoleTest extends TestCase {
         EasyMock.replay(mMockScheduler);
 
         // non interactive mode needs some args to start
-        mConsole.setArgs(new String[] {"help"});
+        mConsole.setArgs(Arrays.asList("help"));
         mConsole.start();
         mConsole.join();
         mProxyExceptionHandler.verify();
@@ -109,7 +110,7 @@ public class ConsoleTest extends TestCase {
         EasyMock.replay(mMockScheduler);
 
         // non interactive mode needs some args to start
-        mConsole.setArgs(new String[] {"help"});
+        mConsole.setArgs(Arrays.asList("help"));
         mConsole.start();
         mConsole.join();
         mProxyExceptionHandler.verify();
