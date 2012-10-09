@@ -205,6 +205,11 @@ public class DeviceManagerTest extends TestCase {
             IRunUtil getRunUtil() {
                 return mMockRunUtil;
             }
+
+            @Override
+            void updateDeviceMonitor() {
+                // ignore
+            }
         };
         mgr.setEnableLogcat(false);
         mgr.setSynchronousMode(true);

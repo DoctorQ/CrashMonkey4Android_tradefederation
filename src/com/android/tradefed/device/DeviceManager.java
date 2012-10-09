@@ -66,6 +66,8 @@ public class DeviceManager implements IDeviceManager {
 
     private static DeviceManager sInstance;
 
+    private final IDeviceMonitor mDvcMon;
+
     private boolean mIsInitialized = false;
     /** A thread-safe map that tracks the devices currently allocated for testing.*/
     private Map<String, IManagedTestDevice> mAllocatedDeviceMap;
@@ -92,6 +94,15 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager() {
+        this(null);
+    }
+
+    /**
+     * Package-private constructor, should only be used by this class and its associated unit test.
+     * Use {@link #getInstance()} instead.
+     */
+    DeviceManager(IDeviceMonitor dvcMon) {
+        mDvcMon = dvcMon;
     }
 
     @Override
@@ -308,6 +319,7 @@ public class DeviceManager implements IDeviceManager {
             // circumstances where this can happen
             CLog.w("Found existing device for available device %s", device.getSerialNumber());
         }
+        updateDeviceMonitor();
     }
 
     /**
@@ -328,6 +340,67 @@ public class DeviceManager implements IDeviceManager {
             sInstance = new DeviceManager();
         }
         return sInstance;
+    }
+
+    /**
+     * Create a new {@link IDeviceManager} singleton with the specified IDeviceMonitor
+     * implementation.  If the specified {@link IDeviceMonitor} class name is <code>null</code>,
+     * this function immediately falls back to the no-arg {@link getInstance()} function, which does
+     * not throw.
+     * <p />
+     * This function may be called once and only once with a non-null argument, and that call must
+     * precede any call to the no-arg {@link getInstance()} function (or, equivalently, any call to
+     * this version with a <code>null</code> argument).
+     *
+     * @param dvcMonClassName The fully-qualified classname of a class that implements
+     *                        {@link IDeviceMonitor}.  That class will be instantiated and used for
+     *                        monitoring.
+     * @throws IllegalStateException of the singleton has already been created
+     * @throws IllegalArgumentException if it fails to instantiate the DeviceMonitor.
+     */
+    public synchronized static IDeviceManager getInstance(String dvcMonClassName) {
+        if (dvcMonClassName == null) return getInstance();
+
+        if (sInstance != null) {
+            throw new IllegalStateException("singleton has already been created.");
+        }
+
+        IDeviceMonitor dvcMon = null;
+        try {
+            final Class<?> dvcMonClass = Class.forName(dvcMonClassName);
+
+            final Object dvcMonObj = dvcMonClass.newInstance();
+            if (dvcMonObj instanceof IDeviceMonitor) {
+                // Success case
+                dvcMon = (IDeviceMonitor) dvcMonObj;
+            } else {
+                throw new IllegalArgumentException(String.format(
+                        "Class %s does not implement IDeviceMonitor interface.", dvcMonClassName));
+            }
+        } catch (ClassNotFoundException e) {
+            throw new IllegalArgumentException(
+                    String.format("Failed to instantiate DeviceMonitor: Class %s not found",
+                            e.getMessage()));
+        } catch (InstantiationException e) {
+            throw new IllegalArgumentException(
+                    String.format("Failed to instantiate DeviceMonitor: %s", e.getMessage()));
+        } catch (IllegalAccessException e) {
+            throw new IllegalArgumentException(
+                    String.format("Failed to instantiate DeviceMonitor: %s", e.getMessage()));
+        }
+
+        sInstance = new DeviceManager(dvcMon);
+        return sInstance;
+    }
+
+
+    void updateDeviceMonitor() {
+        if (mDvcMon == null) return;
+        if (!mIsInitialized) {
+            CLog.w("updateDeviceMonitor called before DeviceManager was initialized!");
+        }
+        if (mAdbBridge == null) return;
+        mDvcMon.updateFullDeviceState(fetchDevicesInfo());
     }
 
     /**
@@ -431,6 +504,7 @@ public class DeviceManager implements IDeviceManager {
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
         CLog.i("Allocated device %s", testDevice.getSerialNumber());
+        updateDeviceMonitor();
         return testDevice;
     }
 
@@ -501,6 +575,7 @@ public class DeviceManager implements IDeviceManager {
             CLog.logAndDisplay(LogLevel.WARN, "Freed device %s is unavailable. Removing from use.",
                     device.getSerialNumber());
         }
+        updateDeviceMonitor();
     }
 
     /**
@@ -800,12 +875,8 @@ public class DeviceManager implements IDeviceManager {
         return unavailableSerials;
     }
 
-    @Override
-    public void displayDevicesInfo(PrintWriter stream) {
+    private Map<IDevice, String> fetchDevicesInfo() {
         Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
-        ArrayList<List<String>> displayRows = new ArrayList<List<String>>();
-        displayRows.add(Arrays.asList("Serial", "State", "Product", "Variant", "Build",
-                "Battery"));
         synchronized (this) {
             checkInit();
             Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
@@ -835,6 +906,17 @@ public class DeviceManager implements IDeviceManager {
                 deviceMap.put(device, "Unavailable");
             }
         }
+
+        return deviceMap;
+    }
+
+    @Override
+    public void displayDevicesInfo(PrintWriter stream) {
+        ArrayList<List<String>> displayRows = new ArrayList<List<String>>();
+        displayRows.add(Arrays.asList("Serial", "State", "Product", "Variant", "Build",
+                "Battery"));
+        Map<IDevice, String> deviceMap = fetchDevicesInfo();
+
         IDeviceSelection selector = getDeviceSelectionOptions();
         addDevicesInfo(selector, displayRows, deviceMap);
         new TableFormatter().displayTable(displayRows, stream);
@@ -947,6 +1029,7 @@ public class DeviceManager implements IDeviceManager {
                         disconnectedDevice.getSerialNumber());
                 monitor.setState(TestDeviceState.NOT_AVAILABLE);
             }
+            updateDeviceMonitor();
         }
     }
 
