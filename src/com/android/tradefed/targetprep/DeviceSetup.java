@@ -150,6 +150,8 @@ public class DeviceSetup implements ITargetPreparer {
 
         configureSystemProperties(device);
 
+        changeSettings(device);
+
         keepScreenOn(device);
 
         connectToWifi(device);
@@ -209,6 +211,17 @@ public class DeviceSetup implements ITargetPreparer {
                     device.getSerialNumber()));
             device.reboot();
         }
+    }
+
+    /**
+     * Change additional settings for the device. This is intended to be overridden by subclass for
+     * additional change of settings.
+     *
+     * @param device
+     * @throws DeviceNotAvailableException
+     */
+    protected void changeSettings(ITestDevice device) throws DeviceNotAvailableException {
+        // ignore
     }
 
     /**
