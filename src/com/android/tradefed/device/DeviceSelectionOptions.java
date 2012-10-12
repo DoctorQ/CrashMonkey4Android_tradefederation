@@ -92,6 +92,9 @@ public class DeviceSelectionOptions implements IDeviceSelection {
 
     private static final String VARIANT_SEPARATOR = ":";
 
+    public static final String DEVICE_PRODUCT_PROPERTY = "ro.hardware";
+    public static final String DEVICE_VARIANT_PROPERTY = "ro.product.device";
+
     /**
      * Add a serial number to the device selection options.
      *
@@ -413,7 +416,7 @@ public class DeviceSelectionOptions implements IDeviceSelection {
 
     @Override
     public String getDeviceProductType(IDevice device) {
-        return getProperty(device, "ro.hardware");
+        return getProperty(device, DEVICE_PRODUCT_PROPERTY);
     }
 
     private String getProperty(IDevice device, String propName) {
@@ -438,7 +441,7 @@ public class DeviceSelectionOptions implements IDeviceSelection {
 
     @Override
     public String getDeviceProductVariant(IDevice device) {
-        return getProperty(device, "ro.product.device");
+        return getProperty(device, DEVICE_VARIANT_PROPERTY);
     }
 
     @Override
