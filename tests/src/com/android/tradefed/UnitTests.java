@@ -36,6 +36,7 @@ import com.android.tradefed.config.OptionSetterTest;
 import com.android.tradefed.config.OptionUpdateRuleTest;
 import com.android.tradefed.device.CpuStatsCollectorTest;
 import com.android.tradefed.device.DeviceManagerTest;
+import com.android.tradefed.device.DeviceMonitorAsyncProxyTest;
 import com.android.tradefed.device.DeviceSelectionOptionsTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
 import com.android.tradefed.device.LargeOutputReceiverTest;
@@ -131,6 +132,7 @@ public class UnitTests extends DeviceTestSuite {
         // device
         addTestSuite(CpuStatsCollectorTest.class);
         addTestSuite(DeviceManagerTest.class);
+        addTestSuite(DeviceMonitorAsyncProxyTest.class);
         addTestSuite(DeviceSelectionOptionsTest.class);
         addTestSuite(DeviceStateMonitorTest.class);
         addTestSuite(LargeOutputReceiverTest.class);

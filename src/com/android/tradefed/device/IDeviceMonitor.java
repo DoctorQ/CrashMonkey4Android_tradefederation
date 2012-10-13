@@ -40,5 +40,9 @@ public interface IDeviceMonitor {
      * Updates states for all of the devices the DeviceManager knows about
      */
     public void updateFullDeviceState(Map<IDevice, String> deviceMap);
+
+    public void deviceAllocated(IDevice device);
+
+//    public void deviceFreed(IDevice device);
 }
 

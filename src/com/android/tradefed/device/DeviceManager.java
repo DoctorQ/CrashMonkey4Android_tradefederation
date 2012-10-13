@@ -102,7 +102,7 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager(IDeviceMonitor dvcMon) {
-        mDvcMon = dvcMon;
+        mDvcMon = new DeviceMonitorAsyncProxy(dvcMon);
     }
 
     @Override
@@ -403,6 +403,11 @@ public class DeviceManager implements IDeviceManager {
         mDvcMon.updateFullDeviceState(fetchDevicesInfo());
     }
 
+    void updateDmAllocated(IDevice device) {
+        if ((!mIsInitialized) || (mDvcMon == null)) return;
+        mDvcMon.deviceAllocated(device);
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -504,6 +509,7 @@ public class DeviceManager implements IDeviceManager {
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
         CLog.i("Allocated device %s", testDevice.getSerialNumber());
+        updateDmAllocated(allocatedDevice);
         updateDeviceMonitor();
         return testDevice;
     }
