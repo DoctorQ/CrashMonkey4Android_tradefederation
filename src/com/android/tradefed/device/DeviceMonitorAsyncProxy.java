@@ -92,13 +92,23 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
      * {@inheritDoc}
      */
     @Override
-    public void updateFullDeviceState(final Map<IDevice, String> deviceMap) {
+    public void setDeviceLister(DeviceLister lister) {
+        if (mChildMonitor != null) {
+            mChildMonitor.setDeviceLister(lister);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void updateFullDeviceState() {
         if ((mChildMonitor == null) || (mDispatcher == null)) return;
 
         final Runnable task = new Runnable() {
             @Override
             public void run() {
-                mChildMonitor.updateFullDeviceState(deviceMap);
+                mChildMonitor.updateFullDeviceState();
             }
         };
         mRunnableQueue.add(task);

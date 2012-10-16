@@ -37,9 +37,25 @@ public interface IDeviceMonitor {
      */
 
     /**
-     * Updates states for all of the devices the DeviceManager knows about
+     * A {@link Runnable}-like class that should return the known devices and their states.
+     * This class allows the {@link IDeviceMonitor} to fetch device info from its own thread, which
+     * should avoid deadlocks that may occur while listing devices.
      */
-    public void updateFullDeviceState(Map<IDevice, String> deviceMap);
+    public static abstract class DeviceLister {
+        public abstract Map<IDevice, String> listDevices();
+    }
+
+    /**
+     * Allows the {@link DeviceLister} to be set.  After a successful attempt to set the Lister,
+     * implementations may discard all subsequent attempts.
+     */
+    public void setDeviceLister(DeviceLister lister);
+
+    /**
+     * Signals the {@link IDeviceMonitor} that device states may have been updated.  The Monitor
+     * may observe the new device states by calling its DeviceLister
+     */
+    public void updateFullDeviceState();
 
     public void deviceAllocated(IDevice device);
 

@@ -21,6 +21,7 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.device.IDeviceMonitor.DeviceLister;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
@@ -150,6 +151,13 @@ public class DeviceManager implements IDeviceManager {
         // It's important to add the listener before initializing the ADB bridge to avoid a race
         // condition when detecting devices.
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
+        mDvcMon.setDeviceLister(new DeviceLister() {
+            @Override
+            public Map<IDevice, String> listDevices() {
+                return fetchDevicesInfo();
+            }
+        });
+
         // assume "adb" is in PATH
         // TODO: make this configurable
         mAdbBridge.init(false /* client support */, "adb");
@@ -400,7 +408,7 @@ public class DeviceManager implements IDeviceManager {
             CLog.w("updateDeviceMonitor called before DeviceManager was initialized!");
         }
         if (mAdbBridge == null) return;
-        mDvcMon.updateFullDeviceState(fetchDevicesInfo());
+        mDvcMon.updateFullDeviceState();
     }
 
     void updateDmAllocated(IDevice device) {
