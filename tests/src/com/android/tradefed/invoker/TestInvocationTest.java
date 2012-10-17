@@ -208,6 +208,29 @@ public class TestInvocationTest extends TestCase {
     }
 
     /**
+     * Test the invoke scenario where there is no build to test for a {@link IRetriableTest}.
+     */
+    public void testInvoke_noBuildRetry() throws BuildRetrievalError, ConfigurationException,
+            DeviceNotAvailableException  {
+        EasyMock.expect(mMockBuildProvider.getBuild()).andReturn(null);
+
+        IRetriableTest test = EasyMock.createMock(IRetriableTest.class);
+        EasyMock.expect(test.isRetriable()).andReturn(Boolean.TRUE);
+
+        IRescheduler mockRescheduler = EasyMock.createMock(IRescheduler.class);
+        EasyMock.expect(mockRescheduler.rescheduleCommand()).andReturn(EasyMock.anyBoolean());
+
+        mStubConfiguration.setTest(test);
+        mStubConfiguration.getCommandOptions().setLoopMode(false);
+        mMockLogRegistry.dumpToGlobalLog(mMockLogger);
+        replayMocks(test);
+        EasyMock.replay(mockRescheduler);
+        mTestInvocation.invoke(mMockDevice, mStubConfiguration, mockRescheduler);
+        EasyMock.verify(mockRescheduler);
+        verifyMocks(test);
+    }
+
+    /**
      * Test the {@link TestInvocation#invoke(IDevice, IConfiguration)} scenario where the
      * test is a {@link IDeviceTest}
      */

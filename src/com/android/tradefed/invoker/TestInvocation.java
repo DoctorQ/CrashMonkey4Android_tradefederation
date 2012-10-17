@@ -121,6 +121,7 @@ public class TestInvocation implements ITestInvocation {
             } else {
                 mStatus = "(no build to test)";
                 CLog.d("No build to test");
+                rescheduleTest(config, rescheduler);
             }
         } catch (BuildRetrievalError e) {
             CLog.e(e);
@@ -389,13 +390,16 @@ public class TestInvocation implements ITestInvocation {
         }
         if (!(exception instanceof BuildError)) {
             config.getBuildProvider().buildNotTested(info);
+            rescheduleTest(config, rescheduler);
+        }
+    }
 
-            for (IRemoteTest test : config.getTests()) {
-                if (!config.getCommandOptions().isLoopMode() && test instanceof IRetriableTest &&
-                        ((IRetriableTest) test).isRetriable()) {
-                    rescheduler.rescheduleCommand();
-                    return;
-                }
+    private void rescheduleTest(IConfiguration config, IRescheduler rescheduler) {
+        for (IRemoteTest test : config.getTests()) {
+            if (!config.getCommandOptions().isLoopMode() && test instanceof IRetriableTest &&
+                    ((IRetriableTest) test).isRetriable()) {
+                rescheduler.rescheduleCommand();
+                return;
             }
         }
     }
