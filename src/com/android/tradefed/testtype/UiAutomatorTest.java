@@ -36,6 +36,12 @@ import java.util.Map;
 
 public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
 
+    public enum LoggingOption {
+        AFTER_TEST,
+        AFTER_FAILURE,
+        OFF,
+    }
+
     private static final String SHELL_EXE_BASE = "/data/local/tmp/";
 
     private ITestDevice mDevice = null;
@@ -64,8 +70,8 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     private int mTestTimeout = 30 * 60 * 1000;  // default to 30 minutes
 
     @Option(name = "capture-logs", description =
-            "capture bugreport and screenshot after each failed test")
-    private boolean mCaptureLogs = true;
+            "capture bugreport and screenshot as specified.")
+    private LoggingOption mLoggingOption = LoggingOption.AFTER_FAILURE;
 
     @Option(name = "runner-path", description = "path to uiautomator runner; may be null and "
             + "default will be used in this case")
@@ -86,8 +92,8 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         return mDevice;
     }
 
-    public void setCaptureLogs(boolean captureLogs) {
-        mCaptureLogs = captureLogs;
+    public void setLoggingOption(LoggingOption loggingOption) {
+        mLoggingOption = loggingOption;
     }
 
     /**
@@ -104,9 +110,9 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         for (Map.Entry<String, String> entry : getTestRunArgMap().entrySet()) {
             getTestRunner().addInstrumentationArg(entry.getKey(), entry.getValue());
         }
-        if (mCaptureLogs) {
+        if (mLoggingOption != LoggingOption.OFF) {
             getDevice().runInstrumentationTests(getTestRunner(), listener,
-                    new FailureReportWrapper(listener));
+                    new LoggingWrapper(listener));
         } else {
             getDevice().runInstrumentationTests(getTestRunner(), listener);
         }
@@ -123,7 +129,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * Checks if the Geppeto components are present on device
+     * Checks if the Geppetto components are present on device
      *
      * @throws DeviceNotAvailableException
      */
@@ -147,21 +153,37 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
      */
     // TODO replace this once we have a generic event triggered reporter like
     // BugReportCollector
-    private class FailureReportWrapper extends StubTestInvocationListener {
+    private class LoggingWrapper extends StubTestInvocationListener {
 
         ITestInvocationListener mListener;
+        private boolean mLoggedFailure = false;
 
-        public FailureReportWrapper(ITestInvocationListener listener) {
+        public LoggingWrapper(ITestInvocationListener listener) {
             mListener = listener;
         }
 
         @Override
         public void testFailed(TestFailure status, TestIdentifier test, String trace) {
+            if (mLoggingOption == LoggingOption.AFTER_FAILURE) {
+                doScreenshotAndBugreport(test + "_failure");
+                // set the flag so that we don't log again when test finishes
+                mLoggedFailure = true;
+            }
+        }
+
+        @Override
+        public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
+            if (!mLoggedFailure && mLoggingOption == LoggingOption.AFTER_TEST) {
+                doScreenshotAndBugreport(test + "_final");
+            }
+        }
+
+        private void doScreenshotAndBugreport(String prefix) {
             InputStreamSource data = null;
             // get screen shot
             try {
                 data = getDevice().getScreenshot();
-                mListener.testLog(test.getTestName() + "_failure_screenshot.png", LogDataType.PNG,
+                mListener.testLog(prefix + "_screenshot.png", LogDataType.PNG,
                         data);
             } catch (DeviceNotAvailableException e) {
                 CLog.e(e);
@@ -172,7 +194,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             }
             // get bugreport
             data = getDevice().getBugreport();
-            mListener.testLog(test.getTestName() + "_failure_bugreport.txt",
+            mListener.testLog(prefix + "_bugreport.txt",
                     LogDataType.TEXT, data);
             if (data != null) {
                 data.cancel();
