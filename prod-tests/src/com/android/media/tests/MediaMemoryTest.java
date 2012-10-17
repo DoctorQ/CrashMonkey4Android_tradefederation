@@ -81,6 +81,9 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
     @Option(name = "getHeapDump", description = "Collect the heap ")
     private boolean mGetHeapDump = false;
 
+    @Option(name = "getProcMem", description = "Collect the procmem info ")
+    private boolean mGetProcMem = false;
+
     public MediaMemoryTest() {
         mPatternMap.put("testCameraPreviewMemoryUsage", "CameraPreview");
         mPatternMap.put("testRecordAudioOnlyMemoryUsage", "AudioRecord");
@@ -101,7 +104,10 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
         runner.setClassName(TEST_CLASS_NAME);
         runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
         if (mGetHeapDump) {
-            runner.addInstrumentationArg("get_heap_dump", "getNativeHeap");
+            runner.addInstrumentationArg("get_heap_dump", "true");
+        }
+        if (mGetProcMem) {
+            runner.addInstrumentationArg("get_procmem", "true");
         }
 
         BugreportCollector bugListener = new BugreportCollector(listener,
