@@ -99,17 +99,20 @@ public class PushFilePreparer implements ITargetPreparer {
             DeviceNotAvailableException {
         for (String pushspec : mPushSpecs) {
             String[] pair = pushspec.split("->");
-            Log.d(LOG_TAG, String.format("Trying to push local '%s' to remote '%s'", pair[0],
-                    pair[1]));
             if (pair.length != 2) {
                 fail(String.format("Invalid pushspec: '%s'"));
                 continue;
             }
+            Log.d(LOG_TAG, String.format("Trying to push local '%s' to remote '%s'", pair[0],
+                    pair[1]));
 
             File src = new File(pair[0]);
             if (!src.exists()) {
-                fail(String.format("Local source file '%s' does not exist", pair[0]));
-                continue;
+                src = buildInfo.getFile(pair[0]);
+                if (src == null || !src.exists()) {
+                    fail(String.format("Local source file '%s' does not exist", pair[0]));
+                    continue;
+                }
             }
             if (src.isDirectory()) {
                 if (!device.pushDir(src, pair[1])) {
@@ -138,4 +141,3 @@ public class PushFilePreparer implements ITargetPreparer {
         }
     }
 }
-
