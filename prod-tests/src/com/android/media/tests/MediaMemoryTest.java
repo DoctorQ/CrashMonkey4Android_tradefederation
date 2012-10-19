@@ -82,14 +82,13 @@ public class MediaMemoryTest implements IDeviceTest, IRemoteTest {
     private boolean mGetHeapDump = false;
 
     public MediaMemoryTest() {
-        mPatternMap.put("Camera Preview Only", "CameraPreview");
-        mPatternMap.put("Audio record only", "AudioRecord");
-        mPatternMap.put("H263 Video Playback Only", "H263Playback");
-        mPatternMap.put("Audio and h263 video record", "H263RecordVideoAudio");
-        mPatternMap.put("H263 video record only", "H263RecordVideoOnly");
-        mPatternMap.put("H264 Video Playback only", "H264Playback");
-        mPatternMap.put("MPEG4 video record only", "MPEG4RecordVideoOnly");
-        mPatternMap.put("WMV video playback only", "WMVPlayback");
+        mPatternMap.put("testCameraPreviewMemoryUsage", "CameraPreview");
+        mPatternMap.put("testRecordAudioOnlyMemoryUsage", "AudioRecord");
+        mPatternMap.put("testH263VideoPlaybackMemoryUsage", "H263Playback");
+        mPatternMap.put("testRecordVideoAudioMemoryUsage", "H263RecordVideoAudio");
+        mPatternMap.put("testH263RecordVideoOnlyMemoryUsage", "H263RecordVideoOnly");
+        mPatternMap.put("testH264VideoPlaybackMemoryUsage", "H264Playback");
+        mPatternMap.put("testMpeg4RecordVideoOnlyMemoryUsage", "MPEG4RecordVideoOnly");
     }
 
 
