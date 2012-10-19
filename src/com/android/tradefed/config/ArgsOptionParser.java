@@ -236,7 +236,8 @@ public class ArgsOptionParser extends OptionSetter {
 
         if (value == null) {
             if (isBooleanOption(name)) {
-                value = name.startsWith(BOOL_FALSE_PREFIX) ? "false" : "true";
+                int idx = name.indexOf(NAMESPACE_SEPARATOR);
+                value = name.startsWith(BOOL_FALSE_PREFIX, idx + 1) ? "false" : "true";
             } else if (isMapOption(name)) {
                 key = grabNextValue(args, name, "for its key");
                 value = grabNextValue(args, name, "for its value");

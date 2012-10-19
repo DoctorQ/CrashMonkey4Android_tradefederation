@@ -42,4 +42,19 @@ public @interface OptionClass {
      * </ul>
      */
     String alias();
+
+    /**
+     * Whether or not to add this {@link Option} to the global Option namespace.
+     * <p />
+     * If <code>true</code> (the default), then it will be possible to specify this option simply
+     * by its name -- <code>--[Option name]</code>.  If <code>false</code>, then the alias or
+     * another specific namespace (such as the full classname) must be specified in order to use
+     * {@link Option}s for this class --
+     * <code>--[OptionClass alias]:[Option name]</code> will work, but <code>--[Option name]</code>
+     * won't resolve to the {@link Option}.
+     * <p />
+     * FIXME: update documentation methods to distinguish classes/fields that aren't in the global
+     * FIXME: namespace
+     */
+    boolean global_namespace() default true;
 }
