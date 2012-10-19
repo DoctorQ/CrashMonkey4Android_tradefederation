@@ -165,7 +165,8 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         @Override
         public void testFailed(TestFailure status, TestIdentifier test, String trace) {
             if (mLoggingOption == LoggingOption.AFTER_FAILURE) {
-                doScreenshotAndBugreport(test + "_failure");
+                doScreenshotAndBugreport(String.format("%s_%s_failure",
+                        test.getClassName(), test.getTestName()));
                 // set the flag so that we don't log again when test finishes
                 mLoggedFailure = true;
             }
@@ -174,7 +175,8 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         @Override
         public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
             if (!mLoggedFailure && mLoggingOption == LoggingOption.AFTER_TEST) {
-                doScreenshotAndBugreport(test + "_final");
+                doScreenshotAndBugreport(String.format("%s_%s_final",
+                        test.getClassName(), test.getTestName()));
             }
         }
 
@@ -183,8 +185,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             // get screen shot
             try {
                 data = getDevice().getScreenshot();
-                mListener.testLog(prefix + "_screenshot.png", LogDataType.PNG,
-                        data);
+                mListener.testLog(prefix + "_screenshot", LogDataType.PNG, data);
             } catch (DeviceNotAvailableException e) {
                 CLog.e(e);
             } finally {
@@ -194,8 +195,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             }
             // get bugreport
             data = getDevice().getBugreport();
-            mListener.testLog(prefix + "_bugreport.txt",
-                    LogDataType.TEXT, data);
+            mListener.testLog(prefix + "_bugreport", LogDataType.TEXT, data);
             if (data != null) {
                 data.cancel();
             }
