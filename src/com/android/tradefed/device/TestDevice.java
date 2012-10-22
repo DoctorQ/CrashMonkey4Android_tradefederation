@@ -876,6 +876,7 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public IFileEntry getFileEntry(String path) throws DeviceNotAvailableException {
+        path = interpolatePathVariables(path);
         String[] pathComponents = path.split(FileListingService.FILE_SEPARATOR);
         if (mRootFile == null) {
             FileListingService service = getFileListingService();

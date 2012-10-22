@@ -24,6 +24,7 @@ import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.InstrumentationResultParser;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.ArrayUtil;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -64,6 +65,7 @@ public class UiAutomatorRunner implements IRemoteAndroidTestRunner {
     private InstrumentationResultParser mParser;
     private String mRunnerPath = UIAUTOMATOR_RUNNER_PATH;
     private String mRunnerName = DEFAULT_RUNNER_NAME;
+    private boolean mIgnoreSighup = false;
 
     /**
      * Create a UiAutomatorRunner for running UI automation tests
@@ -107,15 +109,23 @@ public class UiAutomatorRunner implements IRemoteAndroidTestRunner {
         return mRunnerPath;
     }
 
+    /**
+     * Sets the option in the uiautomator to ignore SIGHUP.
+     * @param value ignore the signal if set to true
+     */
+    public void setIgnoreSighup(boolean value) {
+        mIgnoreSighup = value;
+    }
+
     protected String getRunCommand() {
-        StringBuilder jarArg = new StringBuilder();
-        jarArg.append(mJarPaths[0]);
-        for (int i = 1; i < mJarPaths.length; i++) {
-            jarArg.append(' ');
-            jarArg.append(mJarPaths[i]);
+        String jarArg = ArrayUtil.join(" ", (Object[])mJarPaths);
+        String command = String.format("%s runtest %s %s",
+                getRunnerPath(), jarArg, getArgsCommand());
+        if (mIgnoreSighup) {
+            return command + " --nohup";
+        } else {
+            return command;
         }
-        return String.format("%s runtest %s %s",
-                getRunnerPath(), jarArg.toString(), getArgsCommand());
     }
 
     /**

@@ -99,7 +99,7 @@ class FileEntryWrapper implements IFileEntry {
      */
     @Override
     public Collection<IFileEntry> getChildren(boolean useCache) throws DeviceNotAvailableException {
-        if (useCache || mChildMap == null) {
+        if (!useCache || mChildMap == null) {
             mChildMap = buildChildrenMap();
         }
         return mChildMap.values();

@@ -42,6 +42,12 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         OFF,
     }
 
+    public enum TestFailureAction {
+        BUGREPORT,
+        SCREENSHOT,
+        BUGREPORT_AND_SCREENSHOT,
+    }
+
     private static final String SHELL_EXE_BASE = "/data/local/tmp/";
 
     private ITestDevice mDevice = null;
@@ -76,6 +82,14 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     @Option(name = "runner-path", description = "path to uiautomator runner; may be null and "
             + "default will be used in this case")
     private String mRunnerPath = null;
+
+    @Option(name = "on-test-failure",
+            description = "sets the action to perform if a test fails")
+    private TestFailureAction mFailureAction = TestFailureAction.BUGREPORT_AND_SCREENSHOT;
+
+    @Option(name = "ignore-sighup",
+            description = "allows uiautomator test to ignore SIGHUP signal")
+    private boolean mIgnoreSighup = false;
     /**
      * {@inheritDoc}
      */
@@ -110,6 +124,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         for (Map.Entry<String, String> entry : getTestRunArgMap().entrySet()) {
             getTestRunner().addInstrumentationArg(entry.getKey(), entry.getValue());
         }
+        getTestRunner().setIgnoreSighup(mIgnoreSighup);
         if (mLoggingOption != LoggingOption.OFF) {
             getDevice().runInstrumentationTests(getTestRunner(), listener,
                     new LoggingWrapper(listener));
@@ -183,21 +198,27 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         private void doScreenshotAndBugreport(String prefix) {
             InputStreamSource data = null;
             // get screen shot
-            try {
-                data = getDevice().getScreenshot();
-                mListener.testLog(prefix + "_screenshot", LogDataType.PNG, data);
-            } catch (DeviceNotAvailableException e) {
-                CLog.e(e);
-            } finally {
-                if (data != null) {
-                    data.cancel();
+            if (mFailureAction == TestFailureAction.SCREENSHOT ||
+                    mFailureAction == TestFailureAction.BUGREPORT_AND_SCREENSHOT) {
+                try {
+                    data = getDevice().getScreenshot();
+                    mListener.testLog(prefix + "_screenshot", LogDataType.PNG, data);
+                } catch (DeviceNotAvailableException e) {
+                    CLog.e(e);
+                } finally {
+                    if (data != null) {
+                        data.cancel();
+                    }
                 }
             }
             // get bugreport
-            data = getDevice().getBugreport();
-            mListener.testLog(prefix + "_bugreport", LogDataType.TEXT, data);
-            if (data != null) {
-                data.cancel();
+            if (mFailureAction == TestFailureAction.BUGREPORT ||
+                    mFailureAction == TestFailureAction.BUGREPORT_AND_SCREENSHOT) {
+                data = getDevice().getBugreport();
+                mListener.testLog(prefix + "_bugreport", LogDataType.TEXT, data);
+                if (data != null) {
+                    data.cancel();
+                }
             }
         }
     }
