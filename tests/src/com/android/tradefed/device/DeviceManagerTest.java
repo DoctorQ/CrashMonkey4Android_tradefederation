@@ -19,6 +19,7 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.device.IDeviceMonitor.DeviceLister;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.IRunUtil;
@@ -59,6 +60,7 @@ public class DeviceManagerTest extends TestCase {
     private IManagedTestDevice mMockTestDevice;
     private IRunUtil mMockRunUtil;
     private ITestDeviceFactory mMockDeviceFactory;
+    private IDeviceMonitor mDeviceMonitor;
 
     /** a reference to the DeviceManager's IDeviceChangeListener. Used for triggering device
      * connection events */
@@ -171,7 +173,11 @@ public class DeviceManagerTest extends TestCase {
     }
 
     private DeviceManager createDeviceManager(IDevice... devices) {
-        DeviceManager mgr = createDeviceManagerNoInit();
+        return createDeviceManager(null, devices);
+    }
+
+    private DeviceManager createDeviceManager(IDeviceMonitor dvcMon, IDevice... devices) {
+        DeviceManager mgr = createDeviceManagerNoInit(dvcMon);
         mgr.init();
         for (IDevice device : devices) {
             mDeviceListener.deviceConnected(device);
@@ -180,7 +186,11 @@ public class DeviceManagerTest extends TestCase {
     }
 
     private DeviceManager createDeviceManagerNoInit() {
-        DeviceManager mgr = new DeviceManager() {
+        return createDeviceManagerNoInit(null);
+    }
+
+    private DeviceManager createDeviceManagerNoInit(IDeviceMonitor dvcMon) {
+        DeviceManager mgr = new DeviceManager(dvcMon, false /* no async proxy */) {
             @Override
             IAndroidDebugBridge createAdbBridge() {
                 return mMockAdbBridge;
@@ -204,11 +214,6 @@ public class DeviceManagerTest extends TestCase {
             @Override
             IRunUtil getRunUtil() {
                 return mMockRunUtil;
-            }
-
-            @Override
-            void updateDeviceMonitor() {
-                // ignore
             }
         };
         mgr.setEnableLogcat(false);
@@ -602,6 +607,35 @@ public class DeviceManagerTest extends TestCase {
             }
             return mAllocatedDevice != null;
         }
+    }
+
+    /**
+     * Test @link DeviceManager#allocateDevice()} when a IDevice is present on DeviceManager
+     * creation.
+     * <p />
+     * FIXME: simplify call structure
+     */
+    public void testMonitor_allocate() throws DeviceNotAvailableException {
+        final IDeviceMonitor dvcMon = EasyMock.createStrictMock(IDeviceMonitor.class);
+
+        // IDeviceMonitor calls, in order
+        dvcMon.setDeviceLister((DeviceLister) EasyMock.anyObject());
+        // add emulators
+        dvcMon.updateFullDeviceState();
+        // add null devices
+        dvcMon.updateFullDeviceState();
+        // allocate actual IDevice(s)
+        dvcMon.updateFullDeviceState();
+        dvcMon.deviceAllocated(EasyMock.eq(mMockIDevice));
+        // create ITestDevice from IDevice
+        dvcMon.updateFullDeviceState();
+
+        setCheckAvailableDeviceExpectations();
+        replayMocks();
+        EasyMock.replay(dvcMon);
+        DeviceManager manager = createDeviceManager(dvcMon, mMockIDevice);
+        assertEquals(mMockTestDevice, manager.allocateDevice());
+        EasyMock.verify(mMockMonitor, dvcMon);
     }
 
     /**

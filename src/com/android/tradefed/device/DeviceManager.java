@@ -95,15 +95,21 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager() {
-        this(null);
+        this(null, true);
     }
 
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
      */
-    DeviceManager(IDeviceMonitor dvcMon) {
-        mDvcMon = new DeviceMonitorAsyncProxy(dvcMon);
+    DeviceManager(IDeviceMonitor dvcMon, boolean useProxy) {
+        if (useProxy) {
+            mDvcMon = new DeviceMonitorAsyncProxy(dvcMon);
+        } else {
+            CLog.w("Running DeviceManager with unproxied DeviceMonitor!  This could lead to " +
+                    "deadlocks!");
+            mDvcMon = dvcMon;
+        }
     }
 
     @Override
@@ -151,12 +157,14 @@ public class DeviceManager implements IDeviceManager {
         // It's important to add the listener before initializing the ADB bridge to avoid a race
         // condition when detecting devices.
         mAdbBridge.addDeviceChangeListener(mManagedDeviceListener);
-        mDvcMon.setDeviceLister(new DeviceLister() {
-            @Override
-            public Map<IDevice, String> listDevices() {
-                return fetchDevicesInfo();
-            }
-        });
+        if (mDvcMon != null) {
+            mDvcMon.setDeviceLister(new DeviceLister() {
+                @Override
+                public Map<IDevice, String> listDevices() {
+                    return fetchDevicesInfo();
+                }
+            });
+        }
 
         // assume "adb" is in PATH
         // TODO: make this configurable
@@ -397,7 +405,7 @@ public class DeviceManager implements IDeviceManager {
                     String.format("Failed to instantiate DeviceMonitor: %s", e.getMessage()));
         }
 
-        sInstance = new DeviceManager(dvcMon);
+        sInstance = new DeviceManager(dvcMon, true /* use async proxy */);
         return sInstance;
     }
 
@@ -412,7 +420,10 @@ public class DeviceManager implements IDeviceManager {
     }
 
     void updateDmAllocated(IDevice device) {
-        if ((!mIsInitialized) || (mDvcMon == null)) return;
+        if (mDvcMon == null) return;
+        if (!mIsInitialized) {
+            CLog.w("updateDmAllocated called before DeviceManager was initialized!");
+        }
         mDvcMon.deviceAllocated(device);
     }
 
