@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -50,6 +51,12 @@ public interface IDeviceMonitor {
      * implementations may discard all subsequent attempts.
      */
     public void setDeviceLister(DeviceLister lister);
+
+    /**
+     * Allows one or more labels to be set which may be used to identify the host, and group it with
+     * or disambiguate it from other hosts.
+     */
+    public void setHostLabels(Collection<String> labels);
 
     /**
      * Signals the {@link IDeviceMonitor} that device states may have been updated.  The Monitor

@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -92,10 +93,30 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
      * {@inheritDoc}
      */
     @Override
-    public void setDeviceLister(DeviceLister lister) {
-        if (mChildMonitor != null) {
-            mChildMonitor.setDeviceLister(lister);
-        }
+    public void setDeviceLister(final DeviceLister lister) {
+        if ((mChildMonitor == null) || (mDispatcher == null)) return;
+
+        mRunnableQueue.add(new Runnable() {
+            @Override
+            public void run() {
+                mChildMonitor.setDeviceLister(lister);
+            }
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setHostLabels(final Collection<String> labels) {
+        if ((mChildMonitor == null) || (mDispatcher == null)) return;
+
+        mRunnableQueue.add(new Runnable() {
+            @Override
+            public void run() {
+                mChildMonitor.setHostLabels(labels);
+            }
+        });
     }
 
     /**
@@ -105,13 +126,12 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
     public void updateFullDeviceState() {
         if ((mChildMonitor == null) || (mDispatcher == null)) return;
 
-        final Runnable task = new Runnable() {
+        mRunnableQueue.add(new Runnable() {
             @Override
             public void run() {
                 mChildMonitor.updateFullDeviceState();
             }
-        };
-        mRunnableQueue.add(task);
+        });
     }
 
     /**
@@ -121,13 +141,12 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
     public void deviceAllocated(final IDevice device) {
         if ((mChildMonitor == null) || (mDispatcher == null)) return;
 
-        final Runnable task = new Runnable() {
+        mRunnableQueue.add(new Runnable() {
             @Override
             public void run() {
                 mChildMonitor.deviceAllocated(device);
             }
-        };
-        mRunnableQueue.add(task);
+        });
     }
 
     /**

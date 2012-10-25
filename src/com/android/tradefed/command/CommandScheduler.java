@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -428,8 +429,15 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 "IDeviceMonitor to use for monitoring device state")
         private String mDeviceMonitorName = null;
 
+        @Option(name = "label", description = "Host label to be used for disambiguation/grouping")
+        private Collection<String> mLabels = new HashSet<String>();
+
         public String getDeviceMonitorName() {
             return mDeviceMonitorName;
+        }
+
+        public Collection<String> getLabels() {
+            return mLabels;
         }
     }
 
@@ -458,7 +466,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
         initLogging();
 
-        initDeviceManager(mGlobalOptions.getDeviceMonitorName());
+        initDeviceManager(mGlobalOptions.getDeviceMonitorName(), mGlobalOptions.getLabels());
 
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
                 new ExecutableCommandComparator());
@@ -473,7 +481,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Initialize the device manager, optionally using a global device filter if specified.
      */
-    void initDeviceManager(String deviceMonitorClassName) {
+    void initDeviceManager(String deviceMonitorClassName, Collection<String> labels) {
         // FIXME: merge the GLOBAL CONFIG stuff with GlobalOptionState
         // look for the environment variable that specifies a global config file
         String globalConfigPath = System.getenv("TF_GLOBAL_CONFIG");
@@ -486,7 +494,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                         new String[] {globalConfigPath});
                 CLog.logAndDisplay(LogLevel.INFO, "Using global device filter config %s",
                         globalConfigPath);
-                getDeviceManager(deviceMonitorClassName).init(globalConfig.getDeviceRequirements());
+                getDeviceManager(deviceMonitorClassName).init(globalConfig.getDeviceRequirements(),
+                        labels);
                 return;
             } catch (ConfigurationException e) {
                 CLog.e("Failed to read TF_GLOBAL_CONFIG file %s", globalConfigPath);
@@ -494,7 +503,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         }
         // initialize the device manager with no global device filter
-        getDeviceManager(deviceMonitorClassName).init();
+        getDeviceManager(deviceMonitorClassName).init(null, labels);
     }
 
     /**

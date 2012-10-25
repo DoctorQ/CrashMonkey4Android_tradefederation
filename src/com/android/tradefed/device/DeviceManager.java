@@ -114,7 +114,7 @@ public class DeviceManager implements IDeviceManager {
 
     @Override
     public void init() {
-        init(ANY_DEVICE_OPTIONS);
+        init(ANY_DEVICE_OPTIONS, null);
     }
 
     /**
@@ -122,10 +122,16 @@ public class DeviceManager implements IDeviceManager {
      * methods are called.
      */
     @Override
-    public synchronized void init(IDeviceSelection globalDeviceFilter) {
+    public synchronized void init(IDeviceSelection globalDeviceFilter,
+            Collection<String> hostLabels) {
         if (mIsInitialized) {
             throw new IllegalStateException("already initialized");
         }
+
+        if (globalDeviceFilter == null) {
+            globalDeviceFilter = ANY_DEVICE_OPTIONS;
+        }
+
         mIsInitialized = true;
         mGlobalDeviceFilter = globalDeviceFilter;
         // Using ConcurrentHashMap for thread safety: handles concurrent modification and iteration
@@ -164,6 +170,9 @@ public class DeviceManager implements IDeviceManager {
                     return fetchDevicesInfo();
                 }
             });
+            if (hostLabels != null) {
+                mDvcMon.setHostLabels(hostLabels);
+            }
         }
 
         // assume "adb" is in PATH

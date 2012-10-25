@@ -200,7 +200,7 @@ public class MockDeviceManager implements IDeviceManager {
      * {@inheritDoc}
      */
     @Override
-    public void init(IDeviceSelection globalDeviceFilter) {
+    public void init(IDeviceSelection globalDeviceFilter, Collection<String> labels) {
         // ignore
     }
 

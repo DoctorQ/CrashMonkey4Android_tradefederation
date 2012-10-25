@@ -31,6 +31,7 @@ import org.easymock.EasyMock;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Unit tests for {@link DeviceManager}.
@@ -45,6 +46,7 @@ public class DeviceManagerTest extends TestCase {
      */
     private static final int MIN_ALLOCATE_WAIT_TIME = 100;
     private static final String DEVICE_SERIAL = "serial";
+    private static final Collection<String> emptyStringSet = Collections.emptySet();
 
     /**
      * Helper interface to mock behavior for
@@ -615,6 +617,7 @@ public class DeviceManagerTest extends TestCase {
      * <p />
      * FIXME: simplify call structure
      */
+    @SuppressWarnings("unchecked")
     public void testMonitor_allocate() throws DeviceNotAvailableException {
         final IDeviceMonitor dvcMon = EasyMock.createStrictMock(IDeviceMonitor.class);
 
@@ -647,7 +650,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManagerNoInit();
         DeviceSelectionOptions excludeFilter = new DeviceSelectionOptions();
         excludeFilter.addExcludeSerial(mMockIDevice.getSerialNumber());
-        manager.init(excludeFilter);
+        manager.init(excludeFilter, emptyStringSet);
         mDeviceListener.deviceConnected(mMockIDevice);
         assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
     }
@@ -664,7 +667,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManagerNoInit();
         DeviceSelectionOptions includeFilter = new DeviceSelectionOptions();
         includeFilter.addSerial(mMockIDevice.getSerialNumber());
-        manager.init(includeFilter);
+        manager.init(includeFilter, emptyStringSet);
         mDeviceListener.deviceConnected(mMockIDevice);
         mDeviceListener.deviceConnected(excludedDevice);
         assertEquals(mMockTestDevice, manager.allocateDevice());
