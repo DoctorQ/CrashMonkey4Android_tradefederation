@@ -699,6 +699,13 @@ public class OptionSetter {
                     OptionClass.class);
             addNameToMap(optionMap, optionSource, String.format("%s%c%s", classAnnotation.alias(),
                     NAMESPACE_SEPARATOR, name), field);
+
+            // Allows use of an enumerated namespace, to enable options to map to specific instances
+            // of a class alias, rather than just to all instances of that particular alias.
+            // Example option name: alias:2:option-name
+            addNameToMap(optionMap, optionSource, String.format("%s%c%d%c%s",
+                    classAnnotation.alias(), NAMESPACE_SEPARATOR, index, NAMESPACE_SEPARATOR, name),
+                    field);
         }
 
         // Allows use of a className-delimited namespace.
