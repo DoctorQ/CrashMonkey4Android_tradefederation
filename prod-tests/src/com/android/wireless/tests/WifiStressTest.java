@@ -247,6 +247,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         BugreportCollector bugListener = new
             BugreportCollector(standardListener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
+        // Device may reboot during the test, to capture a bugreport after that,
+        // wait for 30 seconds for device to be online, otherwise, bugreport will be empty
+        bugListener.setDeviceWaitTime(30);
 
         for (TestInfo testCase : mTestList) {
             // for Wi-Fi reconnection test,

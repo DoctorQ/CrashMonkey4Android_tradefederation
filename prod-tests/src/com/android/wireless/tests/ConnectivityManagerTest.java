@@ -88,6 +88,9 @@ public class ConnectivityManagerTest implements IRemoteTest, IDeviceTest {
             BugreportCollector(standardListener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
         bugListener.setDescriptiveName("connectivity_manager_test");
+        // Device may reboot during the test, to capture a bugreport after that,
+        // wait for 30 seconds for device to be online, otherwise, bugreport will be empty
+        bugListener.setDeviceWaitTime(30);
 
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
                 TEST_PACKAGE_NAME, TEST_RUNNER_NAME, mTestDevice.getIDevice());

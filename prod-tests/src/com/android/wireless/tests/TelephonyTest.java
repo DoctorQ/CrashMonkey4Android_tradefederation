@@ -110,6 +110,9 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
             BugreportCollector(listener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
         bugListener.setDescriptiveName(mTestName);
+        // Device may reboot during the test, to capture a bugreport after that,
+        // wait for 30 seconds for device to be online, otherwise, bugreport will be empty
+        bugListener.setDeviceWaitTime(30);
 
         CollectingTestListener collectListener = new CollectingTestListener();
         int remainingCalls = Integer.parseInt(mRepeatCount);
