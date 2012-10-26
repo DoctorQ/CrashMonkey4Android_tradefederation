@@ -63,7 +63,11 @@ public class AppSetup implements ITargetPreparer {
         }
 
         for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
-            device.installPackage(apkFile.getFile(), true);
+            String result = device.installPackage(apkFile.getFile(), true);
+            if (result != null) {
+                throw new TargetSetupError(String.format("Failed to install %s on %s. Reason: %s",
+                        apkFile.getFile().getName(), device.getSerialNumber(), result));
+            }
         }
     }
 
