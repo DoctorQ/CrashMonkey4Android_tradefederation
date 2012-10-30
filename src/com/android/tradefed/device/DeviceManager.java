@@ -40,11 +40,11 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,10 +128,10 @@ public class DeviceManager implements IDeviceManager {
         }
         mIsInitialized = true;
         mGlobalDeviceFilter = globalDeviceFilter;
-        // use Hashtable since it is synchronized
-        mAllocatedDeviceMap = new Hashtable<String, IManagedTestDevice>();
+        // Using ConcurrentHashMap for thread safety: handles concurrent modification and iteration
+        mAllocatedDeviceMap = new ConcurrentHashMap<String, IManagedTestDevice>();
         mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
-        mCheckDeviceMap = new Hashtable<String, IDeviceStateMonitor>();
+        mCheckDeviceMap = new ConcurrentHashMap<String, IDeviceStateMonitor>();
 
         if (isFastbootAvailable()) {
             mFastbootListeners = Collections.synchronizedSet(new HashSet<IFastbootListener>());
@@ -901,11 +901,11 @@ public class DeviceManager implements IDeviceManager {
     }
 
     private Map<IDevice, String> fetchDevicesInfo() {
-        Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
+        final Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
         synchronized (this) {
             checkInit();
-            Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
-            List<IDevice> allDeviceCopy = ArrayUtil.list(mAdbBridge.getDevices());
+            final Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
+            final List<IDevice> allDeviceCopy = ArrayUtil.list(mAdbBridge.getDevices());
 
             for (IDevice device : allDeviceCopy) {
                 // ignore devices not matching global filter
