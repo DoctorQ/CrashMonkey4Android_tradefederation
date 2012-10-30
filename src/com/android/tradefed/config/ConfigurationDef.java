@@ -137,14 +137,43 @@ public class ConfigurationDef {
     }
 
     /**
-     * Creates a configuration from the info stored in this definition, and populate its fields with
-     * the provided option values.
+     * Creates a configuration from the info stored in this definition, and populates its fields
+     * with the provided option values.
      *
      * @return the created {@link IConfiguration}
      * @throws ConfigurationException if configuration could not be created
      */
     IConfiguration createConfiguration() throws ConfigurationException {
         IConfiguration config = new Configuration(getName(), getDescription());
+
+        for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
+            List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());
+            for (String className : objClassEntry.getValue()) {
+                Object configObject = createObject(objClassEntry.getKey(), className);
+                objectList.add(configObject);
+            }
+            config.setConfigurationObjectList(objClassEntry.getKey(), objectList);
+        }
+        for (OptionDef optionEntry : mOptionList) {
+            if (optionEntry.key == null) {
+                config.injectOptionValue(optionEntry.name, optionEntry.value);
+            } else {
+                config.injectOptionValue(optionEntry.name, optionEntry.key, optionEntry.value);
+            }
+        }
+
+        return config;
+    }
+
+    /**
+     * Creates a global configuration from the info stored in this definition, and populates its
+     * fields with the provided option values.
+     *
+     * @return the created {@link IGlobalConfiguration}
+     * @throws ConfigurationException if configuration could not be created
+     */
+    IGlobalConfiguration createGlobalConfiguration() throws ConfigurationException {
+        IGlobalConfiguration config = new GlobalConfiguration(getName(), getDescription());
 
         for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
             List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());

@@ -28,14 +28,10 @@ import java.util.Map;
  * instance.
  */
 public interface IDeviceMonitor {
-    /*  (not javadoc)
-     * Interesting states:
-     *   Avail
-     *   Unavail
-     *   Unresponsive
-     *   Allocated
-     *   Ignore?
+    /**
+     * A method that will be called after all of the Monitor's @Option fields have been set.
      */
+    public void run();
 
     /**
      * A {@link Runnable}-like class that should return the known devices and their states.

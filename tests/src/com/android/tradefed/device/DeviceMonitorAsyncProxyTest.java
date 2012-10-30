@@ -35,7 +35,7 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
 
     @Override
     public void setUp() {
-        mMockMonitor = EasyMock.createMock(IDeviceMonitor.class);
+        mMockMonitor = EasyMock.createStrictMock(IDeviceMonitor.class);
         mMockDevice = EasyMock.createMock(IDevice.class);
         mProxy = new DeviceMonitorAsyncProxy(mMockMonitor);
     }
@@ -46,8 +46,10 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
     }
 
     public void testAllocated() {
+        mMockMonitor.run();
         mMockMonitor.deviceAllocated(EasyMock.eq(mMockDevice));
         EasyMock.replay(mMockMonitor, mMockDevice);
+        mProxy.run();
         mProxy.deviceAllocated(mMockDevice);
 
         // Wait for magic to happen
@@ -57,9 +59,11 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
     }
 
     public void testCancel() {
+        mMockMonitor.run();
         mMockMonitor.deviceAllocated(EasyMock.eq(mMockDevice));
         EasyMock.replay(mMockMonitor, mMockDevice);
 
+        mProxy.run();
         // this call should register
         mProxy.deviceAllocated(mMockDevice);
         // Wait for magic to happen (so we don't cancel before the first call is processed)
@@ -82,6 +86,7 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
     }
 
     public void testCancel_whileBlocking() {
+        mProxy.run();
         // At this point, the Dispatcher will have been started
         assertNotNull(mProxy.getDispatcher());
         mProxy.cancel();
@@ -98,6 +103,7 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
      * Make sure that a delay in processing is not reflected on the calling side
      */
     public void testDelay() {
+        mMockMonitor.run();
         mMockMonitor.deviceAllocated(EasyMock.eq(mMockDevice));
         EasyMock.expectLastCall().andAnswer(new IAnswer<Object>() {
             @Override
@@ -108,6 +114,7 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
         });
         EasyMock.replay(mMockMonitor, mMockDevice);
 
+        mProxy.run();
         final long then = System.currentTimeMillis();
         mProxy.deviceAllocated(mMockDevice);
         final long now = System.currentTimeMillis();

@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Unit tests for {@link ConfigurationFactory}
@@ -37,6 +39,7 @@ public class ConfigurationFactoryTest extends TestCase {
 
     /** the test config name that is built into this jar */
     private static final String TEST_CONFIG = "test-config";
+    private static final String GLOBAL_TEST_CONFIG = "global-config";
 
     /**
      * {@inheritDoc}
@@ -85,11 +88,48 @@ public class ConfigurationFactoryTest extends TestCase {
     }
 
     /**
+     * Test that a config xml defined in this test jar can be read as a built-in
+     */
+    public void testGetGlobalConfiguration_extension() throws ConfigurationException {
+        assertGlobalConfigValid(GLOBAL_TEST_CONFIG);
+    }
+
+    /**
+     * Test specifying a config xml by file path
+     */
+    public void testGetGlobalConfiguration_xmlpath() throws ConfigurationException, IOException {
+        // extract the test-config.xml into a tmp file
+        InputStream configStream = getClass().getResourceAsStream(
+                String.format("/testconfigs/%s.xml", GLOBAL_TEST_CONFIG));
+        File tmpFile = FileUtil.createTempFile(GLOBAL_TEST_CONFIG, ".xml");
+        try {
+            FileUtil.writeToFile(configStream, tmpFile);
+            assertGlobalConfigValid(tmpFile.getAbsolutePath());
+            // check reading it again - should grab the cached version
+            assertGlobalConfigValid(tmpFile.getAbsolutePath());
+        } finally {
+            tmpFile.delete();
+        }
+    }
+
+    /**
      * Checks all config attributes are non-null
      */
     private void assertConfigValid(String name) throws ConfigurationException {
         IConfiguration config = mFactory.createConfigurationFromArgs(new String[] {name});
         assertNotNull(config);
+    }
+
+    /**
+     * Checks all config attributes are non-null
+     */
+    private void assertGlobalConfigValid(String name) throws ConfigurationException {
+        List<String> unprocessed = new ArrayList<String>();
+        IGlobalConfiguration config =
+                mFactory.createGlobalConfigurationFromArgs(new String[] {name}, unprocessed);
+        assertNotNull(config);
+        assertNotNull(config.getDeviceMonitor());
+        assertTrue(unprocessed.isEmpty());
     }
 
     /**

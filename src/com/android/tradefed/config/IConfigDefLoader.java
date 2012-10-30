@@ -30,4 +30,5 @@ interface IConfigDefLoader {
      */
     ConfigurationDef getConfigurationDef(String name) throws ConfigurationException;
 
+    boolean isGlobalConfig();
 }

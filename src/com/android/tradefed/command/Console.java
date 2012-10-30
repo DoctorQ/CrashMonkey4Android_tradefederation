@@ -17,14 +17,16 @@
 package com.android.tradefed.command;
 
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.command.CommandScheduler.GlobalOptionStore;
 import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
+import com.android.tradefed.config.GlobalConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
+import com.android.tradefed.config.IGlobalConfiguration;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
+import com.android.tradefed.device.IDeviceMonitor;
 import com.android.tradefed.log.ConsoleReaderOutputStream;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.ArrayUtil;
@@ -875,26 +877,20 @@ public class Console extends Thread {
      */
     public static void startConsole(Console console, String[] args) throws InterruptedException,
             ConfigurationException {
-        // Parse global TF options
-        GlobalOptionStore globalOpts = new GlobalOptionStore();
-        List<String> nonGlobalArgs;
-        try {
-            ArgsOptionParser globalOptParse = new ArgsOptionParser(globalOpts);
-            nonGlobalArgs = globalOptParse.parse(args);
-        } catch (ConfigurationException e) {
-            // Ignore the exception for now, until we have better error-handling
-            System.out.println("WARNING! WARNING! WARNING!");
-            System.out.println("Encountered ConfigurationException while parsing global options: " +
-                    e.getMessage());
-            System.out.println("In the future, this exception will be fatal.  Please report this " +
-                    "to TF maintainers.");
-            System.out.println("END OF WARNING");
-            System.out.println("");
+        List<String> nonGlobalArgs = new LinkedList<String>();
+        IGlobalConfiguration globalConfig = new GlobalConfiguration();
+        IConfigurationFactory configFactory = ConfigurationFactory.getInstance();
+        String globalConfigPath = System.getenv("TF_GLOBAL_CONFIG");
+        if (globalConfigPath != null) {
+            globalConfig = configFactory.createGlobalConfigurationFromArgs(
+                    ArrayUtil.buildArray(new String[] {globalConfigPath}, args), nonGlobalArgs);
+            System.out.format("Using global config %s\n", globalConfigPath);
+        } else {
             nonGlobalArgs = Arrays.asList(args);
         }
 
         console.setArgs(nonGlobalArgs);
-        console.setCommandScheduler(new CommandScheduler(globalOpts));
+        console.setCommandScheduler(new CommandScheduler(globalConfig));
         console.setDaemon(true);
         console.start();
 

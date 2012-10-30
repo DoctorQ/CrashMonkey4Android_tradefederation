@@ -83,9 +83,19 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
             mDispatcher = null;
             return;
         } else {
-            // enabled; spin up the dispatcher thread
+            // enabled; set up the dispatcher thread
             mDispatcher = new Dispatcher(mRunnableQueue);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void run() {
+        if (mDispatcher != null) {
             mDispatcher.start();
+            mChildMonitor.run();
         }
     }
 

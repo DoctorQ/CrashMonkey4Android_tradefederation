@@ -98,7 +98,12 @@ public class ConfigurationFactory implements IConfigurationFactory {
      */
     class ConfigLoader implements IConfigDefLoader {
 
+        private final boolean mIsGlobalConfig;
         private Set<String> mIncludedConfigs = new HashSet<String>();
+
+        public ConfigLoader(boolean isGlobalConfig) {
+            mIsGlobalConfig = isGlobalConfig;
+        }
 
         /**
          * {@inheritDoc}
@@ -135,6 +140,14 @@ public class ConfigurationFactory implements IConfigurationFactory {
             ConfigurationXmlParser parser = new ConfigurationXmlParser(this);
             return parser.parse(name, bufStream);
         }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isGlobalConfig() {
+            return mIsGlobalConfig;
+        }
     }
 
     ConfigurationFactory() {
@@ -159,8 +172,9 @@ public class ConfigurationFactory implements IConfigurationFactory {
      * @return {@link ConfigurationDef}
      * @throws ConfigurationException if an error occurred loading the config
      */
-    private ConfigurationDef getConfigurationDef(String name) throws ConfigurationException {
-        return new ConfigLoader().getConfigurationDef(name);
+    private ConfigurationDef getConfigurationDef(String name, boolean isGlobal)
+            throws ConfigurationException {
+        return new ConfigLoader(isGlobal).getConfigurationDef(name);
     }
 
     /**
@@ -194,8 +208,45 @@ public class ConfigurationFactory implements IConfigurationFactory {
         optionArgsRef.addAll(Arrays.asList(arrayArgs));
         // first arg is config name
         final String configName = optionArgsRef.remove(0);
-        ConfigurationDef configDef = getConfigurationDef(configName);
+        ConfigurationDef configDef = getConfigurationDef(configName, false);
         return configDef.createConfiguration();
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public IGlobalConfiguration createGlobalConfigurationFromArgs(String[] arrayArgs,
+            List<String> remainingArgs) throws ConfigurationException {
+        List<String> listArgs = new ArrayList<String>(arrayArgs.length);
+        IGlobalConfiguration config =
+                internalCreateGlobalConfigurationFromArgs(arrayArgs, listArgs);
+        remainingArgs.addAll(config.setOptionsFromCommandLineArgs(listArgs));
+
+        return config;
+    }
+
+    /**
+     * Creates a {@link Configuration} from the name given in arguments.
+     * <p/>
+     * Note will not populate configuration with values from options
+     *
+     * @param arrayArgs the full list of command line arguments, including the config name
+     * @param listArgs an empty list, that will be populated with the remaining option arguments
+     * @return
+     * @throws ConfigurationException
+     */
+    private IGlobalConfiguration internalCreateGlobalConfigurationFromArgs(String[] arrayArgs,
+            List<String> optionArgsRef) throws ConfigurationException {
+        if (arrayArgs.length == 0) {
+            throw new ConfigurationException("Configuration to run was not specified");
+        }
+        optionArgsRef.addAll(Arrays.asList(arrayArgs));
+        // first arg is config name
+        final String configName = optionArgsRef.remove(0);
+        ConfigurationDef configDef = getConfigurationDef(configName, false);
+        return configDef.createGlobalConfiguration();
     }
 
     /**
@@ -238,7 +289,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
         Set<String> configNames = cpScanner.getClassPathEntries(new ConfigClasspathFilter());
         for (String configName : configNames) {
             try {
-                ConfigurationDef configDef = getConfigurationDef(configName);
+                ConfigurationDef configDef = getConfigurationDef(configName, false);
                 mConfigDefMap.put(configName, configDef);
             } catch (ConfigurationException e) {
                 Log.e(LOG_TAG, String.format("Failed to load configuration '%s'. Reason: %s",
@@ -256,8 +307,8 @@ public class ConfigurationFactory implements IConfigurationFactory {
     @Override
     public void printHelpForConfig(String[] args, boolean importantOnly, PrintStream out) {
         try {
-            IConfiguration config = internalCreateConfigurationFromArgs(args, new ArrayList<String>(
-                    args.length));
+            IConfiguration config = internalCreateConfigurationFromArgs(args,
+                    new ArrayList<String>(args.length));
             config.printCommandUsage(importantOnly, out);
         } catch (ConfigurationException e) {
             // config must not be specified. Print generic help

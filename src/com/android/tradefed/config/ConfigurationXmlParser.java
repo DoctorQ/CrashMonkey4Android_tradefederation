@@ -52,6 +52,7 @@ class ConfigurationXmlParser {
         private ConfigurationDef mConfigDef;
         private String mCurrentConfigObject;
         private final IConfigDefLoader mConfigDefLoader;
+        private Boolean isLocalConfig = null;
 
         ConfigHandler(String name, IConfigDefLoader loader) {
             mConfigDef = new ConfigurationDef(name);
@@ -69,7 +70,25 @@ class ConfigurationXmlParser {
                 final String objectTypeName = attributes.getValue("type");
                 addObject(objectTypeName, attributes);
             } else if (Configuration.isBuiltInObjType(localName)) {
-                // tag is a built in config object
+                // tag is a built in local config object
+                if (isLocalConfig == null) {
+                    isLocalConfig = true;
+                } else if (!isLocalConfig) {
+                    throwException(String.format(
+                            "Attempted to specify local object '%s' for global config!",
+                            localName));
+                }
+                addObject(localName, attributes);
+            } else if (GlobalConfiguration.isBuiltInObjType(localName)) {
+                // tag is a built in global config object
+                if (isLocalConfig == null) {
+                    // FIXME: config type should be explicit rather than inferred
+                    isLocalConfig = false;
+                } else if (isLocalConfig) {
+                    throwException(String.format(
+                            "Attempted to specify global object '%s' for local config!",
+                            localName));
+                }
                 addObject(localName, attributes);
             } else if (OPTION_TAG.equals(localName)) {
                 String optionName = attributes.getValue("name");

@@ -123,7 +123,7 @@ public class DeviceManager implements IDeviceManager {
      */
     @Override
     public synchronized void init(IDeviceSelection globalDeviceFilter,
-            Collection<String> hostLabels) {
+            Collection<String> ignoredHostLabels) {
         if (mIsInitialized) {
             throw new IllegalStateException("already initialized");
         }
@@ -170,9 +170,7 @@ public class DeviceManager implements IDeviceManager {
                     return fetchDevicesInfo();
                 }
             });
-            if (hostLabels != null) {
-                mDvcMon.setHostLabels(hostLabels);
-            }
+            mDvcMon.run();
         }
 
         // assume "adb" is in PATH
@@ -377,41 +375,15 @@ public class DeviceManager implements IDeviceManager {
      * precede any call to the no-arg {@link getInstance()} function (or, equivalently, any call to
      * this version with a <code>null</code> argument).
      *
-     * @param dvcMonClassName The fully-qualified classname of a class that implements
-     *                        {@link IDeviceMonitor}.  That class will be instantiated and used for
-     *                        monitoring.
+     * @param dvcMon An {@link IDeviceMonitor} instance to use to monitor devices.  May be null.
      * @throws IllegalStateException of the singleton has already been created
      * @throws IllegalArgumentException if it fails to instantiate the DeviceMonitor.
      */
-    public synchronized static IDeviceManager getInstance(String dvcMonClassName) {
-        if (dvcMonClassName == null) return getInstance();
+    public synchronized static IDeviceManager getInstance(IDeviceMonitor dvcMon) {
+        if (dvcMon == null) return getInstance();
 
         if (sInstance != null) {
             throw new IllegalStateException("singleton has already been created.");
-        }
-
-        IDeviceMonitor dvcMon = null;
-        try {
-            final Class<?> dvcMonClass = Class.forName(dvcMonClassName);
-
-            final Object dvcMonObj = dvcMonClass.newInstance();
-            if (dvcMonObj instanceof IDeviceMonitor) {
-                // Success case
-                dvcMon = (IDeviceMonitor) dvcMonObj;
-            } else {
-                throw new IllegalArgumentException(String.format(
-                        "Class %s does not implement IDeviceMonitor interface.", dvcMonClassName));
-            }
-        } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException(
-                    String.format("Failed to instantiate DeviceMonitor: Class %s not found",
-                            e.getMessage()));
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException(
-                    String.format("Failed to instantiate DeviceMonitor: %s", e.getMessage()));
-        } catch (IllegalAccessException e) {
-            throw new IllegalArgumentException(
-                    String.format("Failed to instantiate DeviceMonitor: %s", e.getMessage()));
         }
 
         sInstance = new DeviceManager(dvcMon, true /* use async proxy */);

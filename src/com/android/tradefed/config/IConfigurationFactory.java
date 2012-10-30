@@ -17,6 +17,7 @@
 package com.android.tradefed.config;
 
 import java.io.PrintStream;
+import java.util.List;
 
 /**
  * Factory for creating {@link IConfiguration}s
@@ -35,6 +36,22 @@ public interface IConfigurationFactory {
      * @throws {@link ConfigurationException} if configuration could not be loaded
      */
     public IConfiguration createConfigurationFromArgs(String[] args) throws ConfigurationException;
+
+    /**
+     * Create a {@link IGlobalConfiguration} from command line arguments.
+     * <p/>
+     * Expected format is "CONFIG [options]", where CONFIG is the built-in configuration name or
+     * a file path to a configuration xml file.
+     *
+     * @param args the command line arguments
+     * @param nonGlobalArgs a list which will be populated with the arguments that weren't processed
+     *                      as global arguments
+     * @return the loaded {@link IGlobalConfiguration}. The delegate object {@link Option} fields
+     *         have been populated with values in args.
+     * @throws {@link ConfigurationException} if configuration could not be loaded
+     */
+    public IGlobalConfiguration createGlobalConfigurationFromArgs(String[] args,
+            List<String> nonGlobalArgs) throws ConfigurationException;
 
     /**
      * Prints help output for this factory.

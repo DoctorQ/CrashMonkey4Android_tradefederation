@@ -623,6 +623,7 @@ public class DeviceManagerTest extends TestCase {
 
         // IDeviceMonitor calls, in order
         dvcMon.setDeviceLister((DeviceLister) EasyMock.anyObject());
+        dvcMon.run();
         // add emulators
         dvcMon.updateFullDeviceState();
         // add null devices
