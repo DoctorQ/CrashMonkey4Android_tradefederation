@@ -33,7 +33,7 @@ public class KernelDeviceBuildInfoTest extends TestCase {
     private File mKernelFile;
 
     @Override
-    protected void setUp() throws Exception {
+    public void setUp() throws Exception {
         super.setUp();
 
         mBuildInfo = new KernelDeviceBuildInfo("kernel_device", "build", "target");
@@ -49,25 +49,37 @@ public class KernelDeviceBuildInfoTest extends TestCase {
         mBuildInfo.setKernelFile(mKernelFile, KERNEL_VERSION);
     }
 
+    @Override
+    public void tearDown() throws Exception {
+        mDeviceFile.delete();
+        mKernelFile.delete();
+
+        super.tearDown();
+    }
+
     /**
      * Test method for {@link KernelDeviceBuildInfo#clone()}.
      */
     public void testClone() throws Exception {
         KernelDeviceBuildInfo copy = (KernelDeviceBuildInfo) mBuildInfo.clone();
 
-        assertEquals(mBuildInfo.getBuildBranch(), copy.getBuildBranch());
-        assertEquals(mBuildInfo.getBuildFlavor(), copy.getBuildFlavor());
-        assertEquals(mBuildInfo.getBuildId(), copy.getBuildId());
-        assertEquals(mBuildInfo.getBuildTargetName(), copy.getBuildTargetName());
-        assertEquals(mBuildInfo.getCommitTime(), copy.getCommitTime());
-        assertEquals(mBuildInfo.getShortSha1(), copy.getShortSha1());
-        assertEquals(mBuildInfo.getTestTag(), copy.getTestTag());
+        try {
+            assertEquals(mBuildInfo.getBuildBranch(), copy.getBuildBranch());
+            assertEquals(mBuildInfo.getBuildFlavor(), copy.getBuildFlavor());
+            assertEquals(mBuildInfo.getBuildId(), copy.getBuildId());
+            assertEquals(mBuildInfo.getBuildTargetName(), copy.getBuildTargetName());
+            assertEquals(mBuildInfo.getCommitTime(), copy.getCommitTime());
+            assertEquals(mBuildInfo.getShortSha1(), copy.getShortSha1());
+            assertEquals(mBuildInfo.getTestTag(), copy.getTestTag());
 
-        assertFalse(mDeviceFile.getAbsolutePath().equals(copy.getDeviceImageFile()));
-        assertTrue(FileUtil.compareFileContents(mDeviceFile, copy.getDeviceImageFile()));
+            assertFalse(mDeviceFile.getAbsolutePath().equals(copy.getDeviceImageFile()));
+            assertTrue(FileUtil.compareFileContents(mDeviceFile, copy.getDeviceImageFile()));
 
-        assertFalse(mKernelFile.getAbsolutePath().equals(copy.getKernelFile()));
-        assertTrue(FileUtil.compareFileContents(mKernelFile, copy.getKernelFile()));
+            assertFalse(mKernelFile.getAbsolutePath().equals(copy.getKernelFile()));
+            assertTrue(FileUtil.compareFileContents(mKernelFile, copy.getKernelFile()));
+        } finally {
+            copy.cleanUp();
+        }
     }
 
     /**

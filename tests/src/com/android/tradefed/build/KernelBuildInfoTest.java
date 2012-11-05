@@ -40,8 +40,8 @@ public class KernelBuildInfoTest extends TestCase {
 
     @Override
     protected void tearDown() throws Exception {
-        super.tearDown();
         FileUtil.deleteFile(mKernelFile);
+        super.tearDown();
     }
 
     /**
@@ -50,16 +50,20 @@ public class KernelBuildInfoTest extends TestCase {
     public void testClone() throws Exception {
         IKernelBuildInfo copy = (KernelBuildInfo) mBuildInfo.clone();
 
-        assertEquals(mBuildInfo.getBuildBranch(), copy.getBuildBranch());
-        assertEquals(mBuildInfo.getBuildFlavor(), copy.getBuildFlavor());
-        assertEquals(mBuildInfo.getBuildId(), copy.getBuildId());
-        assertEquals(mBuildInfo.getBuildTargetName(), copy.getBuildTargetName());
-        assertEquals(mBuildInfo.getCommitTime(), copy.getCommitTime());
-        assertEquals(mBuildInfo.getShortSha1(), copy.getShortSha1());
-        assertEquals(mBuildInfo.getTestTag(), copy.getTestTag());
+        try {
+            assertEquals(mBuildInfo.getBuildBranch(), copy.getBuildBranch());
+            assertEquals(mBuildInfo.getBuildFlavor(), copy.getBuildFlavor());
+            assertEquals(mBuildInfo.getBuildId(), copy.getBuildId());
+            assertEquals(mBuildInfo.getBuildTargetName(), copy.getBuildTargetName());
+            assertEquals(mBuildInfo.getCommitTime(), copy.getCommitTime());
+            assertEquals(mBuildInfo.getShortSha1(), copy.getShortSha1());
+            assertEquals(mBuildInfo.getTestTag(), copy.getTestTag());
 
-        assertFalse(mKernelFile.getAbsolutePath().equals(copy.getKernelFile()));
-        assertTrue(FileUtil.compareFileContents(mKernelFile, copy.getKernelFile()));
+            assertFalse(mKernelFile.getAbsolutePath().equals(copy.getKernelFile()));
+            assertTrue(FileUtil.compareFileContents(mKernelFile, copy.getKernelFile()));
+        } finally {
+            copy.cleanUp();
+        }
     }
 
     /**

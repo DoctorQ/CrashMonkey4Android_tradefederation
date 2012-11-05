@@ -17,6 +17,7 @@
 
 package com.android.tradefed.device;
 
+import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.TestCase;
@@ -66,8 +67,13 @@ public class LargeOutputReceiverTest extends TestCase {
             byte[] inputData3 = input3.getBytes();
             helper.addOutput(inputData3, 0, inputData3.length);
 
-            String actualString = StreamUtil.getStringFromStream(
-                    helper.getData().createInputStream());
+            InputStreamSource iss = helper.getData();
+            String actualString;
+            try {
+                actualString = StreamUtil.getStringFromStream(iss.createInputStream());
+            } finally {
+                iss.cancel();
+            }
             // verify that data from both the backup log file (input2) and current log file
             // (input3) is retrieved
             assertFalse(actualString.contains(input1));
