@@ -33,6 +33,7 @@ import com.android.tradefed.result.InvocationSummaryHelper;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.targetprep.BuildError;
+import com.android.tradefed.targetprep.ITargetCleaner;
 import com.android.tradefed.targetprep.ITargetPreparer;
 import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.testtype.IBuildReceiver;
@@ -269,6 +270,7 @@ public class TestInvocation implements ITestInvocation {
         boolean resumed = false;
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
+        Throwable exception = null;
 
         info.setDeviceSerial(device.getSerialNumber());
         startInvocation(config, device, info);
@@ -283,10 +285,12 @@ public class TestInvocation implements ITestInvocation {
                     device.getSerialNumber(), e.toString());
             takeBugreport(device, config.getTestInvocationListeners());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
+            exception = e;
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");
             CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
+            exception = e;
         } catch (DeviceNotAvailableException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Invocation did not complete due to device %s becoming not available. " +
@@ -297,15 +301,18 @@ public class TestInvocation implements ITestInvocation {
             } else {
                 CLog.i("Rescheduled failed invocation for resume");
             }
+            exception = e;
             throw e;
         } catch (RuntimeException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Unexpected exception when running invocation: %s", e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
+            exception = e;
             throw e;
         } catch (AssertionError e) {
             CLog.w("Caught AssertionError while running invocation: ", e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
+            exception = e;
         } finally {
             mStatus = "done running tests";
             try {
@@ -314,6 +321,18 @@ public class TestInvocation implements ITestInvocation {
                 if (!resumed) {
                     InvocationSummaryHelper.reportInvocationEnded(
                             config.getTestInvocationListeners(), elapsedTime);
+                }
+
+                for (ITargetPreparer preparer : config.getTargetPreparers()) {
+                    // Note: adjusted indentation below for legibility.  If preparer is an
+                    // ITargetCleaner and we didn't hit DeviceNotAvailableException, then...
+                    if (preparer instanceof ITargetCleaner &&
+                            !(exception != null &&
+                              exception instanceof DeviceNotAvailableException)) {
+                            ITargetCleaner cleaner = (ITargetCleaner) preparer;
+                            cleaner.tearDown(device, info, exception);
+                        }
+                    }
                 }
             } finally {
                 config.getBuildProvider().cleanUp(info);
