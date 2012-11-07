@@ -23,11 +23,14 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
-public class RunCommandTargetPreparer implements ITargetPreparer {
+public class RunCommandTargetPreparer implements ITargetCleaner {
     @Option(name = "run-command", description = "adb shell command to run")
-    private Collection<String> mCommands = new ArrayList<String>();
+    private List<String> mCommands = new ArrayList<String>();
+
+    @Option(name = "teardown-command", description = "adb shell command to run at teardown time")
+    private List<String> mTeardownCommands = new ArrayList<String>();
 
     /**
      * {@inheritDoc}
@@ -38,7 +41,21 @@ public class RunCommandTargetPreparer implements ITargetPreparer {
         for (String cmd : mCommands) {
             // If the command had any output, the executeShellCommand method will log it at the
             // VERBOSE level; so no need to do any logging from here.
-            CLog.d("About to run command on device %s: %s", device.getSerialNumber(), cmd);
+            CLog.d("About to run setup command on device %s: %s", device.getSerialNumber(), cmd);u
+            device.executeShellCommand(cmd);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void tearDown(ITestDevice device, IBuildInfo buildInfo, Throwable e)
+            throws DeviceNotAvailableException {
+        for (String cmd : mTeardownCommands) {
+            // If the command had any output, the executeShellCommand method will log it at the
+            // VERBOSE level; so no need to do any logging from here.
+            CLog.d("About to run tearDown command on device %s: %s", device.getSerialNumber(), cmd);
             device.executeShellCommand(cmd);
         }
     }
