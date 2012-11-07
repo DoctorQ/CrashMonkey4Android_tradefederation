@@ -329,9 +329,8 @@ public class TestInvocation implements ITestInvocation {
                     if (preparer instanceof ITargetCleaner &&
                             !(exception != null &&
                               exception instanceof DeviceNotAvailableException)) {
-                            ITargetCleaner cleaner = (ITargetCleaner) preparer;
-                            cleaner.tearDown(device, info, exception);
-                        }
+                        ITargetCleaner cleaner = (ITargetCleaner) preparer;
+                        cleaner.tearDown(device, info, exception);
                     }
                 }
             } finally {

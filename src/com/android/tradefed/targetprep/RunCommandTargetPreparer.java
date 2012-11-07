@@ -41,7 +41,7 @@ public class RunCommandTargetPreparer implements ITargetCleaner {
         for (String cmd : mCommands) {
             // If the command had any output, the executeShellCommand method will log it at the
             // VERBOSE level; so no need to do any logging from here.
-            CLog.d("About to run setup command on device %s: %s", device.getSerialNumber(), cmd);u
+            CLog.d("About to run setup command on device %s: %s", device.getSerialNumber(), cmd);
             device.executeShellCommand(cmd);
         }
     }
