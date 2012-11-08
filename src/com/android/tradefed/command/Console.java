@@ -81,6 +81,9 @@ public class Console extends Thread {
 
     private static ConsoleReaderOutputStream sConsoleStream = null;
 
+    private static final String GLOBAL_CONFIG_VARIABLE = "TF_GLOBAL_CONFIG";
+    private static final String GLOBAL_CONFIG_FILENAME = "tf_global_config.xml";
+
     protected ICommandScheduler mScheduler;
     protected ConsoleReader mConsoleReader;
     private RegexTrie<Runnable> mCommandTrie = new RegexTrie<Runnable>();
@@ -870,6 +873,41 @@ public class Console extends Thread {
     }
 
     /**
+     * Returns the path to a global config, if one exists, or <code>null</code> if none could be
+     * found.
+     * <p />
+     * Search locations, in decreasing order of precedence
+     * <ol>
+     *   <li><code>$TF_GLOBAL_CONFIG</code> environment variable</li>
+     *   <li><code>tf_global_config.xml</code> file in $PWD</li>
+     *   <li>(FIXME) <code>tf_global_config.xml</code> file in dir where <code>tradefed.sh</code>
+     *       lives</li>
+     * </ol>
+     */
+    private static String getGlobalConfigPath() throws ConfigurationException {
+        String path = System.getenv(GLOBAL_CONFIG_VARIABLE);
+        if (path != null) {
+            // don't actually check for accessibility here, since the variable might be specifying
+            // a java resource rather than a filename.  Even so, this can help the user figure out
+            // which global config (if any) was picked up by TF.
+            System.err.format("Attempting to use global config \"%s\" from variable $%s.\n",
+                    path, GLOBAL_CONFIG_VARIABLE);
+            return path;
+        }
+
+        File file = new File(GLOBAL_CONFIG_FILENAME);
+        if (file.exists()) {
+            path = file.getPath();
+            System.err.format("Attempting to use autodetected global config \"%s\".\n", path);
+            return path;
+        }
+
+        // FIXME: search in tradefed.sh launch dir (or classpath?)
+
+        return null;
+    }
+
+    /**
      * Starts the given tradefed console with given args
      *
      * @param console the {@link Console} to start
@@ -880,11 +918,11 @@ public class Console extends Thread {
         List<String> nonGlobalArgs = new LinkedList<String>();
         IGlobalConfiguration globalConfig = new GlobalConfiguration();
         IConfigurationFactory configFactory = ConfigurationFactory.getInstance();
-        String globalConfigPath = System.getenv("TF_GLOBAL_CONFIG");
+        String globalConfigPath = getGlobalConfigPath();
         if (globalConfigPath != null) {
             globalConfig = configFactory.createGlobalConfigurationFromArgs(
                     ArrayUtil.buildArray(new String[] {globalConfigPath}, args), nonGlobalArgs);
-            System.out.format("Using global config %s\n", globalConfigPath);
+            System.err.format("Success!  Using global config \"%s\"\n", globalConfigPath);
         } else {
             nonGlobalArgs = Arrays.asList(args);
         }

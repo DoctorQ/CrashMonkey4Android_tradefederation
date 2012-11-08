@@ -459,16 +459,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * Initialize the device manager, optionally using a global device filter if specified.
      */
     void initDeviceManager(IDeviceMonitor deviceMonitor, IDeviceSelection selector) {
-/*
-                CLog.logAndDisplay(LogLevel.INFO, "Using global device filter config %s",
-                        globalConfigPath);
-                getDeviceManager(deviceMonitorClassName).init(globalConfig.getDeviceRequirements(),
-                        labels);
-*/
-        if (selector != null) {
-            CLog.logAndDisplay(LogLevel.INFO, "Using global device filter!");
-        }
-
         // initialize the device manager with no global device filter
         getDeviceManager(deviceMonitor).init(selector, null);
     }
