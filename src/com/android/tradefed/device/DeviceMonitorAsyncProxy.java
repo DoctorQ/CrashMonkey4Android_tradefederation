@@ -95,7 +95,13 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
     public void run() {
         if (mDispatcher != null) {
             mDispatcher.start();
-            mChildMonitor.run();
+            // send this through the queue to make sure the message arrives in order
+            mRunnableQueue.add(new Runnable() {
+                @Override
+                public void run() {
+                    mChildMonitor.run();
+                }
+            });
         }
     }
 
