@@ -28,6 +28,7 @@ import com.android.tradefed.device.ITestDevice;
 public class DeviceBuildDescriptor {
 
     private static final String DEVICE_BUILD_ID = "device_build_id";
+    private static final String DEVICE_BUILD_ALIAS = "device_build_alias";
     private static final String DEVICE_PRODUCT = "device_product_name";
     private static final String DEVICE_BUILD_TYPE = "device_build_type";
 
@@ -48,10 +49,18 @@ public class DeviceBuildDescriptor {
     }
 
     /**
-     * Gets the device build ID.
+     * Gets the device build ID. Maps to the ro.build.incremental.id property on device.
      */
     public String getDeviceBuildId() {
         return mBuild.getBuildAttributes().get(DEVICE_BUILD_ID);
+    }
+
+    /**
+     * Gets the device build alias. Maps to the ro.build.id property on device. Typically follows
+     * format IMM76.
+     */
+    public String getDeviceBuildAlias() {
+        return mBuild.getBuildAttributes().get(DEVICE_BUILD_ALIAS);
     }
 
     /**
@@ -76,7 +85,8 @@ public class DeviceBuildDescriptor {
      */
     public static void injectDeviceAttributes(ITestDevice device, IBuildInfo b)
             throws DeviceNotAvailableException {
-        b.addBuildAttribute(DEVICE_BUILD_ID, device.getProperty("ro.build.id"));
+        b.addBuildAttribute(DEVICE_BUILD_ID, device.getBuildId());
+        b.addBuildAttribute(DEVICE_BUILD_ALIAS, device.getProperty("ro.build.id"));
         b.addBuildAttribute(DEVICE_PRODUCT, device.getProperty("ro.product.name"));
         b.addBuildAttribute(DEVICE_BUILD_TYPE, device.getProperty("ro.build.type"));
     }
