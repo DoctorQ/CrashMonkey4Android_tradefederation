@@ -58,6 +58,11 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
             importance = Importance.IF_UNSET)
     private String mTestSize = null;
 
+    @Option(name = "runner",
+            description = "Restrict tests executed to a specific instrumentation class runner. " +
+    "Installed instrumentations that do not have this runner will be skipped.")
+    private String mRunner = null;
+
     @Option(name = "rerun",
             description = "Rerun unexecuted tests individually on same device if test run " +
             "fails to complete.")
@@ -128,7 +133,7 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
      */
     private void buildTests() throws DeviceNotAvailableException {
         if (mTests == null) {
-            ListInstrumentationParser parser = new ListInstrumentationParser();
+            ListInstrumentationParser parser = new ListInstrumentationParser(mRunner);
             getDevice().executeShellCommand("pm list instrumentation", parser);
             if (parser.getParsedTests().isEmpty()) {
                 throw new IllegalArgumentException(String.format(
@@ -210,6 +215,14 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
     private class ListInstrumentationParser extends MultiLineReceiver {
 
         private List<InstrumentationTest> mTests = new LinkedList<InstrumentationTest>();
+        private String mRunnerFilter;
+
+        /**
+         * @param mRunner
+         */
+        public ListInstrumentationParser(String runner) {
+            mRunnerFilter = runner;
+        }
 
         /**
          * {@inheritDoc}
@@ -228,15 +241,18 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
 
                 Matcher m = LIST_INSTR_PATTERN.matcher(line);
                 if (m.find()) {
-                    InstrumentationTest t = createInstrumentationTest();
-                    t.setPackageName(m.group(1));
-                    t.setRunnerName(m.group(2));
-                    t.setCoverageTarget(m.group(3));
-                    t.setRerunMode(mIsRerunMode);
-                    t.setResumeMode(mIsResumeMode);
-                    t.setTestSize(getTestSize());
-                    t.setTestTimeout(getTestTimeout());
-                    mTests.add(t);
+                    String runner = m.group(2);
+                    if (mRunnerFilter == null || mRunnerFilter.equals(runner)) {
+                        InstrumentationTest t = createInstrumentationTest();
+                        t.setPackageName(m.group(1));
+                        t.setRunnerName(runner);
+                        t.setCoverageTarget(m.group(3));
+                        t.setRerunMode(mIsRerunMode);
+                        t.setResumeMode(mIsResumeMode);
+                        t.setTestSize(getTestSize());
+                        t.setTestTimeout(getTestTimeout());
+                        mTests.add(t);
+                    }
                 }
             }
         }
