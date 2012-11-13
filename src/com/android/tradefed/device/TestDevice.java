@@ -76,8 +76,8 @@ class TestDevice implements IManagedTestDevice {
     /** the default number of command retry attempts to perform */
     static final int MAX_RETRY_ATTEMPTS = 2;
     private static final String BUGREPORT_CMD = "bugreport";
-    private static final String LIST_PACKAGES_CMD = "pm list packages";
-    private static final Pattern PACKAGE_REGEX = Pattern.compile("package:(.*)");
+    static final String LIST_PACKAGES_CMD = "pm list packages -f";
+    private static final Pattern PACKAGE_REGEX = Pattern.compile("package:(.*)=(.*)");
     /**
      * Allow pauses of up to 2 minutes while receiving bugreport.  Note that dumpsys may pause up to
      * a minute while waiting for unresponsive components, but should bail after that minute, if it
@@ -2373,13 +2373,43 @@ class TestDevice implements IManagedTestDevice {
      */
     @Override
     public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException {
+        return getInstalledPackageNames(new PkgFilter() {
+            @Override
+            public boolean accept(String pkgName, String apkPath) {
+                return true;
+            }
+        });
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException {
+        return getInstalledPackageNames(new PkgFilter() {
+            @Override
+            public boolean accept(String pkgName, String apkPath) {
+                return !apkPath.startsWith("/system");
+            }
+        });
+    }
+
+    private static interface PkgFilter {
+        boolean accept(String pkgName, String apkPath);
+    }
+
+    private Set<String> getInstalledPackageNames(PkgFilter filter)
+            throws DeviceNotAvailableException {
         Set<String> packages= new HashSet<String>();
         String output = executeShellCommand(LIST_PACKAGES_CMD);
         if (output != null) {
             Matcher m = PACKAGE_REGEX.matcher(output);
             while (m.find()) {
-                String packageName = m.group(1);
-                packages.add(packageName);
+                String packagePath = m.group(1);
+                String packageName = m.group(2);
+                if (filter.accept(packageName, packagePath)) {
+                    packages.add(packageName);
+                }
             }
         }
         return packages;

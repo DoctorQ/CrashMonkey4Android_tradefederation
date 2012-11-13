@@ -882,11 +882,21 @@ public interface ITestDevice {
     public TestDeviceOptions getOptions();
 
     /**
-     * Fetch the package names installed on the device.
+     * Fetch the application package names present on the device.
      *
      * @return {@link Set} of {@link String} package names currently installed on the device.
      * @throws DeviceNotAvailableException
      */
     public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException;
+
+    /**
+     * Fetch the application package names , filtering out apks installed on the
+     * devices /system partition. This can also be thought of as the list of uninstallable
+     * package names.
+     *
+     * @return {@link Set} of {@link String} package names currently installed on the device.
+     * @throws DeviceNotAvailableException
+     */
+    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException;
 
 }

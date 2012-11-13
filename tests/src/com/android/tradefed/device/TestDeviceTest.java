@@ -42,7 +42,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -999,24 +998,41 @@ public class TestDeviceTest extends TestCase {
     /**
      * Unit test for {@link TestDevice#getInstalledPackageNames()}.
      */
-    public void testgetInstalledPackageNames() throws Exception {
-        final String output = "package:com.android.wallpaper\n"
-                + "package:com.android.wallpaper.livepickler";
-        Set<String> expected = new HashSet<String>();
-        expected.add("com.android.wallpaper");
-        expected.add("com.android.wallpaper.livepickler");
-        assertgetInstalledPackageNames(output, expected);
+    public void testGetInstalledPackageNames() throws Exception {
+        final String output = "package:/system/app/LiveWallpapers.apk=com.android.wallpaper\n" +
+                "package:/system/app/LiveWallpapersPicker.apk=com.android.wallpaper.livepicker";
+        injectShellResponse(TestDevice.LIST_PACKAGES_CMD, output);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
+        Set<String> actualPkgs = mTestDevice.getInstalledPackageNames();
+        assertEquals(2, actualPkgs.size());
+        assertTrue(actualPkgs.contains("com.android.wallpaper"));
+        assertTrue(actualPkgs.contains("com.android.wallpaper.livepicker"));
+    }
+
+    /**
+     * Unit test for {@link TestDevice#getInstalledNonSystemPackageNames()}.
+     */
+    public void testGetInstalledNonSystemPackageNames() throws Exception {
+        final String output = "package:/data/app/LiveWallpapers.apk=com.android.wallpaper\n" +
+                "package:/system/app/LiveWallpapersPicker.apk=com.android.wallpaper.livepicker";
+        injectShellResponse(TestDevice.LIST_PACKAGES_CMD, output);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
+        Set<String> actualPkgs = mTestDevice.getInstalledNonSystemPackageNames();
+        assertEquals(1, actualPkgs.size());
+        assertTrue(actualPkgs.contains("com.android.wallpaper"));
     }
 
     /**
      * Unit test for {@link TestDevice#getInstalledPackageNames()}.
      * <p/>
-     * Test bad bad output.
+     * Test bad output.
      */
-    public void testgetInstalledPackageNamesForBadOutput() throws Exception {
+    public void testGetInstalledPackageNamesForBadOutput() throws Exception {
         final String output = "junk output";
-        Set<String> expected = new HashSet<String>();
-        assertgetInstalledPackageNames(output, expected);
+        injectShellResponse(TestDevice.LIST_PACKAGES_CMD, output);
+        EasyMock.replay(mMockIDevice, mMockMonitor);
+        Set<String> actualPkgs = mTestDevice.getInstalledPackageNames();
+        assertEquals(0, actualPkgs.size());
     }
 
     /**
@@ -1123,22 +1139,6 @@ public class TestDeviceTest extends TestCase {
         assertEquals("errors=remount-ro", mpi.options.get(15));
 
         assertNull(mTestDevice.getMountPointInfo("/a/mountpoint/too/far"));
-    }
-
-    /**
-     * Helper method to verify the {@link TestDevice#getInstalledPackageNames()} method under
-     * different conditions.
-     *
-     * @param output the test output to inject
-     * @param expectedPackages the expected {@link Set} of packages to expect
-     */
-    private void assertgetInstalledPackageNames(final String output, Set<String> expectedPackages)
-            throws Exception {
-        final String expectedCmd = "pm list packages";
-        // expect shell command to be called, and return the test shell output
-        injectShellResponse(expectedCmd, output);
-        EasyMock.replay(mMockIDevice, mMockMonitor);
-        assertEquals(expectedPackages, mTestDevice.getInstalledPackageNames());
     }
 }
 
