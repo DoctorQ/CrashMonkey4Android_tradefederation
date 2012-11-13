@@ -131,5 +131,24 @@ public class DeviceMonitorAsyncProxyTest extends TestCase {
 
         EasyMock.verify(mMockMonitor, mMockDevice);
     }
+
+    /**
+     * Ensure that a RuntimeException thrown by a Runnable is logged with CLog before the Dispatcher
+     * thread exits, so that we can see historical evidence of the exception happening.
+     * <p />
+     * Note that this test requires manual verification
+     */
+    public void testException() {
+        mProxy.run();
+        mProxy.getRunnableQueue().add(new Runnable() {
+            @Override
+            public void run() {
+                throw new RuntimeException("boom.");
+            }
+        });
+
+        // Wait for magic to happen
+        RunUtil.getDefault().sleep(100);
+    }
 }
 

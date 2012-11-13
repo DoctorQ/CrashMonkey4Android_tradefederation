@@ -17,6 +17,7 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.Collection;
 import java.util.Map;
@@ -55,6 +56,11 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
                     runner.run();
                 } catch (InterruptedException e) {
                     // ignore.  This just gives us an opportunity to re-evaluate mCanceled
+                } catch (RuntimeException e) {
+                    // Log and rethrow
+                    CLog.e("Encountered an exception; this will break device monitoring");
+                    CLog.e(e);
+                    throw e;
                 }
             }
         }
@@ -176,8 +182,18 @@ public class DeviceMonitorAsyncProxy implements IDeviceMonitor {
         mChildMonitor = null;
     }
 
+    /**
+     * Returns the dispatcher.  Exposed for unit testing.
+     */
     Dispatcher getDispatcher() {
         return mDispatcher;
+    }
+
+    /**
+     * Returns the run queue.  Exposed for unit testing.
+     */
+    BlockingQueue<Runnable> getRunnableQueue() {
+        return mRunnableQueue;
     }
 }
 
