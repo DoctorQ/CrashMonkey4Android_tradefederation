@@ -20,27 +20,24 @@ import com.android.tradefed.build.IAppBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.VersionedFile;
 import com.android.tradefed.config.Option;
-import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * A {@link ITargetPreparer} that installs an apk and its tests.
  */
-public class AppSetup implements ITargetPreparer {
+public class AppSetup implements ITargetPreparer, ITargetCleaner{
 
     private static final String LOG_TAG = "AppSetup";
 
-    @Option(name="app-package-name", description="the package name(s) of app and tests. " +
-            "Used for device cleanup of old packages before starting tests.",
-            importance = Importance.IF_UNSET)
-    private Collection<String> mAppPackageNames = new ArrayList<String>();
-
     @Option(name="reboot", description="reboot device during setup.")
     private boolean mReboot = true;
+
+    @Option(name="uninstall", description="uninstall all apks after test completes.")
+    private boolean mUninstall = true;
 
     /**
      * {@inheritDoc}
@@ -53,9 +50,6 @@ public class AppSetup implements ITargetPreparer {
         }
         IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
         Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
-        for (String packageName : mAppPackageNames) {
-            device.uninstallPackage(packageName);
-        }
 
         if (mReboot) {
             // reboot device to get a clean state
@@ -71,4 +65,21 @@ public class AppSetup implements ITargetPreparer {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void tearDown(ITestDevice device, IBuildInfo buildInfo, Throwable e)
+            throws DeviceNotAvailableException {
+        if (mUninstall) {
+            Set<String> pkgs = device.getInstalledNonSystemPackageNames();
+            for (String pkg : pkgs) {
+                String result = device.uninstallPackage(pkg);
+                if (result != null) {
+                    CLog.w("Uninstall of %s on %s failed: %s", pkg, device.getSerialNumber(),
+                            result);
+                }
+            }
+        }
+    }
 }

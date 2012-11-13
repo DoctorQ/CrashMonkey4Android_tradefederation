@@ -699,4 +699,12 @@ public class StubTestDevice implements IManagedTestDevice {
         // ignore
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException {
+        return null;
+    }
 }
