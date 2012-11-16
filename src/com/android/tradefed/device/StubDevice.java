@@ -89,14 +89,6 @@ class StubDevice implements IDevice {
      * {@inheritDoc}
      */
     @Override
-    public String getName() {
-        return null;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
     public Client getClient(String applicationName) {
         return null;
     }
@@ -390,5 +382,13 @@ class StubDevice implements IDevice {
             DeviceUnixSocketNamespace namespace) throws TimeoutException,
             AdbCommandRejectedException, IOException {
         // ignore
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getName() {
+        return null;
     }
 }

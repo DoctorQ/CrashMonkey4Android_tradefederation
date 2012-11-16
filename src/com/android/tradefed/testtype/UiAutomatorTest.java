@@ -30,6 +30,7 @@ import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +91,9 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     @Option(name = "ignore-sighup",
             description = "allows uiautomator test to ignore SIGHUP signal")
     private boolean mIgnoreSighup = false;
+
+    private String mRunName;
+
     /**
      * {@inheritDoc}
      */
@@ -110,14 +114,19 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         mLoggingOption = loggingOption;
     }
 
+    public void setRunName(String runName) {
+        mRunName = runName;
+    }
+
     /**
      * {@inheritDoc}
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        setTestRunner(new UiAutomatorRunner(getDevice().getIDevice(),
+        mRunner = new UiAutomatorRunner(getDevice().getIDevice(),
                 getTestJarPaths().toArray(new String[]{}),
-                mClasses.toArray(new String[]{}), mRunnerPath));
+                mClasses.toArray(new String[]{}), mRunnerPath);
+        mRunner.setRunName(mRunName);
         preTestSetup();
         getRunUtil().sleep(getSyncTime());
         mRunner.setMaxtimeToOutputResponse(mTestTimeout);
@@ -249,13 +258,6 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * @param runner {@link UiAutomatorRunner} to set.
-     */
-    public void setTestRunner(UiAutomatorRunner runner) {
-        mRunner = runner;
-    }
-
-    /**
      * @return the test jar path.
      */
     public List<String> getTestJarPaths() {
@@ -281,5 +283,19 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
      */
     public void setTestRunArgMap(Map<String, String> runArgMap) {
         mArgMap = runArgMap;
+    }
+
+    /**
+     * Add a test class name to run.
+     */
+    public void addClassName(String className) {
+        mClasses.add(className);
+    }
+
+    /**
+     * Add a test class name collection to run.
+     */
+    public void addClassNames(Collection<String> classNames) {
+        mClasses.addAll(classNames);
     }
 }
