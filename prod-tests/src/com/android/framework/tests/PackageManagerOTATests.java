@@ -295,7 +295,8 @@ public class PackageManagerOTATests extends DeviceTestCase {
         assertTrue("ACCESS_CACHE_FILESYSTEM permission should be granted",
                 mUtils.packageHasPermission(PACKAGE_NAME, CACHE_PERMISSION));
 
-        mUtils.installFile(getTestAppFilePath(VERSION_1_APK), true);
+        // The "=d" command forces a downgrade.
+        mUtils.installFile(getTestAppFilePath(VERSION_1_APK), true, "-d");
         mPackageXml = mUtils.pullPackagesXML();
         assertFalse("After system app upgrade, the path should be the upgraded app on /data",
                 mUtils.expectEquals(mPackageXml, CODE_PATH_XPATH, SYSTEM_APP_PATH));
