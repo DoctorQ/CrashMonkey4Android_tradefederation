@@ -207,13 +207,15 @@ public class PackageManagerOTATestUtils {
      * Helper method to install a file
      *
      * @param localFile the {@link File} to install
-     * @param reinstall set to <code>true</code> if re-install of app should be
-     *            performed
+     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
+     *            available options.
+     *
      * @throws DeviceNotAvailableException
      */
-    public void installFile(final File localFile, final boolean replace)
+    public void installFile(final File localFile, final boolean replace, String... extraArgs)
             throws DeviceNotAvailableException {
-        String result = mDevice.installPackage(localFile, replace);
+        String result = mDevice.installPackage(localFile, replace, extraArgs);
         Assert.assertNull(String.format("Failed to install file %s with result %s",
                 localFile.getAbsolutePath(), result), result);
     }
