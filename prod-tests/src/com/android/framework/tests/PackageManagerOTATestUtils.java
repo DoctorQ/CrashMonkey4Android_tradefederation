@@ -239,12 +239,15 @@ public class PackageManagerOTATestUtils {
     }
 
     /**
-     * Helper method to start system shell.
+     * Helper method to start system shell. It also reset the flag dev.bootcomplete to 0 to ensure
+     * that the package manager had a chance to finish.
      *
      * @throws DeviceNotAvailableException
      */
     public void startSystem() throws DeviceNotAvailableException {
+        mDevice.executeShellCommand("setprop dev.bootcomplete 0");
         mDevice.executeShellCommand("start");
+        mDevice.waitForDeviceAvailable();
     }
 
     /**
