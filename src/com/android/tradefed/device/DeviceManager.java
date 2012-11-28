@@ -21,6 +21,8 @@ import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.GlobalConfiguration;
+import com.android.tradefed.config.IGlobalConfiguration;
 import com.android.tradefed.device.IDeviceMonitor.DeviceLister;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.util.ArrayUtil;
@@ -62,8 +64,8 @@ public class DeviceManager implements IDeviceManager {
      * for testing */
     private static final int CHECK_WAIT_DEVICE_AVAIL_MS = 30 * 1000;
 
-    /** a {@link DeviceSelectionOptions} that matches any device */
-    private static final IDeviceSelection ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
+    /** a {@link DeviceSelectionOptions} that matches any device.  Visible for testing. */
+    static final IDeviceSelection ANY_DEVICE_OPTIONS = new DeviceSelectionOptions();
 
     private static DeviceManager sInstance;
 
@@ -95,14 +97,15 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager() {
-        this(null, true);
+        this(true);
     }
 
     /**
      * Package-private constructor, should only be used by this class and its associated unit test.
      * Use {@link #getInstance()} instead.
      */
-    DeviceManager(IDeviceMonitor dvcMon, boolean useProxy) {
+    DeviceManager(boolean useProxy) {
+        IDeviceMonitor dvcMon = getGlobalConfig().getDeviceMonitor();
         if (useProxy) {
             mDvcMon = new DeviceMonitorAsyncProxy(dvcMon);
         } else {
@@ -114,7 +117,7 @@ public class DeviceManager implements IDeviceManager {
 
     @Override
     public void init() {
-        init(ANY_DEVICE_OPTIONS, null);
+        init(null);
     }
 
     /**
@@ -122,14 +125,13 @@ public class DeviceManager implements IDeviceManager {
      * methods are called.
      */
     @Override
-    public synchronized void init(IDeviceSelection globalDeviceFilter,
-            Collection<String> ignoredHostLabels) {
+    public synchronized void init(IDeviceSelection globalDeviceFilter) {
         if (mIsInitialized) {
             throw new IllegalStateException("already initialized");
         }
 
         if (globalDeviceFilter == null) {
-            globalDeviceFilter = ANY_DEVICE_OPTIONS;
+            globalDeviceFilter = getGlobalConfig().getDeviceRequirements();
         }
 
         mIsInitialized = true;
@@ -221,6 +223,15 @@ public class DeviceManager implements IDeviceManager {
      */
     void startFastbootMonitor() {
         mFastbootMonitor.start();
+    }
+
+    /**
+     * Get the {@link IGlobalConfiguration} instance to use.
+     * <p />
+     * Exposed for unit testing.
+     */
+    IGlobalConfiguration getGlobalConfig() {
+        return GlobalConfiguration.getInstance();
     }
 
     /**
@@ -364,32 +375,6 @@ public class DeviceManager implements IDeviceManager {
         }
         return sInstance;
     }
-
-    /**
-     * Create a new {@link IDeviceManager} singleton with the specified IDeviceMonitor
-     * implementation.  If the specified {@link IDeviceMonitor} class name is <code>null</code>,
-     * this function immediately falls back to the no-arg {@link getInstance()} function, which does
-     * not throw.
-     * <p />
-     * This function may be called once and only once with a non-null argument, and that call must
-     * precede any call to the no-arg {@link getInstance()} function (or, equivalently, any call to
-     * this version with a <code>null</code> argument).
-     *
-     * @param dvcMon An {@link IDeviceMonitor} instance to use to monitor devices.  May be null.
-     * @throws IllegalStateException of the singleton has already been created
-     * @throws IllegalArgumentException if it fails to instantiate the DeviceMonitor.
-     */
-    public synchronized static IDeviceManager getInstance(IDeviceMonitor dvcMon) {
-        if (dvcMon == null) return getInstance();
-
-        if (sInstance != null) {
-            throw new IllegalStateException("singleton has already been created.");
-        }
-
-        sInstance = new DeviceManager(dvcMon, true /* use async proxy */);
-        return sInstance;
-    }
-
 
     void updateDeviceMonitor() {
         if (mDvcMon == null) return;

@@ -20,9 +20,12 @@ import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceMonitor;
 import com.android.tradefed.device.IDeviceSelection;
 import com.android.tradefed.device.StubDeviceMonitor;
+import com.android.tradefed.util.ArrayUtil;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -39,11 +42,96 @@ public class GlobalConfiguration implements IGlobalConfiguration {
     public static final String DEVICE_REQUIREMENTS_TYPE_NAME = "device_requirements";
 
     private static Map<String, ObjTypeInfo> sObjTypeMap = null;
+    private static IGlobalConfiguration sInstance = null;
+    private static final Object sInstanceLock = new Object();
+
+    private static final String GLOBAL_CONFIG_VARIABLE = "TF_GLOBAL_CONFIG";
+    private static final String GLOBAL_CONFIG_FILENAME = "tf_global_config.xml";
 
     /** Mapping of config object type name to config objects. */
     private Map<String, List<Object>> mConfigMap;
     private final String mName;
     private final String mDescription;
+
+    /**
+     * Returns a reference to the singleton {@link GlobalConfiguration} instance for this TF
+     * instance.
+     *
+     * @throws IllegalStateException if {@see createGlobalConfiguration(String[])} has not already
+     *         been called.
+     */
+    public static IGlobalConfiguration getInstance() {
+        if (sInstance == null) {
+            throw new IllegalStateException("GlobalConfiguration has not yet been initialized!");
+        }
+        return sInstance;
+    }
+
+    /**
+     * Sets up the {@link GlobalConfiguration} singleton for this TF instance.  Must be called
+     * once and only once, before anything attempts to call {@see getInstance()}
+     *
+     * @throws IllegalStateException if called more than once
+     */
+    public static List<String> createGlobalConfiguration(String[] args)
+            throws ConfigurationException {
+        synchronized (sInstanceLock) {
+            if (sInstance != null) {
+                throw new IllegalStateException("GlobalConfiguration is already initialized!");
+            }
+
+            List<String> nonGlobalArgs = new ArrayList<String>(args.length);
+            IConfigurationFactory configFactory = ConfigurationFactory.getInstance();
+            String globalConfigPath = getGlobalConfigPath();
+
+            if (globalConfigPath != null) {
+                // Found a global config file; attempt to parse and use it
+                sInstance = configFactory.createGlobalConfigurationFromArgs(
+                        ArrayUtil.buildArray(new String[] {globalConfigPath}, args), nonGlobalArgs);
+                System.err.format("Success!  Using global config \"%s\"\n", globalConfigPath);
+            } else {
+                // Use default global config
+                sInstance = new GlobalConfiguration();
+                nonGlobalArgs = Arrays.asList(args);
+            }
+            return nonGlobalArgs;
+        }
+    }
+
+    /**
+     * Returns the path to a global config, if one exists, or <code>null</code> if none could be
+     * found.
+     * <p />
+     * Search locations, in decreasing order of precedence
+     * <ol>
+     *   <li><code>$TF_GLOBAL_CONFIG</code> environment variable</li>
+     *   <li><code>tf_global_config.xml</code> file in $PWD</li>
+     *   <li>(FIXME) <code>tf_global_config.xml</code> file in dir where <code>tradefed.sh</code>
+     *       lives</li>
+     * </ol>
+     */
+    private static String getGlobalConfigPath() throws ConfigurationException {
+        String path = System.getenv(GLOBAL_CONFIG_VARIABLE);
+        if (path != null) {
+            // don't actually check for accessibility here, since the variable might be specifying
+            // a java resource rather than a filename.  Even so, this can help the user figure out
+            // which global config (if any) was picked up by TF.
+            System.err.format("Attempting to use global config \"%s\" from variable $%s.\n",
+                    path, GLOBAL_CONFIG_VARIABLE);
+            return path;
+        }
+
+        File file = new File(GLOBAL_CONFIG_FILENAME);
+        if (file.exists()) {
+            path = file.getPath();
+            System.err.format("Attempting to use autodetected global config \"%s\".\n", path);
+            return path;
+        }
+
+        // FIXME: search in tradefed.sh launch dir (or classpath?)
+
+        return null;
+    }
 
     /**
      * Container struct for built-in config object type
@@ -82,14 +170,14 @@ public class GlobalConfiguration implements IGlobalConfiguration {
     /**
      * Creates a {@link GlobalConfiguration} with default config objects and stock name/description
      */
-    public GlobalConfiguration() {
+    private GlobalConfiguration() {
         this("default", "default global configuration");
     }
 
     /**
      * Creates a {@link GlobalConfiguration} with default config objects
      */
-    public GlobalConfiguration(String name, String description) {
+    GlobalConfiguration(String name, String description) {
         mName = name;
         mDescription = description;
         mConfigMap = new LinkedHashMap<String, List<Object>>();

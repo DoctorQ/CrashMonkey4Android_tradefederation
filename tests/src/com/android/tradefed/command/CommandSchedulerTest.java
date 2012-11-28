@@ -76,11 +76,6 @@ public class CommandSchedulerTest extends TestCase {
             }
 
             @Override
-            IDeviceManager getDeviceManager(IDeviceMonitor deviceMonitor) {
-                return mMockManager;
-            }
-
-            @Override
             IConfigurationFactory getConfigFactory() {
                 return mMockConfigFactory;
             }

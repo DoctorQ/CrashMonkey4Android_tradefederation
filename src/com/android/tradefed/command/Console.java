@@ -22,11 +22,9 @@ import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
 import com.android.tradefed.config.GlobalConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
-import com.android.tradefed.config.IGlobalConfiguration;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.IDeviceManager;
-import com.android.tradefed.device.IDeviceMonitor;
 import com.android.tradefed.log.ConsoleReaderOutputStream;
 import com.android.tradefed.log.LogRegistry;
 import com.android.tradefed.util.ArrayUtil;
@@ -41,7 +39,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -80,9 +77,6 @@ public class Console extends Thread {
     protected static final String LINE_SEPARATOR = System.getProperty("line.separator");
 
     private static ConsoleReaderOutputStream sConsoleStream = null;
-
-    private static final String GLOBAL_CONFIG_VARIABLE = "TF_GLOBAL_CONFIG";
-    private static final String GLOBAL_CONFIG_FILENAME = "tf_global_config.xml";
 
     protected ICommandScheduler mScheduler;
     protected ConsoleReader mConsoleReader;
@@ -873,41 +867,6 @@ public class Console extends Thread {
     }
 
     /**
-     * Returns the path to a global config, if one exists, or <code>null</code> if none could be
-     * found.
-     * <p />
-     * Search locations, in decreasing order of precedence
-     * <ol>
-     *   <li><code>$TF_GLOBAL_CONFIG</code> environment variable</li>
-     *   <li><code>tf_global_config.xml</code> file in $PWD</li>
-     *   <li>(FIXME) <code>tf_global_config.xml</code> file in dir where <code>tradefed.sh</code>
-     *       lives</li>
-     * </ol>
-     */
-    private static String getGlobalConfigPath() throws ConfigurationException {
-        String path = System.getenv(GLOBAL_CONFIG_VARIABLE);
-        if (path != null) {
-            // don't actually check for accessibility here, since the variable might be specifying
-            // a java resource rather than a filename.  Even so, this can help the user figure out
-            // which global config (if any) was picked up by TF.
-            System.err.format("Attempting to use global config \"%s\" from variable $%s.\n",
-                    path, GLOBAL_CONFIG_VARIABLE);
-            return path;
-        }
-
-        File file = new File(GLOBAL_CONFIG_FILENAME);
-        if (file.exists()) {
-            path = file.getPath();
-            System.err.format("Attempting to use autodetected global config \"%s\".\n", path);
-            return path;
-        }
-
-        // FIXME: search in tradefed.sh launch dir (or classpath?)
-
-        return null;
-    }
-
-    /**
      * Starts the given tradefed console with given args
      *
      * @param console the {@link Console} to start
@@ -915,20 +874,10 @@ public class Console extends Thread {
      */
     public static void startConsole(Console console, String[] args) throws InterruptedException,
             ConfigurationException {
-        List<String> nonGlobalArgs = new LinkedList<String>();
-        IGlobalConfiguration globalConfig = new GlobalConfiguration();
-        IConfigurationFactory configFactory = ConfigurationFactory.getInstance();
-        String globalConfigPath = getGlobalConfigPath();
-        if (globalConfigPath != null) {
-            globalConfig = configFactory.createGlobalConfigurationFromArgs(
-                    ArrayUtil.buildArray(new String[] {globalConfigPath}, args), nonGlobalArgs);
-            System.err.format("Success!  Using global config \"%s\"\n", globalConfigPath);
-        } else {
-            nonGlobalArgs = Arrays.asList(args);
-        }
+        List<String> nonGlobalArgs = GlobalConfiguration.createGlobalConfiguration(args);
 
         console.setArgs(nonGlobalArgs);
-        console.setCommandScheduler(new CommandScheduler(globalConfig));
+        console.setCommandScheduler(new CommandScheduler());
         console.setDaemon(true);
         console.start();
 

@@ -71,10 +71,8 @@ public interface IDeviceManager {
      * the DeviceManager to ignore certain connected devices.
      *
      * @param globalDeviceFilter the device filter
-     * @param hostLabels optional labels which can help to identify a TF instance for higher-level
-     *        monitoring
      */
-    public void init(IDeviceSelection globalDeviceFilter, Collection<String> hostLabels);
+    public void init(IDeviceSelection globalDeviceFilter);
 
     /**
      * Request a physical device for testing, waiting indefinitely until one becomes available.

@@ -18,6 +18,7 @@ package com.android.tradefed.device;
 import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.IDevice.DeviceState;
+import com.android.tradefed.config.IGlobalConfiguration;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
 import com.android.tradefed.device.IDeviceMonitor.DeviceLister;
 import com.android.tradefed.util.CommandResult;
@@ -46,7 +47,6 @@ public class DeviceManagerTest extends TestCase {
      */
     private static final int MIN_ALLOCATE_WAIT_TIME = 100;
     private static final String DEVICE_SERIAL = "serial";
-    private static final Collection<String> emptyStringSet = Collections.emptySet();
 
     /**
      * Helper interface to mock behavior for
@@ -63,6 +63,7 @@ public class DeviceManagerTest extends TestCase {
     private IRunUtil mMockRunUtil;
     private ITestDeviceFactory mMockDeviceFactory;
     private IDeviceMonitor mDeviceMonitor;
+    private IGlobalConfiguration mMockGlobalConfig;
 
     /** a reference to the DeviceManager's IDeviceChangeListener. Used for triggering device
      * connection events */
@@ -161,6 +162,7 @@ public class DeviceManagerTest extends TestCase {
         mMockTestDevice = EasyMock.createMock(IManagedTestDevice.class);
         mMockRunUtil = EasyMock.createMock(IRunUtil.class);
         mMockDeviceFactory = EasyMock.createMock(ITestDeviceFactory.class);
+        mMockGlobalConfig = EasyMock.createNiceMock(IGlobalConfiguration.class);
 
         EasyMock.expect(mMockIDevice.getSerialNumber()).andStubReturn(DEVICE_SERIAL);
         EasyMock.expect(mMockIDevice.isEmulator()).andStubReturn(Boolean.FALSE);
@@ -172,14 +174,13 @@ public class DeviceManagerTest extends TestCase {
                 (String)EasyMock.anyObject())).andStubReturn(new CommandResult());
         EasyMock.expect(mMockRunUtil.runTimedCmdSilently(EasyMock.anyLong(), (String)EasyMock.
                 anyObject(), (String)EasyMock.anyObject())).andStubReturn(new CommandResult());
+
+        EasyMock.expect(mMockGlobalConfig.getDeviceRequirements()).andStubReturn(
+                DeviceManager.ANY_DEVICE_OPTIONS);
     }
 
     private DeviceManager createDeviceManager(IDevice... devices) {
-        return createDeviceManager(null, devices);
-    }
-
-    private DeviceManager createDeviceManager(IDeviceMonitor dvcMon, IDevice... devices) {
-        DeviceManager mgr = createDeviceManagerNoInit(dvcMon);
+        DeviceManager mgr = createDeviceManagerNoInit();
         mgr.init();
         for (IDevice device : devices) {
             mDeviceListener.deviceConnected(device);
@@ -188,11 +189,8 @@ public class DeviceManagerTest extends TestCase {
     }
 
     private DeviceManager createDeviceManagerNoInit() {
-        return createDeviceManagerNoInit(null);
-    }
 
-    private DeviceManager createDeviceManagerNoInit(IDeviceMonitor dvcMon) {
-        DeviceManager mgr = new DeviceManager(dvcMon, false /* no async proxy */) {
+        DeviceManager mgr = new DeviceManager(false /* no async proxy */) {
             @Override
             IAndroidDebugBridge createAdbBridge() {
                 return mMockAdbBridge;
@@ -211,6 +209,11 @@ public class DeviceManagerTest extends TestCase {
             IManagedTestDevice createTestDevice(IDevice allocatedDevice,
                     IDeviceStateMonitor monitor) {
                 return mMockDeviceFactory.createDevice();
+            }
+
+            @Override
+            IGlobalConfiguration getGlobalConfig() {
+                return mMockGlobalConfig;
             }
 
             @Override
@@ -620,6 +623,7 @@ public class DeviceManagerTest extends TestCase {
     @SuppressWarnings("unchecked")
     public void testMonitor_allocate() throws DeviceNotAvailableException {
         final IDeviceMonitor dvcMon = EasyMock.createStrictMock(IDeviceMonitor.class);
+        EasyMock.expect(mMockGlobalConfig.getDeviceMonitor()).andStubReturn(dvcMon);
 
         // IDeviceMonitor calls, in order
         dvcMon.setDeviceLister((DeviceLister) EasyMock.anyObject());
@@ -635,9 +639,8 @@ public class DeviceManagerTest extends TestCase {
         dvcMon.updateFullDeviceState();
 
         setCheckAvailableDeviceExpectations();
-        replayMocks();
-        EasyMock.replay(dvcMon);
-        DeviceManager manager = createDeviceManager(dvcMon, mMockIDevice);
+        replayMocks(dvcMon);
+        DeviceManager manager = createDeviceManager(mMockIDevice);
         assertEquals(mMockTestDevice, manager.allocateDevice());
         EasyMock.verify(mMockMonitor, dvcMon);
     }
@@ -651,7 +654,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManagerNoInit();
         DeviceSelectionOptions excludeFilter = new DeviceSelectionOptions();
         excludeFilter.addExcludeSerial(mMockIDevice.getSerialNumber());
-        manager.init(excludeFilter, emptyStringSet);
+        manager.init(excludeFilter);
         mDeviceListener.deviceConnected(mMockIDevice);
         assertNull(manager.allocateDevice(MIN_ALLOCATE_WAIT_TIME));
     }
@@ -668,7 +671,7 @@ public class DeviceManagerTest extends TestCase {
         DeviceManager manager = createDeviceManagerNoInit();
         DeviceSelectionOptions includeFilter = new DeviceSelectionOptions();
         includeFilter.addSerial(mMockIDevice.getSerialNumber());
-        manager.init(includeFilter, emptyStringSet);
+        manager.init(includeFilter);
         mDeviceListener.deviceConnected(mMockIDevice);
         mDeviceListener.deviceConnected(excludedDevice);
         assertEquals(mMockTestDevice, manager.allocateDevice());
@@ -926,7 +929,7 @@ public class DeviceManagerTest extends TestCase {
      */
     private void replayMocks(Object... additionalMocks) {
         EasyMock.replay(mMockMonitor, mMockTestDevice, mMockIDevice, mMockAdbBridge, mMockRunUtil,
-                mMockDeviceFactory);
+                mMockDeviceFactory, mMockGlobalConfig);
         for (Object mock : additionalMocks) {
             EasyMock.replay(mock);
         }

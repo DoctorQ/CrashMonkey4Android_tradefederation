@@ -424,26 +424,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * instantiated but not started.
      */
     public CommandScheduler() {
-        this(null);
-    }
-
-    /**
-     * Creates a {@link CommandScheduler}.
-     * <p />
-     * Note: logging is initialized here. We assume that {@link CommandScheduler#start} will be
-     * called, so that we can clean logs up at the end of the {@link CommandScheduler#run} method.
-     * In particular, this means that a leak will result if a {@link CommandScheduler} instance is
-     * instantiated but not started.
-     */
-    public CommandScheduler(IGlobalConfiguration globalConfig) {
-        // FIXME: create a global singleton to access globalConfig
-        if (globalConfig == null) {
-            globalConfig = new GlobalConfiguration();
-        }
-
         initLogging();
 
-        initDeviceManager(globalConfig.getDeviceMonitor(), globalConfig.getDeviceRequirements());
+        initDeviceManager();
 
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
                 new ExecutableCommandComparator());
@@ -458,9 +441,8 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Initialize the device manager, optionally using a global device filter if specified.
      */
-    void initDeviceManager(IDeviceMonitor deviceMonitor, IDeviceSelection selector) {
-        // initialize the device manager with no global device filter
-        getDeviceManager(deviceMonitor).init(selector, null);
+    void initDeviceManager() {
+        getDeviceManager().init();
     }
 
     /**
@@ -479,15 +461,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     IDeviceManager getDeviceManager() {
         return DeviceManager.getInstance();
-    }
-
-    /**
-     * Factory method for getting a reference to the {@link IDeviceManager}
-     *
-     * @return the {@link IDeviceManager} to use
-     */
-    IDeviceManager getDeviceManager(IDeviceMonitor deviceMonitor) {
-        return DeviceManager.getInstance(deviceMonitor);
     }
 
     /**
