@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * A {@link ITargetPreparer} that installs an apk and its tests.
  */
-public class AppSetup implements ITargetPreparer, ITargetCleaner{
+public class AppSetup implements ITargetPreparer, ITargetCleaner {
 
     private static final String LOG_TAG = "AppSetup";
 
