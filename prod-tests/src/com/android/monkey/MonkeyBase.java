@@ -181,6 +181,9 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
             "(text/xml/zip/gzip/png/unknown).  May be repeated.")
     private Map<String, LogDataType> mUploadFilePatterns = new LinkedHashMap<String, LogDataType>();
 
+    @Option(name = "screenshot", description = "Take a device screenshot on monkey completion")
+    private boolean mScreenshot = false;
+
     private ITestDevice mTestDevice = null;
     private MonkeyLogItem mMonkeyLog = null;
 
@@ -266,6 +269,8 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
                 CLog.w("Device %s not available after 2 minutes.", mTestDevice.getSerialNumber());
             }
 
+            takeScreenshot(listener, "screenshot");
+
             takeBugreport(listener, BUGREPORT_NAME);
             // FIXME: Remove this once traces.txt is no longer needed.
             takeTraces(listener);
@@ -273,6 +278,22 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
         }
 
         checkResults();
+    }
+
+    /**
+     * If enabled, capture a screenshot and send it to a listener.
+     * @throws DeviceNotAvailableException
+     */
+    protected void takeScreenshot(ITestInvocationListener listener, String screenshotName)
+            throws DeviceNotAvailableException {
+        if (mScreenshot) {
+            InputStreamSource screenshot = mTestDevice.getScreenshot();
+            try {
+                listener.testLog(screenshotName, LogDataType.PNG, screenshot);
+            } finally {
+                screenshot.cancel();
+            }
+        }
     }
 
     /**
@@ -483,7 +504,6 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
 
         Assert.assertTrue("Uptime failure",
                 stopUptime - startUptime > totalDuration - UPTIME_BUFFER);
-
 
         // False count
         Assert.assertFalse("False count", mMonkeyLog.getIsFinished() &&
