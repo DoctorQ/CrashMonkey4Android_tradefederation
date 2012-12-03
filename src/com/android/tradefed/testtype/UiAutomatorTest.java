@@ -114,6 +114,20 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
         mLoggingOption = loggingOption;
     }
 
+    /**
+     * Deprecated - use {@link #setLoggingOption(LoggingOption)} instead.
+     * <p/>
+     * Retained for compatibility with cts-tradefed
+     */
+    @Deprecated
+    public void setCaptureLogs(boolean captureLogs) {
+        if (captureLogs) {
+            setLoggingOption(LoggingOption.AFTER_FAILURE);
+        } else {
+            setLoggingOption(LoggingOption.OFF);
+        }
+    }
+
     public void setRunName(String runName) {
         mRunName = runName;
     }
