@@ -79,6 +79,7 @@ import com.android.tradefed.testtype.NativeStressTestParserTest;
 import com.android.tradefed.testtype.NativeStressTestTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsParserTest;
 import com.android.tradefed.testtype.testdefs.XmlDefsTestTest;
+import com.android.tradefed.util.AaptParserTest;
 import com.android.tradefed.util.ArrayUtilTest;
 import com.android.tradefed.util.ByteArrayListTest;
 import com.android.tradefed.util.ConditionPriorityBlockingQueueTest;
@@ -188,6 +189,7 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(XmlDefsTestTest.class);
 
         // util
+        addTestSuite(AaptParserTest.class);
         addTestSuite(ArrayUtilTest.class);
         addTestSuite(ByteArrayListTest.class);
         addTestSuite(ConditionPriorityBlockingQueueTest.class);
