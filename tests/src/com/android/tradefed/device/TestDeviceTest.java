@@ -1140,5 +1140,14 @@ public class TestDeviceTest extends TestCase {
 
         assertNull(mTestDevice.getMountPointInfo("/a/mountpoint/too/far"));
     }
+
+    public void testParseFreeSpaceFromFree() throws Exception {
+        assertNotNull("Failed to parse free space size with decimal point",
+                mTestDevice.parseFreeSpaceFromFree("/storage/emulated/legacy",
+                "/storage/emulated/legacy    13.2G   296.4M    12.9G   4096"));
+        assertNotNull("Failed to parse integer free space size",
+                mTestDevice.parseFreeSpaceFromFree("/storage/emulated/legacy",
+                "/storage/emulated/legacy     13G   395M    12G   4096"));
+    }
 }
 
