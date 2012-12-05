@@ -808,22 +808,23 @@ class TestDevice implements IManagedTestDevice {
      * @param dfOutput the output of df command to parse
      * @return the available space in kilobytes or <code>null</code> if output could not be parsed
      */
-    private Long parseFreeSpaceFromFree(String externalStorePath, String dfOutput) {
+    Long parseFreeSpaceFromFree(String externalStorePath, String dfOutput) {
         Long freeSpace = null;
         final Pattern freeSpaceTablePattern = Pattern.compile(String.format(
                 //fs   Size         Used         Free
-                "%s\\s+[\\w\\d]+\\s+[\\w\\d]+\\s+(\\d+)(\\w)", externalStorePath));
+                "%s\\s+[\\w\\d\\.]+\\s+[\\w\\d\\.]+\\s+([\\d\\.]+)(\\w)", externalStorePath));
         Matcher tablePatternMatcher = freeSpaceTablePattern.matcher(dfOutput);
         if (tablePatternMatcher.find()) {
             String numericValueString = tablePatternMatcher.group(1);
             String unitType = tablePatternMatcher.group(2);
             try {
-                freeSpace = Long.parseLong(numericValueString);
+                Float freeSpaceFloat = Float.parseFloat(numericValueString);
                 if (unitType.equals("M")) {
-                    freeSpace = freeSpace * 1024;
+                    freeSpaceFloat = freeSpaceFloat * 1024;
                 } else if (unitType.equals("G")) {
-                    freeSpace = freeSpace * 1024 * 1024;
+                    freeSpaceFloat = freeSpaceFloat * 1024 * 1024;
                 }
+                freeSpace = freeSpaceFloat.longValue();
             } catch (NumberFormatException e) {
                 // fall through
             }
