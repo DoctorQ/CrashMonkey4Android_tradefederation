@@ -58,7 +58,7 @@ public class RandomUrlListPusher implements ITargetPreparer {
 
     @Option(name = "device-location",
             description = "location on device where the generate URL list should be pushed")
-    private String mDeviceLocation = "${EXTERNEL_STORAGE}/popular_urls.txt";
+    private String mDeviceLocation = "${EXTERNAL_STORAGE}/popular_urls.txt";
 
     @Override
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
