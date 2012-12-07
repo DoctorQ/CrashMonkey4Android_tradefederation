@@ -48,6 +48,10 @@ public class InstallApkSetup implements ITargetPreparer {
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             BuildError, DeviceNotAvailableException {
         for (File apk : mApkPaths) {
+            if (!apk.exists()) {
+                throw new TargetSetupError(String.format("%s does not exist",
+                        apk.getAbsolutePath()));
+            }
             Log.i(LOG_TAG, String.format("Installing %s on %s", apk.getName(),
                     device.getSerialNumber()));
             String result = device.installPackage(apk, true);
