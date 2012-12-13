@@ -317,5 +317,18 @@ public class BugreportParserTest extends TestCase {
         DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
         return formatter.parse(timeStr);
     }
+
+    /**
+     * Some Android devices refer to SYSTEM LOG as MAIN LOG. Check that parser recognizes this
+     * alternate syntax.
+     */
+    public void testSystemLogAsMainLog() {
+        List<String> lines = Arrays.asList(
+                "------ MAIN LOG (logcat -b main -b system -v threadtime -d *:v) ------",
+                "--------- beginning of /dev/log/system",
+                "12-11 19:48:07.945  1484  1508 D BatteryService: update start");
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+        assertNotNull(bugreport.getSystemLog());
+    }
 }
 
