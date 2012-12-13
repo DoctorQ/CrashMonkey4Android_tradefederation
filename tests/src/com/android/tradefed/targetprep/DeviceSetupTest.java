@@ -90,7 +90,8 @@ public class DeviceSetupTest extends TestCase {
         // expect a bunch of shell commands - no need to verify which ones
         EasyMock.expect(mMockDevice.executeShellCommand((String)EasyMock.anyObject())).
                 andReturn("").anyTimes();
-        EasyMock.expect(mMockDevice.getProperty("ro.build.id")).andReturn("IMM76K");
+        EasyMock.expect(mMockDevice.getProperty(ITestDevice.DISPLAYED_BUILD_ID_PROP)).andReturn(
+                "IMM76K");
     }
 
     /**
