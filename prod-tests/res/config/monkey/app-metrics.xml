@@ -29,5 +29,4 @@
         <option name="monkey-timeout" value="10" />
         <option name="retry-on-failure" value="true" />
     </test>
-    <logger class="com.android.tradefed.log.FileLogger" />
 </configuration>
