@@ -16,6 +16,9 @@
 
 package com.android.tradefed.command;
 
+import com.android.tradefed.config.ConfigurationException;
+import com.android.tradefed.config.GlobalConfiguration;
+
 /**
  * An alternate TradeFederation entry point that will run command specified in command
  * line arguments and then quit.
@@ -25,10 +28,10 @@ package com.android.tradefed.command;
  * Expected arguments: [commands options] <config to run>
  */
 public class CommandRunner {
-    private final ICommandScheduler mScheduler;
+    private ICommandScheduler mScheduler;
 
     CommandRunner() {
-       mScheduler = new CommandScheduler();
+
     }
 
     /**
@@ -38,6 +41,8 @@ public class CommandRunner {
      */
     public void run(String[] args) {
         try {
+            GlobalConfiguration.createGlobalConfiguration(args);
+            mScheduler = new CommandScheduler();
             mScheduler.start();
             NotifyingCommandListener cmdListener = new NotifyingCommandListener();
             cmdListener.setExpectedCalls(1);
@@ -47,6 +52,9 @@ public class CommandRunner {
             mScheduler.shutdown();
             mScheduler.join();
         } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ConfigurationException e) {
+            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
