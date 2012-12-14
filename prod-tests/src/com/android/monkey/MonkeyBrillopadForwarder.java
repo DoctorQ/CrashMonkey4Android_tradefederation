@@ -122,14 +122,29 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
     private MonkeyStatus reportMonkeyStats(MonkeyLogItem monkeyLog,
             Map<String, String> monkeyMetrics) {
         MonkeyStatus status = getStatus(monkeyLog);
-        monkeyMetrics.put("throttle", Integer.toString(monkeyLog.getThrottle()));
+        monkeyMetrics.put("throttle", convertToString(monkeyLog.getThrottle()));
         monkeyMetrics.put("status", status.toString());
-        monkeyMetrics.put("target_count", Integer.toString(monkeyLog.getTargetCount()));
-        monkeyMetrics.put("injected_count", Integer.toString(monkeyLog.getFinalCount()));
-        monkeyMetrics.put("run_duration", Long.toString(monkeyLog.getTotalDuration()));
-        monkeyMetrics.put("uptime", Long.toString((monkeyLog.getStopUptimeDuration() -
+        monkeyMetrics.put("target_count", convertToString(monkeyLog.getTargetCount()));
+        monkeyMetrics.put("injected_count", convertToString(monkeyLog.getFinalCount()));
+        monkeyMetrics.put("run_duration", convertToString(monkeyLog.getTotalDuration()));
+        monkeyMetrics.put("uptime", convertToString((monkeyLog.getStopUptimeDuration() -
                 monkeyLog.getStartUptimeDuration())));
         return status;
+    }
+
+    /**
+     * A utility method that converts an {@link Integer} to a {@link String}, and that can handle
+     * null.
+     */
+    private static String convertToString(Integer integer) {
+        return integer == null ? "" : integer.toString();
+    }
+
+    /**
+     * A utility method that converts a {@link Long} to a {@link String}, and that can handle null.
+     */
+    private static String convertToString(Long longInt) {
+        return longInt == null ? "" : longInt.toString();
     }
 
     /**
