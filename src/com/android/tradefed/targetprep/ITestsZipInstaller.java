@@ -50,6 +50,9 @@ public interface ITestsZipInstaller {
     /**
      * Removes all of the files/directories from {@code /data} on the specified device, with the
      * exception of those excluded by the skip list.
+     * <p/>
+     * Implementation will stop the runtime on device. It is highly recommended to reboot the device
+     * upon completion of this method.
      *
      * @param device The {@link ITestDevice} to act on
      * @see #setDataWipeSkipList

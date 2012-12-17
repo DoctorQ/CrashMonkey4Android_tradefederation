@@ -79,10 +79,9 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         CLog.i(String.format("Pushing test zips content onto userdata on %s",
                 device.getSerialNumber()));
 
-        // Stop the runtime, so it doesn't notice us mucking with the filesystem
-        device.executeShellCommand("stop");
-        // Stop installd to prevent it from writing to /data/data
-        device.executeShellCommand("stop installd");
+        RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
+        device.setRecoveryMode(RecoveryMode.ONLINE);
+
         deleteData(device);
 
         CLog.d("Syncing test files/apks");
@@ -97,6 +96,8 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         for (File dir : findDirs(hostDir, DEVICE_DATA_FILE)) {
             device.executeShellCommand("chown system.system " + dir.getPath());
         }
+
+        device.setRecoveryMode(cachedRecoveryMode);
     }
 
     /**
@@ -107,6 +108,11 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
             TargetSetupError {
         RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
         device.setRecoveryMode(RecoveryMode.ONLINE);
+
+        // Stop the runtime, so it doesn't notice us mucking with the filesystem
+        device.executeShellCommand("stop");
+        // Stop installd to prevent it from writing to /data/data
+        device.executeShellCommand("stop installd");
 
         CLog.d("clearing " + FileListingService.DIRECTORY_DATA + " directory on device "
                 + device.getSerialNumber());
