@@ -603,7 +603,6 @@ public interface ITestDevice {
      * Connects to a wifi network.
      * <p/>
      * Turns on wifi and blocks until a successful connection is made to the specified wifi network.
-     * adb needs to be running as root.
      *
      * @param wifiSsid the wifi ssid to connect to
      * @param wifiPsk PSK passphrase or null if unencrypted

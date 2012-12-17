@@ -108,7 +108,11 @@ public class WifiUtil extends Instrumentation {
             // As a pattern, method implementations below should gather arguments _first_, and then
             // use those arguments so that the system is not left in an inconsistent state if an
             // argument is missing in the middle of an implementation.
-            if ("addOpenNetwork".equals(method)) {
+            if ("enableWifi".equals(method)) {
+                result.putBoolean("result", mWifiManager.setWifiEnabled(true));
+            } else if ("disableWifi".equals(method)) {
+                result.putBoolean("result", mWifiManager.setWifiEnabled(false));
+            } else if ("addOpenNetwork".equals(method)) {
                 final String ssid = expectString("ssid");
 
                 final WifiConfiguration config = new WifiConfiguration();
@@ -183,6 +187,9 @@ public class WifiUtil extends Instrumentation {
             } else if ("saveConfiguration".equals(method)) {
                 result.putBoolean("result", mWifiManager.saveConfiguration());
 
+            } else if ("getSupplicantState".equals(method)) {
+                String state = mWifiManager.getConnectionInfo().getSupplicantState().name();
+                result.putString("result", state);
             } else {
                 fail(String.format("Didn't recognize method '%s'", method));
                 return;

@@ -33,6 +33,8 @@ import java.util.regex.Pattern;
 /**
  * A {@link ITargetPreparer} that configures a device for testing based on provided {@link Option}s.
  * <p/>
+ * Requires a device where 'adb root' is possible, typically a userdebug build type.
+ * <p/>
  * Should be performed *after* a new build is flashed.
  */
 @OptionClass(alias = "device-setup")
