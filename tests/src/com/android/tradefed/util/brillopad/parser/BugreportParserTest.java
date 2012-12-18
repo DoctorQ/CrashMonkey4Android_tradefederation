@@ -330,5 +330,18 @@ public class BugreportParserTest extends TestCase {
         BugreportItem bugreport = new BugreportParser().parse(lines);
         assertNotNull(bugreport.getSystemLog());
     }
+
+    /**
+     * Some Android devices refer to SYSTEM LOG as MAIN AND SYSTEM LOG. Check that parser
+     * recognizes this alternate syntax.
+     */
+    public void testSystemAndMainLog() {
+        List<String> lines = Arrays.asList(
+                "------ MAIN AND SYSTEM LOG (logcat -b main -b system -v threadtime -d *:v) ------",
+                "--------- beginning of /dev/log/system",
+                "12-17 15:15:12.877  1994  2019 D UiModeManager: updateConfigurationLocked: ");
+        BugreportItem bugreport = new BugreportParser().parse(lines);
+        assertNotNull(bugreport.getSystemLog());
+    }
 }
 
