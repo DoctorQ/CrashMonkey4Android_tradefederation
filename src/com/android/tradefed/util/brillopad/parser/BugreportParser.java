@@ -47,7 +47,8 @@ public class BugreportParser extends AbstractSectionParser {
     private static final String MEM_INFO_SECTION_REGEX = "------ MEMORY INFO .*";
     private static final String PROCRANK_SECTION_REGEX = "------ PROCRANK .*";
     private static final String SYSTEM_PROP_SECTION_REGEX = "------ SYSTEM PROPERTIES .*";
-    private static final String SYSTEM_LOG_SECTION_REGEX = "------ (SYSTEM|MAIN) LOG .*";
+    private static final String SYSTEM_LOG_SECTION_REGEX =
+            "------ (SYSTEM|MAIN|MAIN AND SYSTEM) LOG .*";
     private static final String ANR_TRACES_SECTION_REGEX = "------ VM TRACES AT LAST ANR .*";
     private static final String NOOP_SECTION_REGEX = "------ .*";
 
