@@ -19,6 +19,7 @@ import com.android.ddmlib.IDevice;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.TestAppConstants;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.FileUtil;
@@ -34,8 +35,10 @@ import java.io.IOException;
  */
 public class TestDeviceStressTest extends DeviceTestCase {
 
+    @Option(name = "iterations", description = "number of iterations to test")
+    private int mIterations = 50;
+
     private static final String LOG_TAG = "TestDeviceStressTest";
-    private static final int ITERATIONS = 50;
     private static final int TEST_FILE_COUNT= 200;
     private TestDevice mTestDevice;
     private IDeviceStateMonitor mMonitor;
@@ -63,7 +66,7 @@ public class TestDeviceStressTest extends DeviceTestCase {
     }
 
     public void testManyReboots() throws DeviceNotAvailableException {
-        for (int i=0; i < ITERATIONS; i++) {
+        for (int i=0; i < mIterations; i++) {
             Log.i(LOG_TAG, String.format("testReboot attempt %d", i));
             mTestDevice.reboot();
             assertEquals(TestDeviceState.ONLINE, mMonitor.getDeviceState());
@@ -71,7 +74,7 @@ public class TestDeviceStressTest extends DeviceTestCase {
     }
 
     public void testManyRebootBootloaders() throws DeviceNotAvailableException {
-        for (int i=0; i < ITERATIONS; i++) {
+        for (int i=0; i < mIterations; i++) {
             Log.i(LOG_TAG, String.format("testRebootBootloader attempt %d", i));
             mTestDevice.rebootIntoBootloader();
             assertEquals(TestDeviceState.FASTBOOT, mMonitor.getDeviceState());
@@ -81,7 +84,7 @@ public class TestDeviceStressTest extends DeviceTestCase {
     }
 
     public void testManyDisableKeyguard() throws DeviceNotAvailableException {
-        for (int i=0; i < ITERATIONS; i++) {
+        for (int i=0; i < mIterations; i++) {
             Log.i(LOG_TAG, String.format("testDisableKeyguard attempt %d", i));
             mTestDevice.reboot();
             assertTrue(runUITests());
@@ -104,7 +107,7 @@ public class TestDeviceStressTest extends DeviceTestCase {
             // Create the test folder and make sure the test folder doesn't exist in
             // device before the test start.
             tmpDir = createTempTestFiles();
-            for (int i = 0; i < ITERATIONS; i++) {
+            for (int i = 0; i < mIterations; i++) {
                 mTestDevice.executeShellCommand(String.format("rm -r %s", deviceFilePath));
                 assertFalse(String.format("%s exists", deviceFilePath),
                         mTestDevice.doesFileExist(deviceFilePath));
@@ -130,5 +133,21 @@ public class TestDeviceStressTest extends DeviceTestCase {
         CollectingTestListener uilistener = new CollectingTestListener();
         getDevice().runInstrumentationTests(uirunner, uilistener);
         return TestAppConstants.UI_TOTAL_TESTS == uilistener.getNumPassedTests();
+    }
+
+    /**
+     * Return the number of iterations.
+     * <p/>
+     * Exposed for unit testing
+     */
+    public int getIterations() {
+        return mIterations;
+    }
+
+    /**
+     * Set the iterations
+     */
+    void setIterations(int iterations) {
+        mIterations = iterations;
     }
 }
