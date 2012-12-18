@@ -43,6 +43,7 @@ import java.util.Collections;
  */
 public class AppLaunchTest implements IDeviceTest, IRemoteTest, IBuildReceiver {
 
+    private static final String RUN_NAME = "AppLaunch";
     private ITestDevice mDevice;
     private IBuildInfo mBuild;
 
@@ -76,7 +77,7 @@ public class AppLaunchTest implements IDeviceTest, IRemoteTest, IBuildReceiver {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         long startTime = System.currentTimeMillis();
-        listener.testRunStarted("app_launch", 2);
+        listener.testRunStarted(RUN_NAME, 2);
         try {
             Assert.assertTrue(mBuild instanceof IAppBuildInfo);
             IAppBuildInfo appBuild = (IAppBuildInfo)mBuild;
@@ -115,6 +116,7 @@ public class AppLaunchTest implements IDeviceTest, IRemoteTest, IBuildReceiver {
     private void performLaunchTest(String packageName, ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         InstrumentationTest i = new InstrumentationTest();
+        i.setRunName(RUN_NAME);
         i.setPackageName("com.android.applaunchtest");
         i.setRunnerName("com.android.applaunchtest.AppLaunchRunner");
         i.setDevice(getDevice());
