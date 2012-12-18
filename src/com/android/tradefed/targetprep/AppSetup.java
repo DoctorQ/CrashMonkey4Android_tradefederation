@@ -15,29 +15,36 @@
  */
 package com.android.tradefed.targetprep;
 
-import com.android.ddmlib.Log;
 import com.android.tradefed.build.IAppBuildInfo;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.VersionedFile;
 import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * A {@link ITargetPreparer} that installs an apk and its tests.
  */
+@OptionClass(alias="app-setup")
 public class AppSetup implements ITargetPreparer, ITargetCleaner {
 
-    private static final String LOG_TAG = "AppSetup";
-
-    @Option(name="reboot", description="reboot device during setup.")
+    @Option(name = "reboot", description = "reboot device during setup.")
     private boolean mReboot = true;
 
-    @Option(name="uninstall", description="uninstall all apks after test completes.")
+    @Option(name = "install", description = "install all apks in build.")
+    private boolean mInstall = true;
+
+    @Option(name = "uninstall", description = "uninstall all apks after test completes.")
     private boolean mUninstall = true;
+
+    @Option(name = "skip-uninstall-pkg", description =
+            "force retention of this package when --uninstall is set.")
+    private Set<String> mSkipUninstallPkgs = new HashSet<String>();
 
     /**
      * {@inheritDoc}
@@ -49,18 +56,21 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
             throw new IllegalArgumentException("Provided buildInfo is not a AppBuildInfo");
         }
         IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
-        Log.i(LOG_TAG, String.format("Performing setup on %s", device.getSerialNumber()));
+        CLog.i("Performing setup on %s", device.getSerialNumber());
 
         if (mReboot) {
             // reboot device to get a clean state
             device.reboot();
         }
 
-        for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
-            String result = device.installPackage(apkFile.getFile(), true);
-            if (result != null) {
-                throw new TargetSetupError(String.format("Failed to install %s on %s. Reason: %s",
-                        apkFile.getFile().getName(), device.getSerialNumber(), result));
+        if (mInstall) {
+            for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
+                String result = device.installPackage(apkFile.getFile(), true);
+                if (result != null) {
+                    throw new TargetSetupError(String.format(
+                            "Failed to install %s on %s. Reason: %s",
+                            apkFile.getFile().getName(), device.getSerialNumber(), result));
+                }
             }
         }
     }
@@ -74,10 +84,12 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         if (mUninstall) {
             Set<String> pkgs = device.getInstalledNonSystemPackageNames();
             for (String pkg : pkgs) {
-                String result = device.uninstallPackage(pkg);
-                if (result != null) {
-                    CLog.w("Uninstall of %s on %s failed: %s", pkg, device.getSerialNumber(),
-                            result);
+                if (!mSkipUninstallPkgs.contains(pkg)) {
+                    String result = device.uninstallPackage(pkg);
+                    if (result != null) {
+                        CLog.w("Uninstall of %s on %s failed: %s", pkg, device.getSerialNumber(),
+                                result);
+                    }
                 }
             }
         }

@@ -71,7 +71,7 @@ tradefed_dist_host_jar_files := $(foreach m, $(tradefed_dist_host_jars), $(HOST_
 tradefed_dist_host_exes := tradefed.sh
 tradefed_dist_host_exe_files := $(foreach m, $(tradefed_dist_host_exes), $(BUILD_OUT_EXECUTABLES)/$(m))
 
-tradefed_dist_test_apks := TradeFedUiTestApp TradeFedTestApp
+tradefed_dist_test_apks := TradeFedUiTestApp TradeFedTestApp DismissKeyguardUtil
 tradefed_dist_test_apk_files := $(foreach m, $(tradefed_dist_test_apks), $(TARGET_OUT_DATA_APPS)/$(m).apk)
 
 tradefed_dist_files := \
