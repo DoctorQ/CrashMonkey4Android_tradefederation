@@ -73,6 +73,10 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
             "the fastboot command(s) to use to wipe data and reboot device.")
     private Collection<String> mFastbootWipeCmds = new ArrayList<String>();
 
+    @Option(name = "boot-into-bootloader", description =
+            "Flag to set if reboot should enter bootloader")
+    private boolean mBootIntoBootloader = true;
+
     private ITestDevice mDevice;
     private String mLastKmsg;
     private String mDmesg;
@@ -182,11 +186,15 @@ public class RebootStressTest implements IRemoteTest, IDeviceTest, IShardableTes
         try {
             for (actualIterations = 0; actualIterations < mIterations; actualIterations++) {
                 CLog.i("Reboot attempt %d of %d", actualIterations+1, mIterations);
-                getDevice().rebootIntoBootloader();
-                if (mWipeUserData) {
-                    executeFastbootWipeCommand();
+                if (mBootIntoBootloader){
+                    getDevice().rebootIntoBootloader();
+                    if (mWipeUserData) {
+                        executeFastbootWipeCommand();
+                    } else {
+                        getDevice().executeFastbootCommand("reboot");
+                    }
                 } else {
-                    getDevice().executeFastbootCommand("reboot");
+                    getDevice().reboot();
                 }
                 getDevice().waitForDeviceAvailable();
                 doWaitAndCheck(listener);
