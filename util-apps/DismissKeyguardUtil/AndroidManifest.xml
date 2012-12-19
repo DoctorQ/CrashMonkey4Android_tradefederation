@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2012 The Android Open Source Project
+<!--
+     Copyright (C) 2012 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -15,18 +16,28 @@
 -->
 
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.android.tradefed.utils">
+    package="com.android.tradefed.utils" >
 
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
 
     <application>
-        <receiver android:name=".DismissKeyguardIntentReceiver" >
+        <receiver android:name="com.android.tradefed.utils.DismissKeyguardIntentReceiver" >
             <intent-filter>
                 <action android:name="com.android.tradefed.utils.DISMISS_KEYGUARD" />
             </intent-filter>
         </receiver>
 
-        <service android:name=".DismissKeyguardService" />
+        <service android:name="com.android.tradefed.utils.DismissKeyguardService" />
+
+        <activity
+            android:name="com.android.tradefed.utils.MainActivity"
+            android:label="@string/title_activity_main" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>
