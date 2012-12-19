@@ -33,7 +33,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.device.WifiHelper.WifiState;
+import com.android.tradefed.device.IWifiHelper.WifiState;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
@@ -1590,9 +1590,14 @@ class TestDevice implements IManagedTestDevice {
         CLog.i("Connecting to wifi network %s on %s", wifiSsid, getSerialNumber());
         try {
             IWifiHelper wifi = createWifiHelper();
-            wifi.enableWifi();
-            // TODO: return false here if failed?
-            wifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED);
+            if (!wifi.enableWifi()) {
+                CLog.e("failed to enable wifi on %s",  getSerialNumber());
+                return false;
+            }
+            if (!wifi.waitForWifiEnabled()) {
+                CLog.e("failed to detect wifi enabled state on %s",  getSerialNumber());
+                return false;
+            }
 
             boolean added = false;
             if (wifiPsk != null) {

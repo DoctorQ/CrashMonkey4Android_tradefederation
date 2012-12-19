@@ -16,8 +16,6 @@
 
 package com.android.tradefed.device;
 
-import com.android.tradefed.device.WifiHelper.WifiState;
-import com.android.tradefed.targetprep.TargetSetupError;
 
 /**
  * Helper interface for manipulating wifi services on device.
@@ -25,18 +23,27 @@ import com.android.tradefed.targetprep.TargetSetupError;
 interface IWifiHelper {
 
     /**
+     * The Wifi supplicant state. Should match states defined in android.net.wifi.SupplicantState.
+     */
+    public enum WifiState {
+        COMPLETED, SCANNING, DISCONNECTED, OTHER;
+    }
+
+    /**
      * Enables wifi state on device.
      *
+     * @return <code>true</code> if wifi was enabled successfully
      * @throws DeviceNotAvailableException
      */
-    void enableWifi() throws DeviceNotAvailableException, TargetSetupError;
+    boolean enableWifi() throws DeviceNotAvailableException;
 
     /**
      * Disables wifi state on device.
      *
+     * @return <code>true</code> if wifi was disabled successfully
      * @throws DeviceNotAvailableException
      */
-    void disableWifi() throws DeviceNotAvailableException, TargetSetupError;
+    boolean disableWifi() throws DeviceNotAvailableException;
 
     /**
      * Waits until one of the expected wifi states occurs.
@@ -94,5 +101,27 @@ interface IWifiHelper {
      * @throws DeviceNotAvailableException
      */
     void removeAllNetworks() throws DeviceNotAvailableException;
+
+    /**
+     * Check if wifi is currently enabled.
+     */
+    boolean isWifiEnabled() throws DeviceNotAvailableException;
+
+    /**
+     * Wait for {@link #isWifiEnabled()} to be true with a default timeout.
+     *
+     * @return <code>true</code> if wifi was enabled before timeout, <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    boolean waitForWifiEnabled() throws DeviceNotAvailableException;
+
+    /**
+     * Wait for {@link #isWifiEnabled()}  to be true.
+     *
+     * @param timeout time in ms to wait
+     * @return <code>true</code> if wifi was enabled before timeout, <code>false</code> otherwise.
+     * @throws DeviceNotAvailableException
+     */
+    boolean waitForWifiEnabled(long timeout) throws DeviceNotAvailableException;
 
 }

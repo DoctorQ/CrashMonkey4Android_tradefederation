@@ -37,7 +37,6 @@ import java.util.regex.Pattern;
 public class WifiHelper implements IWifiHelper {
 
     private static final String NULL_IP_ADDR = "0.0.0.0";
-    private static final String INTERFACE_KEY = "interface";
     private static final String INSTRUMENTATION_CLASS = ".WifiUtil";
     private static final String INSTRUMENTATION_PKG = "com.android.tradefed.utils.wifi";
     static final String FULL_INSTRUMENTATION_NAME =
@@ -47,15 +46,6 @@ public class WifiHelper implements IWifiHelper {
             String.format("pm list instrumentation %s", INSTRUMENTATION_PKG);
 
     private static final String WIFIUTIL_APK_NAME = "WifiUtil.apk";
-
-    enum WifiState {
-        COMPLETED, SCANNING, DISCONNECTED;
-    }
-
-    /** token used to detect proper command response */
-    static final String SUCCESS_MARKER = "tHiS-iS-sUcCeSs-MaRkEr";
-
-    private static final String WPA_STATE = "wpa_state";
 
     /** the default time in ms to wait for a wifi state */
     private static final long DEFAULT_WIFI_STATE_TIMEOUT = 30*1000;
@@ -111,26 +101,16 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
-    public void enableWifi() throws DeviceNotAvailableException, TargetSetupError {
-        final String output = mDevice.executeShellCommand("svc wifi enable");
-        if (!output.matches("^\\s*$")) {
-            // We expect empty, possibly with whitespace
-            throw new TargetSetupError(String.format(
-                    "Failed to enable wifi; `svc wifi enable` returned \"%s\"", output));
-        }
+    public boolean enableWifi() throws DeviceNotAvailableException {
+        return asBool(runWifiUtil("enableWifi"));
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void disableWifi() throws DeviceNotAvailableException, TargetSetupError {
-        final String output = mDevice.executeShellCommand("svc wifi disable");
-        if (!output.matches("^\\s*$")) {
-            // We expect empty, possibly with whitespace
-            throw new TargetSetupError(String.format(
-                    "Failed to disable wifi; `svc wifi disable` returned \"%s\"", output));
-        }
+    public boolean disableWifi() throws DeviceNotAvailableException {
+        return asBool(runWifiUtil("disableWifi"));
     }
 
     /**
@@ -154,13 +134,10 @@ public class WifiHelper implements IWifiHelper {
             throws DeviceNotAvailableException {
         long startTime = System.currentTimeMillis();
         while (System.currentTimeMillis() < (startTime + timeout)) {
-            Map<String, String> statusMap = getWifiStatus();
-            if (statusMap != null) {
-                String state = statusMap.get(WPA_STATE);
-                for (WifiState expectedState : expectedStates) {
-                    if (expectedState.name().equals(state)) {
-                        return true;
-                    }
+            String state = runWifiUtil("getSupplicantState");
+            for (WifiState expectedState : expectedStates) {
+                if (expectedState.name().equals(state)) {
+                    return true;
                 }
             }
             getRunUtil().sleep(getPollTime());
@@ -173,48 +150,6 @@ public class WifiHelper implements IWifiHelper {
      */
     long getPollTime() {
         return 1*1000;
-    }
-
-    /**
-     * Retrieves wifi status from device.
-     * <p/>
-     * This will call 'wpa_cli' status on device. Typical output looks like:
-     *
-     * <pre>
-     * Using interface 'tiwlan0'
-     * bssid=00:0b:86:c3:80:40
-     * ssid=ssidname
-     * id=0
-     * pairwise_cipher=NONE
-     * group_cipher=NONE
-     * key_mgmt=NONE
-     * wpa_state=COMPLETED
-     * </pre>
-     *
-     * Each line will be converted to an entry in the resulting map, with an additional key
-     * {@link #INTERFACE_KEY} indicating the interface name.
-     *
-     * @return a map containing wifi status variables. <code>null</code> if wpa_cli failed to
-     *         connect to wpa_supplicant
-     * @throws DeviceNotAvailableException
-     */
-    Map<String, String> getWifiStatus() throws DeviceNotAvailableException {
-        Map<String, String> statusMap = new HashMap<String, String>();
-        WpaCliOutput output = callWpaCli("status");
-        if (!output.isSuccess()) {
-            return null;
-        }
-        for (String line: output.mOutputLines) {
-            String[] pair = line.split("=", 2);
-            if (pair.length == 2) {
-                statusMap.put(pair[0], pair[1]);
-            }
-        }
-        if (!statusMap.containsKey(WPA_STATE)) {
-            return null;
-        }
-        statusMap.put(INTERFACE_KEY, output.mWpaInterface);
-        return statusMap;
     }
 
     /**
@@ -298,6 +233,35 @@ public class WifiHelper implements IWifiHelper {
     @Override
     public void removeAllNetworks() throws DeviceNotAvailableException {
         runWifiUtil("removeAllNetworks");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isWifiEnabled() throws DeviceNotAvailableException {
+        return asBool(runWifiUtil("isWifiEnabled"));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean waitForWifiEnabled() throws DeviceNotAvailableException {
+        return waitForWifiEnabled(DEFAULT_WIFI_STATE_TIMEOUT);
+    }
+
+    @Override
+    public boolean waitForWifiEnabled(long timeout) throws DeviceNotAvailableException {
+        long startTime = System.currentTimeMillis();
+
+        while (System.currentTimeMillis() < (startTime + timeout)) {
+            if (isWifiEnabled()) {
+                return true;
+            }
+            getRunUtil().sleep(getPollTime());
+        }
+        return false;
     }
 
     /**
@@ -387,77 +351,6 @@ public class WifiHelper implements IWifiHelper {
     private static String quote(String str) {
         return String.format("\"%s\"", str);
     }
-
-    /**
-     * Calls wpa_cli and does initial parsing.
-     *
-     * @param cmd the wpa_cli command to run
-     * @return a WpaCliOutput object containing the result of the command. If an error is detected
-     *         in wpa_cli output, e.g. failed to connect to wpa_supplicant, which is typically due
-     *         to disabled wifi, <code>null</code> will be returned
-     * @throws DeviceNotAvailableException
-     */
-    private WpaCliOutput callWpaCli(String cmd) throws DeviceNotAvailableException {
-        String fullCmd = String.format("wpa_cli %s && echo && echo %s", cmd, SUCCESS_MARKER);
-        WpaCliOutput output = new WpaCliOutput();
-        mDevice.executeShellCommand(fullCmd, output);
-        return output;
-    }
-
-    /**
-     * Processes the output of a wpa_cli command.
-     */
-    private static class WpaCliOutput extends MultiLineReceiver {
-
-        private boolean mDidCommandComplete = false;
-        private boolean mIsCommandSuccess = true;
-
-        /** The name of the interface resulting from a wpa cli command */
-        String mWpaInterface = null;
-
-        /** The output lines of the wpa cli command. */
-        List<String> mOutputLines;
-
-        WpaCliOutput() {
-            mOutputLines = new ArrayList<String>();
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public void processNewLines(String[] lines) {
-            // expect SUCCESS_MARKER to be present on last line for successful command
-            if (!mDidCommandComplete) {
-                mDidCommandComplete = lines[lines.length -1].equals(SUCCESS_MARKER);
-            }
-            Pattern interfacePattern = Pattern.compile("Using interface '(.*)'");
-
-            for (String line : lines) {
-                mOutputLines.add(line);
-                if (line.contains("Failed to connect to wpa_supplicant")) {
-                    mIsCommandSuccess = false;
-                }
-                Matcher interfaceMatcher = interfacePattern.matcher(line);
-                if (interfaceMatcher.find()) {
-                    mWpaInterface = interfaceMatcher.group(1);
-                }
-            }
-        }
-
-        public boolean isSuccess() {
-            return mDidCommandComplete && mIsCommandSuccess;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean isCancelled() {
-            return false;
-        }
-    }
-
 
     /**
      * Processes the output of a WifiUtil invocation

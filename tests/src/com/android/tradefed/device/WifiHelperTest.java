@@ -16,7 +16,6 @@
 package com.android.tradefed.device;
 
 import com.android.ddmlib.IShellOutputReceiver;
-import com.android.tradefed.device.WifiHelper.WifiState;
 
 import junit.framework.TestCase;
 
@@ -28,81 +27,11 @@ import org.easymock.EasyMock;
 public class WifiHelperTest extends TestCase {
 
     private ITestDevice mMockDevice;
-    private WifiHelper mWifi;
 
     @Override
     protected void setUp() throws Exception {
         super.setUp();
         mMockDevice = EasyMock.createMock(ITestDevice.class);
-        mWifi = new WifiHelper(mMockDevice) {
-            @Override
-            long getPollTime() {
-                return 50;
-            }
-
-            @Override
-            void ensureDeviceSetup() {
-                // ignore
-            }
-        };
-    }
-
-    /**
-     * Test {@link WifiHelper#waitForWifiState(WifiState...))} success case.
-     */
-    public void testWaitForWifiState() throws DeviceNotAvailableException {
-        injectStatusResult(WifiState.COMPLETED);
-        EasyMock.replay(mMockDevice);
-        assertTrue(mWifi.waitForWifiState(WifiState.SCANNING, WifiState.COMPLETED));
-    }
-
-    /**
-     * Test {@link WifiHelper#getWifiStatus())} case when response is missing SUCCESS marker.
-     */
-    public void testGetWifiStatus_missingMarker() throws DeviceNotAvailableException {
-        final String statusQueryReturn =
-                "Using interface 'eth0'\r\n" +
-                "id=0\r\n" +
-                "wpa_state=COMPLETED\r\n";
-        injectShellResponse(statusQueryReturn);
-        EasyMock.replay(mMockDevice);
-        assertNull(mWifi.getWifiStatus());
-    }
-
-    /**
-     * Test {@link WifiHelper#getWifiStatus())} case when response is missing state.
-     */
-    public void testGetWifiStatus_missingState() throws DeviceNotAvailableException {
-        final String statusQueryReturn = String.format(
-                "Using interface 'eth0'\r\n" +
-                "id=0\r\n" +
-                "%s\r\n", WifiHelper.SUCCESS_MARKER);
-        injectShellResponse(statusQueryReturn);
-        EasyMock.replay(mMockDevice);
-        assertNull(mWifi.getWifiStatus());
-    }
-
-    private void injectStatusResult(WifiState state) throws DeviceNotAvailableException {
-        final String statusQueryReturn = String.format(
-            "Using interface 'eth0'\r\n" +
-            "id=0\r\n" +
-            "wpa_state=%s\r\n" +
-            "%s\r\n",
-            state.name(), WifiHelper.SUCCESS_MARKER);
-        injectShellResponse(statusQueryReturn);
-    }
-
-    private void injectShellResponse(final String data) throws DeviceNotAvailableException {
-        mMockDevice.executeShellCommand((String)EasyMock.anyObject(),
-                (IShellOutputReceiver)EasyMock.anyObject());
-        EasyMock.expectLastCall().andDelegateTo(new StubTestDevice() {
-            @Override
-            public void executeShellCommand(String cmd, IShellOutputReceiver receiver) {
-                byte[] byteData = data.getBytes();
-                receiver.addOutput(byteData, 0, byteData.length);
-                receiver.flush();
-            }
-        });
     }
 
     // tests for reimplementation
