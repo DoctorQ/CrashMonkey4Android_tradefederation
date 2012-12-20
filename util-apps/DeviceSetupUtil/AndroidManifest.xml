@@ -19,15 +19,21 @@
     package="com.android.tradefed.utils" >
 
     <uses-permission android:name="android.permission.DISABLE_KEYGUARD" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.WRITE_SETTINGS" />
 
     <application>
-        <receiver android:name="com.android.tradefed.utils.DismissKeyguardIntentReceiver" >
+        <receiver android:name="com.android.tradefed.utils.DeviceSetupIntentReceiver" >
             <intent-filter>
-                <action android:name="com.android.tradefed.utils.DISMISS_KEYGUARD" />
+                <action android:name="com.android.tradefed.utils.DEVICE_SETUP" />
+                <action android:name="android.intent.action.ACTION_POWER_CONNECTED" />
+                <action android:name="android.intent.action.ACTION_POWER_DISCONNECTED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_DETACHED" />
+                <action android:name="android.hardware.usb.action.USB_DEVICE_ATTACHED" />
             </intent-filter>
         </receiver>
 
-        <service android:name="com.android.tradefed.utils.DismissKeyguardService" />
+        <service android:name="com.android.tradefed.utils.DeviceSetupService" />
 
         <activity
             android:name="com.android.tradefed.utils.MainActivity"
