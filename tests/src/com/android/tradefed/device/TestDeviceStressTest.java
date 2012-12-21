@@ -38,6 +38,10 @@ public class TestDeviceStressTest extends DeviceTestCase {
     @Option(name = "iterations", description = "number of iterations to test")
     private int mIterations = 50;
 
+    @Option(name = "stop-on-failure", description =
+            "stops the rest of the iteration on a failure")
+    private boolean mStopOnFailure = true;
+
     private static final String LOG_TAG = "TestDeviceStressTest";
     private static final int TEST_FILE_COUNT= 200;
     private TestDevice mTestDevice;
@@ -84,11 +88,19 @@ public class TestDeviceStressTest extends DeviceTestCase {
     }
 
     public void testManyDisableKeyguard() throws DeviceNotAvailableException {
+        int passed = 0;
+        boolean iterationPassed;
         for (int i=0; i < mIterations; i++) {
             Log.i(LOG_TAG, String.format("testDisableKeyguard attempt %d", i));
             mTestDevice.reboot();
-            assertTrue(runUITests());
+            iterationPassed = runUITests();
+            if (mStopOnFailure){
+                assertTrue(iterationPassed);
+            } else {
+                passed += iterationPassed? 1 : 0;
+            }
         }
+        assertEquals(mIterations, passed);
     }
 
     /**
