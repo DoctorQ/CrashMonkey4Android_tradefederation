@@ -60,31 +60,26 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private static final int MAX_TEST_TIMEOUT = 5 * 60 * 60 * 1000;
 
     // Constants for running the tests
-    private static final String mTestClassName =
+    private static final String TEST_CLASS_NAME =
             "com.android.mediaframeworktest.stress.MediaRecorderStressTest";
-    private static final String mTestPackageName = "com.android.mediaframeworktest";
-    private static final String mTestRunnerName = ".MediaRecorderStressTestRunner";
+    private static final String TEST_PACKAGE_NAME = "com.android.mediaframeworktest";
+    private static final String TEST_RUNNER_NAME = ".MediaRecorderStressTestRunner";
 
     // Constants for parsing the output file
-    private static final String PREVIEW_STANZA = "Camera start preview stress:";
-    private static final String SWITCH_STANZA = "Camera and video recorder preview switching";
-    private static final String PLAYBACK_STANZA = "Video record and play back stress test:";
-    private static final String RECORDING_STANZA = "H263 video record";
-    private static final String TIMELAPSE_STANZA = "Start camera time lapse stress:";
+    private Map<String, String> outputStanzas;
     private static final Pattern EXPECTED_LOOP_COUNT_PATTERN =
             Pattern.compile("Total number of loops:\\s*(\\d+)");
     private static final Pattern ACTUAL_LOOP_COUNT_PATTERN =
             Pattern.compile("No of loop:.*,\\s*(\\d+)\\s*");
-
-    private final String mOutputPath = "mediaStressOutput.txt";
+    private static final String OUTPUT_PATH = "mediaStressOutput.txt";
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
 
-        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mTestPackageName,
-                mTestRunnerName, mTestDevice.getIDevice());
-        runner.setClassName(mTestClassName);
+        IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
+                TEST_RUNNER_NAME, mTestDevice.getIDevice());
+        runner.setClassName(TEST_CLASS_NAME);
         runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
 
         cleanTmpFiles();
@@ -99,7 +94,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private void cleanTmpFiles() throws DeviceNotAvailableException {
         String extStore = mTestDevice.getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
         mTestDevice.executeShellCommand(String.format("rm %s/temp*.3gp", extStore));
-        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, mOutputPath));
+        mTestDevice.executeShellCommand(String.format("rm %s/%s", extStore, OUTPUT_PATH));
     }
 
     /**
@@ -111,7 +106,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
         File outputFile = null;
         InputStreamSource outputSource = null;
         try {
-            outputFile = mTestDevice.pullFileFromExternal(mOutputPath);
+            outputFile = mTestDevice.pullFileFromExternal(OUTPUT_PATH);
 
             if (outputFile == null) {
                 return;
@@ -120,10 +115,11 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
             Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
                     outputFile.length(), outputFile));
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
-            listener.testLog(mOutputPath, LogDataType.TEXT, outputSource);
+            listener.testLog(OUTPUT_PATH, LogDataType.TEXT, outputSource);
             parseOutputFile(outputFile, listener);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("IOException while reading or parsing output file: %s", e));
+            Log.e(LOG_TAG,
+                    String.format("IOException while reading or parsing output file: %s", e));
         } finally {
             if (outputFile != null) {
                 outputFile.delete();
@@ -139,6 +135,14 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
      */
     private void parseOutputFile(File outputFile, ITestInvocationListener listener) {
         Map<String, String> runMetrics = new HashMap<String, String>();
+        Map<String, String> stanzaKeyMap = new HashMap<String, String>();
+        stanzaKeyMap.put("testStressCamera", "StopPreviewAndRelease");
+        stanzaKeyMap.put("testStressCameraSwitchRecorder", "SwitchModeCameraVideo");
+        stanzaKeyMap.put("testStressRecordVideoAndPlayback1080P", "VideoRecordPlayback1080P");
+        stanzaKeyMap.put("testStressRecordVideoAndPlayback720P", "VideoRecordPlayback720P");
+        stanzaKeyMap.put("testStressRecordVideoAndPlayback480P", "VideoRecordPlayback480P");
+        stanzaKeyMap.put("testStressRecorder", "VideoRecording");
+        stanzaKeyMap.put("testStressTimeLapse", "TimeLapseRecord");
 
         // try to parse it
         String contents;
@@ -156,21 +160,11 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
         while (lineIter.hasNext()) {
             line = lineIter.next();
             String key = null;
-            if (PREVIEW_STANZA.equals(line)) {
-                key = "StopPreviewAndRelease";
-            } else if (SWITCH_STANZA.equals(line)) {
-                key = "SwitchModeCameraVideo";
-            } else if (PLAYBACK_STANZA.equals(line)) {
-                key = "VideoRecordPlayback";
-            } else if (line.startsWith(RECORDING_STANZA)) {
-                key = "VideoRecording";
-            } else if (TIMELAPSE_STANZA.equals(line)) {
-                key = "TimeLapseRecord";
-            } else if (line.isEmpty()) {
-                // ignore
-                continue;
+
+            if (stanzaKeyMap.containsKey(line)) {
+                key = stanzaKeyMap.get(line);
             } else {
-                Log.e(LOG_TAG, String.format("Got unexpected line: %s", line));
+                Log.d(LOG_TAG, String.format("Got unexpected line: %s", line));
                 continue;
             }
 
@@ -241,4 +235,3 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
         return mTestDevice;
     }
 }
-
