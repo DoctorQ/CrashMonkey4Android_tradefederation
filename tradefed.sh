@@ -79,5 +79,5 @@ fi
 
 
 # Note: must leave ${RDBG_FLAG} unquoted so that it goes away when unset
-java ${RDBG_FLAG} \
+java ${RDBG_FLAG} -XX:+HeapDumpOnOutOfMemoryError \
   -cp "${ddmlib_path}:${tf_path}" com.android.tradefed.command.Console "$@"
