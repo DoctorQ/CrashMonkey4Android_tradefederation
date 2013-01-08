@@ -56,8 +56,8 @@ public class DeviceBuildDescriptor {
     }
 
     /**
-     * Gets the device build alias. Maps to the {@link ITestDevice#DISPLAYED_BUILD_ID_PROP}
-     * property on device. Typically follows format IMM76.
+     * Gets the device build alias. Maps to the ro.build.id property on device. Typically follows
+     * format IMM76.
      */
     public String getDeviceBuildAlias() {
         return mBuild.getBuildAttributes().get(DEVICE_BUILD_ALIAS);
@@ -86,8 +86,7 @@ public class DeviceBuildDescriptor {
     public static void injectDeviceAttributes(ITestDevice device, IBuildInfo b)
             throws DeviceNotAvailableException {
         b.addBuildAttribute(DEVICE_BUILD_ID, device.getBuildId());
-        b.addBuildAttribute(DEVICE_BUILD_ALIAS, device.getProperty(
-                ITestDevice.DISPLAYED_BUILD_ID_PROP));
+        b.addBuildAttribute(DEVICE_BUILD_ALIAS, device.getProperty("ro.build.id"));
         b.addBuildAttribute(DEVICE_PRODUCT, device.getProperty("ro.product.name"));
         b.addBuildAttribute(DEVICE_BUILD_TYPE, device.getProperty("ro.build.type"));
     }

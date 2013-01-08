@@ -52,13 +52,6 @@ public interface ITestDevice {
     }
 
     /**
-     * The property name of the device's 'displayed' build ID. This is typically a more
-     * user-friendly presentation than {@link ITestDevice#getBuildId()} which for Nexus devices is
-     * typically an integer.
-     */
-    public static final String DISPLAYED_BUILD_ID_PROP = "ro.build.display.id";
-
-    /**
      * A simple struct class to store information about a single mountpoint
      */
     public static class MountPointInfo {
