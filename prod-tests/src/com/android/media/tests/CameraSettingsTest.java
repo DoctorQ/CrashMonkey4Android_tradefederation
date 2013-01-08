@@ -19,6 +19,7 @@ package com.android.media.tests;
 import com.android.ddmlib.IDevice;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
@@ -46,9 +47,10 @@ import java.util.regex.Pattern;
  * Camera zoom stress test that increments the camera's zoom level across the
  * entire range [min, max], taking a picture at each level.
  */
-public class CameraZoomTest implements IDeviceTest, IRemoteTest {
+public class CameraSettingsTest implements IDeviceTest, IRemoteTest {
 
-    private static final String ZOOM_STANZA = "Camera zoom stress:";
+    private static final String ZOOM_STANZA = "testStressCameraZoom:";
+    private static final String SCENE_MODES_STANZA = "testStressCameraSceneModes:";
     private static final Pattern EXPECTED_LOOP_COUNT_PATTERN =
             Pattern.compile("(Total number of loops:)(\\s*)(\\d+)");
     private static final Pattern ACTUAL_LOOP_COUNT_PATTERN =
@@ -56,13 +58,16 @@ public class CameraZoomTest implements IDeviceTest, IRemoteTest {
 
     private static final String TEST_CLASS_NAME =
             "com.android.mediaframeworktest.stress.CameraStressTest";
-    private static final String TEST_METHOD_NAME = "testStressCameraZoom";
     private static final String TEST_PACKAGE_NAME = "com.android.mediaframeworktest";
     private static final String TEST_RUNNER_NAME =
             "com.android.mediaframeworktest.CameraStressTestRunner";
     private static final String TEST_RU = "CameraApplicationStress";
 
     private final String mOutputPath = "cameraStressOutput.txt";
+
+    @Option(name="testMethodName", description="Used to specify a specific test method to run")
+    private String mTestMethodName = null;
+
     ITestDevice mTestDevice = null;
 
     /**
@@ -75,7 +80,10 @@ public class CameraZoomTest implements IDeviceTest, IRemoteTest {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
                 TEST_RUNNER_NAME, mTestDevice.getIDevice());
         runner.setClassName(TEST_CLASS_NAME);
-        runner.setMethodName(TEST_CLASS_NAME, TEST_METHOD_NAME);
+
+        if (mTestMethodName != null) {
+            runner.setMethodName(TEST_CLASS_NAME, mTestMethodName);
+        }
 
         BugreportCollector bugListener = new BugreportCollector(listener, mTestDevice);
         bugListener.addPredicate(BugreportCollector.AFTER_FAILED_TESTCASES);
@@ -163,29 +171,34 @@ public class CameraZoomTest implements IDeviceTest, IRemoteTest {
 
         while (listIterator.hasNext()) {
             line = listIterator.next();
+            CLog.d(String.format("Parsing line: \"%s\"", line));
 
             if (ZOOM_STANZA.equals(line)) {
                 key = "CameraZoom";
+            } else if (SCENE_MODES_STANZA.equals(line)) {
+                key = "CameraSceneMode";
             }
 
             Matcher expectedMatcher = EXPECTED_LOOP_COUNT_PATTERN.matcher(line);
             if (expectedMatcher.matches()) {
                 expectedCount = new Integer(expectedMatcher.group(3));
+                CLog.d(String.format("Found expected count for key \"%s\": %s",
+                        key, expectedCount));
             }
 
             Matcher actualMatcher = ACTUAL_LOOP_COUNT_PATTERN.matcher(line);
             if (actualMatcher.matches()) {
                 actualCount = new Integer(actualMatcher.group(3));
+                CLog.d(String.format("Found actual count for key \"%s\": %s", key, actualCount));
             }
 
             if ((key != null) && (expectedCount != null) && (actualCount != null)) {
-                metrics.put(key, String.format("%d",
-                        coalesceLoopCounts(expectedCount, actualCount)));
-
-                key = null;
-                expectedCount = null;
-                actualCount = null;
+                metrics.put(key, String.format("%d", actualCount));
             }
+
+            key = null;
+            expectedCount = null;
+            actualCount = null;
         }
 
         return metrics;
@@ -207,19 +220,5 @@ public class CameraZoomTest implements IDeviceTest, IRemoteTest {
         CLog.d(String.format("About to report metrics: %s", metrics));
         listener.testRunStarted(runName, 0);
         listener.testRunEnded(0, metrics);
-    }
-
-    /**
-     * Given an actual and an expected iteration count, determine a single
-     * metric to report.
-     */
-    private int coalesceLoopCounts(Integer actual, Integer expected) {
-        if (expected == null || expected <= 0) {
-            return -1;
-        } else if (actual == null) {
-            return 0;
-        } else {
-            return actual;
-        }
     }
 }
