@@ -932,7 +932,7 @@ public class DeviceManager implements IDeviceManager {
                     deviceState,
                     getDisplay(selector.getDeviceProductType(device)),
                     getDisplay(selector.getDeviceProductVariant(device)),
-                    getDisplay(device.getProperty(ITestDevice.DISPLAYED_BUILD_ID_PROP)),
+                    getDisplay(device.getProperty("ro.build.id")),
                     getDisplay(selector.getBatteryLevel(device)))
             );
         }
