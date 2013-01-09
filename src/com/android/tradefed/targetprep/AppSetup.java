@@ -33,7 +33,7 @@ import java.util.Set;
 @OptionClass(alias="app-setup")
 public class AppSetup implements ITargetPreparer, ITargetCleaner {
 
-    @Option(name = "reboot", description = "reboot device during setup.")
+    @Option(name="reboot", description="reboot device after running tests.")
     private boolean mReboot = true;
 
     @Option(name = "install", description = "install all apks in build.")
@@ -58,11 +58,6 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
         CLog.i("Performing setup on %s", device.getSerialNumber());
 
-        if (mReboot) {
-            // reboot device to get a clean state
-            device.reboot();
-        }
-
         if (mInstall) {
             for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
                 String result = device.installPackage(apkFile.getFile(), true);
@@ -81,6 +76,10 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
     @Override
     public void tearDown(ITestDevice device, IBuildInfo buildInfo, Throwable e)
             throws DeviceNotAvailableException {
+        // reboot device before uninstalling apps, in case device is wedged
+        if (mReboot) {
+            device.reboot();
+        }
         if (mUninstall) {
             Set<String> pkgs = device.getInstalledNonSystemPackageNames();
             for (String pkg : pkgs) {
