@@ -31,7 +31,7 @@ public class DeviceBuildDescriptorFuncTest extends DeviceTestCase {
         assertTrue(DeviceBuildDescriptor.describesDeviceBuild(b));
         DeviceBuildDescriptor d2 = new DeviceBuildDescriptor(b);
         assertNotNull(d2.getDeviceBuildId());
-        assertNotNull(d2.getProductName());
-        assertNotNull(d2.getType());
+        assertNotNull(d2.getDeviceBuildFlavor());
+        assertNotNull(d2.getDeviceUserDescription());
     }
 }

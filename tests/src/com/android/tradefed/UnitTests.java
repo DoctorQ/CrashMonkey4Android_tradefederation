@@ -16,6 +16,7 @@
 package com.android.tradefed;
 
 import com.android.tradefed.build.BuildInfoTest;
+import com.android.tradefed.build.DeviceBuildDescriptorTest;
 import com.android.tradefed.build.DeviceBuildInfoTest;
 import com.android.tradefed.build.FileDownloadCacheTest;
 import com.android.tradefed.build.KernelBuildInfoTest;
@@ -108,6 +109,7 @@ public class UnitTests extends DeviceTestSuite {
         // build
         addTestSuite(BuildInfoTest.class);
         addTestSuite(DeviceBuildInfoTest.class);
+        addTestSuite(DeviceBuildDescriptorTest.class);
         addTestSuite(FileDownloadCacheTest.class);
         addTestSuite(KernelBuildInfoTest.class);
         addTestSuite(KernelDeviceBuildInfoTest.class);
