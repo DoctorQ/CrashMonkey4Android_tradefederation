@@ -19,20 +19,15 @@ package com.android.tradefed.command;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
-import com.android.tradefed.config.ArgsOptionParser;
 import com.android.tradefed.config.ConfigurationException;
 import com.android.tradefed.config.ConfigurationFactory;
-import com.android.tradefed.config.GlobalConfiguration;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.config.IConfigurationFactory;
-import com.android.tradefed.config.IGlobalConfiguration;
 import com.android.tradefed.device.DeviceManager;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
-import com.android.tradefed.device.IDeviceMonitor;
-import com.android.tradefed.device.IDeviceSelection;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
@@ -47,7 +42,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -97,6 +91,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
 
     /** used to assign unique ids to each CommandTracker created */
     private int mCurrentCommandId = 0;
+
+    /** flag for instructing scheduler to exit when no commands are present */
+    private boolean mShutdownOnEmpty = false;
 
     private enum CommandState {
         WAITING_FOR_DEVICE("Wait_for_device"),
@@ -503,6 +500,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                     }
                 }
             }
+            mCommandTimer.shutdown();
             CLog.i("Waiting for invocation threads to complete");
             List<InvocationThread> threadListCopy;
             synchronized (this) {
@@ -743,7 +741,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     private synchronized boolean isShutdown() {
-        return mCommandTimer.isShutdown();
+        return mCommandTimer.isShutdown() || (mShutdownOnEmpty && mAllCommands.isEmpty());
     }
 
     /**
@@ -756,6 +754,16 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             if (mCommandTimer != null) {
                 mCommandTimer.shutdownNow();
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public synchronized void shutdownOnEmpty() {
+        if (!isShutdown()) {
+            mShutdownOnEmpty = true;
         }
     }
 
