@@ -29,8 +29,8 @@ public class DeviceBuildDescriptor {
 
     private static final String DEVICE_BUILD_ID = "device_build_id";
     private static final String DEVICE_BUILD_ALIAS = "device_build_alias";
-    private static final String DEVICE_PRODUCT = "device_product_name";
-    private static final String DEVICE_BUILD_TYPE = "device_build_type";
+    private static final String DEVICE_BUILD_FLAVOR = "device_build_flavor";
+    private static final String DEVICE_DESC = "device_description";
 
     private final IBuildInfo mBuild;
 
@@ -64,17 +64,21 @@ public class DeviceBuildDescriptor {
     }
 
     /**
-     * Gets the device product name.
+     * Gets the device build flavor eg yakju-userdebug.
      */
-    public String getProductName() {
-        return mBuild.getBuildAttributes().get(DEVICE_PRODUCT);
+    public String getDeviceBuildFlavor() {
+        return mBuild.getBuildAttributes().get(DEVICE_BUILD_FLAVOR);
     }
 
     /**
-     * Gets the device build type. eg typically one of userdebug, user, eng
+     * Gets a description of the device and build. This is typically a more end-user friendly
+     * description compared with {@link #getDeviceBuildAlias()} and {@link #getDeviceBuildFlavor()}
+     * but with the possible penalty of being less precise.
+     * eg. it wouldn't be possible to distinguish the GSM (yakju) and CDMA (mysid) variants of
+     * Google Galaxy Nexus using this string.
      */
-    public String getType() {
-        return mBuild.getBuildAttributes().get(DEVICE_BUILD_TYPE);
+    public String getDeviceUserDescription() {
+        return mBuild.getBuildAttributes().get(DEVICE_DESC);
     }
 
     /**
@@ -87,7 +91,30 @@ public class DeviceBuildDescriptor {
             throws DeviceNotAvailableException {
         b.addBuildAttribute(DEVICE_BUILD_ID, device.getBuildId());
         b.addBuildAttribute(DEVICE_BUILD_ALIAS, device.getProperty("ro.build.id"));
-        b.addBuildAttribute(DEVICE_PRODUCT, device.getProperty("ro.product.name"));
-        b.addBuildAttribute(DEVICE_BUILD_TYPE, device.getProperty("ro.build.type"));
+        String buildFlavor = String.format("%s-%s", device.getProperty("ro.product.name"),
+                device.getProperty("ro.build.type"));
+        b.addBuildAttribute(DEVICE_BUILD_FLAVOR, buildFlavor);
+        b.addBuildAttribute(DEVICE_DESC, generateDeviceDesc(device));
+    }
+
+    /**
+     * Generate the device description string from device properties.
+     * <p/>
+     * Description should follow this format: eg
+     * Google Galaxy Nexus 4.2
+     *
+     * @param device
+     * @return
+     * @throws DeviceNotAvailableException
+     */
+    private static String generateDeviceDesc(ITestDevice device)
+            throws DeviceNotAvailableException {
+        // brand is typically all lower case. Capitalize it
+        String brand =  device.getProperty("ro.product.brand");
+        if (brand.length() > 1) {
+            brand = String.format("%s%s", brand.substring(0, 1).toUpperCase(), brand.substring(1));
+        }
+        return String.format("%s %s %s", brand, device.getProperty("ro.product.model"),
+                device.getProperty("ro.build.release"));
     }
 }
