@@ -232,7 +232,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
 
         if (rootEntry.isDirectory()) {
             // recursively run tests in all subdirectories
-            for (IFileEntry childEntry : rootEntry.getChildren(true)) {
+            for (IFileEntry childEntry : rootEntry.getChildren(false)) {
                 doRunAllTestsInSubdirectory(childEntry, testDevice, listener);
             }
         } else {
@@ -261,6 +261,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
             final String fullPath, final String flags) throws DeviceNotAvailableException {
         // TODO: add individual test timeout support, and rerun support
         try {
+            String cmd = getGTestCmdLine(fullPath, flags);
             testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser,
                     mMaxTestTimeMs /* maxTimeToShellOutputResponse */,
                     0 /* retryAttempts */);
@@ -273,6 +274,17 @@ public class GTest implements IDeviceTest, IRemoteTest {
             resultParser.flush();
             throw e;
         }
+    }
+
+    /**
+     * Helper method to build the gtest command to run.
+     *
+     * @param fullPath absolute file system path to gtest binary on device
+     * @param flags gtest execution flags
+     * @return the shell command line to run for the gtest
+     */
+    protected String getGTestCmdLine(String fullPath, String flags) {
+        return String.format("%s %s", fullPath, flags);
     }
 
     /**
