@@ -115,7 +115,7 @@ public class BandwidthUtils {
         } catch (IOException e) {
             CLog.d("Failed to read file %s: %s", statsFile.toString(), e.getMessage());
         } finally {
-            StreamUtil.closeStream(fStream);
+            StreamUtil.close(fStream);
         }
     }
 
@@ -148,7 +148,7 @@ public class BandwidthUtils {
         } catch (IOException e) {
             CLog.d("Failed to read file %s: %s", file.toString(), e.getMessage());
         } finally {
-            StreamUtil.closeStream(fStream);
+            StreamUtil.close(fStream);
         }
     }
 
@@ -281,7 +281,7 @@ public class BandwidthUtils {
         } catch (IOException e) {
             CLog.d("Failed to read file %s: %s", file.toString(), e.getMessage());
         } finally {
-            StreamUtil.closeStream(fStream);
+            StreamUtil.close(fStream);
         }
         return null;
     }

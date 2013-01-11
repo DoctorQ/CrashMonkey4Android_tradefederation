@@ -218,7 +218,7 @@ public class LogFileSaverTest extends TestCase {
             final String testData = "Here's some test data, blah";
             ByteArrayInputStream mockInput = new ByteArrayInputStream(testData.getBytes());
             StreamUtil.copyStreams(mockInput, gzipOutStream);
-            StreamUtil.closeStream(gzipOutStream);
+            StreamUtil.close(gzipOutStream);
             // Verify test data was written to file
             gzipInputStream = new GZIPInputStream(new BufferedInputStream(
                     new FileInputStream(logFile)));
@@ -226,7 +226,7 @@ public class LogFileSaverTest extends TestCase {
             String actualLogString = StreamUtil.getStringFromStream(gzipInputStream);
             assertTrue(actualLogString.equals(testData));
         } finally {
-            StreamUtil.closeStream(gzipInputStream);
+            StreamUtil.close(gzipInputStream);
             FileUtil.deleteFile(logFile);
         }
     }

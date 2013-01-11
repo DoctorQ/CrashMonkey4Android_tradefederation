@@ -82,7 +82,7 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
         device.setRecoveryMode(RecoveryMode.ONLINE);
 
-        deleteData(device);
+        doDeleteData(device);
 
         CLog.d("Syncing test files/apks");
         File hostDir = new File(deviceBuild.getTestsDir(), "DATA");
@@ -109,6 +109,18 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
         RecoveryMode cachedRecoveryMode = device.getRecoveryMode();
         device.setRecoveryMode(RecoveryMode.ONLINE);
 
+        doDeleteData(device);
+
+        device.setRecoveryMode(cachedRecoveryMode);
+    }
+
+    /**
+     * Deletes userdata from device without toggling {@link RecoveryMode}.
+     * <p/>
+     * Expects callers to have set device to {@link RecoveryMode.ONLINE}.
+     */
+    private void doDeleteData(ITestDevice device) throws DeviceNotAvailableException,
+            TargetSetupError {
         // Stop the runtime, so it doesn't notice us mucking with the filesystem
         device.executeShellCommand("stop");
         // Stop installd to prevent it from writing to /data/data
@@ -138,8 +150,6 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
                 deleteDir(device, dataSubDir.getFullEscapedPath());
             }
         }
-
-        device.setRecoveryMode(cachedRecoveryMode);
     }
 
     /**

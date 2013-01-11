@@ -133,7 +133,7 @@ public class LogRegistry implements ILogRegistry {
         try {
             InputStream stream = source.createInputStream();
             mGlobalLogger.dumpToLog(stream);
-            StreamUtil.closeStream(stream);
+            StreamUtil.close(stream);
         } catch (IOException e) {
             System.err.println("Failed to dump log");
             e.printStackTrace();

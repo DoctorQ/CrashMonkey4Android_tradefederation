@@ -350,7 +350,7 @@ public class FileUtil {
             is = new FileInputStream(sourceFile);
             return StreamUtil.getStringFromStream(is);
         } finally {
-            StreamUtil.closeStream(is);
+            StreamUtil.close(is);
         }
     }
 
@@ -378,8 +378,8 @@ public class FileUtil {
             destStream = new BufferedOutputStream(new FileOutputStream(destFile));
             StreamUtil.copyStreams(origStream, destStream);
         } finally {
-            StreamUtil.closeStream(origStream);
-            StreamUtil.closeStream(destStream);
+            StreamUtil.close(origStream);
+            StreamUtil.close(destStream);
         }
     }
 
@@ -486,7 +486,7 @@ public class FileUtil {
             zipFile.delete();
             throw e;
         } finally {
-            StreamUtil.closeStream(out);
+            StreamUtil.close(out);
         }
     }
 
@@ -563,7 +563,7 @@ public class FileUtil {
             gzipFile.delete();
             throw e;
         } finally {
-            StreamUtil.closeStream(out);
+            StreamUtil.close(out);
         }
     }
 
@@ -581,7 +581,7 @@ public class FileUtil {
             inputStream = new BufferedInputStream(new FileInputStream(file));
             StreamUtil.copyStreams(inputStream, out);
         } finally {
-            StreamUtil.closeStream(inputStream);
+            StreamUtil.close(inputStream);
         }
     }
 
@@ -640,6 +640,7 @@ public class FileUtil {
         BufferedInputStream stream1 = null;
         BufferedInputStream stream2 = null;
 
+        boolean result = true;
         try {
             stream1 = new BufferedInputStream(new FileInputStream(file1));
             stream2 = new BufferedInputStream(new FileInputStream(file2));
@@ -648,15 +649,16 @@ public class FileUtil {
                 int byte1 = stream1.read();
                 int byte2 = stream2.read();
                 if (byte1 != byte2) {
-                    return false;
+                    result = false;
+                    break;
                 }
                 eof = byte1 == -1;
             }
-            return true;
         } finally {
-            StreamUtil.closeStream(stream1);
-            StreamUtil.closeStream(stream2);
+            StreamUtil.close(stream1);
+            StreamUtil.close(stream2);
         }
+        return result;
     }
 
     /**

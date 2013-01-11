@@ -32,7 +32,6 @@ import org.easymock.EasyMock;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Collection;
-import java.util.Collections;
 
 /**
  * Unit tests for {@link DeviceManager}.
@@ -62,7 +61,6 @@ public class DeviceManagerTest extends TestCase {
     private IManagedTestDevice mMockTestDevice;
     private IRunUtil mMockRunUtil;
     private ITestDeviceFactory mMockDeviceFactory;
-    private IDeviceMonitor mDeviceMonitor;
     private IGlobalConfiguration mMockGlobalConfig;
 
     /** a reference to the DeviceManager's IDeviceChangeListener. Used for triggering device
@@ -620,7 +618,6 @@ public class DeviceManagerTest extends TestCase {
      * <p />
      * FIXME: simplify call structure
      */
-    @SuppressWarnings("unchecked")
     public void testMonitor_allocate() throws DeviceNotAvailableException {
         final IDeviceMonitor dvcMon = EasyMock.createStrictMock(IDeviceMonitor.class);
         EasyMock.expect(mMockGlobalConfig.getDeviceMonitor()).andStubReturn(dvcMon);

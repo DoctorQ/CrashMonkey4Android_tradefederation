@@ -296,8 +296,8 @@ public class HttpHelperTest extends TestCase {
          * Close any open streams.
          */
         public void close() {
-            StreamUtil.closeStream(mInputStream);
-            StreamUtil.closeStream(mOutputStream);
+            StreamUtil.close(mInputStream);
+            StreamUtil.close(mOutputStream);
         }
 
         /**

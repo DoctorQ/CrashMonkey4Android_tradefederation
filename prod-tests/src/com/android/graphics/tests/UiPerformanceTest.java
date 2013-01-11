@@ -29,7 +29,9 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
 
@@ -156,7 +158,7 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
         File resFile = null;
         InputStreamSource outputSource = null;
         Map<String, String> runMetrics = new HashMap<String, String>();
-
+        BufferedReader br = null;
         try {
             resFile = mTestDevice.pullFileFromExternal(OUTPUT_FILE_NAME);
             if (resFile == null) {
@@ -171,7 +173,7 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
             listener.testLog(OUTPUT_FILE_NAME, LogDataType.TEXT, outputSource);
 
             // Parse the results file
-            BufferedReader br = new BufferedReader(new FileReader(resFile));
+            br = new BufferedReader(new FileReader(resFile));
             String line = null;
             String unitKey = null;
             int size = mPatterns.length;
@@ -200,12 +202,9 @@ public class UiPerformanceTest implements IDeviceTest, IRemoteTest {
         } catch (IOException e) {
             CLog.e("IOException while reading outputfile %s", OUTPUT_FILE_NAME);
         } finally {
-            if (resFile != null) {
-                resFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
-            }
+            FileUtil.deleteFile(resFile);
+            StreamUtil.cancel(outputSource);
+            StreamUtil.close(br);
         }
     }
 

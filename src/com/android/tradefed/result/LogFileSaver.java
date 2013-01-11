@@ -196,7 +196,7 @@ public class LogFileSaver implements ILogFileSaver {
             CLog.i("Saved log file %s", logFile.getAbsolutePath());
             return logFile;
         } finally {
-            StreamUtil.closeStream(bufInput);
+            StreamUtil.close(bufInput);
             StreamUtil.closeZipStream(outStream);
 
         }

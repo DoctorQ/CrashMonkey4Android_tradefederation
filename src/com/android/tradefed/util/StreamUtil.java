@@ -52,7 +52,7 @@ public class StreamUtil {
         try {
             contents = getStringFromStream(stream);
         } finally {
-            closeStream(stream);
+            close(stream);
         }
         return contents;
     }
@@ -71,7 +71,7 @@ public class StreamUtil {
         try {
             contents = getByteArrayListFromStream(stream);
         } finally {
-            closeStream(stream);
+            close(stream);
         }
         return contents;
     }
@@ -160,33 +160,11 @@ public class StreamUtil {
     }
 
     /**
-     * Closes given input stream.
-     *
-     * @param inStream the {@link InputStream}. No action taken if inStream is null.
+     * @deprecated use {@link #close(Closeable)} instead.
      */
-    public static void closeStream(InputStream inStream) {
-        if (inStream != null) {
-            try {
-                inStream.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
-    }
-
-    /**
-     * Closes given output stream.
-     *
-     * @param outStream the {@link OutputStream}. No action taken if outStream is null.
-     */
-    public static void closeStream(OutputStream outStream) {
-        if (outStream != null) {
-            try {
-                outStream.close();
-            } catch (IOException e) {
-                // ignore
-            }
-        }
+    @Deprecated
+    public static void closeStream(Closeable closeable) {
+        close(closeable);
     }
 
     /**
@@ -241,6 +219,11 @@ public class StreamUtil {
         }
     }
 
+    /**
+     * Closes the given {@link Closeable}.
+     *
+     * @param closeable the {@link Closeable}. No action taken if <code>null</code>.
+     */
     public static void close(Closeable closeable) {
         if (closeable != null) {
             try {
@@ -251,4 +234,12 @@ public class StreamUtil {
         }
     }
 
+    /**
+     * Cancels the given {@link InputStreamSource} if non-null.
+     */
+    public static void cancel(InputStreamSource outputSource) {
+        if (outputSource != null) {
+            outputSource.cancel();
+        }
+    }
 }

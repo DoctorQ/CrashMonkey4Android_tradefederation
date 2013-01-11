@@ -17,17 +17,18 @@
 package com.android.media.tests;
 
 import com.android.ddmlib.IDevice;
-import com.android.ddmlib.Log;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
@@ -51,7 +52,6 @@ import java.util.regex.Pattern;
  * Note that this test will not run properly unless /sdcard is mounted and writable.
  */
 public class MediaStressTest implements IDeviceTest, IRemoteTest {
-    private static final String LOG_TAG = "MediaStressTest";
 
     ITestDevice mTestDevice = null;
     private static final String METRICS_RUN_NAME = "VideoRecordingStress";
@@ -66,7 +66,6 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private static final String TEST_RUNNER_NAME = ".MediaRecorderStressTestRunner";
 
     // Constants for parsing the output file
-    private Map<String, String> outputStanzas;
     private static final Pattern EXPECTED_LOOP_COUNT_PATTERN =
             Pattern.compile("Total number of loops:\\s*(\\d+)");
     private static final Pattern ACTUAL_LOOP_COUNT_PATTERN =
@@ -112,21 +111,15 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
                 return;
             }
 
-            Log.d(LOG_TAG, String.format("Sending %d byte file %s into the logosphere!",
-                    outputFile.length(), outputFile));
+            CLog.d("Sending %d byte file %s into the logosphere!", outputFile.length(), outputFile);
             outputSource = new SnapshotInputStreamSource(new FileInputStream(outputFile));
             listener.testLog(OUTPUT_PATH, LogDataType.TEXT, outputSource);
             parseOutputFile(outputFile, listener);
         } catch (IOException e) {
-            Log.e(LOG_TAG,
-                    String.format("IOException while reading or parsing output file: %s", e));
+            CLog.e("IOException while reading or parsing output file: %s", e);
         } finally {
-            if (outputFile != null) {
-                outputFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
-            }
+            FileUtil.deleteFile(outputFile);
+            StreamUtil.cancel(outputSource);
         }
     }
 
@@ -150,7 +143,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
             InputStream dataStream = new FileInputStream(outputFile);
             contents = StreamUtil.getStringFromStream(dataStream);
         } catch (IOException e) {
-            Log.e(LOG_TAG, String.format("Got IOException: %s", e));
+            CLog.e("Got IOException: %s", e);
             return;
         }
 
@@ -164,7 +157,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
             if (stanzaKeyMap.containsKey(line)) {
                 key = stanzaKeyMap.get(line);
             } else {
-                Log.d(LOG_TAG, String.format("Got unexpected line: %s", line));
+                CLog.d("Got unexpected line: %s", line);
                 continue;
             }
 
@@ -184,7 +177,7 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
      */
     void reportMetrics(ITestInvocationListener listener, Map<String, String> metrics) {
         // Create an empty testRun to report the parsed runMetrics
-        Log.d(LOG_TAG, String.format("About to report metrics: %s", metrics));
+        CLog.d("About to report metrics: %s", metrics);
         listener.testRunStarted(METRICS_RUN_NAME, 0);
         listener.testRunEnded(0, metrics);
     }
@@ -201,12 +194,10 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
             if (m.matches()) {
                 retval = Integer.parseInt(m.group(1));
             } else {
-                Log.e(LOG_TAG, String.format("Couldn't match pattern %s against line '%s'",
-                        numPattern, line));
+                CLog.e("Couldn't match pattern %s against line '%s'", numPattern, line);
             }
         } else {
-            Log.e(LOG_TAG, String.format("Encounted EOF while trying to match pattern %s",
-                    numPattern));
+            CLog.e("Encounted EOF while trying to match pattern %s", numPattern);
         }
 
         return retval;

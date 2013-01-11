@@ -28,7 +28,9 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.RegexTrie;
+import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
 
@@ -184,6 +186,7 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         InputStreamSource outputSource = null;
         resFile = mTestDevice.pullFile(OUTPUT_FILE);
         int testRun = 0;
+        BufferedReader br = null;
         try {
             if (resFile == null) {
                 // If the result file is empty, either system crash or there are other fails
@@ -197,7 +200,7 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
             outputSource = new SnapshotInputStreamSource(new FileInputStream(resFile));
             listener.testLog(String.format("result_%d", mResIndex++), LogDataType.TEXT,
                              outputSource);
-            BufferedReader br= new BufferedReader(new FileReader(resFile));
+            br = new BufferedReader(new FileReader(resFile));
             String line = null;
             while ((line = br.readLine()) != null) {
                 Matcher m = ITERATION_PATTERN.matcher(line);
@@ -218,12 +221,9 @@ public class TelephonyStabilityTest implements IRemoteTest, IDeviceTest {
         } catch (IOException e) {
             CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
         } finally {
-            if (resFile != null) {
-                resFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
-            }
+            FileUtil.deleteFile(resFile);
+            StreamUtil.cancel(outputSource);
+            StreamUtil.close(br);
         }
         return (testRun + 1);
     }

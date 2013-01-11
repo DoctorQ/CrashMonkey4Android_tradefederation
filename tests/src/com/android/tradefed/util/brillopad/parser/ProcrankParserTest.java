@@ -21,7 +21,6 @@ import junit.framework.TestCase;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 /**
  * Unit tests for {@link ProcrankParser}
@@ -42,7 +41,6 @@ public class ProcrankParserTest extends TestCase {
                 "RAM: 731448K total, 415804K free, 9016K buffers, 108548K cached",
                 "[procrank: 1.6s elapsed]");
         ProcrankParser parser = new ProcrankParser();
-        Map<String, Integer> map;
         ProcrankItem procrank = parser.parse(inputBlock);
 
         // Ensures that only valid lines are parsed. Only 6 of the 11 lines under the header are

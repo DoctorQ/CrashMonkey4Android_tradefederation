@@ -1577,7 +1577,7 @@ class TestDevice implements IManagedTestDevice {
             CLog.e("Failed to compress screenshot to png");
             CLog.e(e);
         }
-        StreamUtil.closeStream(imageOut);
+        StreamUtil.close(imageOut);
         return pngData;
     }
 

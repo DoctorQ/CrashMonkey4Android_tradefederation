@@ -29,8 +29,10 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
 
@@ -296,12 +298,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         } catch (IOException e) {
             CLog.e("IOException while reading output file: %s", mOutputFile);
         } finally {
-            if (resFile != null) {
-                resFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
-            }
+            FileUtil.deleteFile(resFile);
+            StreamUtil.cancel(outputSource);
         }
     }
 
@@ -311,8 +309,9 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         Map<String, String> runScanMetrics = null;
         boolean isScanningTest = (test.mTestName == "WifiScanning");
         Integer iteration = null;
+        BufferedReader br = null;
         try {
-            BufferedReader br= new BufferedReader(new FileReader(dataFile));
+            br = new BufferedReader(new FileReader(dataFile));
             String line = null;
             while ((line = br.readLine()) != null) {
                 List<List<String>> capture = new ArrayList<List<String>>(1);
@@ -361,6 +360,8 @@ public class WifiStressTest implements IRemoteTest, IDeviceTest {
         } catch (IOException e) {
             CLog.e("IOException while reading from data stream: %s", e);
             return;
+        } finally {
+            StreamUtil.close(br);
         }
     }
 

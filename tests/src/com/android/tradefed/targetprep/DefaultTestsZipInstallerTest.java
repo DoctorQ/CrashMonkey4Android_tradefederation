@@ -79,6 +79,8 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         // expect initial android stop
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn("serial_number_stub");
         EasyMock.expect(mMockDevice.getRecoveryMode()).andReturn(RecoveryMode.AVAILABLE);
+        EasyMock.expect(mMockDevice.executeShellCommand("stop")).andReturn("");
+        EasyMock.expect(mMockDevice.executeShellCommand("stop installd")).andReturn("");
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
 
         // turtle!  (return false, for "write failed")

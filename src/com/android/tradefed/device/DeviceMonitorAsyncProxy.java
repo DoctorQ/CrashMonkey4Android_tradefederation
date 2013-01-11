@@ -20,7 +20,6 @@ import com.android.ddmlib.IDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 

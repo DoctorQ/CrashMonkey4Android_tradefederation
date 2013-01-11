@@ -26,6 +26,8 @@ import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
 
@@ -143,13 +145,14 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
         File resFile = null;
         int calls = 0;
         resFile = mTestDevice.pullFile(mOutputFile);
+        BufferedReader br = null;
         try {
             if (resFile == null) {
                 // test failed without writing any results
                 // either system crash, or other fails, treat as one failed iteration
                 return 1;
             }
-            BufferedReader br= new BufferedReader(new FileReader(resFile));
+            br = new BufferedReader(new FileReader(resFile));
             String line = br.readLine();
 
             // The output file should only include one line
@@ -164,10 +167,9 @@ public class TelephonyTest implements IRemoteTest, IDeviceTest {
             callStatus[reason]++;
         } catch (IOException e) {
             CLog.e("IOException while reading outputfile %s", resFile.getAbsolutePath());
-        }
-
-        if (resFile != null) {
-            resFile.delete();
+        } finally {
+            FileUtil.deleteFile(resFile);
+            StreamUtil.close(br);
         }
         return calls;
     }

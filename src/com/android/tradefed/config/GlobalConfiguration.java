@@ -19,7 +19,6 @@ package com.android.tradefed.config;
 import com.android.tradefed.device.DeviceSelectionOptions;
 import com.android.tradefed.device.IDeviceMonitor;
 import com.android.tradefed.device.IDeviceSelection;
-import com.android.tradefed.device.StubDeviceMonitor;
 import com.android.tradefed.util.ArrayUtil;
 
 import java.io.File;
@@ -27,9 +26,9 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -368,25 +367,6 @@ public class GlobalConfiguration implements IGlobalConfiguration {
     private void setConfigurationObjectNoThrow(String typeName, Object configObject) {
         try {
             setConfigurationObject(typeName, configObject);
-        } catch (ConfigurationException e) {
-            // should never happen
-            throw new IllegalArgumentException(e);
-        }
-    }
-
-    /**
-     * A wrapper around {@link #setConfigurationObjectList(String, List)} that will not throw
-     * {@link ConfigurationException}.
-     * <p/>
-     * Intended to be used in cases where its guaranteed that <var>configObject</var> is the
-     * correct type
-     *
-     * @param typeName
-     * @param configObject
-     */
-    private void setConfigurationObjectListNoThrow(String typeName, List<?> configList) {
-        try {
-            setConfigurationObjectList(typeName, configList);
         } catch (ConfigurationException e) {
             // should never happen
             throw new IllegalArgumentException(e);

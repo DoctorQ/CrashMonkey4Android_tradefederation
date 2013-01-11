@@ -15,23 +15,16 @@
  */
 package com.android.tradefed.device;
 
-import com.android.ddmlib.IShellOutputReceiver;
-
 import junit.framework.TestCase;
-
-import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link WifiHelper}.
  */
 public class WifiHelperTest extends TestCase {
 
-    private ITestDevice mMockDevice;
-
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mMockDevice = EasyMock.createMock(ITestDevice.class);
     }
 
     // tests for reimplementation

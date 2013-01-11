@@ -28,6 +28,8 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.SnapshotInputStreamSource;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
+import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.StreamUtil;
 
 import junit.framework.Assert;
 
@@ -163,6 +165,7 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
         InputStreamSource outputSource = null;
         Map<String, String> runMetrics = new HashMap<String, String>();
         File resFile = null;
+        BufferedReader br = null;
         try {
             resFile = mTestDevice.pullFileFromExternal(mOutputFile);
             if (resFile == null) {
@@ -175,7 +178,7 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
             listener.testLog(mOutputFile, LogDataType.TEXT, outputSource);
 
             // Parse the results file and post results to test listener
-            BufferedReader br= new BufferedReader(new FileReader(resFile));
+            br = new BufferedReader(new FileReader(resFile));
             String line = null;
             while ((line = br.readLine()) != null) {
                 Matcher match = MESSAGE_PATTERN.matcher(line);
@@ -188,12 +191,9 @@ public class SmsStressTest implements IRemoteTest, IDeviceTest {
         } catch (IOException e) {
             CLog.e("IOException while reading from data stream: %s", e);
         } finally {
-            if (resFile != null) {
-                resFile.delete();
-            }
-            if (outputSource != null) {
-                outputSource.cancel();
-            }
+            FileUtil.deleteFile(resFile);
+            StreamUtil.cancel(outputSource);
+            StreamUtil.close(br);
         }
         reportMetrics(METRICS_NAME, listener, runMetrics);
     }

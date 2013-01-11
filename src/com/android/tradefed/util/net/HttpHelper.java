@@ -96,6 +96,7 @@ public class HttpHelper implements IHttpHelper {
     /**
      * {@inheritDoc}
      */
+    @SuppressWarnings("resource")
     @Override
     public String doGet(String url) throws IOException, DataSizeException {
         CLog.d("Performing GET request for %s", url);
@@ -111,13 +112,16 @@ public class HttpHelper implements IHttpHelper {
                     bufResult.length - currBufPos)) != -1) {
                 currBufPos += bytesRead;
                 if (currBufPos >= bufResult.length) {
+                    // Eclipse compiler incorrectly flags this statement as not 'remote
+                    // is not closed at this location'.
+                    // So add @SuppressWarnings('resource') to shut it up.
                     throw new DataSizeException();
                 }
             }
 
             return new String(bufResult, 0, currBufPos);
         } finally {
-            StreamUtil.closeStream(remote);
+            StreamUtil.close(remote);
         }
     }
 
@@ -131,7 +135,7 @@ public class HttpHelper implements IHttpHelper {
         try {
             remote = getRemoteUrlStream(new URL(url));
         } finally {
-            StreamUtil.closeStream(remote);
+            StreamUtil.close(remote);
         }
     }
 
@@ -334,6 +338,7 @@ public class HttpHelper implements IHttpHelper {
          * Perform a single POST request, storing the response or the associated exception in case
          * of error.
          */
+        @SuppressWarnings("resource")
         @Override
         public boolean run() {
             InputStream inputStream = null;
@@ -356,6 +361,9 @@ public class HttpHelper implements IHttpHelper {
                         bufResult.length - currBufPos)) != -1) {
                     currBufPos += bytesRead;
                     if (currBufPos >= bufResult.length) {
+                        // Eclipse compiler incorrectly flags this statement as not 'stream
+                        // is not closed at this location'.
+                        // So add @SuppressWarnings('resource') to shut it up.
                         throw new DataSizeException();
                     }
                 }
@@ -371,15 +379,9 @@ public class HttpHelper implements IHttpHelper {
                 CLog.i("RuntimeException %s", e.getMessage());
                 setException(e);
             } finally {
-                StreamUtil.closeStream(outputStream);
-                StreamUtil.closeStream(inputStream);
-                if (outputStreamWriter != null) {
-                    try {
-                        outputStreamWriter.close();
-                    } catch (IOException e) {
-                        // ignore
-                    }
-                }
+                StreamUtil.close(outputStream);
+                StreamUtil.close(inputStream);
+                StreamUtil.close(outputStreamWriter);
             }
 
             return false;
