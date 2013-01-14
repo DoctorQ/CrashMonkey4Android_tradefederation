@@ -75,7 +75,7 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
 
     @Option(name = "send-coverage",
             description = "Send coverage target info to test listeners.")
-    private boolean mSendCoverage = true;
+    private boolean mSendCoverage = false;
 
     private List<InstrumentationTest> mTests = null;
 
