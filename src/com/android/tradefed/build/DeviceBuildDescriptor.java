@@ -115,6 +115,6 @@ public class DeviceBuildDescriptor {
             brand = String.format("%s%s", brand.substring(0, 1).toUpperCase(), brand.substring(1));
         }
         return String.format("%s %s %s", brand, device.getProperty("ro.product.model"),
-                device.getProperty("ro.build.release"));
+                device.getProperty("ro.build.version.release"));
     }
 }

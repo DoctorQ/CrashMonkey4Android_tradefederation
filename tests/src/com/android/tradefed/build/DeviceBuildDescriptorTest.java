@@ -34,7 +34,7 @@ public class DeviceBuildDescriptorTest extends TestCase {
         EasyMock.expect(d.getProperty("ro.build.type")).andReturn("userdebug");
         EasyMock.expect(d.getProperty("ro.product.brand")).andReturn("google");
         EasyMock.expect(d.getProperty("ro.product.model")).andReturn("Galaxy Nexus");
-        EasyMock.expect(d.getProperty("ro.build.release")).andReturn("4.2");
+        EasyMock.expect(d.getProperty("ro.build.version.release")).andReturn("4.2");
         EasyMock.replay(d);
         DeviceBuildDescriptor.injectDeviceAttributes(d, b);
         DeviceBuildDescriptor db = new DeviceBuildDescriptor(b);
