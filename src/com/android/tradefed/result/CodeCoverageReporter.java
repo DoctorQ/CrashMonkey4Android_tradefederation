@@ -159,9 +159,8 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
 
     private void fetchAppropriateMetaDataFile() {
         File coverageZipFile = mBuildInfo.getFile(mCoverageMetaZipFileName);
-        CLog.d("Coverage zip file: %s", coverageZipFile.getAbsolutePath());
-
         Assert.assertNotNull("Failed to get the coverage metadata zipfile.", coverageZipFile);
+        CLog.d("Coverage zip file: %s", coverageZipFile.getAbsolutePath());
         try {
             mLocalTmpDir = FileUtil.createTempDir("emma-meta");
             ZipFile zipFile = new ZipFile(coverageZipFile);

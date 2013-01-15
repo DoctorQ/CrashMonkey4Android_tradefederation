@@ -50,11 +50,13 @@ public class CodeCoverageTest extends InstrumentationTest {
 
     @Override
     public void run(final ITestInvocationListener listener) throws DeviceNotAvailableException {
+        // Disable rerun mode, we want to stop the tests as soon as we fail.
+        super.setRerunMode(false);
         // Force generation of emma coverage file to true and set up coverage
         // file path.
-        addInstrumentationArg("coverage", "true");
+        super.addInstrumentationArg("coverage", "true");
         if (mCoverageFile != null) {
-            addInstrumentationArg("coverageFile", mCoverageFile);
+            super.addInstrumentationArg("coverageFile", mCoverageFile);
         }
 
         CollectingTestListener testCoverageFile = new CollectingTestListener();
