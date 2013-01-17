@@ -80,17 +80,40 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         if (mReboot) {
             device.reboot();
         }
-        if (mUninstall) {
-            Set<String> pkgs = device.getInstalledNonSystemPackageNames();
+        if (mUninstall && !uninstallApps(device)) {
+            // cannot cleanup device! Bad things may happen in future tests. Take device out
+            // of service
+            // TODO: in future, consider doing more sophisticated recovery operations
+            throw new DeviceNotAvailableException(String.format(
+                    "Failed to uninstall apps on %s", device.getSerialNumber()));
+        }
+    }
+
+    private boolean uninstallApps(ITestDevice device) throws DeviceNotAvailableException {
+        // make multiple attempts to uninstall apps, aborting if failed
+        // TODO: consider moving this to ITestDevice, so more sophisticated recovery attempts
+        // can be performed
+        for (int i = 0; i < 3; i++) {
+            Set<String> pkgs = getAppsToUninstall(device);
+            if (pkgs.isEmpty()) {
+                return true;
+            }
             for (String pkg : pkgs) {
-                if (!mSkipUninstallPkgs.contains(pkg)) {
-                    String result = device.uninstallPackage(pkg);
-                    if (result != null) {
-                        CLog.w("Uninstall of %s on %s failed: %s", pkg, device.getSerialNumber(),
-                                result);
-                    }
+                String result = device.uninstallPackage(pkg);
+                if (result != null) {
+                    CLog.w("Uninstall of %s on %s failed: %s", pkg, device.getSerialNumber(),
+                            result);
                 }
             }
         }
+        // check getAppsToUninstall one more time, cause last attempt through loop might have been
+        // successful
+        return getAppsToUninstall(device).isEmpty();
+    }
+
+    private Set<String> getAppsToUninstall(ITestDevice device) throws DeviceNotAvailableException {
+        Set<String> pkgs = device.getInstalledNonSystemPackageNames();
+        pkgs.removeAll(mSkipUninstallPkgs);
+        return pkgs;
     }
 }
