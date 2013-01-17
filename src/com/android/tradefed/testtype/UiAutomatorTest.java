@@ -29,7 +29,10 @@ import com.android.tradefed.result.StubTestInvocationListener;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import junit.framework.Assert;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,13 +58,13 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     private UiAutomatorRunner mRunner = null;
 
     @Option(name = "jar-path", description = "path to jars containing UI Automator test cases and"
-            + " dependencies; May be repeated.", mandatory = true)
+            + " dependencies; May be repeated. " +
+            "If unspecified will use all jars found in /data/local/tmp/")
     private List<String> mJarPaths = new ArrayList<String>();
 
     @Option(name = "class",
             description = "test class to run, may be repeated; multiple classess will be run"
-                    + " in the same order as provided in command line",
-                    mandatory = true)
+                    + " in the same order as provided in command line")
     private List<String> mClasses = new ArrayList<String>();
 
     @Option(name = "sync-time", description = "time to allow for initial sync, in ms")
@@ -92,7 +95,9 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             description = "allows uiautomator test to ignore SIGHUP signal")
     private boolean mIgnoreSighup = false;
 
-    private String mRunName;
+    @Option(name = "run-name",
+            description = "the run name to use when reporting test results.")
+    private String mRunName = "uiautomator";
 
     /**
      * {@inheritDoc}
@@ -137,9 +142,12 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
+        buildJarPaths();
         mRunner = new UiAutomatorRunner(getDevice().getIDevice(),
-                getTestJarPaths().toArray(new String[]{}),
-                mClasses.toArray(new String[]{}), mRunnerPath);
+                getTestJarPaths().toArray(new String[]{}), mRunnerPath);
+        if (!mClasses.isEmpty()) {
+            mRunner.setClassNames(mClasses.toArray(new String[]{}));
+        }
         mRunner.setRunName(mRunName);
         preTestSetup();
         getRunUtil().sleep(getSyncTime());
@@ -153,6 +161,22 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
                     new LoggingWrapper(listener));
         } else {
             getDevice().runInstrumentationTests(getTestRunner(), listener);
+        }
+    }
+
+    private void buildJarPaths() throws DeviceNotAvailableException {
+        if (mJarPaths.isEmpty()) {
+            String rawFileString =
+                    getDevice().executeShellCommand(String.format("ls %s", SHELL_EXE_BASE));
+            String[] rawFiles = rawFileString.split("\r\n");
+            for (String rawFile : rawFiles) {
+                if (rawFile.endsWith(".jar")) {
+                    mJarPaths.add(rawFile);
+                }
+            }
+            Assert.assertFalse(String.format("could not find jars in %s", SHELL_EXE_BASE),
+                    mJarPaths.isEmpty());
+            CLog.d("built jar paths %s", mJarPaths);
         }
     }
 

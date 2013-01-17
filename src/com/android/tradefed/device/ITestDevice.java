@@ -897,5 +897,4 @@ public interface ITestDevice {
      * @throws DeviceNotAvailableException
      */
     public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException;
-
 }

@@ -78,15 +78,13 @@ public class UiAutomatorRunner implements IRemoteAndroidTestRunner {
      * @param runnerPath alternative uiautomator runner to use, may be <code>null</code> and default
      *                   will be used in this case
      */
-    public UiAutomatorRunner(IDevice remoteDevice, String[] jarPaths, String[] classes,
-            String runnerPath) {
+    public UiAutomatorRunner(IDevice remoteDevice, String[] jarPaths, String runnerPath) {
         mRemoteDevice = remoteDevice;
         mJarPaths = jarPaths;
         mArgsMap = new LinkedHashMap<String, String>(); // ensure the order that the args are added
         if (runnerPath != null) {
             mRunnerPath = runnerPath;
         }
-        setClassNames(classes);
     }
 
     /**

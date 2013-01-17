@@ -23,6 +23,7 @@ import com.google.common.base.Objects;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Map;
 
@@ -178,6 +179,14 @@ public class BuildInfo implements IBuildInfo {
             return fileRecord.getFile();
         }
         return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<VersionedFile> getFiles() {
+        return mVersionedFileMap.values();
     }
 
     /**
