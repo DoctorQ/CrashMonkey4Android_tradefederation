@@ -24,9 +24,7 @@ import com.android.tradefed.util.RunUtil;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -42,7 +40,7 @@ public class WifiHelper implements IWifiHelper {
     static final String FULL_INSTRUMENTATION_NAME =
             String.format("%s/%s", INSTRUMENTATION_PKG, INSTRUMENTATION_CLASS);
 
-    private static final String CHECK_INSTRUMENTATION_CMD =
+    static final String CHECK_INSTRUMENTATION_CMD =
             String.format("pm list instrumentation %s", INSTRUMENTATION_PKG);
 
     private static final String WIFIUTIL_APK_NAME = "WifiUtil.apk";
@@ -211,7 +209,7 @@ public class WifiHelper implements IWifiHelper {
 
         while (System.currentTimeMillis() < (startTime + timeout)) {
             final String ip = getIpAddress();
-            if (!ip.isEmpty() && !NULL_IP_ADDR.equals(getIpAddress())) {
+            if (ip != null && !ip.isEmpty() && !NULL_IP_ADDR.equals(ip)) {
                 return true;
             }
             getRunUtil().sleep(getPollTime());
@@ -269,14 +267,15 @@ public class WifiHelper implements IWifiHelper {
      *
      * @param method the WifiUtil method to call
      * @param args a flat list of [arg-name, value] pairs to pass
-     * @return The value of the result field in the output
+     * @return The value of the result field in the output, or <code>null</code> if result could
+     * not be parsed
      */
     private String runWifiUtil(String method, String... args) throws DeviceNotAvailableException {
         final String cmd = buildWifiUtilCmd(method, args);
 
         WifiUtilOutput parser = new WifiUtilOutput();
         mDevice.executeShellCommand(cmd, parser);
-        return parser.mResult;
+        return parser.getResult();
     }
 
     /**
@@ -356,39 +355,30 @@ public class WifiHelper implements IWifiHelper {
      * Processes the output of a WifiUtil invocation
      */
     private static class WifiUtilOutput extends MultiLineReceiver {
-
-        private boolean mDidCommandComplete = false;
-
-        private static final String INST_SUCCESS_MARKER = "INSTRUMENTATION_CODE: -1";
         private static final Pattern RESULT_PAT =
                 Pattern.compile("INSTRUMENTATION_RESULT: result=(.*)");
 
-        String mResult = null;
-
-        /** The output lines of the WifiUtil invocation. */
-        List<String> mOutputLines;
-
-        WifiUtilOutput() {
-            mOutputLines = new ArrayList<String>();
-        }
+        private String mResult = null;
 
         /**
          * {@inheritDoc}
          */
         @Override
         public void processNewLines(String[] lines) {
-            // expect INST_SUCCESS_MARKER to be present on last line for successful command
-            if (!mDidCommandComplete) {
-                mDidCommandComplete = lines[lines.length - 1].equals(INST_SUCCESS_MARKER);
-            }
-
             for (String line : lines) {
-                mOutputLines.add(line);
                 Matcher resultMatcher = RESULT_PAT.matcher(line);
                 if (resultMatcher.matches()) {
                     mResult = resultMatcher.group(1);
                 }
             }
+        }
+
+        /**
+         * Return the result flag parsed from instrmentation output. <code>null</code> is returned
+         * if result output was not present.
+         */
+        String getResult() {
+            return mResult;
         }
 
         /**
