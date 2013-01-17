@@ -118,6 +118,11 @@ public class Console extends Thread {
             "tradefed process, which is listening on specified port")
         private Integer mHandoverPort = null;
 
+        @Option(name = "wait-for-commands", shortName = 'c', description =
+                "only exit after all commands have executed ")
+        private boolean mExitOnEmpty = false;
+
+
         @Override
         public void run(CaptureList args) {
             try {
@@ -127,8 +132,14 @@ public class Console extends Thread {
                     parser.parse(optionArgs);
                 }
 
+                String exitMode = "invocations";
                 if (mHandoverPort == null) {
-                    mScheduler.shutdown();
+                    if (mExitOnEmpty) {
+                        exitMode = "commands";
+                        mScheduler.shutdownOnEmpty();
+                    } else {
+                        mScheduler.shutdown();
+                    }
                 } else {
                     if (!mScheduler.handoverShutdown(mHandoverPort)) {
                         // failure message should already be logged
@@ -136,7 +147,8 @@ public class Console extends Thread {
                     }
                 }
                 printLine("Signalling command scheduler for shutdown.");
-                printLine("TF will exit without warning when remaining invocations complete.");
+                printLine(String.format("TF will exit without warning when remaining %s complete.",
+                        exitMode));
             } catch (ConfigurationException e) {
                 printLine(e.toString());
             }
@@ -362,7 +374,8 @@ public class Console extends Thread {
 
 
         // Help commands
-        genericHelp.add("Enter 'q' or 'exit' to exit");
+        genericHelp.add("Enter 'q' or 'exit' to exit. " +
+                "Use '--wait-for-command|-c' to exit only after all commands have executed.");
         genericHelp.add("Enter 'kill' to attempt to forcibly exit, by shutting down adb");
         genericHelp.add("");
         genericHelp.add("Enter 'help all' to see all embedded documentation at once.");
@@ -398,8 +411,10 @@ public class Console extends Thread {
                 "\t<config> [options]                Shortcut for the above: run specified command" +
                     LINE_SEPARATOR +
                 "\tcmdfile <cmdfile.txt>             Run the specified commandfile" + LINE_SEPARATOR +
-                "\tsingleCommand <config> [options]  Run the specified command, and run 'exit' " +
-                        "immediately afterward" + LINE_SEPARATOR,
+                "\tcommandAndExit <config> [options] Run the specified command, and run " +
+                "'exit -c' immediately afterward" + LINE_SEPARATOR,
+                "\tcmdfileAndExit <cmdfile.txt>      Run the specified commandfile, and run " +
+                "'exit -c' immediately afterward" + LINE_SEPARATOR,
                 RUN_PATTERN));
 
         commandHelp.put(SET_PATTERN, String.format(
@@ -519,27 +534,22 @@ public class Console extends Thread {
                 for (int i = 2; i < args.size(); i++) {
                     flatArgs[i - 2] = args.get(i).get(0);
                 }
-                NotifyingCommandListener cmdListener = new NotifyingCommandListener();
-                cmdListener.setExpectedCalls(1);
-                if (mScheduler.addCommand(flatArgs, cmdListener)) {
-                    try {
-                        cmdListener.waitForExpectedCalls();
-                    } catch (InterruptedException e) {
-                        // ignore
-                    }
+                if (mScheduler.addCommand(flatArgs)) {
+                    mScheduler.shutdownOnEmpty();
                 }
-                mScheduler.shutdown();
+
                 // Intentionally kill the console before CommandScheduler finishes
                 mShouldExit = true;
             }
         };
         trie.put(runAndExitCommand, RUN_PATTERN, "s(?:ingleCommand)?", null);
+        trie.put(runAndExitCommand, RUN_PATTERN, "commandAndExit", null);
 
         // Missing required argument: show help
         // FIXME: fix this functionality
         // trie.put(runHelpRun, runPattern, "(?:singleC|c)ommand");
 
-        ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
+        final ArgRunnable<CaptureList> runRunCmdfile = new ArgRunnable<CaptureList>() {
             @Override
             public void run(CaptureList args) {
                 // Skip 2 tokens to get past runPattern and "cmdfile".  We're guaranteed to have at
@@ -561,6 +571,17 @@ public class Console extends Thread {
         };
         trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)");
         trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)", null);
+
+        ArgRunnable<CaptureList> runRunCmdfileAndExit = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                runRunCmdfile.run(args);
+                mScheduler.shutdownOnEmpty();
+            }
+        };
+        trie.put(runRunCmdfileAndExit, RUN_PATTERN, "cmdfileAndExit", "(.*)");
+        trie.put(runRunCmdfileAndExit, RUN_PATTERN, "cmdfileAndExit", "(.*)", null);
+
         // Missing required argument: show help
         // FIXME: fix this functionality
         //trie.put(runHelpRun, runPattern, "cmdfile");

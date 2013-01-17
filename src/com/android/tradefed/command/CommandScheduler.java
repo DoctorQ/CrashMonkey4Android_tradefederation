@@ -92,6 +92,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /** used to assign unique ids to each CommandTracker created */
     private int mCurrentCommandId = 0;
 
+    /** flag for instructing scheduler to exit when no commands are present */
+    private boolean mShutdownOnEmpty = false;
+
     private enum CommandState {
         WAITING_FOR_DEVICE("Wait_for_device"),
         EXECUTING("Executing"),
@@ -497,6 +500,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                     }
                 }
             }
+            mCommandTimer.shutdown();
             CLog.i("Waiting for invocation threads to complete");
             List<InvocationThread> threadListCopy;
             synchronized (this) {
@@ -737,7 +741,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     }
 
     private synchronized boolean isShutdown() {
-        return mCommandTimer.isShutdown();
+        return mCommandTimer.isShutdown() || (mShutdownOnEmpty && mAllCommands.isEmpty());
     }
 
     /**
@@ -750,6 +754,16 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             if (mCommandTimer != null) {
                 mCommandTimer.shutdownNow();
             }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public synchronized void shutdownOnEmpty() {
+        if (!isShutdown()) {
+            mShutdownOnEmpty = true;
         }
     }
 

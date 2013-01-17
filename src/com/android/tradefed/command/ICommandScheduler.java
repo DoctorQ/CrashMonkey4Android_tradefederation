@@ -82,6 +82,14 @@ public interface ICommandScheduler {
     public void shutdown();
 
     /**
+     * Similar to {@link @shutdown}, but will instead wait for all commands to be executed
+     * before exiting.
+     * <p/>
+     * Note that if any commands are in loop mode, the scheduler will never exit.
+     */
+    public void shutdownOnEmpty();
+
+    /**
      * Initiates a {@link #shutdown()} and handover to another tradefed process on this same host.
      * <p/>
      * The scheduler will inform the remote tradefed process listening on that port of freed devices
@@ -163,5 +171,4 @@ public interface ICommandScheduler {
      * Cancels the currently running remote manager.
      */
     public void stopRemoteManager();
-
 }
