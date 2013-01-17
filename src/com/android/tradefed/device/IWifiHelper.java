@@ -90,8 +90,8 @@ interface IWifiHelper {
     boolean waitForIp(long timeout) throws DeviceNotAvailableException;
 
     /**
-     * Gets the IP address associated with the wifi interface
-     *
+     * Gets the IP address associated with the wifi interface. Returns <code>null</code> if there
+     * was a failure retrieving ip address.
      */
     String getIpAddress() throws DeviceNotAvailableException;
 

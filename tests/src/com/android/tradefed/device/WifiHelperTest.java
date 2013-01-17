@@ -15,16 +15,25 @@
  */
 package com.android.tradefed.device;
 
+import com.android.tradefed.util.IRunUtil;
+
 import junit.framework.TestCase;
+
+import org.easymock.EasyMock;
 
 /**
  * Unit tests for {@link WifiHelper}.
  */
 public class WifiHelperTest extends TestCase {
 
+    private ITestDevice mMockDevice;
+
     @Override
     protected void setUp() throws Exception {
         super.setUp();
+        mMockDevice = EasyMock.createMock(ITestDevice.class);
+        EasyMock.expect(mMockDevice.executeShellCommand(WifiHelper.CHECK_INSTRUMENTATION_CMD))
+                .andReturn(WifiHelper.FULL_INSTRUMENTATION_NAME);
     }
 
     // tests for reimplementation
@@ -64,5 +73,28 @@ public class WifiHelperTest extends TestCase {
         assertTrue(cmd.contains(piece2));
         assertTrue(cmd.contains(piece3));
         assertTrue(cmd.endsWith(end));
+    }
+
+    /**
+     * Test {@link WifiHelper#waitForIp()} that gets invalid data on first attempt, but then
+     * succeeds on second.
+     */
+    public void testWaitForIp_failThenPass() throws Exception {
+        // expect 'iswifienabled' check
+        MockTestDeviceHelper.injectShellResponse(mMockDevice, null,
+                "INSTRUMENTATION_RESULT: result=true", false);
+        MockTestDeviceHelper.injectShellResponse(mMockDevice, null, "", false);
+        MockTestDeviceHelper.injectShellResponse(mMockDevice, null,
+                "INSTRUMENTATION_RESULT: result=1.2.3.4", false);
+        EasyMock.replay(mMockDevice);
+        WifiHelper wifiHelper = new WifiHelper(mMockDevice) {
+            @Override
+            IRunUtil getRunUtil() {
+                return EasyMock.createNiceMock(IRunUtil.class);
+            }
+        };
+        assertTrue(wifiHelper.waitForIp(10 * 60 * 1000));
+        // verify that two executeCommand attempt were made
+        EasyMock.verify(mMockDevice);
     }
 }
