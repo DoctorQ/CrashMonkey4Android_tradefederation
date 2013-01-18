@@ -1622,7 +1622,7 @@ class TestDevice implements IManagedTestDevice {
             }
             // wait for ping success
             for (int i = 0; i < 10; i++) {
-                String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
+                String pingOutput = executeShellCommand("ping -c 1 -w 5 8.8.8.8");
                 if (pingOutput.contains("1 packets transmitted, 1 received")) {
                     return true;
                 }
