@@ -31,6 +31,7 @@ import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.QuotationAwareTokenizer;
 import com.android.tradefed.util.RegexTrie;
 import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.VersionParser;
 
 import jline.ConsoleReader;
 
@@ -71,6 +72,7 @@ public class Console extends Thread {
     protected static final String RUN_PATTERN = "r(?:un)?";
     protected static final String EXIT_PATTERN = "(?:q|exit)";
     protected static final String SET_PATTERN = "s(?:et)?";
+    protected static final String VERSION_PATTERN = "version";
     protected static final String REMOVE_PATTERN = "remove";
     protected static final String DEBUG_PATTERN = "debug";
 
@@ -386,6 +388,7 @@ public class Console extends Thread {
         genericHelp.add("Enter 'help set'    for help with 'set' commands");
         genericHelp.add("Enter 'help remove' for help with 'remove' commands");
         genericHelp.add("Enter 'help debug'  for help with 'debug' commands");
+        genericHelp.add("Enter 'version'  to get the current version of Tradefed");
 
         commandHelp.put(LIST_PATTERN, String.format(
                 "%s help:" + LINE_SEPARATOR +
@@ -525,6 +528,17 @@ public class Console extends Thread {
         };
         trie.put(runRunCommand, RUN_PATTERN, "c(?:ommand)?", null);
         trie.put(runRunCommand, RUN_PATTERN, null);
+        trie.put(new Runnable() {
+            @Override
+            public void run() {
+               String version = VersionParser.fetchVersion();
+               if (version != null) {
+                   printLine(version);
+               } else {
+                   printLine("Failed to fetch version information for Tradefed.");
+               }
+            }
+         }, VERSION_PATTERN);
 
         ArgRunnable<CaptureList> runAndExitCommand = new ArgRunnable<CaptureList>() {
             @Override
