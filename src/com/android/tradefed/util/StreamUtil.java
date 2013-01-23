@@ -163,8 +163,16 @@ public class StreamUtil {
      * @deprecated use {@link #close(Closeable)} instead.
      */
     @Deprecated
-    public static void closeStream(Closeable closeable) {
-        close(closeable);
+    public static void closeStream(OutputStream out) {
+        close(out);
+    }
+
+    /**
+     * @deprecated use {@link #close(Closeable)} instead.
+     */
+    @Deprecated
+    public static void closeStream(InputStream in) {
+        close(in);
     }
 
     /**
