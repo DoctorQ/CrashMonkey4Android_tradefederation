@@ -107,7 +107,7 @@ public class DeviceBuildDescriptor {
      * @return
      * @throws DeviceNotAvailableException
      */
-    private static String generateDeviceDesc(ITestDevice device)
+    public static String generateDeviceDesc(ITestDevice device)
             throws DeviceNotAvailableException {
         // brand is typically all lower case. Capitalize it
         String brand =  device.getProperty("ro.product.brand");
