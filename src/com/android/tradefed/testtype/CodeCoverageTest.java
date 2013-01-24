@@ -28,8 +28,6 @@ import com.android.tradefed.result.ResultForwarder;
 import com.android.tradefed.result.TestRunResult;
 import com.android.tradefed.util.FileUtil;
 
-import junit.framework.Assert;
-
 import java.io.File;
 import java.util.Map;
 
@@ -73,14 +71,17 @@ public class CodeCoverageTest extends InstrumentationTest {
         CLog.d("Coverage file at %s", mCoverageFile);
         File coverageFile = null;
         try {
-            Assert.assertTrue("Missing coverage file.", getDevice().doesFileExist(mCoverageFile));
-            coverageFile = getDevice().pullFile(mCoverageFile);
-            if (coverageFile != null) {
-                CLog.d("coverage file from device: %s", coverageFile.getAbsolutePath());
-                FileInputStreamSource source = new FileInputStreamSource(coverageFile);
-                listener.testLog(getPackageName() + "_runtime_coverage", LogDataType.COVERAGE,
-                        source);
-                source.cancel();
+            if (getDevice().doesFileExist(mCoverageFile)) {
+                coverageFile = getDevice().pullFile(mCoverageFile);
+                if (coverageFile != null) {
+                    CLog.d("coverage file from device: %s", coverageFile.getAbsolutePath());
+                    FileInputStreamSource source = new FileInputStreamSource(coverageFile);
+                    listener.testLog(getPackageName() + "_runtime_coverage", LogDataType.COVERAGE,
+                            source);
+                    source.cancel();
+                }
+            } else {
+                CLog.w("Missing coverage file %s. Did test crash?", mCoverageFile);
             }
         } finally {
             if (coverageFile != null) {
