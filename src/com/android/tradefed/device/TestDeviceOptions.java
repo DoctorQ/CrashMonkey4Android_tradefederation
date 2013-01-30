@@ -32,8 +32,8 @@ public class TestDeviceOptions {
     private String mDisableKeyguardCmd = "input keyevent 82";
 
     @Option(name = "max-tmp-logcat-file", description =
-        "The maximum size of a tmp logcat file, in bytes.")
-    private long mMaxLogcatFileSize = 10 * 1024 * 1024;
+        "The maximum size of tmp logcat data to retain, in bytes.")
+    private long mMaxLogcatDataSize = 20 * 1024 * 1024;
 
     @Option(name = "fastboot-timeout", description =
             "time in ms to wait for a device to boot into fastboot.")
@@ -106,22 +106,17 @@ public class TestDeviceOptions {
     }
 
     /**
-     * Get the maximum size of a tmp logcat file, in bytes.
-     * <p/>
-     * The actual size of the log info stored will be up to twice this number, as two logcat files
-     * are stored.
-     *
-     * TODO: make this represent a strictly enforced total max size
+     * Get the approximate maximum size of a tmp logcat data to retain, in bytes.
      */
-    public long getMaxLogcatFileSize() {
-        return mMaxLogcatFileSize;
+    public long getMaxLogcatDataSize() {
+        return mMaxLogcatDataSize;
     }
 
     /**
-     * @param maxLogcatFileSize the max logcat file size to set
+     * @param maxLogcatDataSize the max logcat tmp size to set
      */
-    public void setMaxLogcatFileSize(long maxLogcatFileSize) {
-        mMaxLogcatFileSize = maxLogcatFileSize;
+    public void setMaxLogcatDataSize(long maxLogcatDataSize) {
+        mMaxLogcatDataSize = maxLogcatDataSize;
     }
 
     /**

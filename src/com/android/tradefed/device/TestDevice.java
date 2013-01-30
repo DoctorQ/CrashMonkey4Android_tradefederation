@@ -215,7 +215,7 @@ class TestDevice implements IManagedTestDevice {
      * @param size max byte size of tmp file
      */
     void setTmpLogcatSize(long size) {
-        mOptions.setMaxLogcatFileSize(size);
+        mOptions.setMaxLogcatDataSize(size);
     }
 
     /**
@@ -1499,7 +1499,7 @@ class TestDevice implements IManagedTestDevice {
      * Exposed for unit testing.
      */
     LogcatReceiver createLogcatReceiver() {
-        return new LogcatReceiver(this, mOptions.getMaxLogcatFileSize(), mLogStartDelay);
+        return new LogcatReceiver(this, mOptions.getMaxLogcatDataSize(), mLogStartDelay);
     }
 
     /**

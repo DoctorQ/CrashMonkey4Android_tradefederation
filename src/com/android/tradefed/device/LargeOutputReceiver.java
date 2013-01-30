@@ -22,60 +22,38 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
-import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.SizeLimitedOutputStream;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.SequenceInputStream;
 
 /**
  * A class designed to help run long running commands collect output.
  * <p>
  * The maximum size of the tmp file is limited to approximately {@code maxFileSize}.
- * To prevent data loss when the limit has been reached, this file keeps two tmp host
+ * To prevent data loss when the limit has been reached, this file keeps set of tmp host
  * files.
  * </p>
  */
 public class LargeOutputReceiver implements IShellOutputReceiver {
-    /** The max number of bytes to store in the buffer */
-    public static final int BUFF_SIZE = 32 * 1024;
-
     private String mSerialNumber;
     private String mDescriptor;
-    private long mMaxFileSize;
 
     private boolean mIsCancelled = false;
-    private OutputStream mOutStream;
-    /** the archived previous temp file */
-    private File mPreviousTmpFile = null;
-    /** the current temp file which data will be streamed into */
-    private File mTmpFile = null;
-    private long mTmpBytesStored = 0;
+    private SizeLimitedOutputStream mOutStream;
+    private long mMaxDataSize;
 
     /**
      * Creates a {@link LargeOutputReceiver}.
      *
      * @param descriptor the descriptor of the command to run. For logging only.
      * @param serialNumber the serial number of the device. For logging only.
-     * @param maxFileSize the max file size of the tmp backing file in bytes.  Since the receiver
-     * keeps two tmp host files, the size of the output can be up to twice {@code maxFileSize}.
+     * @param maxDataSize the approximate max amount of data to keep.
      */
-    public LargeOutputReceiver(String descriptor, String serialNumber, long maxFileSize) {
+    public LargeOutputReceiver(String descriptor, String serialNumber, long maxDataSize) {
         mDescriptor = descriptor;
         mSerialNumber = serialNumber;
-        mMaxFileSize = maxFileSize;
-
-        try {
-            createTmpFile();
-        }  catch (IOException e) {
-            CLog.w("failed to create %s file for %s.", mDescriptor, mSerialNumber);
-        }
+        mMaxDataSize = maxDataSize;
+        mOutStream = createOutputStream();
     }
 
     /**
@@ -88,12 +66,6 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
         }
         try {
             mOutStream.write(data, offset, length);
-            mTmpBytesStored += length;
-            if (mTmpBytesStored > mMaxFileSize) {
-                CLog.i("Max tmp %s file size reached for %s, swapping", mDescriptor, mSerialNumber);
-                createTmpFile();
-                mTmpBytesStored = 0;
-            }
         } catch (IOException e) {
             CLog.w("failed to write %s data for %s.", mDescriptor, mSerialNumber);
         }
@@ -105,20 +77,9 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
      * @return The collected output from the command.
      */
     public synchronized InputStreamSource getData() {
-        if (mTmpFile != null) {
-            flush();
+        if (mOutStream != null) {
             try {
-                FileInputStream fileStream = new FileInputStream(mTmpFile);
-                if (mPreviousTmpFile != null) {
-                    // return an input stream that first reads from mPreviousTmpFile, then reads
-                    // from mTmpFile
-                    InputStream stream = new SequenceInputStream(
-                            new FileInputStream(mPreviousTmpFile), fileStream);
-                    return new SnapshotInputStreamSource(stream);
-                } else {
-                    // no previous file, just return a wrapper around mTmpFile's stream
-                    return new SnapshotInputStreamSource(fileStream);
-                }
+                return new SnapshotInputStreamSource(mOutStream.getData());
             } catch (IOException e) {
                 CLog.e("failed to get %s data for %s.", mDescriptor, mSerialNumber);
                 CLog.e(e);
@@ -137,11 +98,7 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
         if (mOutStream == null) {
             return;
         }
-        try {
-            mOutStream.flush();
-        } catch (IOException e) {
-            CLog.w("failed to flush %s data for %s.", mDescriptor, mSerialNumber);
-        }
+        mOutStream.flush();
     }
 
     /**
@@ -149,12 +106,12 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
      */
     public synchronized void clear() {
         delete();
+        mOutStream = createOutputStream();
+    }
 
-        try {
-            createTmpFile();
-        }  catch (IOException e) {
-            CLog.w("failed to create %s file for %s.", mDescriptor, mSerialNumber);
-        }
+    private SizeLimitedOutputStream createOutputStream() {
+        return new SizeLimitedOutputStream(mMaxDataSize, String.format("%s_%s",
+                getDescriptor(), mSerialNumber), ".txt");
     }
 
     /**
@@ -168,30 +125,8 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
      * Delete all accumulated data.
      */
     public void delete() {
-        flush();
-        closeLogStream();
-
-        FileUtil.deleteFile(mTmpFile);
-        mTmpFile = null;
-        FileUtil.deleteFile(mPreviousTmpFile);
-        mPreviousTmpFile = null;
-        mTmpBytesStored = 0;
-    }
-
-    /**
-     * Closes the stream to tmp log file
-     */
-    private void closeLogStream() {
-        try {
-            if (mOutStream != null) {
-                mOutStream.flush();
-                mOutStream.close();
-                mOutStream = null;
-            }
-
-        } catch (IOException e) {
-            CLog.w("failed to close %s stream for %s.", mDescriptor, mSerialNumber);
-        }
+        mOutStream.delete();
+        mOutStream = null;
     }
 
     /**
@@ -200,60 +135,6 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
     @Override
     public synchronized boolean isCancelled() {
         return mIsCancelled;
-    }
-
-    /**
-     * Creates a new tmp file, closing the old one as necessary
-     * <p>
-     * Exposed for unit testing.
-     * </p>
-     * @throws IOException
-     * @throws FileNotFoundException
-     */
-    synchronized void createTmpFile() throws IOException, FileNotFoundException {
-        if (mIsCancelled) {
-            CLog.w("Attempted to createTmpFile() after cancel() for device %s, ignoring.",
-                    mSerialNumber);
-            return;
-        }
-
-        closeLogStream();
-        if (mPreviousTmpFile != null) {
-            mPreviousTmpFile.delete();
-        }
-        mPreviousTmpFile = mTmpFile;
-        mTmpFile = FileUtil.createTempFile(String.format("%s_%s_", mDescriptor, mSerialNumber),
-                ".txt");
-        CLog.i("Created tmp %s file %s", mDescriptor, mTmpFile.getAbsolutePath());
-        mOutStream = new BufferedOutputStream(new FileOutputStream(mTmpFile),
-                BUFF_SIZE);
-        // add an initial message to log, to give info to viewer
-        if (mPreviousTmpFile == null) {
-            // first log!
-            appendLogMsg(String.format("%s for device %s", mDescriptor, mSerialNumber));
-        } else {
-            appendLogMsg(String.format("Continuing %s capture for device %s. Previous content may "
-                    + "have been truncated.", mDescriptor, mSerialNumber));
-        }
-    }
-
-    /**
-     * Adds a message to the captured device log.
-     *
-     * @param msg
-     */
-    protected synchronized void appendLogMsg(String msg) {
-        if (mOutStream == null || msg == null) {
-            return;
-        }
-        // add the msg to log, so readers will know the command was interrupted
-        try {
-            mOutStream.write("\n*******************\n".getBytes());
-            mOutStream.write(msg.getBytes());
-            mOutStream.write("\n*******************\n".getBytes());
-        } catch (IOException e) {
-            CLog.w("failed to write %s data for %s.", mDescriptor, mSerialNumber);
-        }
     }
 
     /**

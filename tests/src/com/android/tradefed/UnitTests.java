@@ -40,7 +40,6 @@ import com.android.tradefed.device.DeviceManagerTest;
 import com.android.tradefed.device.DeviceMonitorAsyncProxyTest;
 import com.android.tradefed.device.DeviceSelectionOptionsTest;
 import com.android.tradefed.device.DeviceStateMonitorTest;
-import com.android.tradefed.device.LargeOutputReceiverTest;
 import com.android.tradefed.device.ReconnectingRecoveryTest;
 import com.android.tradefed.device.TestDeviceTest;
 import com.android.tradefed.device.WaitDeviceRecoveryTest;
@@ -91,6 +90,7 @@ import com.android.tradefed.util.NullUtilTest;
 import com.android.tradefed.util.QuotationAwareTokenizerTest;
 import com.android.tradefed.util.RegexTrieTest;
 import com.android.tradefed.util.RunUtilTest;
+import com.android.tradefed.util.SizeLimitedOutputStreamTest;
 import com.android.tradefed.util.brillopad.BrillopadTests;
 import com.android.tradefed.util.net.HttpMultipartPostTest;
 import com.android.tradefed.util.xml.AndroidManifestWriterTest;
@@ -138,7 +138,6 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(DeviceMonitorAsyncProxyTest.class);
         addTestSuite(DeviceSelectionOptionsTest.class);
         addTestSuite(DeviceStateMonitorTest.class);
-        addTestSuite(LargeOutputReceiverTest.class);
         addTestSuite(ReconnectingRecoveryTest.class);
         addTestSuite(TestDeviceTest.class);
         addTestSuite(WaitDeviceRecoveryTest.class);
@@ -197,12 +196,13 @@ public class UnitTests extends DeviceTestSuite {
         addTestSuite(ConditionPriorityBlockingQueueTest.class);
         addTestSuite(EmailTest.class);
         addTestSuite(FileUtilTest.class);
+        addTestSuite(HttpMultipartPostTest.class);
         addTestSuite(MultiMapTest.class);
         addTestSuite(NullUtilTest.class);
         addTestSuite(QuotationAwareTokenizerTest.class);
         addTestSuite(RegexTrieTest.class);
         addTestSuite(RunUtilTest.class);
-        addTestSuite(HttpMultipartPostTest.class);
+        addTestSuite(SizeLimitedOutputStreamTest.class);
 
         // util subdirs
         addTestSuite(AndroidManifestWriterTest.class);

@@ -25,7 +25,6 @@ import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.device.ITestDevice.MountPointInfo;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
 import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
@@ -330,81 +329,6 @@ public class TestDeviceTest extends TestCase {
 
         EasyMock.replay(mMockIDevice);
         mTestDevice.clearErrorDialogs();
-    }
-
-    /**
-     * Test the log file size limiting.
-     */
-    public void testLogCatReceiver() throws IOException, InterruptedException, TimeoutException,
-            AdbCommandRejectedException, ShellCommandUnresponsiveException {
-        mTestDevice.setTmpLogcatSize(10);
-        final String input = "this is the output of greater than 10 bytes.";
-        final String input2 = "this is the second output of greater than 10 bytes.";
-        final String input3 = "<10bytes";
-        final Object notifier = new Object();
-        LogcatReceiver receiver = null;
-
-        // mock the call to get system build id
-        EasyMock.expect(mMockIDevice.getProperty((String)EasyMock.anyObject())).andStubReturn("1");
-
-        try {
-            IAnswer<Object> shellAnswer = new IAnswer<Object>() {
-                @Override
-                public Object answer() throws Throwable {
-                    IShellOutputReceiver receiver =
-                        (IShellOutputReceiver)EasyMock.getCurrentArguments()[1];
-                    byte[] inputData = input.getBytes();
-                    // add log data > maximum. This will trigger a log swap, where inputData
-                    // will be moved to the backup log file
-                    receiver.addOutput(inputData, 0, inputData.length);
-                    // inject the second input data > maximum. This will trigger another log
-                    // swap, that will discard inputData. the backup log file will have
-                    // inputData2, and the current log file will be empty
-                    byte[] inputData2 = input2.getBytes();
-                    receiver.addOutput(inputData2, 0, inputData2.length);
-                    // inject log data smaller than max log data - that will not trigger a
-                    // log swap. The backup log file should contain inputData2, and the
-                    // current should contain inputData3
-                    byte[] inputData3 = input3.getBytes();
-                    receiver.addOutput(inputData3, 0, inputData3.length);
-                    synchronized (notifier) {
-                        notifier.notify();
-                        try {
-                          // block until interrupted
-                          notifier.wait();
-                        } catch (InterruptedException e) {
-                        }
-                    }
-                    return null;
-                }
-            };
-            // expect shell command to be called, with any receiver
-            mMockIDevice.executeShellCommand((String)EasyMock.anyObject(), (IShellOutputReceiver)
-                    EasyMock.anyObject(), EasyMock.eq(0));
-            EasyMock.expectLastCall().andAnswer(shellAnswer);
-            EasyMock.replay(mMockIDevice);
-            receiver = mTestDevice.createLogcatReceiver();
-            receiver.start();
-            synchronized (notifier) {
-                notifier.wait();
-            }
-            InputStreamSource iss = receiver.getLogcatData();
-            String actualString = "";
-            try {
-                actualString = StreamUtil.getStringFromStream(iss.createInputStream());
-            } finally {
-                iss.cancel();
-            }
-            // verify that data from both the backup log file (input2) and current log file
-            // (input3) is retrieved
-            assertFalse(actualString.contains(input));
-            assertTrue(actualString.contains(input2));
-            assertTrue(actualString.contains(input3));
-        } finally {
-            if (receiver != null) {
-                receiver.stop();
-            }
-        }
     }
 
     public void testGetBugreport_deviceUnavail() throws Exception {
