@@ -18,6 +18,7 @@ package com.android.tradefed.build;
 import com.android.tradefed.device.ITestDevice;
 
 import java.io.File;
+import java.util.Collection;
 import java.util.Map;
 
 /**
@@ -119,6 +120,11 @@ public interface IBuildInfo {
     public File getFile(String name);
 
     /**
+     * Returns all {@link VersionedFile}s stored in this {@link BuildInfo}.
+     */
+    public Collection<VersionedFile> getFiles();
+
+    /**
      * Helper method to retrieve a file version with given name.
      * @param name
      * @return the image version or <code>null</code> if not found
@@ -143,5 +149,4 @@ public interface IBuildInfo {
      * Clones the {@link IBuildInfo} object.
      */
     public IBuildInfo clone();
-
 }

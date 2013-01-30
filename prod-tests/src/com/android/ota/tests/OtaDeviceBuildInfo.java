@@ -18,8 +18,11 @@ package com.android.ota.tests;
 
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
+import com.android.tradefed.build.VersionedFile;
 
 import java.io.File;
+import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -384,5 +387,16 @@ public class OtaDeviceBuildInfo implements IDeviceBuildInfo {
             clone.setOtaBuild((IDeviceBuildInfo)mOtaBuild.clone());
         }
         return clone;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Collection<VersionedFile> getFiles() {
+        Collection<VersionedFile> combinedFiles = new LinkedList<VersionedFile>();
+        combinedFiles.addAll(mBaselineBuild.getFiles());
+        combinedFiles.addAll(mOtaBuild.getFiles());
+        return combinedFiles;
     }
 }
