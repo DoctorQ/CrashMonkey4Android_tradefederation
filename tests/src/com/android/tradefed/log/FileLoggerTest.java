@@ -22,7 +22,6 @@ import com.android.tradefed.result.InputStreamSource;
 import junit.framework.TestCase;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
@@ -32,22 +31,6 @@ import java.io.InputStreamReader;
 public class FileLoggerTest extends TestCase {
 
     private static String LOG_TAG = "FileLoggerTest";
-
-    /**
-     * Test that we are able to create a logger.
-     *
-     * @throws ConfigurationException if unable to create log file
-     * @throws SecurityException if unable to delete the log file on cleanup
-     */
-    public void testCreateLogger() throws IOException, SecurityException {
-        FileLogger logger = new FileLogger();
-        logger.init();
-        String tempFile = logger.getFilename();
-        File logFile = new File(tempFile);
-        assertTrue(logFile.exists());
-        logger.closeLog();
-        assertFalse(logFile.exists());
-    }
 
     /**
      * Test logging to a logger.

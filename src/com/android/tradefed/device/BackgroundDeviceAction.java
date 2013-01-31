@@ -104,8 +104,9 @@ public class BackgroundDeviceAction extends Thread {
 
         // FIXME: Determine when we should append a message to the receiver.
         if (mReceiver instanceof LargeOutputReceiver) {
-            ((LargeOutputReceiver) mReceiver).appendLogMsg(String.format(
-                    "%s interrupted. May see duplicated content in log.", mDescriptor));
+            byte[] stringData = String.format(
+                    "%s interrupted. May see duplicated content in log.", mDescriptor).getBytes();
+            mReceiver.addOutput(stringData, 0, stringData.length);
         }
 
         // Make sure we haven't been cancelled before we sleep for a long time

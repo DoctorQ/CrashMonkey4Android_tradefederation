@@ -22,15 +22,13 @@ import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
-import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.SizeLimitedOutputStream;
 import com.android.tradefed.util.StreamUtil;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.Writer;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -41,9 +39,6 @@ import java.util.HashSet;
 public class FileLogger implements ILeveledLogOutput {
     private static final String TEMP_FILE_PREFIX = "tradefed_log_";
     private static final String TEMP_FILE_SUFFIX = ".txt";
-
-    private File mTempLogFile = null;
-    private BufferedWriter mLogWriter = null;
 
     @Option(name = "log-level", description = "the minimum log level to log.")
     private LogLevel mLogLevel = LogLevel.DEBUG;
@@ -56,8 +51,11 @@ public class FileLogger implements ILeveledLogOutput {
     @Option(name = "log-tag-display", description = "Always display given tags logs on stdout")
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
-    // temp: track where this log was closed
-    private StackTraceElement[] mCloseStackFrames = null;
+    @Option(name = "max-log-size", description = "maximum allowable size of tmp log data in mB.")
+    private int mMaxLogSizeMbytes = 20;
+
+    private Writer mLogWriter = null;
+    private SizeLimitedOutputStream mLogStream;
 
     /**
      * Adds tags to the log-tag-display list
@@ -76,16 +74,9 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public void init() throws IOException {
-        try {
-            mTempLogFile = FileUtil.createTempFile(TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
-            mLogWriter = new BufferedWriter(new FileWriter(mTempLogFile));
-        }
-        catch (IOException e) {
-            if (mTempLogFile != null) {
-                mTempLogFile.delete();
-            }
-            throw e;
-        }
+        mLogStream = new SizeLimitedOutputStream(mMaxLogSizeMbytes * 1024 * 1024, TEMP_FILE_PREFIX,
+                TEMP_FILE_SUFFIX);
+        mLogWriter = new PrintWriter(mLogStream);
     }
 
     /**
@@ -187,52 +178,21 @@ public class FileLogger implements ILeveledLogOutput {
     }
 
     /**
-     * Returns the path representation of the file being logged to by this file logger
-     */
-    String getFilename() throws SecurityException {
-        if (mTempLogFile == null) {
-            throw new IllegalStateException(
-                    "logger has already been closed or has not been initialized");
-        }
-        return mTempLogFile.getAbsolutePath();
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
     public InputStreamSource getLog() {
-        if (mLogWriter == null) {
-            // TODO: change this back to throw new IllegalStateException(
-            System.err.println(String.format(
-                    "logger has already been closed or has not been initialized, Thread %s",
-                    Thread.currentThread().getName()));
-            System.err.println("Current stack:");
-            printStackTrace(Thread.currentThread().getStackTrace());
-            System.err.println("\nLog closed at:");
-            printStackTrace(mCloseStackFrames);
-        } else {
+        if (mLogWriter != null && mLogStream != null) {
             try {
                 // create a InputStream from log file
                 mLogWriter.flush();
-                return new SnapshotInputStreamSource(new FileInputStream(mTempLogFile));
-
+                return new SnapshotInputStreamSource(mLogStream.getData());
             } catch (IOException e) {
                 System.err.println("Failed to get log");
                 e.printStackTrace();
             }
         }
         return new ByteArrayInputStreamSource(new byte[0]);
-    }
-
-    private void printStackTrace(StackTraceElement[] trace) {
-        if (trace == null) {
-            System.err.println("no stack");
-            return;
-        }
-        for (StackTraceElement element : trace) {
-            System.err.println("\tat " + element);
-        }
     }
 
     /**
@@ -257,20 +217,16 @@ public class FileLogger implements ILeveledLogOutput {
     void doCloseLog() throws IOException {
         try {
             if (mLogWriter != null) {
-                // TODO: temp: track where this log was closed
-                mCloseStackFrames = Thread.currentThread().getStackTrace();
-                // set mLogWriter to null first before closing, to prevent "write" calls after
-                // "close"
-                BufferedWriter writer = mLogWriter;
+                Writer writer = mLogWriter;
                 mLogWriter = null;
 
                 writer.flush();
                 writer.close();
             }
         } finally {
-            if (mTempLogFile != null) {
-                mTempLogFile.delete();
-                mTempLogFile = null;
+            if (mLogStream != null) {
+                mLogStream.delete();
+                mLogStream = null;
             }
         }
     }
