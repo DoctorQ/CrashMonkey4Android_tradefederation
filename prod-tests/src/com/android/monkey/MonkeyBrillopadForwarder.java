@@ -47,7 +47,28 @@ import java.util.Map;
 public class MonkeyBrillopadForwarder extends ResultForwarder {
 
     private enum MonkeyStatus {
-        FINISHED, CRASHED, MISSING_COUNT, FALSE_COUNT, UPTIME_FAILURE;
+        FINISHED("Money completed without errors."),
+        CRASHED("Monkey run stopped because of a crash."),
+        MISSING_COUNT("Monkey run failed to complete due to an unknown reason. " +
+                "Check logs for details."),
+        FALSE_COUNT("Monkey run reported an invalid count. " +
+                "Check logs for details."),
+        UPTIME_FAILURE("Monkey output is indicating an invalid uptime. " +
+                "Device may have reset during run.");
+
+        private String mDescription;
+
+        MonkeyStatus(String desc) {
+            mDescription = desc;
+        }
+
+        /**
+         * A User friendly description of the status
+         * @return
+         */
+        String getDescription() {
+            return mDescription;
+        }
     }
 
     private BugreportItem mBugreport = null;
@@ -103,7 +124,7 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
             reportNativeCrashes(systemLog, monkeyMetrics, crashTrace);
 
             if (!status.equals(MonkeyStatus.FINISHED)) {
-                String failure = String.format("Monkey run failed due to %s.\n%s", status,
+                String failure = String.format("%s.\n%s", status.getDescription(),
                         crashTrace.toString());
                 super.testFailed(TestFailure.FAILURE, monkeyTest, failure);
             }
