@@ -58,6 +58,15 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
         CLog.i("Performing setup on %s", device.getSerialNumber());
 
+        // double check that device is clean, in case it has unexpected cruft on it
+        if (mUninstall && !uninstallApps(device)) {
+            // cannot cleanup device! Bad things may happen in future tests. Take device out
+            // of service
+            // TODO: in future, consider doing more sophisticated recovery operations
+            throw new DeviceNotAvailableException(String.format(
+                    "Failed to uninstall apps on %s", device.getSerialNumber()));
+        }
+
         if (mInstall) {
             for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
                 String result = device.installPackage(apkFile.getFile(), true);
@@ -68,6 +77,7 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
                 }
             }
         }
+
     }
 
     /**
