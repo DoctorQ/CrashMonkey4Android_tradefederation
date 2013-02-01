@@ -345,7 +345,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         private final IDeviceManager mManager;
         private final ITestDevice mDevice;
         private final ExecutableCommand mCmd;
-        private ITestInvocation mInvocation = null;
+        private final ITestInvocation mInvocation;
         private long mStartTime = -1;
 
         public InvocationThread(String name, IDeviceManager manager, ITestDevice device,
@@ -355,11 +355,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             mManager = manager;
             mDevice = device;
             mCmd = command;
-        }
-
-        private synchronized ITestInvocation createInvocation() {
             mInvocation = createRunInstance();
-            return mInvocation;
         }
 
         public long getStartTime() {
@@ -370,7 +366,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         public void run() {
             FreeDeviceState deviceState = FreeDeviceState.AVAILABLE;
             mStartTime = System.currentTimeMillis();
-            ITestInvocation instance = createInvocation();
+            ITestInvocation instance = getInvocation();
             IConfiguration config = mCmd.getConfiguration();
             try {
                 mCmd.commandStarted();
@@ -403,7 +399,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             }
         }
 
-        private synchronized ITestInvocation getInvocation() {
+        ITestInvocation getInvocation() {
             return mInvocation;
         }
 
