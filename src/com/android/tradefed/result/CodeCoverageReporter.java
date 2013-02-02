@@ -16,6 +16,7 @@
 
 package com.android.tradefed.result;
 
+import com.android.ddmlib.IDevice;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.OptionClass;
@@ -36,8 +37,8 @@ import java.util.zip.ZipFile;
 /**
  * A {@link ITestInvocationListener} that will generate code coverage reports.
  * <p/>
- * Used in conjunction with {@link CodeCoverageTest}. This assumes that emma.jar
- * is in the classpath.
+ * Used in conjunction with {@link CodeCoverageTest}. This assumes that emmalib.jar
+ * is in same filesystem location as ddmlib jar.
  */
 @OptionClass(alias = "code-coverage-reporter")
 public class CodeCoverageReporter extends StubTestInvocationListener {
@@ -215,9 +216,9 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
     private void generateCoverageReport(File coverageFile, File metaFile) {
         Assert.assertNotNull("Could not find a valid coverage file.", coverageFile);
         Assert.assertNotNull("Could not find a valid meta data coverage file.", metaFile);
-        // Assume emma.jar is in the path.
+        String emmaPath = findEmmaJarPath();
         String cmd[] = {
-                "java", "-cp", "emma.jar", "emma", "report", "-r", "html", "-r", "xml",
+                "java", "-cp", emmaPath, "emma", "report", "-r", "html", "-r", "xml",
                 "-in", coverageFile.getAbsolutePath(), "-in", metaFile.getAbsolutePath(),
                 "-Dreport.html.out.encoding=UTF-8",
                 "-Dreport.html.out.file=" + mReportOutputPath.getAbsolutePath() + "/index.html",
@@ -226,7 +227,8 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
         IRunUtil runUtil = RunUtil.getDefault();
         CommandResult result = runUtil.runTimedCmd(REPORT_GENERATION_TIMEOUT_MS, cmd);
         if (!result.getStatus().equals(CommandStatus.SUCCESS)) {
-            CLog.d("Failed to generate coverage report for %s.", coverageFile.getAbsolutePath());
+            CLog.e("Failed to generate coverage report for %s. stderr: %s",
+                    coverageFile.getAbsolutePath(), result.getStderr());
         } else {
             // Make the report world readable.
             boolean setPerms = FileUtil.chmodRWXRecursively(mReportOutputPath);
@@ -235,5 +237,26 @@ public class CodeCoverageReporter extends StubTestInvocationListener {
                         mReportOutputPath.getAbsolutePath());
             }
         }
+    }
+
+    /**
+     * Tries to find emma.jar in same location as ddmlib.jar.
+     *
+     * @returns full path to emma jar file
+     * @throws AssertionFailedError if could not find emma jar
+     */
+    String findEmmaJarPath() {
+        String ddmlibPath = IDevice.class.getProtectionDomain()
+                .getCodeSource()
+                .getLocation()
+                .getFile();
+        Assert.assertFalse("failed to find ddmlib path", ddmlibPath.isEmpty());
+        File parentFolder = new File(ddmlibPath);
+        File emmaJar = new File(parentFolder.getParent(), "emmalib.jar");
+        Assert.assertTrue(
+                String.format("Failed to find emma.jar in %s", emmaJar.getAbsolutePath()),
+                emmaJar.exists());
+        CLog.d("Found emma jar at %s", emmaJar.getAbsolutePath());
+        return emmaJar.getAbsolutePath();
     }
 }
