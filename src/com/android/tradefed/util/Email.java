@@ -22,8 +22,10 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * A helper class to send an email.  Note that this class is NOT PLATFORM INDEPENDENT.  It will
@@ -32,7 +34,8 @@ import java.util.Iterator;
  */
 public class Email implements IEmail {
     private static final String LOG_TAG = "Email";
-    private static final String mailer = "/usr/bin/mailx";
+    private static final String[] mailer = {"/usr/sbin/sendmail", "-t", "-i"};
+    static final String CRLF = "\r\n";
 
     private static String join(Collection<String> list, String sep) {
         StringBuilder builder = new StringBuilder();
@@ -66,56 +69,76 @@ public class Email implements IEmail {
     }
 
     /**
+     * A small helper function that adds the specified header to the header list only if the value
+     * is non-null
+     */
+    private void addHeader(List<String> headers, String name, String value) {
+        if (name == null || value == null) return;
+        headers.add(String.format("%s: %s", name, value));
+    }
+
+    /**
+     * A small helper function that adds the specified header to the header list only if the value
+     * is non-null
+     */
+    private void addHeaders(List<String> headers, String name, Collection<String> values) {
+        if (name == null || values == null) return;
+        if (values.isEmpty()) return;
+
+        final String strValues = join(values, ",");
+        headers.add(String.format("%s: %s", name, strValues));
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public void send(Message msg) throws IllegalArgumentException, IOException {
         // Sanity checks
-        if (msg.getTo() == null || msg.getSubject() == null || msg.getBody() == null) {
-            throw new IllegalArgumentException("Message has no destination or no subject");
+        if (msg.getTo() == null) {
+            throw new IllegalArgumentException("Message is missing a destination");
+        } else if (msg.getSubject() == null) {
+            throw new IllegalArgumentException("Message is missing a subject");
+        } else if (msg.getBody() == null) {
+            throw new IllegalArgumentException("Message is missing a body");
         }
 
-        ArrayList<String> cmd = new ArrayList<String>();
-        // mailx -b bcc -c cc -s subj to-addr to-addr
-        cmd.add(mailer);
-        if (msg.getBcc() != null) {
-            cmd.add("-b");
-            cmd.add(join(msg.getBcc(), ","));
-        }
-        if (msg.isHtml()) {
-            cmd.add("-a");
-            cmd.add("Content-type: text/html;");
-        }
-        if (msg.getCc() != null) {
-            cmd.add("-c");
-            cmd.add(join(msg.getCc(), ","));
-        }
-        cmd.add("-s");
-        cmd.add(msg.getSubject());
-
-        cmd.addAll(msg.getTo());
-
+        // Sender, Recipients, CC, BCC, Subject are all set with appropriate email headers
+        final ArrayList<String> headers = new ArrayList<String>();
+        final String[] mailCmd;
         if (msg.getSender() != null) {
-            // Sender in the headers:
-            cmd.add("-a");
-            cmd.add(String.format("From: %s", msg.getSender()));
-            // sendmail options are denoted with a double-hyphen
-            cmd.add("--");
-            // Envelope Sender
-            cmd.add("-f");
-            cmd.add(msg.getSender());
-        }
+            addHeader(headers, "From", msg.getSender());
 
-        Log.i(LOG_TAG, String.format("About to send email with command: %s", cmd));
-        String[] strArray = new String[cmd.size()];
-        Process mailerProc = run(cmd.toArray(strArray));
+            // Envelope Sender (will receive any errors related to the email)
+            int cmdLen = mailer.length + 2;
+            mailCmd = Arrays.copyOf(mailer, cmdLen);
+            mailCmd[cmdLen - 2] = "-f";
+            mailCmd[cmdLen - 1] = msg.getSender();
+        } else {
+            mailCmd = mailer;
+        }
+        addHeaders(headers, "To", msg.getTo());
+        addHeaders(headers, "Cc", msg.getCc());
+        addHeaders(headers, "Bcc", msg.getBcc());
+        addHeader(headers, "Content-type", msg.getContentType());
+        addHeader(headers, "Subject", msg.getSubject());
+
+        final StringBuilder fullMsg = new StringBuilder();
+        fullMsg.append(join(headers, CRLF));
+        fullMsg.append(CRLF);
+        fullMsg.append(CRLF);
+        fullMsg.append(msg.getBody());
+
+        Log.e(LOG_TAG, String.format("About to send email with command: %s",
+                Arrays.toString(mailCmd)));
+        Process mailerProc = run(mailCmd);
         BufferedOutputStream mailerStdin = new BufferedOutputStream(mailerProc.getOutputStream());
         /* There is no such thing as a "character" in the land of the shell; there are only bytes.
          * Here, we convert the body from a Java string (consisting of characters) to a byte array
          * encoding each character with UTF-8.  Each character will be represented as between one
          * and four bytes apiece.
          */
-        mailerStdin.write(msg.getBody().getBytes("UTF-8"));
+        mailerStdin.write(fullMsg.toString().getBytes("UTF-8"));
         mailerStdin.flush();
         mailerStdin.close();
 

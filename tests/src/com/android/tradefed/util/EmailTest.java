@@ -24,6 +24,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 public class EmailTest extends TestCase {
     private TestEmail mEmail = null;
@@ -141,9 +143,35 @@ public class EmailTest extends TestCase {
      * Ensure that the email body is passed correctly to the mailer program's standard input
      */
     public void testSend_simple() throws IOException {
-        Message msg = new Message("dest@ination.com", "subject", "body");
+        final Message msg = new Message("dest@ination.com", "subject", "body");
+        msg.setSender("or@igin.com");
         mEmail.send(msg);
-        assertTrue("body".equals(mEmail.getMailerData()));
+
+        final Map<String, String> headers = new HashMap<String, String>();
+        final String body = extractBody(mEmail.getMailerData(), headers);
+
+        assertEquals("body", body);
+        assertEquals("or@igin.com", headers.get("From"));
+        assertEquals("dest@ination.com", headers.get("To"));
+        assertEquals("subject", headers.get("Subject"));
+        assertEquals(Message.PLAIN, headers.get("Content-type"));
+        assertEquals(4, headers.size());
+    }
+
+    /**
+     * Make sure that the HTML flag is passed along correctly
+     */
+    public void testSend_htmlEmail() throws IOException {
+        final String expectedBody = "<html><body>le body</body></html>";
+        final Message msg = new Message("dest@ination.com", "subject", expectedBody);
+        msg.setHtml(true);
+        mEmail.send(msg);
+
+        final Map<String, String> headers = new HashMap<String, String>();
+        final String body = extractBody(mEmail.getMailerData(), headers);
+
+        assertEquals(expectedBody, body);
+        assertEquals(Message.HTML, headers.get("Content-type"));
     }
 
     /**
@@ -153,7 +181,7 @@ public class EmailTest extends TestCase {
     public void testSend_emptySubject() throws IOException {
         Message msg = new Message("dest@ination.com", "", "body");
         mEmail.send(msg);
-        assertTrue("body".equals(mEmail.getMailerData()));
+        assertTrue("body".equals(extractBody(mEmail.getMailerData())));
     }
 
     /**
@@ -162,7 +190,72 @@ public class EmailTest extends TestCase {
     public void testSend_emptyBody() throws IOException {
         Message msg = new Message("dest@ination.com", "subject", "");
         mEmail.send(msg);
-        assertTrue("".equals(mEmail.getMailerData()));
+        assertTrue("".equals(extractBody(mEmail.getMailerData())));
+    }
+
+    /**
+     * A short functional test to send an email somewhere.  Intended to be manually enabled with
+     * appropriate email addresses to verify that Email functionality is working after changes.
+     * Not enabled by default because the particular addresses to use will depend on the environment
+     */
+    public void _manual_testFuncSend() throws IOException {
+        final String sender = null;
+        final String[] to = {"RECIPIENT"};
+        final String[] cc = {};
+        final String[] bcc = {};
+
+        final String subject = "This is a TF test email";
+        final String body = "<html><body><h1>What do we want?!</h1><h2>Time travel!</h2>" +
+                "When do we want it?<span style=\"display:block;color:blue;font-weight:bold\">" +
+                "it's irrelevant!</span></body></html>";
+        final String contentType = Message.HTML;
+
+        final Message msg = new Message();
+        msg.setSubject(subject);
+        msg.setBody(body);
+        msg.setContentType(contentType);
+        if (sender != null) {
+            msg.setSender(sender);
+        }
+        for (String addr : to) {
+            msg.addTo(addr);
+        }
+        for (String addr : cc) {
+            msg.addCc(addr);
+        }
+        for (String addr : bcc) {
+            msg.addBcc(addr);
+        }
+
+        final IEmail mailer = new Email();
+        mailer.send(msg);
+    }
+
+    private String extractBody(String data) {
+        return extractBody(data, null);
+    }
+
+    /**
+     * Helper function that takes a full email and splits it into the headers and the body.
+     * Optionally returns the headers via the second arg
+     */
+    private String extractBody(String data, Map<String, String> headers) {
+        final String[] pieces = data.split(Email.CRLF + Email.CRLF, 2);
+        if (headers != null) {
+            for (String header : pieces[0].split(Email.CRLF)) {
+                final String[] halves = header.split(": ", 2);
+                final String key = halves[0];
+                final String val = halves.length == 2 ? halves[1] : null;
+
+                headers.put(key, val);
+            }
+        }
+
+        if (pieces.length < 2) {
+            return null;
+        } else {
+            return pieces[1];
+        }
     }
 }
 
