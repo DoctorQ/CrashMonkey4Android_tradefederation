@@ -100,4 +100,9 @@ public interface IDeviceSelection extends IMatcher<IDevice> {
      */
     public Integer getBatteryLevel(IDevice device);
 
+    /**
+     * Set the serial numbers inclusion list, replacing any existing values.
+     */
+    public void setSerial(String... serialNumber);
+
 }

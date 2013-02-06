@@ -48,6 +48,10 @@ public class CommandOptions implements ICommandOptions {
             importance = Importance.ALWAYS)
     private boolean mLoopMode = false;
 
+    @Option(name = "all-devices", description =
+            "fork this command to run on all connected devices.")
+    private boolean mAllDevices = false;
+
     /**
      * Set the help mode for the config.
      * <p/>
@@ -132,5 +136,13 @@ public class CommandOptions implements ICommandOptions {
             CLog.e("failed to clone command options", e);
         }
         return clone;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean runOnAllDevices() {
+        return mAllDevices;
     }
 }

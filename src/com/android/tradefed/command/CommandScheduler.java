@@ -589,9 +589,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             } else {
                 config.validateOptions();
                 CommandTracker cmdTracker = createCommandTracker(args, listener);
-                ExecutableCommand cmdInstance = createExecutableCommand(cmdTracker, config, false);
                 cmdTracker.incrementExecTime(totalExecTime);
-                addExecCommandToQueue(cmdInstance, 0);
+                if (config.getCommandOptions().runOnAllDevices()) {
+                    addCommandForAllDevices(totalExecTime, cmdTracker);
+                } else {
+                    ExecutableCommand cmdInstance = createExecutableCommand(cmdTracker, config, false);
+                    addExecCommandToQueue(cmdInstance, 0);
+                }
                 return true;
             }
         } catch (ConfigurationException e) {
@@ -603,6 +607,31 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
             System.out.println();
         }
         return false;
+    }
+
+    /**
+     * Creates a new command for each connected device, and adds each to the queue.
+     * <p/>
+     * Note this won't have the desired effect if user has specified other
+     * conflicting {@link IConfiguration#getDeviceRequirements()}in the command.
+     */
+    private void addCommandForAllDevices(long totalExecTime, CommandTracker cmdTracker)
+            throws ConfigurationException {
+        Set<String> devices = new HashSet<String>();
+        devices.addAll(getDeviceManager().getAvailableDevices());
+        devices.addAll(getDeviceManager().getAllocatedDevices());
+        // schedule for for unavailable devices, just in case they come back online
+        devices.addAll(getDeviceManager().getUnavailableDevices());
+
+        for (String device : devices) {
+            IConfiguration config = getConfigFactory().createConfigurationFromArgs(
+                    cmdTracker.getArgs());
+            CLog.logAndDisplay(LogLevel.INFO, "Scheduling '%s' on '%s'", cmdTracker.getArgs()[0],
+                    device);
+            config.getDeviceRequirements().setSerial(device);
+            ExecutableCommand execCmd = createExecutableCommand(cmdTracker, config, false);
+            addExecCommandToQueue(execCmd, 0);
+        }
     }
 
     /**

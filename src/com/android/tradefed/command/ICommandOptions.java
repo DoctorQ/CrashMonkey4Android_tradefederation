@@ -59,4 +59,9 @@ public interface ICommandOptions {
      */
     public ICommandOptions clone();
 
+    /**
+     * Return true if command should run on all devices.
+     */
+    public boolean runOnAllDevices();
+
 }

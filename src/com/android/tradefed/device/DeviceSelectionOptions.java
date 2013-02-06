@@ -25,6 +25,7 @@ import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -102,6 +103,15 @@ public class DeviceSelectionOptions implements IDeviceSelection {
      */
     public void addSerial(String serialNumber) {
         mSerials.add(serialNumber);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setSerial(String... serialNumber) {
+        mSerials.clear();
+        mSerials.addAll(Arrays.asList(serialNumber));
     }
 
     /**
