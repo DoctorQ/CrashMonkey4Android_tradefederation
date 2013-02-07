@@ -66,7 +66,7 @@ public class SizeLimitedOutputStream extends OutputStream {
      */
     public SizeLimitedOutputStream(long maxDataSize, int numFiles, String tempFilePrefix,
             String tempFileSuffix) {
-        mMaxFileSize = maxDataSize / numFiles;
+        mMaxFileSize = maxDataSize / (long)numFiles;
         mFiles = new File[numFiles];
         mCurrentFilePos = numFiles;
         mTempFilePrefix = tempFilePrefix;
@@ -125,7 +125,9 @@ public class SizeLimitedOutputStream extends OutputStream {
         try {
             mCurrentOutputStream.flush();
         } catch (IOException e) {
-            CLog.w("failed to flush data: %s", e);
+            // don't use CLog in this class, because its the underlying stream for the logger.
+            // leads to bad things
+           System.out.printf("failed to flush data: %s\n", e);
         }
     }
 
@@ -174,7 +176,6 @@ public class SizeLimitedOutputStream extends OutputStream {
             mFiles[mCurrentFilePos].delete();
         }
         mFiles[mCurrentFilePos] = FileUtil.createTempFile(mTempFilePrefix, mTempFileSuffix);
-        CLog.d("Created tmp file %s", mFiles[mCurrentFilePos].getAbsolutePath());
         mCurrentOutputStream = new CountingOutputStream(new BufferedOutputStream(
                 new FileOutputStream(mFiles[mCurrentFilePos]), BUFF_SIZE));
     }
