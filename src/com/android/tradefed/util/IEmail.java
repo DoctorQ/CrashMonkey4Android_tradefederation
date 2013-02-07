@@ -46,13 +46,16 @@ public interface IEmail {
      * Container for email message data.
      */
     public static class Message {
+        static final String PLAIN = "text/plain";
+        static final String HTML = "text/html";
+
         private Collection<String> mToAddrs = null;
         private Collection<String> mCcAddrs = null;
         private Collection<String> mBccAddrs = null;
         private String mSubject = null;
         private String mBody = null;
         private String mSender = null;
-        private boolean mHtml = false;
+        private String mContentType = PLAIN;
 
         public Message() {}
 
@@ -92,7 +95,7 @@ public interface IEmail {
         }
         /**
          * Set the recipients. All previously added recipients will be replaced.
-         * {@see #addTo(String)} to add to the recipients list.
+         * {@see #addTo(String)} to append to the recipients list.
          *
          * @param recipients an array of recipient email addresses
          */
@@ -104,6 +107,18 @@ public interface IEmail {
         }
         public void setSender(String sender) {
             mSender = sender;
+        }
+        public void setContentType(String contentType) {
+            if (contentType == null) throw new NullPointerException();
+            mContentType = contentType;
+        }
+
+        public void setHtml(boolean html) {
+            if (html) {
+                setContentType(HTML);
+            } else {
+                setContentType(PLAIN);
+            }
         }
 
         public Collection<String> getTo() {
@@ -126,12 +141,12 @@ public interface IEmail {
             return mSender;
         }
 
-        public void setHtml(boolean html) {
-            mHtml = html;
+        public String getContentType() {
+            return mContentType;
         }
 
         public boolean isHtml() {
-            return mHtml;
+            return HTML.equals(mContentType);
         }
     }
 }
