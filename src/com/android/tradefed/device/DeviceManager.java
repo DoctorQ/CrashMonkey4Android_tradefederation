@@ -138,7 +138,7 @@ public class DeviceManager implements IDeviceManager {
         mGlobalDeviceFilter = globalDeviceFilter;
         // Using ConcurrentHashMap for thread safety: handles concurrent modification and iteration
         mAllocatedDeviceMap = new ConcurrentHashMap<String, IManagedTestDevice>();
-        mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
+        mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>(true /* thread-safe */);
         mCheckDeviceMap = new ConcurrentHashMap<String, IDeviceStateMonitor>();
 
         if (isFastbootAvailable()) {

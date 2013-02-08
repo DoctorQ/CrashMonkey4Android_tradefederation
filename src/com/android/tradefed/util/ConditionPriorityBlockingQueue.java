@@ -15,6 +15,7 @@
  */
 package com.android.tradefed.util;
 
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -75,7 +76,7 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
     }
 
     /** the list of current objects */
-    private final LinkedList<T> mList;
+    private final List<T> mList;
 
     /** the global lock */
     private final ReentrantLock mLock = new ReentrantLock(true);
@@ -90,21 +91,52 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
     /**
      * Creates a {@link ConditionPriorityBlockingQueue}
      * <p/>
-     * Elements will be prioritized in FIFO order.
+     * Elements will be prioritized in FIFO order.  Thread safety will be <emph>disabled</emph>.
      */
     public ConditionPriorityBlockingQueue() {
         this(null);
     }
 
     /**
-     * Creates a {@link ConditionPriorityBlockingQueue}
+     * Creates a {@link ConditionPriorityBlockingQueue} with thread safety <emph>disabled</emph>
      *
      * @param c the {@link Comparator} used to prioritize the queue.
      */
     public ConditionPriorityBlockingQueue(Comparator<T> c) {
+        this(c, false);
+    }
+
+    /**
+     * Creates a {@link ConditionPriorityBlockingQueue} with elements prioritized in FIFO order
+     *
+     * @param threadSafe whether or not to use internal synchronization.  If <code>false</code>,
+     *        then a {@link ConcurrentModificationException} may be thrown if this Queue is
+     *        structurally modified while iteration is in progress.  <code>true</code> will reduce
+     *        overhead for modifications and accesses.
+     */
+    public ConditionPriorityBlockingQueue(boolean threadSafe) {
+        this(null, threadSafe);
+    }
+
+    /**
+     * Creates a {@link ConditionPriorityBlockingQueue}
+     *
+     * @param c the {@link Comparator} used to prioritize the queue.
+     * @param threadSafe whether or not to use internal synchronization.  If <code>false</code>,
+     *        then a {@link ConcurrentModificationException} may be thrown if this Queue is
+     *        structurally modified while iteration is in progress.  <code>true</code> will reduce
+     *        overhead for modifications and accesses.
+     */
+    public ConditionPriorityBlockingQueue(Comparator<T> c, boolean threadSafe) {
         mComparator = c;
-        mList = new LinkedList<T>();
-        mWaitingMatcherList = new LinkedList<ConditionMatcherPair<T>>();
+        if (threadSafe) {
+            mList = Collections.synchronizedList(new LinkedList<T>());
+            mWaitingMatcherList =
+                    Collections.synchronizedList(new LinkedList<ConditionMatcherPair<T>>());
+        } else {
+            mList = new LinkedList<T>();
+            mWaitingMatcherList = new LinkedList<ConditionMatcherPair<T>>();
+        }
     }
 
     /**
