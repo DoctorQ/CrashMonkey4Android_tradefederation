@@ -17,6 +17,8 @@
 package com.android.tradefed.testtype;
 
 import com.android.ddmlib.FileListingService;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -32,7 +34,6 @@ import com.android.tradefed.util.RunUtil;
 import junit.framework.Assert;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -55,7 +56,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     private static final String SHELL_EXE_BASE = "/data/local/tmp/";
 
     private ITestDevice mDevice = null;
-    private UiAutomatorRunner mRunner = null;
+    private IRemoteAndroidTestRunner mRunner = null;
 
     @Option(name = "jar-path", description = "path to jars containing UI Automator test cases and"
             + " dependencies; May be repeated. " +
@@ -98,6 +99,22 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     @Option(name = "run-name",
             description = "the run name to use when reporting test results.")
     private String mRunName = "uiautomator";
+
+    @Option(name = "instrumentation",
+            description = "the specified test should be driven with instrumentation."
+            + "jar-path, runner-path, ignore-sighup are ignored when this is set.")
+    private boolean mInstrumentation = false;
+
+    @Option(name = "package",
+            description = "The manifest package name of the UI test package."
+            + "Only applies when 'instrumentation' option is set.")
+    private String mPackage = null;
+
+    @Option(name = "runner",
+            description="The instrumentation based test runner class name to use."
+            + "Only applies when 'instrumentation' option is set.")
+    private String mRunnerName =
+        "com.android.uiautomator.testrunner.UiAutomatorInstrumentationTestRunner";
 
     /**
      * {@inheritDoc}
@@ -142,25 +159,39 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        buildJarPaths();
-        mRunner = new UiAutomatorRunner(getDevice().getIDevice(),
-                getTestJarPaths().toArray(new String[]{}), mRunnerPath);
-        if (!mClasses.isEmpty()) {
-            mRunner.setClassNames(mClasses.toArray(new String[]{}));
+        if (!isInstrumentationTest()) {
+            buildJarPaths();
         }
-        mRunner.setRunName(mRunName);
+        mRunner = createTestRunner();
+        if (!mClasses.isEmpty()) {
+            getTestRunner().setClassNames(mClasses.toArray(new String[]{}));
+        }
+        getTestRunner().setRunName(mRunName);
         preTestSetup();
         getRunUtil().sleep(getSyncTime());
-        mRunner.setMaxtimeToOutputResponse(mTestTimeout);
+        getTestRunner().setMaxtimeToOutputResponse(mTestTimeout);
         for (Map.Entry<String, String> entry : getTestRunArgMap().entrySet()) {
             getTestRunner().addInstrumentationArg(entry.getKey(), entry.getValue());
         }
-        getTestRunner().setIgnoreSighup(mIgnoreSighup);
+        if (!isInstrumentationTest()) {
+            ((UiAutomatorRunner)getTestRunner()).setIgnoreSighup(mIgnoreSighup);
+        }
         if (mLoggingOption != LoggingOption.OFF) {
             getDevice().runInstrumentationTests(getTestRunner(), listener,
                     new LoggingWrapper(listener));
         } else {
             getDevice().runInstrumentationTests(getTestRunner(), listener);
+        }
+    }
+
+    protected IRemoteAndroidTestRunner createTestRunner() {
+        if (isInstrumentationTest()) {
+            IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(mPackage, mRunnerName,
+                    getDevice().getIDevice());
+            return runner;
+        } else {
+            return new UiAutomatorRunner(getDevice().getIDevice(),
+                    getTestJarPaths().toArray(new String[]{}), mRunnerPath);
         }
     }
 
@@ -191,21 +222,24 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * Checks if the Geppetto components are present on device
+     * Checks if the UI Automator components are present on device
      *
      * @throws DeviceNotAvailableException
      */
     protected void preTestSetup() throws DeviceNotAvailableException {
-        String runnerPath = getTestRunner().getRunnerPath();
-        if (!getDevice().doesFileExist(runnerPath)) {
-            throw new RuntimeException("Missing UI Automator runner: " + runnerPath);
-        }
-        for (String jarPath : getTestJarPaths()) {
-            if (!jarPath.startsWith(FileListingService.FILE_SEPARATOR)) {
-                jarPath = SHELL_EXE_BASE + jarPath;
+        if (!isInstrumentationTest()) {
+            String runnerPath = ((UiAutomatorRunner)getTestRunner()).getRunnerPath();
+            if (!getDevice().doesFileExist(runnerPath)) {
+                throw new RuntimeException("Missing UI Automator runner: " + runnerPath);
             }
-            if (!getDevice().doesFileExist(jarPath)) {
-                throw new RuntimeException("Missing UI Automator test jar on device: " + jarPath);
+            for (String jarPath : getTestJarPaths()) {
+                if (!jarPath.startsWith(FileListingService.FILE_SEPARATOR)) {
+                    jarPath = SHELL_EXE_BASE + jarPath;
+                }
+                if (!getDevice().doesFileExist(jarPath)) {
+                    throw new RuntimeException("Missing UI Automator test jar on device: "
+                            + jarPath);
+                }
             }
         }
     }
@@ -289,9 +323,9 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * @return the UI Automator Test Runner.
+     * @return the test runner.
      */
-    public UiAutomatorRunner getTestRunner() {
+    public IRemoteAndroidTestRunner getTestRunner() {
         return mRunner;
     }
 
@@ -335,5 +369,13 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
      */
     public void addClassNames(Collection<String> classNames) {
         mClasses.addAll(classNames);
+    }
+
+    public boolean isInstrumentationTest() {
+        return mInstrumentation;
+    }
+
+    public void setRunnerName(String runnerName) {
+        mRunnerName = runnerName;
     }
 }
