@@ -27,8 +27,6 @@ import com.android.tradefed.util.StreamUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.Writer;
 import java.util.Collection;
 import java.util.HashSet;
 
@@ -52,9 +50,8 @@ public class FileLogger implements ILeveledLogOutput {
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
 
     @Option(name = "max-log-size", description = "maximum allowable size of tmp log data in mB.")
-    private int mMaxLogSizeMbytes = 20;
+    private long mMaxLogSizeMbytes = 20;
 
-    private Writer mLogWriter = null;
     private SizeLimitedOutputStream mLogStream;
 
     /**
@@ -74,9 +71,8 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public void init() throws IOException {
-        mLogStream = new SizeLimitedOutputStream(mMaxLogSizeMbytes * 1024 * 1024, TEMP_FILE_PREFIX,
-                TEMP_FILE_SUFFIX);
-        mLogWriter = new PrintWriter(mLogStream);
+        mLogStream = new SizeLimitedOutputStream(mMaxLogSizeMbytes * 1024 * 1024,
+                TEMP_FILE_PREFIX, TEMP_FILE_SUFFIX);
     }
 
     /**
@@ -138,8 +134,8 @@ public class FileLogger implements ILeveledLogOutput {
      * @throws IOException
      */
     void writeToLog(String outMessage) throws IOException {
-        if (mLogWriter != null) {
-            mLogWriter.write(outMessage);
+        if (mLogStream != null) {
+            mLogStream.write(outMessage.getBytes());
         }
     }
 
@@ -182,10 +178,10 @@ public class FileLogger implements ILeveledLogOutput {
      */
     @Override
     public InputStreamSource getLog() {
-        if (mLogWriter != null && mLogStream != null) {
+        if (mLogStream != null) {
             try {
                 // create a InputStream from log file
-                mLogWriter.flush();
+                mLogStream.flush();
                 return new SnapshotInputStreamSource(mLogStream.getData());
             } catch (IOException e) {
                 System.err.println("Failed to get log");
@@ -215,18 +211,14 @@ public class FileLogger implements ILeveledLogOutput {
      * @throws IOException
      */
     void doCloseLog() throws IOException {
-        try {
-            if (mLogWriter != null) {
-                Writer writer = mLogWriter;
-                mLogWriter = null;
-
-                writer.flush();
-                writer.close();
-            }
-        } finally {
-            if (mLogStream != null) {
-                mLogStream.delete();
-                mLogStream = null;
+        SizeLimitedOutputStream stream = mLogStream;
+        mLogStream = null;
+        if (stream != null) {
+            try {
+                stream.flush();
+                stream.close();
+            } finally {
+                stream.delete();
             }
         }
     }
@@ -238,8 +230,8 @@ public class FileLogger implements ILeveledLogOutput {
      * @throws IOException
      */
     void dumpToLog(InputStream inputStream) throws IOException {
-        if (mLogWriter != null) {
-            StreamUtil.copyStreamToWriter(inputStream, mLogWriter);
+        if (mLogStream != null) {
+            StreamUtil.copyStreams(inputStream, mLogStream);
         }
     }
 }
