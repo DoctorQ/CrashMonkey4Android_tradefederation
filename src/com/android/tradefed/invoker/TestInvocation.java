@@ -20,6 +20,7 @@ import com.android.tradefed.build.BuildInfo;
 import com.android.tradefed.build.BuildRetrievalError;
 import com.android.tradefed.build.ExistingBuildProvider;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.build.IDeviceBuildProvider;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
@@ -107,7 +108,12 @@ public class TestInvocation implements ITestInvocation {
             mStatus = "fetching build";
             config.getLogOutput().init();
             getLogRegistry().registerLogger(config.getLogOutput());
-            IBuildInfo info = config.getBuildProvider().getBuild();
+            IBuildInfo info = null;
+            if (config.getBuildProvider() instanceof IDeviceBuildProvider) {
+                info = ((IDeviceBuildProvider)config.getBuildProvider()).getBuild(device);
+            } else {
+                info = config.getBuildProvider().getBuild();
+            }
             if (info != null) {
                 injectBuild(info, config.getTests());
                 if (shardConfig(config, info, rescheduler)) {
