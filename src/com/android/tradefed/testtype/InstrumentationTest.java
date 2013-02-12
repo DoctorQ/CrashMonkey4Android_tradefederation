@@ -28,6 +28,7 @@ import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.BugreportCollector;
 import com.android.tradefed.result.CollectingTestListener;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.ResultForwarder;
@@ -109,6 +110,12 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     @Option(name = "instrumentation-arg",
             description = "Additional instrumentation arguments to provide.")
     private Map<String, String> mInstrArgMap = new HashMap<String, String>();
+
+    @Option(name = "bugreport-on-failure", description = "Sets which failed testcase events " +
+            "cause a bugreport to be collected. a bugreport after failed testcases.  Note that " +
+            "there is _no feedback mechanism_ between the test runner and the bugreport " +
+            "collector, so use the EACH setting with due caution.")
+    private BugreportCollector.Freq mBugreportFrequency = null;
 
     private ITestDevice mDevice = null;
 
@@ -415,7 +422,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
      * @param listener the test result listener
      * @throws DeviceNotAvailableException if device stops communicating
      */
-    private void doTestRun(final ITestInvocationListener listener)
+    private void doTestRun(ITestInvocationListener listener)
             throws DeviceNotAvailableException {
 
         if (mRemainingTests != null && !mForceBatchMode) {
@@ -426,6 +433,16 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
         if (mRemainingTests == null) {
             mRemainingTests = collectTestsToRun(mRunner);
         }
+        if (mBugreportFrequency != null) {
+            // Collect a bugreport after EACH/FIRST failed testcase
+            BugreportCollector.Predicate pred = new BugreportCollector.Predicate(
+                    BugreportCollector.Relation.AFTER,
+                    mBugreportFrequency,
+                    BugreportCollector.Noun.FAILED_TESTCASE);
+
+            listener = new BugreportCollector(listener, mDevice);
+        }
+
         if (mRemainingTests == null) {
             // failed to collect the tests or collection is off. Just try to run them all
             mDevice.runInstrumentationTests(mRunner, listener);
