@@ -356,6 +356,18 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
     }
 
     /**
+     * Set the frequency with which to automatically collect bugreports after test failures.
+     * <p />
+     * Note that there is _no feedback mechanism_ between the test runner and the bugreport
+     * collector, so use the EACH setting with due caution: if a large quantity of failures happen
+     * in rapid succession, the bugreport for a given one of the failures could end up being
+     * collected tens of minutes or hours after the respective failure occurred.
+     */
+    public void setBugreportFrequency(BugreportCollector.Freq freq) {
+        mBugreportFrequency = freq;
+    }
+
+    /**
      * Add an argument to provide when running the instrumentation tests
      *
      * @param key the argument name

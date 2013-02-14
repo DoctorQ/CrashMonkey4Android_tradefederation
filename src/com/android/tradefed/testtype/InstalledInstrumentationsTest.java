@@ -23,6 +23,8 @@ import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.BugreportCollector;
+
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.testtype.testdefs.XmlDefsTest;
 
@@ -76,6 +78,12 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
     @Option(name = "send-coverage",
             description = "Send coverage target info to test listeners.")
     private boolean mSendCoverage = false;
+
+    @Option(name = "bugreport-on-failure", description = "Sets which failed testcase events " +
+            "cause a bugreport to be collected. a bugreport after failed testcases.  Note that " +
+            "there is _no feedback mechanism_ between the test runner and the bugreport " +
+            "collector, so use the EACH setting with due caution.")
+    private BugreportCollector.Freq mBugreportFrequency = null;
 
     private List<InstrumentationTest> mTests = null;
 
@@ -251,6 +259,7 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
                         t.setResumeMode(mIsResumeMode);
                         t.setTestSize(getTestSize());
                         t.setTestTimeout(getTestTimeout());
+                        t.setBugreportFrequency(mBugreportFrequency);
                         mTests.add(t);
                     }
                 }
