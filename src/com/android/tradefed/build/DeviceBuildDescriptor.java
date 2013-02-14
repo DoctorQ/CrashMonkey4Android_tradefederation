@@ -31,6 +31,7 @@ public class DeviceBuildDescriptor {
     private static final String DEVICE_BUILD_ALIAS = "device_build_alias";
     private static final String DEVICE_BUILD_FLAVOR = "device_build_flavor";
     private static final String DEVICE_DESC = "device_description";
+    private static final String DEVICE_PRODUCT = "device_product";
 
     private final IBuildInfo mBuild;
 
@@ -82,6 +83,13 @@ public class DeviceBuildDescriptor {
     }
 
     /**
+     * Get the product and variant of the device, in product:variant format.
+     */
+    public String getDeviceProduct() {
+        return mBuild.getBuildAttributes().get(DEVICE_PRODUCT);
+    }
+
+    /**
      * Inserts attributes from device into build.
      *
      * @param device
@@ -95,6 +103,7 @@ public class DeviceBuildDescriptor {
                 device.getProperty("ro.build.type"));
         b.addBuildAttribute(DEVICE_BUILD_FLAVOR, buildFlavor);
         b.addBuildAttribute(DEVICE_DESC, generateDeviceDesc(device));
+        b.addBuildAttribute(DEVICE_PRODUCT, generateDeviceProduct(device));
     }
 
     /**
@@ -116,5 +125,14 @@ public class DeviceBuildDescriptor {
         }
         return String.format("%s %s %s", brand, device.getProperty("ro.product.model"),
                 device.getProperty("ro.build.version.release"));
+    }
+
+    /**
+     * Query the product and variant of the device, in product:variant format.
+     * @throws DeviceNotAvailableException
+     */
+    public static String generateDeviceProduct(ITestDevice device)
+            throws DeviceNotAvailableException {
+        return String.format("%s:%s", device.getProductType(), device.getProductVariant());
     }
 }
