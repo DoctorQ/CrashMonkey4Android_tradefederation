@@ -118,15 +118,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private static class CommandTracker {
         private final int mId;
         private final String[] mArgs;
-        private final ICommandListener mListener;
 
         /** the total amount of time this command was executing. Used to prioritize */
         private long mTotalExecTime = 0;
 
-        CommandTracker(int id, String[] args, ICommandListener listener) {
+        CommandTracker(int id, String[] args) {
             mId = id;
             mArgs = args;
-            mListener = listener;
         }
 
         synchronized void incrementExecTime(long execTime) {
@@ -145,15 +143,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
          */
         String[] getArgs() {
             return mArgs;
-        }
-
-        /**
-         * Callback to inform listener that command has started execution.
-         */
-        synchronized void commandStarted() {
-            if (mListener != null) {
-                mListener.commandStarted();
-            }
         }
 
         int getId() {
@@ -201,7 +190,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         void commandStarted() {
             mState = CommandState.EXECUTING;
             mSleepTime = null;
-            mCmdTracker.commandStarted();
         }
 
         public void commandFinished(long elapsedTime) {
@@ -562,22 +550,14 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     @Override
     public boolean addCommand(String[] args) {
-        return addCommand(args, null);
+        return addCommand(args, 0);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public boolean addCommand(String[] args, ICommandListener listener) {
-        return addCommand(args, listener, 0);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean addCommand(String[] args, ICommandListener listener, long totalExecTime) {
+    public boolean addCommand(String[] args, long totalExecTime) {
         try {
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(args);
             if (config.getCommandOptions().isHelpMode()) {
@@ -588,11 +568,12 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 CLog.v("Dry run mode; not adding command: %s", Arrays.toString(args));
             } else {
                 config.validateOptions();
-                CommandTracker cmdTracker = createCommandTracker(args, listener);
-                cmdTracker.incrementExecTime(totalExecTime);
+
                 if (config.getCommandOptions().runOnAllDevices()) {
-                    addCommandForAllDevices(totalExecTime, cmdTracker);
+                    addCommandForAllDevices(totalExecTime, args);
                 } else {
+                    CommandTracker cmdTracker = createCommandTracker(args);
+                    cmdTracker.incrementExecTime(totalExecTime);
                     ExecutableCommand cmdInstance = createExecutableCommand(cmdTracker, config, false);
                     addExecCommandToQueue(cmdInstance, 0);
                 }
@@ -615,7 +596,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      * Note this won't have the desired effect if user has specified other
      * conflicting {@link IConfiguration#getDeviceRequirements()}in the command.
      */
-    private void addCommandForAllDevices(long totalExecTime, CommandTracker cmdTracker)
+    private void addCommandForAllDevices(long totalExecTime, String[] args)
             throws ConfigurationException {
         Set<String> devices = new HashSet<String>();
         devices.addAll(getDeviceManager().getAvailableDevices());
@@ -624,6 +605,11 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         devices.addAll(getDeviceManager().getUnavailableDevices());
 
         for (String device : devices) {
+            String[] argsWithDevice = Arrays.copyOf(args, args.length + 2);
+            argsWithDevice[argsWithDevice.length - 2] = "-s";
+            argsWithDevice[argsWithDevice.length - 1] = device;
+            CommandTracker cmdTracker = createCommandTracker(argsWithDevice);
+            cmdTracker.incrementExecTime(totalExecTime);
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(
                     cmdTracker.getArgs());
             CLog.logAndDisplay(LogLevel.INFO, "Scheduling '%s' on '%s'", cmdTracker.getArgs()[0],
@@ -637,10 +623,9 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     /**
      * Creates a new {@link CommandTracker} with a unique id.
      */
-    private synchronized CommandTracker createCommandTracker(String[] args,
-            ICommandListener listener) {
+    private synchronized CommandTracker createCommandTracker(String[] args) {
         mCurrentCommandId++;
-        return new CommandTracker(mCurrentCommandId, args, listener);
+        return new CommandTracker(mCurrentCommandId, args);
     }
 
     /**

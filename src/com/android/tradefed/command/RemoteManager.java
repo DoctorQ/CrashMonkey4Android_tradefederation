@@ -214,7 +214,7 @@ public class RemoteManager extends Thread {
         String[] cmdArgs = Arrays.copyOfRange(commandSegments, 2, commandSegments.length);
         Log.logAndDisplay(LogLevel.INFO, "RemoteManager",
                 String.format("Adding command '%s'", ArrayUtil.join(" ", (Object[])cmdArgs)));
-        return mScheduler.addCommand(cmdArgs, null, totalTime);
+        return mScheduler.addCommand(cmdArgs, totalTime);
     }
 
     private void freeAllDevices() {

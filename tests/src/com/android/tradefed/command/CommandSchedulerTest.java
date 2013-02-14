@@ -46,7 +46,6 @@ public class CommandSchedulerTest extends TestCase {
     private IConfiguration mMockConfiguration;
     private CommandOptions mCommandOptions;
     private DeviceSelectionOptions mDeviceOptions;
-    private NotifyingCommandListener mCmdListener;
 
     /**
      * {@inheritDoc}
@@ -61,7 +60,6 @@ public class CommandSchedulerTest extends TestCase {
         mMockConfiguration = EasyMock.createMock(IConfiguration.class);
         mCommandOptions = new CommandOptions();
         mDeviceOptions = new DeviceSelectionOptions();
-        mCmdListener = new NotifyingCommandListener();
 
         mScheduler = new CommandScheduler() {
             @Override
@@ -111,8 +109,6 @@ public class CommandSchedulerTest extends TestCase {
      */
     private void verifyMocks() {
         EasyMock.verify(mMockConfigFactory, mMockConfiguration, mMockInvocation);
-        assertEquals("Did not receive expected number of CommandListener.commandStarted calls",
-                mCmdListener.getNumExpectedCalls(), mCmdListener.getNumCalls());
         mMockManager.assertDevicesFreed();
     }
 
@@ -143,7 +139,7 @@ public class CommandSchedulerTest extends TestCase {
         mMockConfigFactory.printHelpForConfig(EasyMock.aryEq(args), EasyMock.eq(true),
                 EasyMock.eq(System.out));
         replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.addCommand(args);
         verifyMocks();
     }
 
@@ -154,14 +150,12 @@ public class CommandSchedulerTest extends TestCase {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);
-        mCmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
         mMockConfiguration.validateOptions();
         replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.addCommand(args);
         mScheduler.start();
-        waitForCommandStartedCalls();
-        mScheduler.shutdown();
+        mScheduler.shutdownOnEmpty();
         mScheduler.join();
         verifyMocks();
     }
@@ -180,16 +174,14 @@ public class CommandSchedulerTest extends TestCase {
         setCreateConfigExpectations(args2, 1);
         setExpectedInvokeCalls(1);
         mMockConfiguration.validateOptions();
-        mCmdListener.setExpectedCalls(1);
 
         replayMocks();
-        assertFalse(mScheduler.addCommand(dryRunArgs, mCmdListener));
+        assertFalse(mScheduler.addCommand(dryRunArgs));
         // the same config object is being used, so clear its state
         mCommandOptions.setDryRunMode(false);
-        assertTrue(mScheduler.addCommand(args2, mCmdListener));
+        assertTrue(mScheduler.addCommand(args2));
         mScheduler.start();
-        waitForCommandStartedCalls();
-        mScheduler.shutdown();
+        mScheduler.shutdownOnEmpty();
         mScheduler.join();
         verifyMocks();
     }
@@ -207,10 +199,30 @@ public class CommandSchedulerTest extends TestCase {
     }
 
     /**
-     * @throws InterruptedException
+     * Sets up a object that will notify when the expected number of
+     * {@link ITestInvocation#invoke(ITestDevice, IConfiguration, IRescheduler)} calls occurs
+     *
+     * @param times
      */
-    private void waitForCommandStartedCalls() throws InterruptedException {
-        mCmdListener.waitForExpectedCalls(1*1000);
+    private Object waitForExpectedInvokeCalls(final int times) throws DeviceNotAvailableException {
+        IAnswer<Object> blockResult = new IAnswer<Object>() {
+            private int mCalls = 0;
+            @Override
+            public Object answer() throws Throwable {
+                synchronized(this) {
+                    mCalls++;
+                    if (times == mCalls) {
+                        notifyAll();
+                    }
+                }
+                return null;
+            }
+        };
+        mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(),
+                (IConfiguration)EasyMock.anyObject(), (IRescheduler)EasyMock.anyObject());
+        EasyMock.expectLastCall().andAnswer(blockResult);
+        EasyMock.expectLastCall().andAnswer(blockResult);
+        return blockResult;
     }
 
     /**
@@ -228,14 +240,14 @@ public class CommandSchedulerTest extends TestCase {
             setCreateConfigExpectations(args, 3);
             mCommandOptions.setLoopMode(true);
             mCommandOptions.setMinLoopTime(0);
-            // wait for invocation to be executed twice
-            mCmdListener.setExpectedCalls(2);
-            setExpectedInvokeCalls(2);
+            Object notifier = waitForExpectedInvokeCalls(2);
             mMockConfiguration.validateOptions();
             replayMocks();
-            mScheduler.addCommand(args, mCmdListener);
+            mScheduler.addCommand(args);
             mScheduler.start();
-            waitForCommandStartedCalls();
+            synchronized (notifier) {
+                notifier.wait(1 * 1000);
+            }
             mScheduler.shutdown();
             mScheduler.join();
             verifyMocks();
@@ -263,7 +275,6 @@ public class CommandSchedulerTest extends TestCase {
      * Verify that scheduler goes into shutdown mode when a {@link FatalHostError} is thrown.
      */
     public void testRun_fatalError() throws Exception {
-        mCmdListener.setExpectedCalls(1);
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(),
                 (IConfiguration)EasyMock.anyObject(), (IRescheduler)EasyMock.anyObject());
         EasyMock.expectLastCall().andThrow(new FatalHostError("error"));
@@ -272,9 +283,8 @@ public class CommandSchedulerTest extends TestCase {
         setCreateConfigExpectations(args, 1);
         mMockConfiguration.validateOptions();
         replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.addCommand(args);
         mScheduler.start();
-        waitForCommandStartedCalls();
         // no need to call shutdown explicitly - scheduler should shutdown by itself
         mScheduler.join();
         verifyMocks();
@@ -292,18 +302,16 @@ public class CommandSchedulerTest extends TestCase {
         // allocate and free a device to get its serial
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addSerial(dev.getSerialNumber());
-        mCmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
         mMockConfiguration.validateOptions();
         mMockConfiguration.validateOptions();
         replayMocks();
-        mScheduler.addCommand(args, mCmdListener);
-        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.addCommand(args);
+        mScheduler.addCommand(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
 
         mScheduler.start();
-        waitForCommandStartedCalls();
-        mScheduler.shutdown();
+        mScheduler.shutdownOnEmpty();
         mScheduler.join();
         verifyMocks();
     }
@@ -322,22 +330,18 @@ public class CommandSchedulerTest extends TestCase {
         ITestDevice dev = mMockManager.allocateDevice();
         mDeviceOptions.addExcludeSerial(dev.getSerialNumber());
         ITestDevice expectedDevice = mMockManager.allocateDevice();
-        NotifyingCommandListener cmdListener = new NotifyingCommandListener();
-        cmdListener.setExpectedCalls(1);
         setExpectedInvokeCalls(1);
         mMockConfiguration.validateOptions();
         mMockConfiguration.validateOptions();
         replayMocks();
-        mScheduler.addCommand(args, cmdListener);
-        mScheduler.addCommand(args, cmdListener);
+        mScheduler.addCommand(args);
+        mScheduler.addCommand(args);
         mMockManager.freeDevice(dev, FreeDeviceState.AVAILABLE);
         mMockManager.freeDevice(expectedDevice, FreeDeviceState.AVAILABLE);
         mScheduler.start();
-        cmdListener.waitForExpectedCalls(1000);
-        mScheduler.shutdown();
+        mScheduler.shutdownOnEmpty();
         mScheduler.join();
         verifyMocks();
-        assertEquals(1, cmdListener.getNumCalls());
     }
 
     /**
@@ -370,18 +374,14 @@ public class CommandSchedulerTest extends TestCase {
 
         // expect one more success call
         setExpectedInvokeCalls(1);
-        mCmdListener.setExpectedCalls(2);
 
         replayMocks(rescheduledConfig);
-        mScheduler.addCommand(args, mCmdListener);
+        mScheduler.addCommand(args);
         mScheduler.start();
-        waitForCommandStartedCalls();
-        mScheduler.shutdown();
+        mScheduler.shutdownOnEmpty();
         mScheduler.join();
 
         EasyMock.verify(mMockConfigFactory, mMockConfiguration, mMockInvocation);
-        assertEquals("Did not receive expected number of CommandListener.commandStarted calls",
-                mCmdListener.getNumExpectedCalls(), mCmdListener.getNumCalls());
     }
 
     /**

@@ -44,12 +44,8 @@ public class CommandRunner {
             GlobalConfiguration.createGlobalConfiguration(args);
             mScheduler = new CommandScheduler();
             mScheduler.start();
-            NotifyingCommandListener cmdListener = new NotifyingCommandListener();
-            cmdListener.setExpectedCalls(1);
-            if (mScheduler.addCommand(args, cmdListener)) {
-                cmdListener.waitForExpectedCalls();
-            }
-            mScheduler.shutdown();
+            mScheduler.addCommand(args);
+            mScheduler.shutdownOnEmpty();
             mScheduler.join();
         } catch (InterruptedException e) {
             e.printStackTrace();
