@@ -122,7 +122,7 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
     }
 
     private Set<String> getAppsToUninstall(ITestDevice device) throws DeviceNotAvailableException {
-        Set<String> pkgs = device.getInstalledNonSystemPackageNames();
+        Set<String> pkgs = device.getUninstallablePackageNames();
         pkgs.removeAll(mSkipUninstallPkgs);
         return pkgs;
     }

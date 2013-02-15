@@ -33,6 +33,7 @@ import com.android.ddmlib.TimeoutException;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.device.DumpsysPackageParser.PackageInfo;
 import com.android.tradefed.device.IWifiHelper.WifiState;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
@@ -2389,16 +2390,47 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * A {@link DeviceAction} for retrieving package system service info, and do retries on
+     * failures.
+     */
+    private class DumpPkgAction implements DeviceAction {
+
+        Collection<PackageInfo> mPkgInfos;
+
+        @Override
+        public boolean run() throws IOException, TimeoutException, AdbCommandRejectedException,
+                ShellCommandUnresponsiveException, InstallException, SyncException {
+            CollectingOutputReceiver receiver = new CollectingOutputReceiver();
+            getIDevice().executeShellCommand("dumpsys package p", receiver);
+            String output = receiver.getOutput();
+            DumpsysPackageParser parser = DumpsysPackageParser.parse(output);
+            mPkgInfos = parser.getPackages();
+            if (mPkgInfos.size() == 0) {
+                // Package parsing can fail if package manager is currently down. throw exception
+                // to retry
+                CLog.w("no packages found from dumpsys package p. output: '%s'", output);
+                throw new IOException();
+            }
+            return true;
+        }
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
-    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException {
-        return getInstalledPackageNames(new PkgFilter() {
-            @Override
-            public boolean accept(String pkgName, String apkPath) {
-                return !apkPath.startsWith("/system");
+    public Set<String> getUninstallablePackageNames() throws DeviceNotAvailableException {
+        DumpPkgAction action = new DumpPkgAction();
+        performDeviceAction("dumpsys package p", action, MAX_RETRY_ATTEMPTS);
+
+        Set<String> pkgs = new HashSet<String>();
+        for (PackageInfo pkgInfo : action.mPkgInfos) {
+            if (!pkgInfo.isSystemApp || pkgInfo.isUpdatedSystemApp) {
+                CLog.d("Found uninstallable package %s", pkgInfo.packageName);
+                pkgs.add(pkgInfo.packageName);
             }
-        });
+        }
+        return pkgs;
     }
 
     private static interface PkgFilter {

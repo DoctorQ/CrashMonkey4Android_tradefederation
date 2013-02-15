@@ -934,19 +934,6 @@ public class TestDeviceTest extends TestCase {
     }
 
     /**
-     * Unit test for {@link TestDevice#getInstalledNonSystemPackageNames()}.
-     */
-    public void testGetInstalledNonSystemPackageNames() throws Exception {
-        final String output = "package:/data/app/LiveWallpapers.apk=com.android.wallpaper\n" +
-                "package:/system/app/LiveWallpapersPicker.apk=com.android.wallpaper.livepicker";
-        injectShellResponse(TestDevice.LIST_PACKAGES_CMD, output);
-        EasyMock.replay(mMockIDevice, mMockMonitor);
-        Set<String> actualPkgs = mTestDevice.getInstalledNonSystemPackageNames();
-        assertEquals(1, actualPkgs.size());
-        assertTrue(actualPkgs.contains("com.android.wallpaper"));
-    }
-
-    /**
      * Unit test for {@link TestDevice#getInstalledPackageNames()}.
      * <p/>
      * Test bad output.
