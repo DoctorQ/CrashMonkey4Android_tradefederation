@@ -1435,12 +1435,6 @@ class TestDevice implements IManagedTestDevice {
 
     /**
      * {@inheritDoc}
-     * <p/>
-     * Works in two modes:
-     * <li>If the logcat is currently being captured in the background (i.e. the manager of this
-     * device is calling startLogcat and stopLogcat as appropriate), will return the current
-     * contents of the background logcat capture.
-     * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
     @Override
     public InputStreamSource getLogcat() {
@@ -1454,12 +1448,10 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
-     * Get a dump of the current logcat for device.
-     *
-     * @return a {@link InputStream} of the logcat data. An empty stream is returned if fail to
-     *         capture logcat data.
+     * {@inheritDoc}
      */
-    private InputStreamSource getLogcatDump() {
+    @Override
+    public InputStreamSource getLogcatDump() {
         byte[] output = new byte[0];
         try {
             // use IDevice directly because we don't want callers to handle

@@ -580,8 +580,22 @@ public interface ITestDevice {
 
     /**
      * Grabs a snapshot stream of the logcat data.
+     * <p/>
+     * Works in two modes:
+     * <li>If the logcat is currently being captured in the background, will return the current
+     * contents of the background logcat capture.
+     * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
     public InputStreamSource getLogcat();
+
+    /**
+    * Get a dump of the current logcat for device. Unlike {@link #getLogcat()}, this method will
+    * always return a static dump of the logcat.
+    *
+    * @return a {@link InputStreamSource} of the logcat data. An empty stream is returned if fail to
+    *         capture logcat data.
+    */
+    public InputStreamSource getLogcatDump();
 
     /**
      * Grabs a screenshot from the device.

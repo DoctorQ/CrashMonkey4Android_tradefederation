@@ -707,4 +707,12 @@ public class StubTestDevice implements IManagedTestDevice {
     public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException {
         return null;
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStreamSource getLogcatDump() {
+        return null;
+    }
 }
