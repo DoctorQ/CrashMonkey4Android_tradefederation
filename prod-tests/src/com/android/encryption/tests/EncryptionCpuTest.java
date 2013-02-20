@@ -358,11 +358,8 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
             setupLogging();
             try {
                 IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(
-                        "com.google.android.camera.tests",
-                        "com.android.camera.stress.CameraStressTestRunner",
-                        mTestDevice.getIDevice());
-                runner.setMethodName("com.android.camera.stress.VideoCapture",
-                        "testBackVideoCapture");
+                        mVideoRecordPackage, mVideoRecordTestRunner, mTestDevice.getIDevice());
+                runner.setMethodName(mVideoRecordClass, mVideoRecordMethod);
                 runner.setMaxtimeToOutputResponse(TEST_TIMEOUT);
                 runner.addInstrumentationArg("video_iterations", Integer.toString(1));
                 runner.addInstrumentationArg("video_duration", Integer.toString(3 * 60 * 1000));
@@ -394,6 +391,18 @@ public class EncryptionCpuTest implements IDeviceTest, IRemoteTest {
 
     @Option(name="run-video-record-test", description="Whether to run push test.")
     private boolean mRunVideoRecord = true;
+
+    @Option(name="video-record-package")
+    private String mVideoRecordPackage = "com.google.android.gallery3d.tests";
+
+    @Option(name="video-record-test-runner")
+    private String mVideoRecordTestRunner = "com.android.gallery3d.stress.CameraStressTestRunner";
+
+    @Option(name="video-record-class")
+    private String mVideoRecordClass = "com.android.gallery3d.stress.VideoCapture";
+
+    @Option(name="video-record-method")
+    private String mVideoRecordMethod = "testBackVideoCapture";
 
     @Option(name="pull-file-size",
             description="The size in kB of the file used in the pull test")
