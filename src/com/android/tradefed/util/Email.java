@@ -129,7 +129,7 @@ public class Email implements IEmail {
         fullMsg.append(CRLF);
         fullMsg.append(msg.getBody());
 
-        Log.e(LOG_TAG, String.format("About to send email with command: %s",
+        Log.d(LOG_TAG, String.format("About to send email with command: %s",
                 Arrays.toString(mailCmd)));
         Process mailerProc = run(mailCmd);
         BufferedOutputStream mailerStdin = new BufferedOutputStream(mailerProc.getOutputStream());
