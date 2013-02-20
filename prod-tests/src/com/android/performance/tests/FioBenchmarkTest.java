@@ -266,7 +266,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
     private int mSimpleInternalFileSize = 256;
 
     @Option(name="run-simple-external-test", description="Run the simple external benchmark.")
-    private Boolean mRunSimpleExternalTest = true;
+    private Boolean mRunSimpleExternalTest = false;
 
     @Option(name="simple-external-file-size",
             description="The file size of the simple external benchmark in MB.")
@@ -284,7 +284,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
     private int mStorageInternalJobCount = 4;
 
     @Option(name="run-storage-external-test", description="Run the storage external benchmark.")
-    private Boolean mRunStorageExternalTest = true;
+    private Boolean mRunStorageExternalTest = false;
 
     @Option(name="storage-external-file-size",
             description="The file size of the storage external benchmark in MB.")
@@ -295,7 +295,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
     private int mStorageExternalJobCount = 4;
 
     @Option(name="run-media-server-test", description="Run the media server benchmark.")
-    private Boolean mRunMediaServerTest = true;
+    private Boolean mRunMediaServerTest = false;
 
     @Option(name="media-server-duration",
             description="The duration of the media server benchmark in secs.")
@@ -314,7 +314,7 @@ public class FioBenchmarkTest implements IDeviceTest, IRemoteTest {
     private int mMediaServerWorkerJobCount = 4;
 
     @Option(name="run-media-scanner-test", description="Run the media scanner benchmark.")
-    private Boolean mRunMediaScannerTest = true;
+    private Boolean mRunMediaScannerTest = false;
 
     @Option(name="media-scanner-media-file-size",
             description="The media file size of the media scanner benchmark in kB.")
