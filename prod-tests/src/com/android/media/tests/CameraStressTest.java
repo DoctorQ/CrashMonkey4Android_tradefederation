@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Runs the Camera stress testcases.
@@ -59,7 +60,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
 
     // Constants for running the tests
-    private static final String TEST_PACKAGE_NAME = "com.google.android.camera.tests";
+    private static final String TEST_PACKAGE_NAME = "com.google.android.gallery3d.tests";
 
     //Max test timeout - 3 hrs
     private static final int MAX_TEST_TIMEOUT = 3 * 60 * 60 * 1000;
@@ -80,6 +81,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         public String mTestName = null;
         public String mClassName = null;
         public String mTestMetricsName = null;
+        public Map<String, String> mInstrumentationArgs = new HashMap<String, String>();
         public RegexTrie<String> mPatternMap = new RegexTrie<String>();
 
         @Override
@@ -124,23 +126,25 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         // Image capture stress test
         TestInfo t = new TestInfo();
         t.mTestName = "imagecap";
-        t.mClassName = "com.android.camera.stress.ImageCapture";
+        t.mClassName = "com.android.gallery3d.stress.ImageCapture";
         t.mTestMetricsName = "CameraApplicationStress";
+        t.mInstrumentationArgs.put("image_iterations", Integer.toString(100));
         t.mPatternMap = patMap;
         mTestCases.add(t);
 
         // Image capture stress test
         t = new TestInfo();
         t.mTestName = "videocap";
-        t.mClassName = "com.android.camera.stress.VideoCapture";
+        t.mClassName = "com.android.gallery3d.stress.VideoCapture";
         t.mTestMetricsName = "CameraApplicationStress";
+        t.mInstrumentationArgs.put("video_iterations", Integer.toString(100));
         t.mPatternMap = patMap;
         mTestCases.add(t);
 
         // "SwitchPreview" stress test
         t = new TestInfo();
         t.mTestName = "switch";
-        t.mClassName = "com.android.camera.stress.SwitchPreview";
+        t.mClassName = "com.android.gallery3d.stress.SwitchPreview";
         t.mTestMetricsName = "CameraApplicationStress";
         t.mPatternMap = patMap;
         mTestCases.add(t);
@@ -167,6 +171,12 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
 
         runner.setClassName(test.mClassName);
         runner.setMaxtimeToOutputResponse(MAX_TEST_TIMEOUT);
+
+        Set<String> argumentKeys = test.mInstrumentationArgs.keySet();
+        for (String s : argumentKeys) {
+            runner.addInstrumentationArg(s, test.mInstrumentationArgs.get(s));
+        }
+
         mTestDevice.runInstrumentationTests(runner, listener, auxListener);
 
         // Grab a bugreport if warranted
@@ -374,7 +384,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
             mTestInfo = new TestInfo();
             TestInfo t = mTestInfo;  // for convenience
             t.mTestName = "capture";
-            t.mClassName = "com.android.camera.stress.ImageCapture";
+            t.mClassName = "com.android.gallery3d.stress.ImageCapture";
             t.mTestMetricsName = "camera_application_stress";
             t.mPatternMap = getPatternMap();
         }

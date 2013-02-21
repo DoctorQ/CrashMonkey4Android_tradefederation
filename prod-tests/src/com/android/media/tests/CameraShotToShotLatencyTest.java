@@ -47,8 +47,8 @@ public class CameraShotToShotLatencyTest implements IDeviceTest, IRemoteTest {
     private static final Pattern STANDARD_DEVIATION_PATTERN =
             Pattern.compile("(Shot to shot latency - standard deviation:)(\\s*)(\\d+\\.\\d*)");
 
-    private static final String TEST_CLASS_NAME = "com.android.camera.stress.ShotToShotLatency";
-    private static final String TEST_PACKAGE_NAME = "com.google.android.camera.tests";
+    private static final String TEST_CLASS_NAME = "com.android.gallery3d.stress.ShotToShotLatency";
+    private static final String TEST_PACKAGE_NAME = "com.google.android.gallery3d.tests";
     private static final String TEST_RUNNER_NAME = "android.test.InstrumentationTestRunner";
 
     private static final String LATENCY_KEY_MEAN = "Shot2ShotLatencyMean";
