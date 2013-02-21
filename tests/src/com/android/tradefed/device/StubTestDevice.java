@@ -21,7 +21,6 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.device.TestDeviceOptions;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.CommandResult;
 
@@ -713,6 +712,14 @@ public class StubTestDevice implements IManagedTestDevice {
      */
     @Override
     public InputStreamSource getLogcatDump() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStreamSource getLogcat(int maxBytes) {
         return null;
     }
 }

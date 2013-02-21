@@ -582,15 +582,30 @@ public interface ITestDevice {
      * Grabs a snapshot stream of the logcat data.
      * <p/>
      * Works in two modes:
-     * <li>If the logcat is currently being captured in the background, will return the current
-     * contents of the background logcat capture.
+     * <li>If the logcat is currently being captured in the background, will return up to
+     * {@link TestDeviceOptions#getMaxLogcatDataSize()} bytes of the current
+     * contents of the background logcat capture
      * <li>Otherwise, will return a static dump of the logcat data if device is currently responding
      */
     public InputStreamSource getLogcat();
 
     /**
+     * Grabs a snapshot stream of the last <code>maxBytes</code> of captured logcat data.
+     * <p/>
+     * Useful for cases when you want to capture frequent snapshots of the captured logcat data
+     * without incurring the potentially big disk space penalty of getting the entire
+     * {@link #getLogcat()} snapshot.
+     *
+     * @param maxBytes the maximum amount of data to return. Should be an amount that can
+     *            comfortably fit in memory
+     */
+    public InputStreamSource getLogcat(int maxBytes);
+
+    /**
     * Get a dump of the current logcat for device. Unlike {@link #getLogcat()}, this method will
     * always return a static dump of the logcat.
+    * <p/>
+    * Has the disadvantage that nothing will be returned if device is not reachable.
     *
     * @return a {@link InputStreamSource} of the logcat data. An empty stream is returned if fail to
     *         capture logcat data.

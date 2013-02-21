@@ -51,6 +51,10 @@ public class LogcatReceiver {
         return mReceiver.getData();
     }
 
+    public InputStreamSource getLogcatData(int maxBytes) {
+        return mReceiver.getData(maxBytes);
+    }
+
     public void clear() {
         mReceiver.clear();
     }

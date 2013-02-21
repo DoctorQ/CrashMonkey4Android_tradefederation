@@ -22,9 +22,12 @@ import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ByteArrayInputStreamSource;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.SnapshotInputStreamSource;
+import com.android.tradefed.util.FixedByteArrayOutputStream;
 import com.android.tradefed.util.SizeLimitedOutputStream;
+import com.android.tradefed.util.StreamUtil;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * A class designed to help run long running commands collect output.
@@ -83,6 +86,49 @@ public class LargeOutputReceiver implements IShellOutputReceiver {
             } catch (IOException e) {
                 CLog.e("failed to get %s data for %s.", mDescriptor, mSerialNumber);
                 CLog.e(e);
+            }
+        }
+
+        // return an empty InputStreamSource
+        return new ByteArrayInputStreamSource(new byte[0]);
+    }
+
+    /**
+     * Gets the last <var>maxBytes</var> of collected output as a {@link InputStreamSource}.
+     *
+     * @param maxBytes the maximum amount of data to return. Should be an amount that can
+     *            comfortably fit in memory
+     * @return The collected output from the command, stored in memory
+     */
+    public synchronized InputStreamSource getData(final int maxBytes) {
+        if (mOutStream != null) {
+            InputStream fullStream = null;
+            try {
+                fullStream = mOutStream.getData();
+                final FixedByteArrayOutputStream os = new FixedByteArrayOutputStream(maxBytes);
+                StreamUtil.copyStreams(fullStream, os);
+                return new InputStreamSource() {
+
+                    @Override
+                    public InputStream createInputStream()  {
+                        return os.getData();
+                    }
+
+                    @Override
+                    public void cancel() {
+                        // ignore, nothing to do
+                    }
+
+                    @Override
+                    public long size() {
+                        return os.size();
+                    }
+                };
+            } catch (IOException e) {
+                CLog.e("failed to get %s data for %s.", mDescriptor, mSerialNumber);
+                CLog.e(e);
+            } finally {
+                StreamUtil.close(fullStream);
             }
         }
 

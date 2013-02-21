@@ -52,7 +52,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -1444,6 +1443,20 @@ class TestDevice implements IManagedTestDevice {
             return getLogcatDump();
         } else {
             return mLogcatReceiver.getLogcatData();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public InputStreamSource getLogcat(int maxBytes) {
+        if (mLogcatReceiver == null) {
+            CLog.w("Not capturing logcat for %s in background, returning a logcat dump "
+                    + "ignoring size", getSerialNumber());
+            return getLogcatDump();
+        } else {
+            return mLogcatReceiver.getLogcatData(maxBytes);
         }
     }
 

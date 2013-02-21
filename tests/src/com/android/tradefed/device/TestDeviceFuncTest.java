@@ -25,6 +25,7 @@ import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.testtype.DeviceTestCase;
 import com.android.tradefed.util.CommandStatus;
 import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
 import org.easymock.EasyMock;
@@ -558,6 +559,37 @@ public class TestDeviceFuncTest extends DeviceTestCase {
             // TODO: add more stringent checks
         } finally {
             FileUtil.deleteFile(tmpPngFile);
+            source.cancel();
+        }
+    }
+
+    /**
+     * Basic test for {@link TestDevice#getLogcat(long)}.
+     * <p/>
+     * Dumps a bunch of messages to logcat, calls getLogcat(), and verifies size of capture file is
+     * equal to provided data.
+     */
+    public void testGetLogcat_size() throws DeviceNotAvailableException, IOException {
+        CLog.i(LOG_TAG, "testGetLogcat_size");
+        for (int i = 0; i < 100; i++) {
+            getDevice().executeShellCommand(String.format("log testGetLogcat_size log dump %d", i));
+        }
+        // sleep a small amount of time to ensure last log message makes it into capture
+        RunUtil.getDefault().sleep(10);
+        InputStreamSource source = getDevice().getLogcat(100 * 1024);
+        assertNotNull(source);
+        File tmpTxtFile = FileUtil.createTempFile("logcat", ".txt");
+        try {
+            FileUtil.writeToFile(source.createInputStream(), tmpTxtFile);
+            CLog.i("Created file at %s", tmpTxtFile.getAbsolutePath());
+            assertEquals("Saved text file is not equal to buffer size", 100 * 1024,
+                    tmpTxtFile.length());
+            // ensure last log message is present in log
+            String s = FileUtil.readStringFromFile(tmpTxtFile);
+            assertTrue("last log message is not in captured logcat",
+                    s.contains("testGetLogcat_size log dump 99"));
+        } finally {
+            FileUtil.deleteFile(tmpTxtFile);
             source.cancel();
         }
     }
