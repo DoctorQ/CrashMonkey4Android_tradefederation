@@ -37,6 +37,12 @@ public interface ICommandOptions {
     public boolean isDryRunMode();
 
     /**
+     * Return <code>true</code> if we should print the command out to the console before we
+     * <emph>skip</emph> adding it to the queue.
+     */
+    public boolean isNoisyDryRunMode();
+
+    /**
      * Return the loop mode for the config.
      */
     public boolean isLoopMode();
