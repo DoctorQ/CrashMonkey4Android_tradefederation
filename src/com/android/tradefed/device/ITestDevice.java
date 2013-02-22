@@ -903,12 +903,12 @@ public interface ITestDevice {
     public Set<String> getInstalledPackageNames() throws DeviceNotAvailableException;
 
     /**
-     * Fetch the application package names , filtering out apks installed on the
-     * devices /system partition. This can also be thought of as the list of uninstallable
-     * package names.
+     * Fetch the application package names that can be uninstalled. This is presently defined as
+     * non-system packages, and updated system packages.
      *
-     * @return {@link Set} of {@link String} package names currently installed on the device.
+     * @return {@link Set} of uninstallable {@link String} package names currently installed on the
+     *         device.
      * @throws DeviceNotAvailableException
      */
-    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException;
+    public Set<String> getUninstallablePackageNames() throws DeviceNotAvailableException;
 }

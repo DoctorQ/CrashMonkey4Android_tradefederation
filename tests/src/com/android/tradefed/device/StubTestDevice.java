@@ -704,7 +704,7 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
-    public Set<String> getInstalledNonSystemPackageNames() throws DeviceNotAvailableException {
+    public Set<String> getUninstallablePackageNames() throws DeviceNotAvailableException {
         return null;
     }
 
