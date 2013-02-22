@@ -57,7 +57,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
 
     // Constants for running the tests
-    private static final String TEST_PACKAGE_NAME = "com.google.android.camera.tests";
+    private static final String TEST_PACKAGE_NAME = "com.google.android.gallery3d.tests";
 
     private final String mOutputPath = "mediaStressOut.txt";
 
@@ -94,7 +94,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         // Startup tests
         TestInfo t = new TestInfo();
         t.mTestName = "startup";
-        t.mClassName = "com.android.camera.stress.CameraStartUp";
+        t.mClassName = "com.android.gallery3d.stress.CameraStartUp";
         t.mTestMetricsName = "CameraVideoRecorderStartup";
         RegexTrie<String> map = t.mPatternMap;
         map = t.mPatternMap;
@@ -107,7 +107,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
         // Latency tests
         t = new TestInfo();
         t.mTestName = "latency";
-        t.mClassName = "com.android.camera.stress.CameraLatency";
+        t.mClassName = "com.android.gallery3d.stress.CameraLatency";
         t.mTestMetricsName = "CameraLatency";
         map = t.mPatternMap;
         map.put("AutoFocus", "^Avg AutoFocus = (\\d+)");
@@ -298,7 +298,7 @@ public class CameraLatencyTest implements IDeviceTest, IRemoteTest {
             mTestInfo = new TestInfo();
             TestInfo t = mTestInfo;  // convenience alias
             t.mTestName = "startup";
-            t.mClassName = "com.android.camera.stress.CameraStartUp";
+            t.mClassName = "com.android.gallery3d.stress.CameraStartUp";
             t.mTestMetricsName = "camera_video_recorder_startup";
             RegexTrie<String> map = t.mPatternMap;
             map.put("FirstCameraStartup", "^First Camera Startup: (\\d+)");
