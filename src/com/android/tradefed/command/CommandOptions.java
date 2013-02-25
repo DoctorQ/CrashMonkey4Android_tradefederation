@@ -36,9 +36,16 @@ public class CommandOptions implements ICommandOptions {
     private boolean mFullHelpMode = false;
 
     @Option(name = "dry-run",
-            description = "build but don't actually run the command; for debugging",
+            description = "build but don't actually run the command.  Intended as a quick check " +
+                    "to ensure that a command is runnable.",
             importance = Importance.ALWAYS)
     private boolean mDryRunMode = false;
+
+    @Option(name = "noisy-dry-run",
+            description = "build but don't actually run the command.  This version prints the " +
+                    "command to the console.  Intended for cmdfile debugging.",
+            importance = Importance.ALWAYS)
+    private boolean mNoisyDryRunMode = false;
 
     @Option(name = "min-loop-time", description =
             "the minimum invocation time in ms when in loop mode.")
@@ -91,7 +98,15 @@ public class CommandOptions implements ICommandOptions {
      */
     @Override
     public boolean isDryRunMode() {
-        return mDryRunMode;
+        return mDryRunMode || mNoisyDryRunMode;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isNoisyDryRunMode() {
+        return mNoisyDryRunMode;
     }
 
     /**
