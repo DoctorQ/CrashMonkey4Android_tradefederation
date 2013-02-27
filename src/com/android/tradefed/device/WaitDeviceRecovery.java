@@ -57,6 +57,12 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
             description="maximum time in ms to wait for device shell to be responsive.")
     protected long mShellWaitTime = 30 * 1000;
 
+    @Option(name = "disable-unresponsive-reboot",
+            description = "If this is set, we will not attempt to reboot an unresponsive device" +
+            "that is in userspace.  Note that this will have no effect if the device is in " +
+            "fastboot or is expected to be in fastboot.")
+    protected boolean mDisableUnresponsiveReboot = false;
+
     /**
      * Get the {@link RunUtil} instance to use.
      * <p/>
@@ -127,7 +133,9 @@ public class WaitDeviceRecovery implements IDeviceRecovery {
      */
     protected void handleDeviceUnresponsive(IDevice device, IDeviceStateMonitor monitor)
             throws DeviceNotAvailableException {
-        rebootDevice(device);
+        if (!mDisableUnresponsiveReboot) {
+            rebootDevice(device);
+        }
         IDevice newdevice = monitor.waitForDeviceOnline();
         if (newdevice == null) {
             handleDeviceNotAvailable(monitor, false);
