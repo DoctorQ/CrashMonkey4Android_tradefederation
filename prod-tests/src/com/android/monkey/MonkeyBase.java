@@ -240,7 +240,10 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
 
         // Generate the monkey command to run, given the options
         String command = buildMonkeyCommand();
-        CLog.i("About to run monkey with at %d minute timeout: %s", mMonkeyTimeout, command);
+        String msg = String.format("About to run monkey with a %d minute timeout: \"%s\"",
+                mMonkeyTimeout, command);
+        CLog.i(msg);
+        mTestDevice.executeShellCommand(String.format("log %s", msg));
 
         StringBuilder outputBuilder = new StringBuilder();
         CommandHelper commandHelper = new CommandHelper();
@@ -265,6 +268,9 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
             // Wait for device to recover if it's not online.  If it hasn't recovered, ignore.
             try {
                 mTestDevice.waitForDeviceOnline(2 * 60 * 1000);
+                // ideally DeviceNotAvailableException shouldn't be caught from this command, but
+                // ignore it here anyway for backwards compatibility
+                mTestDevice.executeShellCommand("log monkey complete");
             } catch (DeviceNotAvailableException e) {
                 CLog.w("Device %s not available after 2 minutes.", mTestDevice.getSerialNumber());
             }
