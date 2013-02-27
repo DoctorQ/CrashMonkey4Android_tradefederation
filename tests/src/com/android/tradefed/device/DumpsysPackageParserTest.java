@@ -17,6 +17,7 @@
 package com.android.tradefed.device;
 
 import com.android.tradefed.device.DumpsysPackageParser.PackageInfo;
+import com.android.tradefed.device.DumpsysPackageParser.ParseException;
 
 import junit.framework.TestCase;
 
@@ -78,5 +79,13 @@ public class DumpsysPackageParserTest extends TestCase {
         assertEquals("com.android.soundrecorder", pkg.packageName);
         assertTrue(pkg.isSystemApp);
         assertTrue(pkg.isUpdatedSystemApp);
+    }
+
+    /**
+     * Verifies parse handles empty input
+     */
+    public void testParse_empty() throws ParseException {
+        DumpsysPackageParser parser = DumpsysPackageParser.parse("");
+        assertEquals(0,  parser.getPackages().size());
     }
 }

@@ -101,6 +101,9 @@ class DumpsysPackageParser {
      * Perform the parsing of the entire 'dumpsys package p' output.
      */
     void doParse(String data) throws ParseException {
+        if (data.length() == 0) {
+            return;
+        }
         // first find the hidden system package section, which is expected at end of output
         int hiddenPkgIndex = data.lastIndexOf(HIDDEN_SYSTEM_PACKAGES_PREFIX);
         if (hiddenPkgIndex == -1) {
