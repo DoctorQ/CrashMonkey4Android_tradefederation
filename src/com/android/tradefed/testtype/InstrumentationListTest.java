@@ -26,6 +26,7 @@ import com.android.tradefed.result.ResultForwarder;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -49,6 +50,7 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
     private int mTestTimeout = 10 * 60 * 1000;  // default to 10 minutes
     private ITestDevice mDevice = null;
     private String mRunName = null;
+    private Map<String, String> mInstrArgMap = new HashMap<String, String>();
 
     /**
      * Creates a {@link InstrumentationListTest}.
@@ -122,6 +124,9 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             // no need to rerun when executing tests one by one
             runner.setRerunMode(false);
             runner.setRunName(mRunName);
+            for (Map.Entry<String, String> entry : mInstrArgMap.entrySet()) {
+                runner.addInstrumentationArg(entry.getKey(), entry.getValue());
+            }
             runTest(runner, listener, testToRun);
         }
     }
@@ -196,5 +201,9 @@ class InstrumentationListTest implements IDeviceTest, IRemoteTest {
             super.testEnded(mExpectedTest, Collections.EMPTY_MAP);
             super.testRunEnded(0, Collections.EMPTY_MAP);
         }
+    }
+
+    void addInstrumentationArgs(Map<String, String> instrArgMap) {
+        mInstrArgMap.putAll(instrArgMap);
     }
 }
