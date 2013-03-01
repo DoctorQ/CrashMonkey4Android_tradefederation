@@ -189,7 +189,7 @@ public class MonkeyLogParser implements IParser {
         }
         m = SEED_AND_TARGET_COUNT.matcher(line);
         if (m.matches()) {
-            mMonkeyLog.setSeed(Integer.parseInt(m.group(1)));
+            mMonkeyLog.setSeed(Long.parseLong(m.group(1)));
             mMonkeyLog.setTargetCount(Integer.parseInt(m.group(2)));
         }
         m = SECURITY_EXCEPTIONS.matcher(line);
