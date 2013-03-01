@@ -154,14 +154,14 @@ public class MonkeyLogItem extends GenericItem {
     /**
      * Get the seed for the monkey run.
      */
-    public Integer getSeed() {
-        return (Integer) getAttribute(SEED);
+    public Long getSeed() {
+        return (Long) getAttribute(SEED);
     }
 
     /**
      * Set the seed for the monkey run.
      */
-    public void setSeed(int seed) {
+    public void setSeed(long seed) {
         setAttribute(SEED, seed);
     }
 
