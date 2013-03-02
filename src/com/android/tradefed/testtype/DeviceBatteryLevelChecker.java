@@ -89,6 +89,14 @@ public class DeviceBatteryLevelChecker implements IDeviceTest, IRemoteTest {
         }
     }
 
+    private void turnScreenOff(ITestDevice device) throws DeviceNotAvailableException {
+        String output = getDevice().executeShellCommand("dumpsys power");
+        if (output.contains("mScreenOn=true")) {
+            // KEYCODE_POWER = 26
+            getDevice().executeShellCommand("input keyevent 26");
+        }
+    }
+
     /**
      * {@inheritDoc}
      */
@@ -97,6 +105,7 @@ public class DeviceBatteryLevelChecker implements IDeviceTest, IRemoteTest {
         Assert.assertNotNull(mTestDevice);
 
         Integer batteryLevel = checkBatteryLevel(mTestDevice);
+
         if (batteryLevel == null) {
             CLog.w("Failed to determine battery level for device %s.",
                     mTestDevice.getSerialNumber());
@@ -118,6 +127,8 @@ public class DeviceBatteryLevelChecker implements IDeviceTest, IRemoteTest {
             CLog.d("Rebooting device %s prior to holding", mTestDevice.getSerialNumber());
             mTestDevice.reboot();
         }
+
+        turnScreenOff(mTestDevice);
 
         // If we're down here, it's time to hold the device until it reaches mResumeLevel
         Long lastReportTime = System.currentTimeMillis();
