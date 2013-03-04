@@ -34,8 +34,9 @@ public interface ITestInvocation {
      * @param rescheduler the {@link IRescheduler}, for rescheduling portions of the invocation for
      *            execution on another resource(s)
      * @throws DeviceNotAvailableException if communication with device was lost
+     * @throws Throwable
      */
     public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
-            throws DeviceNotAvailableException;
+            throws DeviceNotAvailableException, Throwable;
 
 }

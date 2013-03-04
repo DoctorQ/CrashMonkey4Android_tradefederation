@@ -146,7 +146,7 @@ public class CommandSchedulerTest extends TestCase {
     /**
      * Test {@link CommandScheduler#run()} when one config has been added
      */
-    public void testRun_oneConfig() throws Exception {
+    public void testRun_oneConfig() throws Throwable {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);
@@ -163,7 +163,7 @@ public class CommandSchedulerTest extends TestCase {
     /**
      * Test {@link CommandScheduler#run()} when one config has been added in dry-run mode
      */
-    public void testRun_dryRun() throws Exception {
+    public void testRun_dryRun() throws Throwable {
         String[] dryRunArgs = new String[] {"--dry-run"};
         mCommandOptions.setDryRunMode(true);
         mMockManager.setNumDevices(2);
@@ -192,7 +192,7 @@ public class CommandSchedulerTest extends TestCase {
      *
      * @param times
      */
-    private void setExpectedInvokeCalls(int times) throws DeviceNotAvailableException {
+    private void setExpectedInvokeCalls(int times) throws Throwable {
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(),
                 (IConfiguration)EasyMock.anyObject(), (IRescheduler)EasyMock.anyObject());
         EasyMock.expectLastCall().times(times);
@@ -204,7 +204,7 @@ public class CommandSchedulerTest extends TestCase {
      *
      * @param times
      */
-    private Object waitForExpectedInvokeCalls(final int times) throws DeviceNotAvailableException {
+    private Object waitForExpectedInvokeCalls(final int times) throws Throwable {
         IAnswer<Object> blockResult = new IAnswer<Object>() {
             private int mCalls = 0;
             @Override
@@ -228,7 +228,7 @@ public class CommandSchedulerTest extends TestCase {
     /**
      * Test {@link CommandScheduler#run()} when one config has been added in a loop
      */
-    public void testRun_oneConfigLoop() throws Exception {
+    public void testRun_oneConfigLoop() throws Throwable {
         String[] args = new String[] {};
         // track if exception occurs on scheduler thread
         UncaughtExceptionHandler defaultHandler = Thread.getDefaultUncaughtExceptionHandler();
@@ -274,7 +274,7 @@ public class CommandSchedulerTest extends TestCase {
     /**
      * Verify that scheduler goes into shutdown mode when a {@link FatalHostError} is thrown.
      */
-    public void testRun_fatalError() throws Exception {
+    public void testRun_fatalError() throws Throwable {
         mMockInvocation.invoke((ITestDevice)EasyMock.anyObject(),
                 (IConfiguration)EasyMock.anyObject(), (IRescheduler)EasyMock.anyObject());
         EasyMock.expectLastCall().andThrow(new FatalHostError("error"));
@@ -295,7 +295,7 @@ public class CommandSchedulerTest extends TestCase {
      * <p/>
      * Adds two configs to run, and verify they both run on one device
      */
-    public void testRun_configSerial() throws Exception {
+    public void testRun_configSerial() throws Throwable {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 2);
@@ -322,7 +322,7 @@ public class CommandSchedulerTest extends TestCase {
      * <p/>
      * Adds two configs to run, and verify they both run on the other device
      */
-    public void testRun_configExcludeSerial() throws Exception {
+    public void testRun_configExcludeSerial() throws Throwable {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 2);
@@ -348,7 +348,7 @@ public class CommandSchedulerTest extends TestCase {
      * Test {@link CommandScheduler#run()} when one config has been rescheduled
      */
     @SuppressWarnings("unchecked")
-    public void testRun_rescheduled() throws Exception {
+    public void testRun_rescheduled() throws Throwable {
         String[] args = new String[] {};
         mMockManager.setNumDevices(2);
         setCreateConfigExpectations(args, 1);

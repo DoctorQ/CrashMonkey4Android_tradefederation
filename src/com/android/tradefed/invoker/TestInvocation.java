@@ -103,7 +103,7 @@ public class TestInvocation implements ITestInvocation {
      */
     @Override
     public void invoke(ITestDevice device, IConfiguration config, IRescheduler rescheduler)
-            throws DeviceNotAvailableException {
+            throws DeviceNotAvailableException, Throwable {
         try {
             mStatus = "fetching build";
             config.getLogOutput().init();
@@ -266,37 +266,29 @@ public class TestInvocation implements ITestInvocation {
      * @param config the {@link IConfiguration}
      * @param device the {@link ITestDevice} to use. May be <code>null</code>
      * @param info the {@link IBuildInfo}
-     *
-     * @throws DeviceNotAvailableException
-     * @throws IOException if log could not be created
      */
     private void performInvocation(IConfiguration config, ITestDevice device, IBuildInfo info,
-            IRescheduler rescheduler) throws DeviceNotAvailableException, IOException {
+            IRescheduler rescheduler) throws Throwable {
 
         boolean resumed = false;
         long startTime = System.currentTimeMillis();
         long elapsedTime = -1;
-        Throwable exception = null;
 
         info.setDeviceSerial(device.getSerialNumber());
         startInvocation(config, device, info);
         try {
             device.setOptions(config.getDeviceOptions());
-            for (ITargetPreparer preparer : config.getTargetPreparers()) {
-                preparer.setUp(device, info);
-            }
-            runTests(device, info, config, rescheduler);
+
+            prepareAndRun(config, device, info, rescheduler);
         } catch (BuildError e) {
             CLog.w("Build %s failed on device %s. Reason: %s", info.getBuildId(),
                     device.getSerialNumber(), e.toString());
             takeBugreport(device, config.getTestInvocationListeners());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
-            exception = e;
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");
             CLog.e(e);
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
-            exception = e;
         } catch (DeviceNotAvailableException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Invocation did not complete due to device %s becoming not available. " +
@@ -307,18 +299,15 @@ public class TestInvocation implements ITestInvocation {
             } else {
                 CLog.i("Rescheduled failed invocation for resume");
             }
-            exception = e;
             throw e;
         } catch (RuntimeException e) {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Unexpected exception when running invocation: %s", e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
-            exception = e;
             throw e;
         } catch (AssertionError e) {
             CLog.w("Caught AssertionError while running invocation: ", e.toString());
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
-            exception = e;
         } finally {
             mStatus = "done running tests";
             try {
@@ -329,18 +318,56 @@ public class TestInvocation implements ITestInvocation {
                             config.getTestInvocationListeners(), elapsedTime);
                 }
 
-                for (ITargetPreparer preparer : config.getTargetPreparers()) {
-                    // Note: adjusted indentation below for legibility.  If preparer is an
-                    // ITargetCleaner and we didn't hit DeviceNotAvailableException, then...
-                    if (preparer instanceof ITargetCleaner &&
-                            !(exception != null &&
-                              exception instanceof DeviceNotAvailableException)) {
-                        ITargetCleaner cleaner = (ITargetCleaner) preparer;
-                        cleaner.tearDown(device, info, exception);
-                    }
-                }
             } finally {
                 config.getBuildProvider().cleanUp(info);
+            }
+        }
+    }
+
+    /**
+     * Do setup, run the tests, then call tearDown
+     */
+    private void prepareAndRun(IConfiguration config, ITestDevice device, IBuildInfo info,
+            IRescheduler rescheduler) throws Throwable {
+        // use the JUnit3 logic for handling exceptions when running tests
+        Throwable exception = null;
+
+        try {
+            doSetup(config, device, info);
+            runTests(device, info, config, rescheduler);
+        } catch (Throwable running) {
+            exception = running;
+        } finally {
+            try {
+                doTeardown(config, device, info, exception);
+            } catch (Throwable tearingDown) {
+                if (exception == null) {
+                    exception = tearingDown;
+                }
+            }
+        }
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
+    private void doSetup(IConfiguration config, ITestDevice device, IBuildInfo info)
+            throws TargetSetupError, BuildError, DeviceNotAvailableException {
+        for (ITargetPreparer preparer : config.getTargetPreparers()) {
+            preparer.setUp(device, info);
+        }
+    }
+
+    private void doTeardown(IConfiguration config, ITestDevice device, IBuildInfo info,
+            Throwable exception) throws DeviceNotAvailableException {
+        for (ITargetPreparer preparer : config.getTargetPreparers()) {
+            // Note: adjusted indentation below for legibility.  If preparer is an
+            // ITargetCleaner and we didn't hit DeviceNotAvailableException, then...
+            if (preparer instanceof ITargetCleaner &&
+                    !(exception != null &&
+                      exception instanceof DeviceNotAvailableException)) {
+                ITargetCleaner cleaner = (ITargetCleaner) preparer;
+                cleaner.tearDown(device, info, exception);
             }
         }
     }
