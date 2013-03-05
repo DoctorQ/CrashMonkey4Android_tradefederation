@@ -18,6 +18,9 @@ package com.android.framework.tests;
 
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.RemoteAndroidTestRunner;
+import com.android.loganalysis.item.BugreportItem;
+import com.android.loganalysis.item.LogcatItem;
+import com.android.loganalysis.parser.BugreportParser;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
@@ -29,13 +32,12 @@ import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.TestResult;
 import com.android.tradefed.testtype.IDeviceTest;
 import com.android.tradefed.testtype.IRemoteTest;
-import com.android.tradefed.util.brillopad.item.BugreportItem;
-import com.android.tradefed.util.brillopad.item.LogcatItem;
-import com.android.tradefed.util.brillopad.parser.BugreportParser;
 
 import junit.framework.Assert;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -82,7 +84,8 @@ public class FrameworkStressTest implements IDeviceTest, IRemoteTest {
 
         try {
             listener.testLog(BUGREPORT_LOG_NAME, LogDataType.TEXT, bugSource);
-            bugreport = parser.parse(bugSource);
+            bugreport = parser.parse(new BufferedReader(new InputStreamReader(
+                    bugSource.createInputStream())));
         } catch (IOException e) {
             Assert.fail(String.format("Failed to fetch and parse bugreport for device %s: %s",
                     mTestDevice.getSerialNumber(), e));

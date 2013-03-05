@@ -19,6 +19,8 @@ package com.android.monkey;
 import com.android.ddmlib.CollectingOutputReceiver;
 import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.loganalysis.item.MonkeyLogItem;
+import com.android.loganalysis.parser.MonkeyLogParser;
 import com.android.tradefed.config.Option;
 import com.android.tradefed.config.Option.Importance;
 import com.android.tradefed.device.DeviceNotAvailableException;
@@ -35,12 +37,12 @@ import com.android.tradefed.testtype.IRetriableTest;
 import com.android.tradefed.util.ArrayUtil;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.brillopad.item.MonkeyLogItem;
-import com.android.tradefed.util.brillopad.parser.MonkeyLogParser;
 
 import junit.framework.Assert;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -329,7 +331,8 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
         InputStreamSource source = new ByteArrayInputStreamSource(log.getBytes());
         try {
             listener.testLog(monkeyLogName, LogDataType.TEXT, source);
-            return new MonkeyLogParser().parse(source);
+            return new MonkeyLogParser().parse(new BufferedReader(new InputStreamReader(
+                    source.createInputStream())));
         } catch (IOException e) {
             CLog.e("Could not parse monkey log");
             return null;

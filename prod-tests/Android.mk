@@ -26,7 +26,7 @@ LOCAL_JAVACFLAGS += -g -Xlint
 LOCAL_MODULE := tf-prod-tests
 
 LOCAL_MODULE_TAGS := optional
-LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt tradefed
+LOCAL_JAVA_LIBRARIES := ddmlib-prebuilt tradefed loganalysis
 
 include $(BUILD_HOST_JAVA_LIBRARY)
 

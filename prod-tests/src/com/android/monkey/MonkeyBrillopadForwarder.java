@@ -17,25 +17,27 @@
 package com.android.monkey;
 
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.loganalysis.item.AnrItem;
+import com.android.loganalysis.item.BugreportItem;
+import com.android.loganalysis.item.IItem;
+import com.android.loganalysis.item.JavaCrashItem;
+import com.android.loganalysis.item.LogcatItem;
+import com.android.loganalysis.item.MonkeyLogItem;
+import com.android.loganalysis.item.NativeCrashItem;
+import com.android.loganalysis.parser.BugreportParser;
+import com.android.loganalysis.parser.MonkeyLogParser;
 import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.ITestInvocationListener;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.result.LogDataType;
 import com.android.tradefed.result.ResultForwarder;
-import com.android.tradefed.util.brillopad.item.AnrItem;
-import com.android.tradefed.util.brillopad.item.BugreportItem;
-import com.android.tradefed.util.brillopad.item.IItem;
-import com.android.tradefed.util.brillopad.item.JavaCrashItem;
-import com.android.tradefed.util.brillopad.item.LogcatItem;
-import com.android.tradefed.util.brillopad.item.MonkeyLogItem;
-import com.android.tradefed.util.brillopad.item.NativeCrashItem;
-import com.android.tradefed.util.brillopad.parser.BugreportParser;
-import com.android.tradefed.util.brillopad.parser.MonkeyLogParser;
 import com.google.common.base.Throwables;
 
 import junit.framework.Assert;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -87,11 +89,13 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
             // just parse the logs for now. Forwarding of results will happen on test completion
             if (dataName.startsWith(MonkeyBase.BUGREPORT_NAME)) {
                 CLog.i("Parsing %s", dataName);
-                mBugreport = new BugreportParser().parse(dataStream);
+                mBugreport = new BugreportParser().parse(new BufferedReader(new InputStreamReader(
+                        dataStream.createInputStream())));
             }
             if (dataName.startsWith(MonkeyBase.MONKEY_LOG_NAME)) {
                 CLog.i("Parsing %s", dataName);
-                mMonkeyLog = new MonkeyLogParser().parse(dataStream);
+                mMonkeyLog = new MonkeyLogParser().parse(new BufferedReader(new InputStreamReader(
+                        dataStream.createInputStream())));
             }
         } catch (IOException e) {
             CLog.e("Could not parse file %s", dataName);
