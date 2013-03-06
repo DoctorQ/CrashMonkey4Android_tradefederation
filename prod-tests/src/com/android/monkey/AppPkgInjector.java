@@ -62,6 +62,11 @@ public class AppPkgInjector implements ITargetPreparer, IConfigurationReceiver {
         IAppBuildInfo appBuild = (IAppBuildInfo)buildInfo;
         for (VersionedFile apkFile : appBuild.getAppPackageFiles()) {
             AaptParser aapt = AaptParser.parse(apkFile.getFile());
+            if (aapt == null) {
+                // TODO: should this be BuildError?
+                throw new TargetSetupError(String.format("aapt parse of %s failed",
+                        apkFile.getFile().getAbsolutePath()));
+            }
             String pkgName = aapt.getPackageName();
             if (pkgName == null) {
                 throw new TargetSetupError(String.format("Failed to parse package name from %s",
