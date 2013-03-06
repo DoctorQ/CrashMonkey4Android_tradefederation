@@ -23,7 +23,9 @@ import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildProvider;
 import com.android.tradefed.config.IConfiguration;
 import com.android.tradefed.device.DeviceNotAvailableException;
+import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
+import com.android.tradefed.device.TestDeviceState;
 import com.android.tradefed.log.ILeveledLogOutput;
 import com.android.tradefed.log.ILogRegistry;
 import com.android.tradefed.log.LogRegistry;
@@ -65,6 +67,7 @@ public class TestInvocation implements ITestInvocation {
     static final String TRADEFED_LOG_NAME = "host_log";
     static final String DEVICE_LOG_NAME = "device_logcat";
     static final String BUILD_ERROR_BUGREPORT_NAME = "build_error_bugreport";
+    static final String DEVICE_UNRESPONSIVE_BUGREPORT_NAME = "device_unresponsive_bugreport";
 
     private String mStatus = "(not invoked)";
 
@@ -283,7 +286,7 @@ public class TestInvocation implements ITestInvocation {
         } catch (BuildError e) {
             CLog.w("Build %s failed on device %s. Reason: %s", info.getBuildId(),
                     device.getSerialNumber(), e.toString());
-            takeBugreport(device, config.getTestInvocationListeners());
+            takeBugreport(device, config.getTestInvocationListeners(), BUILD_ERROR_BUGREPORT_NAME);
             reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
         } catch (TargetSetupError e) {
             CLog.e("Caught exception while running invocation");
@@ -293,6 +296,12 @@ public class TestInvocation implements ITestInvocation {
             // log a warning here so its captured before reportLogs is called
             CLog.w("Invocation did not complete due to device %s becoming not available. " +
                     "Reason: %s", device.getSerialNumber(), e.getMessage());
+            if ((e instanceof DeviceUnresponsiveException)
+                    && TestDeviceState.ONLINE.equals(device.getDeviceState())) {
+                // under certain cases it might still be possible to grab a bugreport
+                takeBugreport(device, config.getTestInvocationListeners(),
+                        DEVICE_UNRESPONSIVE_BUGREPORT_NAME);
+            }
             resumed = resume(config, info, rescheduler, System.currentTimeMillis() - startTime);
             if (!resumed) {
                 reportFailure(e, config.getTestInvocationListeners(), config, info, rescheduler);
@@ -482,7 +491,8 @@ public class TestInvocation implements ITestInvocation {
         logger.closeLog();
     }
 
-    private void takeBugreport(ITestDevice device, List<ITestInvocationListener> listeners) {
+    private void takeBugreport(ITestDevice device, List<ITestInvocationListener> listeners,
+            String bugreportName) {
         if (device == null) {
             return;
         }
@@ -490,7 +500,7 @@ public class TestInvocation implements ITestInvocation {
         InputStreamSource bugreport = device.getBugreport();
         try {
             for (ITestInvocationListener listener : listeners) {
-                listener.testLog(BUILD_ERROR_BUGREPORT_NAME, LogDataType.TEXT, bugreport);
+                listener.testLog(bugreportName, LogDataType.TEXT, bugreport);
             }
         } finally {
             bugreport.cancel();
