@@ -288,6 +288,11 @@ public class DeviceSetup implements ITargetPreparer {
 
             }
             String fullRemotePath = device.getIDevice().getMountPoint(IDevice.MNT_EXTERNAL_STORAGE);
+            if (fullRemotePath == null) {
+                throw new TargetSetupError(String.format(
+                        "failed to get external storage path on device %s",
+                        device.getSerialNumber()));
+            }
             if (mRemoteDataPath != null) {
                 fullRemotePath = String.format("%s/%s", fullRemotePath, mRemoteDataPath);
             }

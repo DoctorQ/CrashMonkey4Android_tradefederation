@@ -952,6 +952,9 @@ class TestDevice implements IManagedTestDevice {
     @Override
     public boolean syncFiles(File localFileDir, String deviceFilePath)
             throws DeviceNotAvailableException {
+        if (localFileDir == null || deviceFilePath == null) {
+            throw new IllegalArgumentException("syncFiles does not take null arguments");
+        }
         CLog.i("Syncing %s to %s on device %s",
                 localFileDir.getAbsolutePath(), deviceFilePath, getSerialNumber());
         if (!localFileDir.isDirectory()) {
