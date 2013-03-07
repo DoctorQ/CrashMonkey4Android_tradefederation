@@ -43,6 +43,17 @@ $(DEST_JAR): $(LOCAL_BUILT_MODULE)
 $(LOCAL_INSTALLED_MODULE) : $(DEST_JAR)
 
 #######################################################
+# intentionally skipping CLEAR_VARS
+
+# Enable the build process to generate javadoc
+LOCAL_IS_HOST_MODULE:=true
+LOCAL_MODULE_CLASS := JAVA_LIBRARIES
+LOCAL_ADDITIONAL_DEPENDENCIES := tradefed
+LOCAL_CLASSPATH := $(HOST_OUT)/framework/\*
+
+include $(BUILD_DROIDDOC)
+
+#######################################################
 include $(CLEAR_VARS)
 
 # Create a simple alias to build all the TF-related targets
