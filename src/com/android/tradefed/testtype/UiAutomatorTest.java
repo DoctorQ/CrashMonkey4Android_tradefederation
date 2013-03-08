@@ -137,7 +137,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * Deprecated - use {@link #setLoggingOption(LoggingOption)} instead.
+     * @deprecated use {@link #setLoggingOption(LoggingOption)} instead.
      * <p/>
      * Retained for compatibility with cts-tradefed
      */
@@ -337,7 +337,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     }
 
     /**
-     * @param jarPath {@link String} the location of the test jar.
+     * @param jarPaths the locations of the test jars.
      */
     public void setTestJarPaths(List<String> jarPaths) {
         mJarPaths = jarPaths;

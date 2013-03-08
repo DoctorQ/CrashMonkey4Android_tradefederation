@@ -54,7 +54,7 @@ public interface IDeviceFlasher {
     /**
      * Sets the mechanism by which the flasher can retrieve resource files for flashing.
      *
-     * @param resourceRetriever the {@link IFlashingResourcesRetriever} to use
+     * @param retriever the {@link IFlashingResourcesRetriever} to use
      */
     public void setFlashingResourcesRetriever(IFlashingResourcesRetriever retriever);
 

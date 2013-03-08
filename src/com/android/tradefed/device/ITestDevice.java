@@ -208,7 +208,7 @@ public interface ITestDevice {
      * Retrieve the given cached property value from the device.
      * <p/>
      * Note this method should only be used for read-only properties that won't change after
-     * device comes online. For volatile properties, use {@link #getPropertySync()}
+     * device comes online. For volatile properties, use {@link #getPropertySync(String)}
      *
      * @param name the property name
      * @return the property value or <code>null</code> if it does not exist
@@ -231,7 +231,7 @@ public interface ITestDevice {
     /**
      * Executes the given adb shell command, retrying multiple times if command fails.
      * <p/>
-     * A simpler form of {@link #executeShellCommand(String, IShellOutputReceiver, int, int))} with
+     * A simpler form of {@link #executeShellCommand(String, IShellOutputReceiver, int, int)} with
      * default values.
      *
      * @param command the adb shell command to run
@@ -352,7 +352,7 @@ public interface ITestDevice {
      * If connection with device is lost before test run completes, and recovery fails, all
      * listeners will be informed of testRunFailed and DeviceNotAvailableException will be thrown.
      *
-     * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
+     * @param runner the {@link IRemoteAndroidTestRunner} which runs the tests
      * @param listeners the test result listeners
      * @return <code>true</code> if test command completed. <code>false</code> if it failed to
      *         complete due to device communication exception, but recovery succeeded
@@ -367,8 +367,8 @@ public interface ITestDevice {
      * {@link #runInstrumentationTests(IRemoteAndroidTestRunner, Collection)} with one or listeners
      * passed as parameters.
      *
-     * @param runner the {@IRemoteAndroidTestRunner} which runs the tests
-     * @param listener the test result listener
+     * @param runner the {@link IRemoteAndroidTestRunner} which runs the tests
+     * @param listeners the test result listener(s)
      * @return <code>true</code> if test command completed. <code>false</code> if it failed to
      *         complete, but recovery succeeded
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
@@ -417,7 +417,7 @@ public interface ITestDevice {
     /**
      * Returns a parsed version of the information in /proc/mounts on the device
      *
-     * @return A {@link List<MountPointInfo>} containing the information in "/proc/mounts"
+     * @return A {@link List} of {@link MountPointInfo} containing the information in "/proc/mounts"
      */
     public List<MountPointInfo> getMountPointInfo() throws DeviceNotAvailableException;
 
@@ -426,7 +426,7 @@ public interface ITestDevice {
      * <code>null</code> if that path has nothing mounted or otherwise does not appear in
      * /proc/mounts as a mountpoint.
      *
-     * @return A {@link List<MountPointInfo>} containing the information in "/proc/mounts"
+     * @return A {@link List} of {@link MountPointInfo} containing the information in "/proc/mounts"
      * @see {@link getMountPointInfo()}
      */
     public MountPointInfo getMountPointInfo(String mountpoint) throws DeviceNotAvailableException;
@@ -506,10 +506,10 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
-     * Recursively push directories contents to device.
+     * Recursively push directory contents to device.
      *
-     * @param localFile the local directory to push
-     * @param deviceFilePath the remote destination absolute file path
+     * @param localDir the local directory to push
+     * @param deviceFilePath the absolute file path of the remote destination
      * @return <code>true</code> if file was pushed successfully. <code>false</code> otherwise.
      * @throws DeviceNotAvailableException if connection with device is lost and cannot be
      * recovered.

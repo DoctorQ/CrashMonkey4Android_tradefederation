@@ -56,7 +56,7 @@ public interface IRunUtil {
     /**
      * Sets a environment variable to be used when running system commands.
      *
-     * @param name the variable name
+     * @param key the variable name
      * @param value the variable value
      *
      * @see {@link ProcessBuilder#environment()}
@@ -76,7 +76,8 @@ public interface IRunUtil {
 
     /**
      * Helper method to execute a system command, and aborting if it takes longer than a specified
-     * time. Similar to {@link runTimedCmd}, but does not log any errors on exception.
+     * time. Similar to {@link #runTimedCmd(long, String...)}, but does not log any errors on
+     * exception.
      *
      * @param timeout maximum time to wait in ms
      * @param command the specified system command and optionally arguments to exec
@@ -133,7 +134,7 @@ public interface IRunUtil {
      *
      * @param timeout maximum time to wait in ms
      * @param runnable {@link IRunUtil.IRunnableResult} to execute
-     * @param to log errors on exception or not.
+     * @param logErrors log errors on exception or not.
      * @return the {@link CommandStatus} result of operation.
      */
     public CommandStatus runTimed(long timeout, IRunUtil.IRunnableResult runnable,

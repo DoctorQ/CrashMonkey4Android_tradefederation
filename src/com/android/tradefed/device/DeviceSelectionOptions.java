@@ -126,7 +126,7 @@ public class DeviceSelectionOptions implements IDeviceSelection {
     /**
      * Add a product type to the device selection options.
      *
-     * @param serialNumber
+     * @param productType
      */
     public void addProductType(String productType) {
         mProductTypes.add(productType);

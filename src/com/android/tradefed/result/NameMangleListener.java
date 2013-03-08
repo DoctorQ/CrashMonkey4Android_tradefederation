@@ -33,25 +33,30 @@ public abstract class NameMangleListener implements ITestInvocationListener {
     }
 
     /**
-     * This method is run on all {@link TestIdentifier}s that are passed to the {@link testStarted},
-     * {@link testFailed}, and {@link testStarted} callbacks.  The method should return a
-     * potentially-modified {@link TestIdentifier} that will be passed to the downstream
-     * {@link ITestInvocationListener} that was specified during construction.  The default
-     * implementation passes the incoming identifier through unmodified.
+     * This method is run on all {@link TestIdentifier}s that are passed to the
+     * {@link #testStarted(TestIdentifier)},
+     * {@link #testFailed(TestFailure, TestIdentifier, String)}, and
+     * {@link #testEnded(TestIdentifier, Map)} callbacks.  The method should return a
+     * possibly-different {@link TestIdentifier} that will be passed to the downstream
+     * {@link ITestInvocationListener} that was specified during construction.
      * <p />
      * The implementation should be careful to not modify the original {@link TestIdentifier}.
+     * <p />
+     * The default implementation passes the incoming identifier through unmodified.
      */
     protected TestIdentifier mangleTestId(TestIdentifier test) {
         return test;
     }
 
     /**
-     * This method is run on all test run names that are passed to the {@link testRunStarted}
-     * callback.  The method should return a potentially-modified test run name that will be passed
-     * to the downstream {@link ITestInvocationListener} that was specified during construction.
-     * The default implementation passes the incoming test run name through unmodified.
+     * This method is run on all test run names that are passed to the
+     * {@link #testRunStarted(String, int)} callback.  The method should return a possibly-different
+     * test run name that will be passed to the downstream {@link ITestInvocationListener} that was
+     * specified during construction.
      * <p />
      * The implementation should be careful to not modify the original run name.
+     * <p />
+     * The default implementation passes the incoming test run name through unmodified.
      */
     protected String mangleTestRunName(String name) {
         return name;
@@ -59,12 +64,13 @@ public abstract class NameMangleListener implements ITestInvocationListener {
 
     /**
      * This method is run on all {@link IBuildInfo}s that are passed to the
-     * {@link invocationStarted} callback.  The method should return a potentially-modified
-     * {@link IBuildInfo} that will be passed to the downstream {@link ITestInvocationListener} that
-     * was specified during construction.  The default implementation passes the incoming IBuildInfo
-     * through unmodified.
+     * {@link #invocationStarted(IBuildInfo)} callback.  The method should return a
+     * possibly-different {@link IBuildInfo} that will be passed to the downstream
+     * {@link ITestInvocationListener} that was specified during construction.
      * <p />
      * The implementation should be careful to not modify the original {@link IBuildInfo}.
+     * <p />
+     * The default implementation passes the incoming IBuildInfo through unmodified.
      */
     protected IBuildInfo mangleBuildInfo(IBuildInfo buildInfo) {
         return buildInfo;

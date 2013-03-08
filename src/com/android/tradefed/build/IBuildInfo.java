@@ -92,7 +92,7 @@ public interface IBuildInfo {
     /**
      * Set the {@link ITestDevice} serial associated with this build.
      *
-     * @param serial the {@link ITestDevice#getSerialNumber()}.
+     * @param serial the serial number of the {@link ITestDevice} that this build was executed with.
      */
     public void setDeviceSerial(String serial);
 

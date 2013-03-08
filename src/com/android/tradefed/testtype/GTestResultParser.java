@@ -194,7 +194,7 @@ public class GTestResultParser extends MultiLineReceiver {
     /**
      * Creates the GTestResultParser.
      *
-     * @param runName the test run name to provide to
+     * @param testRunName the test run name to provide to
      *            {@link ITestRunListener#testRunStarted(String, int)}
      * @param listeners informed of test results as the tests are executing
      */
@@ -206,7 +206,7 @@ public class GTestResultParser extends MultiLineReceiver {
     /**
      * Creates the GTestResultParser for a single listener.
      *
-     * @param runName the test run name to provide to
+     * @param testRunName the test run name to provide to
      *            {@link ITestRunListener#testRunStarted(String, int)}
      * @param listener informed of test results as the tests are executing
      */

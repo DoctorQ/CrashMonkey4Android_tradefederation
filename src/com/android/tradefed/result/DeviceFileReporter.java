@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A pass-through {@link ITestInvocationListener} that checks the device for files and sends them
- * to {@link #testLog} if found.
+ * A utility class that checks the device for files and sends them to
+ * {@link ITestInvocationListener#testLog(String, LogDataType, InputStreamSource)} if found.
  */
 public class DeviceFileReporter {
     private final Map<String, LogDataType> mFilePatterns = new LinkedHashMap<String, LogDataType>();

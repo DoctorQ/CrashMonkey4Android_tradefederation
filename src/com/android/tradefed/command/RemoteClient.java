@@ -77,7 +77,7 @@ public class RemoteClient {
 
     /**
      * Send a 'remove all devices from global ignore filter' command
-     * @param serial
+     *
      * @throws IOException
      */
     public boolean sendUnfilterAll() throws IOException {
@@ -97,6 +97,7 @@ public class RemoteClient {
 
     /**
      * Send a 'close connection' command
+     *
      * @throws IOException
      */
     public boolean sendClose() throws IOException {

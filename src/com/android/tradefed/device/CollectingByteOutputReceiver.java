@@ -19,7 +19,7 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.tradefed.util.ByteArrayList;
 
 /**
- * A {@link IShellOutputReceiver} which collects the whole shell output into a {@link byte[]}.
+ * A {@link IShellOutputReceiver} which collects the whole shell output into a {@code byte[]}.
  * This is useful for shell commands that will produce a significant amount of output, where the
  * 2x {@link String} memory overhead will be significant.
  */

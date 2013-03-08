@@ -64,7 +64,7 @@ public class AndroidManifestWriter {
      * Sets the minimum SDK version for this manifest.
      *
      * @param minSdkVersion - the minimim sdk version to use
-     * @returns <code>true</code> on success, false otherwise
+     * @return <code>true</code> on success, false otherwise
      */
     public boolean setMinSdkVersion(String minSdkVersion) {
         Element usesSdkElement = null;
@@ -111,7 +111,7 @@ public class AndroidManifestWriter {
      * Parses the manifest file, and collects data.
      *
      * @param osManifestFilePath The OS path of the manifest file to parse.
-     * @return an {@link AndroidManifestHelper} or null if parsing failed
+     * @return an {@link AndroidManifestWriter} or null if parsing failed
      */
     public static AndroidManifestWriter parse(String osManifestFilePath) {
         try {

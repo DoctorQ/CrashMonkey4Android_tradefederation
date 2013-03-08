@@ -33,12 +33,12 @@ public interface IAndroidDebugBridge {
     IDevice[] getDevices();
 
     /**
-     * Wrapper for {@link AndroidDebugBridge#addDeviceChangeListener(IDeviceChangeListener))}
+     * Wrapper for {@link AndroidDebugBridge#addDeviceChangeListener(IDeviceChangeListener)}
      */
     void addDeviceChangeListener(IDeviceChangeListener listener);
 
     /**
-     * Wrapper for {@link AndroidDebugBridge#removeDeviceChangeListener(IDeviceChangeListener))}
+     * Wrapper for {@link AndroidDebugBridge#removeDeviceChangeListener(IDeviceChangeListener)}
      */
     void removeDeviceChangeListener(IDeviceChangeListener listener);
 

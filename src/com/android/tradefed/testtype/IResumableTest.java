@@ -21,8 +21,8 @@ import java.util.List;
 /**
  * An {@link IRemoteTest} that supports resuming a previous aborted test run from where it left off.
  * <p/>
- * Implementations should provide a {@link IRemoteTest#run(List)} method that can remember
- * previous recorded state, and resume where previous run left off if called again.
+ * Implementations should provide a {@link IRemoteTest#run(ITestInvocationListener)} method that can
+ * remember previous recorded state, and resume where previous run left off if called again.
  */
 public interface IResumableTest extends IRemoteTest {
 

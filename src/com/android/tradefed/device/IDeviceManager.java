@@ -116,8 +116,8 @@ public interface IDeviceManager {
      * Attempts to return a device that hasn't been previously allocated will be ignored.
      *
      * @param device the {@link ITestDevice} to free
-     * @param state the {@link FreeDeviceState}. Used to control if device is returned to available
-     *            device pool.
+     * @param state the {@link IDeviceManager.FreeDeviceState}. Used to control if device is
+     *            returned to available device pool.
      */
     public void freeDevice(ITestDevice device, FreeDeviceState state);
 
@@ -148,7 +148,7 @@ public interface IDeviceManager {
      * Connect to a device with adb-over-tcp
      * <p/>
      * This method allocates a new device, which should eventually be freed via
-     * {@link #disconnectFromTcpDevice(ITestDevice))}
+     * {@link #disconnectFromTcpDevice(ITestDevice)}
      * <p/>
      * The returned {@link ITestDevice} will be online, but may not be responsive.
      * <p/>
@@ -166,7 +166,7 @@ public interface IDeviceManager {
      * Switches the device back to usb mode, and frees it.
      *
      * @param tcpDevice the device currently in tcp mode, previously allocated via
-     *            {@link connectToTcpDevice}
+     *            {@link #connectToTcpDevice(String)}
      * @return <code>true</code> if switch to usb mode was successful
      */
     public boolean disconnectFromTcpDevice(ITestDevice tcpDevice);

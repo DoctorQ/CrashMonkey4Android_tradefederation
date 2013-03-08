@@ -33,12 +33,12 @@ public interface IFileDownloader {
     public File downloadFile(String remoteFilePath) throws BuildRetrievalError;
 
     /**
-     * Alternate form of {@link downloadFile}, that allows caller to specify the destination
-     * file the remote contents  should be placed in.
+     * Alternate form of {@link #downloadFile(String)}, that allows caller to specify the
+     * destination file the remote contents should be placed in.
      *
-     * @param remoteFilePath the remote path to the file to download, relative to a implementation
-     * specific root.
-     * @param destFile the file  to place the downloaded contents into. Should not exist.
+     * @param relativeRemotePath the remote path to the file to download, relative to an
+     *        implementation-specific root.
+     * @param destFile the file to place the downloaded contents into. Should not exist.
      * @throws BuildRetrievalError if file could not be downloaded
      */
     public void downloadFile(String relativeRemotePath, File destFile) throws BuildRetrievalError;

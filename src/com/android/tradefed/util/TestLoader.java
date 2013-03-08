@@ -42,7 +42,7 @@ public class TestLoader {
      * Creates a {@link Test} containing all the {@link TestCase} found in given jar
      *
      * @param testJarFile the jar file to load tests from
-     * @param libraries the additional jar files classes in testJarFile are dependent on.
+     * @param dependentJars the additional jar files which classes in testJarFile depend on
      * @return the {@link Test} containing all tests
      */
     public Test loadTests(File testJarFile, Collection<File> dependentJars) {
