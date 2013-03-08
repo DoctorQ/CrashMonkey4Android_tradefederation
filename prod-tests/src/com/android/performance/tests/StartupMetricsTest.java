@@ -57,13 +57,18 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
             description="Delay in ms after boot complete before taking the bugreport.")
     private static final long mPostBootDelayMs = 60000;
 
+    @Option(name="skip-memory-stats", description="Report boot time only, without memory stats.")
+    private final boolean mSkipMemoryStats = false;
+
     ITestDevice mTestDevice = null;
 
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         Assert.assertNotNull(mTestDevice);
         executeRebootTest(listener);
-        fetchBugReportMetrics(listener);
+        if (!mSkipMemoryStats) {
+            fetchBugReportMetrics(listener);
+        }
     }
 
     /**
