@@ -50,6 +50,7 @@ public class PackageManagerOTATests extends DeviceTestCase {
     private static final String SYSTEM_APK = "version_test.apk";
     private static final String SYSTEM_DIFF_APK = "version_test_diff.apk";
     private static final String SYSTEM_APP_PATH = "/system/app/version_test.apk";
+    private static final String DATA_APP_DIRECTORY = "/data/app/";
     private static final String DIFF_SYSTEM_APP_PATH = "/system/app/version_test_diff.apk";
     private static final String PACKAGE_NAME = "com.android.frameworks.coretests.version_test";
     private static final String VIBRATE_PERMISSION = "android.permission.VIBRATE";
@@ -64,7 +65,7 @@ public class PackageManagerOTATests extends DeviceTestCase {
         mUtils = new PackageManagerOTATestUtils(getDevice());
 
         // Clean up any potential old files from previous tests.
-        mUtils.removeSystemApp(SYSTEM_DIFF_APK);
+        mUtils.removeSystemApp(SYSTEM_DIFF_APK, false);
         mUtils.removeAndWipe(SYSTEM_APK);
         getDevice().waitForDeviceAvailable();
         mPackageXml = mUtils.pullPackagesXML();
@@ -199,8 +200,7 @@ public class PackageManagerOTATests extends DeviceTestCase {
         assertTrue("Package should have FLAG_SYSTEM", expectFlag(mPackageXml, FLAG_XPATH, 1));
         assertFalse("Updated-package should not be present",
                 mUtils.expectExists(mPackageXml, UPDATE_PACKAGE_XPATH));
-
-        mUtils.removeSystemApp(SYSTEM_APK);
+        mUtils.removeSystemApp(SYSTEM_APK, true);
         mPackageXml = mUtils.pullPackagesXML();
         assertFalse("Package should not be installed",
                 mUtils.expectExists(mPackageXml, PACKAGE_XPATH));
@@ -298,10 +298,11 @@ public class PackageManagerOTATests extends DeviceTestCase {
         // The "-d" command forces a downgrade.
         mUtils.installFile(getTestAppFilePath(VERSION_1_APK), true, "-d");
         mPackageXml = mUtils.pullPackagesXML();
-        assertFalse("After system app upgrade, the path should be the upgraded app on /data",
-                mUtils.expectEquals(mPackageXml, CODE_PATH_XPATH, SYSTEM_APP_PATH));
-        assertTrue("Package version should be 2",
-                mUtils.expectEquals(mPackageXml, VERSION_XPATH, "2"));
+        assertTrue("After system app upgrade, the path should be the upgraded app on /data",
+                mUtils.expectStartsWith(mPackageXml, CODE_PATH_XPATH, 
+                DATA_APP_DIRECTORY + PACKAGE_NAME));
+        assertTrue("Package version should be 1",
+                mUtils.expectEquals(mPackageXml, VERSION_XPATH, "1"));
         assertTrue("Updated-package should be present",
                 mUtils.expectExists(mPackageXml, UPDATE_PACKAGE_XPATH));
         assertTrue("Package should have FLAG_SYSTEM", expectFlag(mPackageXml, FLAG_XPATH, 1));
@@ -429,8 +430,9 @@ public class PackageManagerOTATests extends DeviceTestCase {
 
         mUtils.installFile(getTestAppFilePath(VERSION_2_APK), true);
         mPackageXml = mUtils.pullPackagesXML();
-        assertFalse("After system app upgrade, the path should be the upgraded app on /data",
-                mUtils.expectEquals(mPackageXml, CODE_PATH_XPATH, SYSTEM_APP_PATH));
+        assertTrue("After system app upgrade, the path should be the upgraded app on /data",
+                mUtils.expectStartsWith(mPackageXml, CODE_PATH_XPATH,
+                DATA_APP_DIRECTORY + PACKAGE_NAME));
         assertTrue("Package version should be 2",
                 mUtils.expectEquals(mPackageXml, VERSION_XPATH, "2"));
         assertTrue("Updated-package should be present",
@@ -441,11 +443,11 @@ public class PackageManagerOTATests extends DeviceTestCase {
         assertTrue("ACCESS_CACHE_FILESYSTEM permission should be granted",
                 mUtils.packageHasPermission(PACKAGE_NAME, CACHE_PERMISSION));
 
-        mUtils.removeSystemApp(SYSTEM_APK);
+        mUtils.removeSystemApp(SYSTEM_APK, false);
         mUtils.pushSystemApp(getTestAppFilePath(VERSION_2_APK), DIFF_SYSTEM_APP_PATH);
-        getDevice().uninstallPackage(PACKAGE_NAME);
+
         mPackageXml = mUtils.pullPackagesXML();
-        assertFalse("After uninstall of update, the system path should be correct",
+        assertTrue("After reboot, the system path should be correct",
                 mUtils.expectEquals(mPackageXml, CODE_PATH_XPATH, DIFF_SYSTEM_APP_PATH));
         assertTrue("Package version should be 2",
                 mUtils.expectEquals(mPackageXml, VERSION_XPATH, "2"));
@@ -479,7 +481,7 @@ public class PackageManagerOTATests extends DeviceTestCase {
         assertTrue("ACCESS_CACHE_FILESYSTEM permission should be granted",
                 mUtils.packageHasPermission(PACKAGE_NAME, CACHE_PERMISSION));
 
-        mUtils.removeSystemApp(SYSTEM_APK);
+        mUtils.removeSystemApp(SYSTEM_APK, true);
         mPackageXml = mUtils.pullPackagesXML();
         assertTrue("Package should still be installed",
                 mUtils.expectExists(mPackageXml, PACKAGE_XPATH));

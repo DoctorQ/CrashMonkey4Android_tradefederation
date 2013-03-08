@@ -74,15 +74,20 @@ public class PackageManagerOTATestUtils {
     /**
      * Remove a system app.
      * @param systemApp {@link String} name for the application in the /system/app folder
+     * @param reboot set to <code>true</code> to optionally reboot device after app removal
      *
      * @throws DeviceNotAvailableException
      */
-    public void removeSystemApp(String systemApp)
+    public void removeSystemApp(String systemApp, boolean reboot)
             throws DeviceNotAvailableException {
         remountSystemRW();
         mDevice.waitForDeviceAvailable();
         String cmd = String.format("rm /system/app/%s", systemApp);
         mDevice.executeShellCommand(cmd);
+        if (reboot) {
+            mDevice.reboot();
+        }
+        mDevice.waitForDeviceAvailable();
     }
 
     /**
@@ -93,7 +98,7 @@ public class PackageManagerOTATestUtils {
      */
     public void removeAndWipe(String systemApp)
             throws DeviceNotAvailableException {
-        removeSystemApp(systemApp);
+        removeSystemApp(systemApp, false);
         wipeDevice();
     }
 
@@ -122,6 +127,25 @@ public class PackageManagerOTATestUtils {
     public int getIntForXPath(File xmlFile, String xPathString) {
         String tmp = getStringForXPath(xmlFile, xPathString);
         return Integer.parseInt(tmp);
+    }
+
+    /**
+     * Expect that the value of a given xpath starts with a given string.
+     *
+     * @param xmlFile {@link File} the xml file in question
+     * @param xPathString {@link String} the xpath to look for
+     * @param value {@link String} the expected start string of the xpath
+     *
+     * @return true if the value for the xpath starts with value, false otherwise
+     */
+    public boolean expectStartsWith(File xmlFile, String xPathString, String value) {
+        Node n = getNodeForXPath(xmlFile, xPathString);
+        if ( n==null ) {
+            CLog.d("Failed to find node for xpath %s", xPathString);
+            return false;
+        }
+        CLog.d("Value of node %s: %s", xPathString, n.getNodeValue());
+        return n.getNodeValue().toLowerCase().startsWith(value.toLowerCase());
     }
 
     /**
@@ -207,7 +231,7 @@ public class PackageManagerOTATestUtils {
      * Helper method to install a file
      *
      * @param localFile the {@link File} to install
-     * @param reinstall set to <code>true</code> if re-install of app should be performed
+     * @param replace set to <code>true</code> if re-install of app should be performed
      * @param extraArgs optional extra arguments to pass. See 'adb shell pm install --help' for
      *            available options.
      *
