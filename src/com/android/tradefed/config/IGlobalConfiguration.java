@@ -39,7 +39,7 @@ public interface IGlobalConfiguration {
      * Set the {@link IDeviceMonitor}.
      *
      * @param deviceMonitor The monitor
-     * @throw ConfigurationException if an {@link IDeviceMonitor} has already been set.
+     * @throws ConfigurationException if an {@link IDeviceMonitor} has already been set.
      */
     public void setDeviceMonitor(IDeviceMonitor deviceMonitor) throws ConfigurationException;
 
@@ -47,7 +47,7 @@ public interface IGlobalConfiguration {
      * Generic method to set the config object list for the given name, replacing any existing
      * value.
      *
-     * @param name the unique name of the config object type.
+     * @param typeName the unique name of the config object type.
      * @param configList the config object list
      * @throws ConfigurationException if any objects in the list are not the correct type
      */
@@ -60,7 +60,7 @@ public interface IGlobalConfiguration {
      * Useful to provide values for options that are generated dynamically.
      *
      * @param optionName the option name
-     * @param optionValues the option value(s)
+     * @param optionValue the option value(s)
      * @throws ConfigurationException if failed to set the option's value
      */
     public void injectOptionValue(String optionName, String optionValue)
@@ -72,15 +72,15 @@ public interface IGlobalConfiguration {
      * Useful to provide values for options that are generated dynamically.
      *
      * @param optionName the map option name
-     * @param optionName the map option key
-     * @param optionValues the map option value
+     * @param optionKey the map option key
+     * @param optionValue the map option value
      * @throws ConfigurationException if failed to set the option's value
      */
     public void injectOptionValue(String optionName, String optionKey, String optionValue)
             throws ConfigurationException;
 
     /**
-     * Set the global config {@Option} fields with given set of command line arguments
+     * Set the global config {@link Option} fields with given set of command line arguments
      * <p/>
      * @see {@link ArgsOptionParser} for expected format
      *

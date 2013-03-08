@@ -71,7 +71,7 @@ public interface ICommandScheduler {
     public void shutdown();
 
     /**
-     * Similar to {@link @shutdown}, but will instead wait for all commands to be executed
+     * Similar to {@link #shutdown()}, but will instead wait for all commands to be executed
      * before exiting.
      * <p/>
      * Note that if any commands are in loop mode, the scheduler will never exit.
@@ -129,7 +129,7 @@ public interface ICommandScheduler {
      * Stop a running invocation.
      *
      * @return true if the invocation was stopped, false otherwise
-     * @throw {@link UnsupportedOperationException} if the implementation doesn't support this
+     * @throws {@link UnsupportedOperationException} if the implementation doesn't support this
      */
     public boolean stopInvocation(ITestInvocation invocation) throws UnsupportedOperationException;
 

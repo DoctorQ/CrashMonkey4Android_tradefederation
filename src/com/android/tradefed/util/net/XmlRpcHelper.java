@@ -240,8 +240,8 @@ public class XmlRpcHelper {
      *
      * @param input An {@link InputStream} from which the parser can read the XmlRpc response
      *        document.
-     * @returns A flat {@code List<String>} containing datatype/value pairs, or {@code null} if
-     *          there was a parse error.
+     * @return A flat {@code List<String>} containing datatype/value pairs, or {@code null} if
+     *         there was a parse error.
      */
     public static List<String> parseResponseTuple(InputStream input) {
         XmlRpcResponseParser parser = new XmlRpcResponseParser();

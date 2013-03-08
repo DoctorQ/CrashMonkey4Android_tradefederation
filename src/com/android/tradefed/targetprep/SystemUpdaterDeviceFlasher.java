@@ -124,7 +124,7 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
      * {@inheritDoc}
      * <p>
      * This implementation only supports {@link IDeviceFlasher.UserDataFlashOption#TESTS_ZIP}
-     * and {@link UserDataFlashOption.RETAIN} as a valid options
+     * and {@link IDeviceFlasher.UserDataFlashOption#RETAIN} as a valid options
      */
     @Override
     public void setUserDataFlashOption(UserDataFlashOption flashOption) {

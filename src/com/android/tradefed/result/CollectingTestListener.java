@@ -221,7 +221,7 @@ public class CollectingTestListener implements ITestInvocationListener {
     }
 
     /**
-     * @returns true if invocation had any failed or error tests.
+     * @return true if invocation had any failed or error tests.
      */
     public boolean hasFailedTests() {
         return getNumErrorTests() > 0 || getNumFailedTests() > 0;

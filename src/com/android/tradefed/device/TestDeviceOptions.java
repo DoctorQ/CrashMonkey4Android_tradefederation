@@ -25,7 +25,8 @@ public class TestDeviceOptions {
     @Option(name = "enable-root", description = "enable adb root on boot.")
     private boolean mEnableAdbRoot = true;
 
-    @Option(name = "disable-keyguard", description = "attempt to disable keyguard once complete.")
+    @Option(name = "disable-keyguard",
+            description = "attempt to disable keyguard once boot is complete.")
     private boolean mDisableKeyguard = true;
 
     @Option(name = "disable-keyguard-cmd", description = "shell command to disable keyguard.")
@@ -64,42 +65,42 @@ public class TestDeviceOptions {
     private long mAvailableTimeout = 6 * 60 * 1000;
 
     /**
-     * @return the mEnableAdbRoot
+     * Check whether adb root should be enabled on boot for this device
      */
     public boolean isEnableAdbRoot() {
         return mEnableAdbRoot;
     }
 
     /**
-     * @param mEnableAdbRoot the mEnableAdbRoot to set
+     * Set whether adb root should be enabled on boot for this device
      */
     public void setEnableAdbRoot(boolean enableAdbRoot) {
         mEnableAdbRoot = enableAdbRoot;
     }
 
     /**
-     * @return the mDisableKeyguard
+     * Check whether or not we should attempt to disable the keyguard once boot has completed
      */
     public boolean isDisableKeyguard() {
         return mDisableKeyguard;
     }
 
     /**
-     * @param mDisableKeyguard the mDisableKeyguard to set
+     * Set whether or not we should attempt to disable the keyguard once boot has completed
      */
     public void setDisableKeyguard(boolean disableKeyguard) {
         mDisableKeyguard = disableKeyguard;
     }
 
     /**
-     * @return the mDisableKeyguardCmd
+     * Fetch the command to disable the keyguard
      */
     public String getDisableKeyguardCmd() {
         return mDisableKeyguardCmd;
     }
 
     /**
-     * @param mDisableKeyguardCmd the mDisableKeyguardCmd to set
+     * Set the command to be used to disable the keyguard
      */
     public void setDisableKeyguardCmd(String disableKeyguardCmd) {
         mDisableKeyguardCmd = disableKeyguardCmd;
@@ -113,7 +114,7 @@ public class TestDeviceOptions {
     }
 
     /**
-     * @param maxLogcatDataSize the max logcat tmp size to set
+     * Set the approximate maximum size of a tmp logcat to retain, in bytes
      */
     public void setMaxLogcatDataSize(long maxLogcatDataSize) {
         mMaxLogcatDataSize = maxLogcatDataSize;
@@ -155,10 +156,10 @@ public class TestDeviceOptions {
     }
 
     /**
-     * @param mRebootTimeout the timeout in msecs for the system to fully boot.
+     * @param rebootTimeout the timeout in msecs for the system to fully boot.
      */
-    public void setRebootTimeout(int mRebootTimeout) {
-        this.mRebootTimeout = mRebootTimeout;
+    public void setRebootTimeout(int rebootTimeout) {
+        mRebootTimeout = rebootTimeout;
     }
 
     /**

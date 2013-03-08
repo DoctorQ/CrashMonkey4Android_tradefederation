@@ -135,7 +135,7 @@ public class ByteArrayList {
     /**
      * Appends the specified element to the end of this list
      *
-     * @param b The {@link byte} to append to the list
+     * @param b The {@code byte} to append to the list
      * @return {@code true}
      */
     public boolean add(byte b) {
@@ -148,7 +148,7 @@ public class ByteArrayList {
     /**
      * Appends the full contents of the supplied {@code byte[]} to the list.
      *
-     * @param src The {@link byte[]} to append contents from
+     * @param src The {@code byte[]} to append contents from
      * @return {@code true}
      */
     public boolean addAll(byte[] src) {
@@ -162,7 +162,7 @@ public class ByteArrayList {
     /**
      * Appends the specified contents of the supplied {@code byte[]} to the list.
      *
-     * @param src The {@link byte[]} to append contents from
+     * @param src The {@code byte[]} to append contents from
      * @param srcOffset The index of first element of {@code src} to append
      * @param length The quantity of bytes to append to the list
      * @return {@code true}

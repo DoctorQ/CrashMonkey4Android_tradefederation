@@ -182,8 +182,8 @@ public class FileDownloadCache {
      * downloaded via the given {@link IFileDownloader}.
      *
      * @param downloader the {@link IFileDownloader}
-     * @param remoteFilePath the remote file.
-     * @return a local {@link File} containing contents of remoteFilePath
+     * @param remotePath the remote file.
+     * @return a local {@link File} containing contents of remotePath
      * @throws BuildRetrievalError if file could not be retrieved
      */
     public File fetchRemoteFile(IFileDownloader downloader, String remotePath)

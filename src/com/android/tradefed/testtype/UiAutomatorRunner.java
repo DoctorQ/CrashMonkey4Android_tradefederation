@@ -71,10 +71,8 @@ public class UiAutomatorRunner implements IRemoteAndroidTestRunner {
      * Create a UiAutomatorRunner for running UI automation tests
      *
      * @param remoteDevice the remote device to interact with: run test, collect results etc
-     * @param jarPath the path to jar file where UI Automator test cases are; the path must be
+     * @param jarPaths the paths to jar files where UI Automator test cases are; the paths must be
      *                absolute or relative to /data/local/tmp/ on device
-     * @param classes list of test class names to run; each name may have suffix "#methodName" to
-     *                indicate the specific method name in the test class to run
      * @param runnerPath alternative uiautomator runner to use, may be <code>null</code> and default
      *                   will be used in this case
      */

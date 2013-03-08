@@ -76,12 +76,12 @@ public class FileUtil {
 
     /**
      * Method to create a chain of directories, and set them all group execute/read/writable as they
-     * are created, by calling {@link chmodGroupRWX}.  Essentially a combination of
-     * {@link File.mkdirs} and {@link setGroupRWX}.
+     * are created, by calling {@link #chmodGroupRWX(File)}.  Essentially a version of
+     * {@link File#mkdirs()} that also runs {@link #chmod(File, String)}.
      *
      * @param file the name of the directory to create, possibly with containing directories that
      *        don't yet exist.
-     * @returns {@code true} if {@code file} exists and is a directory, {@code false} otherwise.
+     * @return {@code true} if {@code file} exists and is a directory, {@code false} otherwise.
      */
     public static boolean mkdirsRWX(File file) {
         File parent = file.getParentFile();
@@ -146,14 +146,14 @@ public class FileUtil {
      * Performs a best effort attempt to make given file group readable and writable.
      * <p />
      * Note that the execute permission is required to make directories accessible.  See
-     * {@link chmodGroupRWX}.
+     * {@link #chmodGroupRWX(File)}.
      * <p/ >
      * If 'chmod' system command is not supported by underlying OS, will set file to writable by
      * all.
      *
      * @param file the {@link File} to make owner and group writable
-     * @returns <code>true</code> if file was successfully made group writable, <code>false</code>
-     *          otherwise
+     * @return <code>true</code> if file was successfully made group writable, <code>false</code>
+     *         otherwise
      */
     public static boolean chmodGroupRW(File file) {
         if (chmod(file, "ug+rw")) {
@@ -173,7 +173,7 @@ public class FileUtil {
      * for all users.
      *
      * @param file the {@link File} to make owner and group writable
-     * @returns <code>true</code> if permissions were set successfully, <code>false</code> otherwise
+     * @return <code>true</code> if permissions were set successfully, <code>false</code> otherwise
      */
     public static boolean chmodGroupRWX(File file) {
         if (chmod(file, "ug+rwx")) {
@@ -700,7 +700,7 @@ public class FileUtil {
     /**
      * Helper method to build a system-dependent File
      *
-     * @param parentFile the parent directory to use.
+     * @param parentDir the parent directory to use.
      * @param pathSegments the relative path segments to use
      * @return the {@link File} representing given path, with each <var>pathSegment</var>
      *         separated by {@link File#separatorChar}
@@ -784,12 +784,12 @@ public class FileUtil {
     /**
      * Convert the given file size in bytes to a more readable format in X.Y[KMGT] format.
      *
-     * @param size file size in bytes
+     * @param sizeLong file size in bytes
      * @return descriptive string of file size
      */
-    public static String convertToReadableSize(long sizelong) {
+    public static String convertToReadableSize(long sizeLong) {
 
-        double size = sizelong;
+        double size = sizeLong;
         for (int i = 0; i < SIZE_SPECIFIERS.length; i++) {
             if (size < 1024) {
                 return String.format("%.1f%c", size, SIZE_SPECIFIERS[i]);

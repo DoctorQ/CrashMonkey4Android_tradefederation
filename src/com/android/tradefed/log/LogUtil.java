@@ -173,10 +173,9 @@ public class LogUtil {
         }
 
         /**
-         * The shim version of {@link Log#e(Throwable)}.
+         * The shim version of {@link Log#e(String, Throwable)}.
          *
          * @param t the {@link Throwable} to output.
-         * @param args The format string arguments
          */
         public static void e(Throwable t) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)

@@ -33,7 +33,7 @@ import java.util.ListIterator;
  * "out.txt" in "-f out.txt"), or a non-option positional argument.
  * <p/>
  * Each option argument must map to one or more {@link Option} fields. A long option maps to the
- * {@link Option#name()}, and a short option maps to {@link Option#shortName()}. Each
+ * {@link Option#name}, and a short option maps to {@link Option#shortName}. Each
  * {@link Option#name()} and {@link Option#shortName()} must be unique with respect to all other
  * {@link Option} fields within the same object.
  * <p/>
@@ -75,31 +75,31 @@ import java.util.ListIterator;
  * <p/>
  *
  * <pre>
- * // Non-@Option fields will be ignored.
+ * // Non-&#64;Option fields will be ignored.
  * class Options {
- *     @Option(name = "quiet", shortName = 'q')
+ *     &#64;Option(name = "quiet", shortName = 'q')
  *     boolean quiet = false;
  *
  *     // Here the user can use --no-color.
- *     @Option(name = "color")
+ *     &#64;Option(name = "color")
  *     boolean color = true;
  *
- *     @Option(name = "mode", shortName = 'm')
+ *     &#64;Option(name = "mode", shortName = 'm')
  *     String mode = "standard; // Supply a default just by setting the field.
  *
- *     @Option(name = "port", shortName = 'p')
+ *     &#64;Option(name = "port", shortName = 'p')
  *     int portNumber = 8888;
  *
  *     // There's no need to offer a short name for rarely-used options.
- *     @Option(name = "timeout" )
+ *     &#64;Option(name = "timeout" )
  *     double timeout = 1.0;
  *
- *     @Option(name = "output-file", shortName = 'o' })
+ *     &#64;Option(name = "output-file", shortName = 'o' })
  *     File output;
  *
  *     // Multiple options are added to the collection.
  *     // The collection field itself must be non-null.
- *     @Option(name = "input-file", shortName = 'i')
+ *     &#64;Option(name = "input-file", shortName = 'i')
  *     List<File> inputs = new ArrayList<File>();
  *
  * }
@@ -140,7 +140,7 @@ public class ArgsOptionParser extends OptionSetter {
     /**
      * Creates a {@link ArgsOptionParser} for a collection of objects.
      *
-     * @param optionSource the config objects.
+     * @param optionSources the config objects.
      * @throws ConfigurationException if config objects is improperly configured.
      */
     public ArgsOptionParser(Collection<Object> optionSources) throws ConfigurationException {
@@ -150,7 +150,7 @@ public class ArgsOptionParser extends OptionSetter {
     /**
      * Creates a {@link ArgsOptionParser} for one or more objects.
      *
-     * @param optionSource the config objects.
+     * @param optionSources the config objects.
      * @throws ConfigurationException if config objects is improperly configured.
      */
     public ArgsOptionParser(Object... optionSources) throws ConfigurationException {
@@ -161,7 +161,7 @@ public class ArgsOptionParser extends OptionSetter {
      * Parses the command-line arguments 'args', setting the @Option fields of the 'optionSource'
      * provided to the constructor.
      *
-     * @returns a {@link List} of the positional arguments left over after processing all options.
+     * @return a {@link List} of the positional arguments left over after processing all options.
      * @throws ConfigurationException if error occurred parsing the arguments.
      */
     public List<String> parse(String... args) throws ConfigurationException {
@@ -171,7 +171,7 @@ public class ArgsOptionParser extends OptionSetter {
     /**
      * Alternate {@link #parse(String... args)} method that takes a {@link List} of arguments
      *
-     * @returns a {@link List} of the positional arguments left over after processing all options.
+     * @return a {@link List} of the positional arguments left over after processing all options.
      * @throws ConfigurationException if error occurred parsing the arguments.
      */
     public List<String> parse(List<String> args) throws ConfigurationException {

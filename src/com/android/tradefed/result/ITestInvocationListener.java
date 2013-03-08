@@ -57,8 +57,7 @@ public interface ITestInvocationListener extends ITestRunListener {
     /**
      * Provides the associated log or debug data from the test invocation.
      * <p/>
-     * Must be called before {@link #invocationFailed(String, Throwable)} or
-     * {@link #invocationEnded()}
+     * Must be called before {@link #invocationFailed(Throwable)} or {@link #invocationEnded(long)}
      * <p/>
      * The TradeFederation framework will automatically call this method, providing the host log
      * and if applicable, the device logcat.

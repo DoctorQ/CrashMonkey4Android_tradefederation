@@ -24,11 +24,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The RegexTrie is a trie where each _stored_ segment of the key is a regex {@link Pattern}.  Thus,
- * the full _stored_ key is a List<Pattern> rather than a String as in a standard trie.  Note that
- * the {@link #get(Object key)} method requires a List<String>, which will be matched against the
- * {@link Pattern}s, rather than checked for equality as in a standard trie.  It will likely perform
- * poorly for large datasets.
+ * The RegexTrie is a trie where each <emph>stored</emph> segment of the key is a regex
+ * {@link Pattern}.  Thus, the full <emph>stored</emph> key is a {@code List<Pattern>} rather than
+ * a {@code List<String>} as in a standard trie.  Note that the {@link #retrieve(String...)} method
+ * will be pointwise matched against the {@code Pattern}s, rather than checked for pointwise
+ * equality as in a standard trie.  Because of this, it may perform poorly for large datasets.
  * <p />
  * One can also use a {@code null} entry in the {@code Pattern} sequence to serve as a wildcard.  If
  * a {@code null} is encountered, all subsequent entries in the sequence will be ignored.
@@ -174,7 +174,7 @@ public class RegexTrie<V> {
      * on-the-fly before adding the subsequent {@link Pattern}s to the trie
      *
      * @param value The value to set
-     * @param patterns The sequence of regular expressions (as {@link String}s) that must be
+     * @param regexen The sequence of regular expressions (as {@link String}s) that must be
      *        sequentially matched to retrieve the associated {@code value}.  Each String will be
      *        compiled as a {@link Pattern} before invoking {@link #put(V, Pattern...)}.
      */

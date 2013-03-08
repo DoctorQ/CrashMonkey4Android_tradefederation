@@ -35,7 +35,7 @@ public interface IEmail {
      * that case, the envelope-sender will typically receive an email from MAILER-DAEMON with the
      * details of the error.
      *
-     * @param msg The {@link Message} to try to send
+     * @param msg The {@link IEmail.Message} to try to send
      * @throws IllegalArgumentException if any of the to, subject, or body fields of {@code msg} is
      *         null
      * @throws IOException if sending email failed in a synchronously-detectable way

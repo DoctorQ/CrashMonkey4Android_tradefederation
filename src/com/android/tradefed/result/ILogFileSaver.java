@@ -88,7 +88,7 @@ public interface ILogFileSaver {
      * TODO: consider moving this method elsewhere. Placed here for now so it easier for current
      * users of this class to mock.
      *
-     * @param dataFile the {@link File} to read from
+     * @param logFile the {@link File} to read from
      * @return a buffered {@link InputStream} to read file data. Callers must close
      *         this stream when complete
      * @throws IOException if stream could not be generated

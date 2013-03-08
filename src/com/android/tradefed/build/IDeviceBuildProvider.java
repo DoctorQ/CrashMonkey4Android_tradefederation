@@ -27,7 +27,7 @@ import com.android.tradefed.device.ITestDevice;
  * modify a device's state.
  * <p/>
  * Implementing this interface will cause TF framework to call the {@link #getBuild(ITestDevice)}
- * method instead of {@link getBuild()}.
+ * method instead of {@link IBuildProvider#getBuild()}.
  */
 public interface IDeviceBuildProvider extends IBuildProvider {
 

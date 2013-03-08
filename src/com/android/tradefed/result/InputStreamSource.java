@@ -28,8 +28,8 @@ public interface InputStreamSource {
 
     /**
      * Return a new clone of the {@link InputStream}, so that the caller can read the stream from
-     * the beginning.  Each invocation of this method (until {@link cancel()} is called) will return
-     * an identically-behaving {@link InputStream} -- the same contents will be returned.
+     * the beginning.  Each invocation of this method (until {@link #cancel()} is called) will
+     * return an identically-behaving {@link InputStream} -- the same contents will be returned.
      *
      * @return An {@link InputStream} that the caller can use to read the data source from the
      *         beginning.  May return {@code null} if this {@code InputStreamSource} has been

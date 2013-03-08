@@ -733,8 +733,6 @@ public class Console extends Thread {
 
     /**
      * The main method to launch the console. Will keep running until shutdown command is issued.
-     *
-     * @param args
      */
     @Override
     public void run() {

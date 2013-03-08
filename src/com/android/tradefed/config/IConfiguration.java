@@ -105,7 +105,6 @@ public interface IConfiguration {
      * Generic interface to get the configuration object with the given type name.
      *
      * @param typeName the unique type of the configuration object
-     * @param expectedType the expected object type
      *
      * @return the configuration object or <code>null</code> if the object type with given name
      * does not exist.
@@ -113,11 +112,10 @@ public interface IConfiguration {
     public Object getConfigurationObject(String typeName);
 
     /**
-     * Similar to {@link #getConfigurationObject(String, Class)}, but for configuration
+     * Similar to {@link #getConfigurationObject(String)}, but for configuration
      * object types that support multiple objects.
      *
      * @param typeName the unique type name of the configuration object
-     * @param expectedType the expected object type
      *
      * @return the list of configuration objects or <code>null</code> if the object type with
      * given name does not exist.
@@ -130,7 +128,7 @@ public interface IConfiguration {
      * Useful to provide values for options that are generated dynamically.
      *
      * @param optionName the option name
-     * @param optionValues the option value(s)
+     * @param optionValue the option value
      * @throws ConfigurationException if failed to set the option's value
      */
     public void injectOptionValue(String optionName, String optionValue)
@@ -142,8 +140,8 @@ public interface IConfiguration {
      * Useful to provide values for options that are generated dynamically.
      *
      * @param optionName the map option name
-     * @param optionName the map option key
-     * @param optionValues the map option value
+     * @param optionKey the map option key
+     * @param optionValue the map option value
      * @throws ConfigurationException if failed to set the option's value
      */
     public void injectOptionValue(String optionName, String optionKey, String optionValue)
@@ -198,7 +196,7 @@ public interface IConfiguration {
      *
      * @param tests
      */
-    public void setTests(List<IRemoteTest> test);
+    public void setTests(List<IRemoteTest> tests);
 
     /**
      * Set the list of {@link ITestInvocationListener}s, replacing any existing values
@@ -255,7 +253,7 @@ public interface IConfiguration {
             throws ConfigurationException;
 
     /**
-     * Set the config {@Option} fields with given set of command line arguments
+     * Set the config {@link Option} fields with given set of command line arguments
      * <p/>
      * @see {@link ArgsOptionParser} for expected format
      *
