@@ -48,17 +48,17 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     public static final String BUGREPORT_LOG_NAME = "bugreport_startup.txt";
 
     @Option(name="boot-time-ms", description="Timeout in ms to wait for device to boot.")
-    private static final long mBootTimeMs = 5 * 60 * 1000;
+    private long mBootTimeMs = 5 * 60 * 1000;
 
     @Option(name="boot-poll-time-ms", description="Delay in ms between polls for device to boot.")
-    private static final long mBootPoolTimeMs = 500;
+    private long mBootPoolTimeMs = 500;
 
     @Option(name="post-boot-delay-ms",
             description="Delay in ms after boot complete before taking the bugreport.")
-    private static final long mPostBootDelayMs = 60000;
+    private long mPostBootDelayMs = 60000;
 
     @Option(name="skip-memory-stats", description="Report boot time only, without memory stats.")
-    private final boolean mSkipMemoryStats = false;
+    private boolean mSkipMemoryStats = false;
 
     ITestDevice mTestDevice = null;
 
