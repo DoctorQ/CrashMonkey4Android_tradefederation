@@ -360,6 +360,23 @@ public class Console extends Thread {
     }
 
     /**
+     * Utility function to actually parse and execute a command file.
+     */
+    void runCmdfile(String cmdfileName, List<String> extraArgs) {
+        try {
+            if (extraArgs != null) {
+                createCommandFileParser().parseFile(new File(cmdfileName), mScheduler, extraArgs);
+            } else {
+                createCommandFileParser().parseFile(new File(cmdfileName), mScheduler);
+            }
+        } catch (IOException e) {
+            printLine(String.format("Failed to run %s: %s", cmdfileName, e));
+        } catch (ConfigurationException e) {
+            printLine(String.format("Failed to run %s: %s", cmdfileName, e));
+        }
+    }
+
+    /**
      * Add commands to create the default Console experience
      * <p />
      * Adds relevant documentation to {@code genericHelp} and {@code commandHelp}.
@@ -574,13 +591,7 @@ public class Console extends Thread {
                 List<String> extraArgs = flatArgs.subList(1, flatArgs.size());
                 printLine(String.format("Attempting to run cmdfile %s with args %s", file,
                         extraArgs.toString()));
-                try {
-                    createCommandFileParser().parseFile(new File(file), mScheduler, extraArgs);
-                } catch (IOException e) {
-                    printLine(String.format("Failed to run %s: %s", file, e));
-                } catch (ConfigurationException e) {
-                    printLine(String.format("Failed to run %s: %s", file, e));
-                }
+                runCmdfile(file, extraArgs);
             }
         };
         trie.put(runRunCmdfile, RUN_PATTERN, "cmdfile", "(.*)");
@@ -595,6 +606,25 @@ public class Console extends Thread {
         };
         trie.put(runRunCmdfileAndExit, RUN_PATTERN, "cmdfileAndExit", "(.*)");
         trie.put(runRunCmdfileAndExit, RUN_PATTERN, "cmdfileAndExit", "(.*)", null);
+
+        ArgRunnable<CaptureList> runRunAllCmdfilesAndExit = new ArgRunnable<CaptureList>() {
+            @Override
+            public void run(CaptureList args) {
+                // skip 2 tokens to get past runPattern and "allCmdfilesAndExit"
+                if (args.size() <= 2) {
+                    printLine("No cmdfiles specified!");
+                } else {
+                    // Each group should have exactly one element, given how the null wildcard
+                    // operates; so we flatten them.
+                    for (String cmdfile : getFlatArgs(2 /* startIdx */, args)) {
+                        runCmdfile(cmdfile, null);
+                    }
+                }
+                mScheduler.shutdownOnEmpty();
+            }
+        };
+        trie.put(runRunAllCmdfilesAndExit, RUN_PATTERN, "allCmdfilesAndExit");
+        trie.put(runRunAllCmdfilesAndExit, RUN_PATTERN, "allCmdfilesAndExit", null);
 
         // Missing required argument: show help
         // FIXME: fix this functionality
