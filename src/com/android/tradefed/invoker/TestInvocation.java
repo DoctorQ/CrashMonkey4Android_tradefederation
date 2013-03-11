@@ -249,9 +249,8 @@ public class TestInvocation implements ITestInvocation {
         msg.append(info.getTestTag());
         msg.append("'");
         if (!info.getBuildId().equals(IBuildInfo.UNKNOWN_BUILD_ID)) {
-            msg.append(" on build '");
-            msg.append(info.getBuildId());
-            msg.append("'");
+            msg.append(" on build ");
+            msg.append(getBuildDescription(info));
         }
         for (String buildAttr : info.getBuildAttributes().values()) {
             msg.append(" ");
@@ -260,7 +259,34 @@ public class TestInvocation implements ITestInvocation {
         msg.append(" on device ");
         msg.append(device.getSerialNumber());
         CLog.logAndDisplay(LogLevel.INFO, msg.toString());
-        mStatus = String.format("running %s on build %s", info.getTestTag(), info.getBuildId());
+        mStatus = String.format("running %s on build %s", info.getTestTag(),
+                getBuildDescription(info));
+    }
+
+    /**
+     * Returns a user-friendly description of the build
+     * @param info
+     * @return
+     */
+    private String getBuildDescription(IBuildInfo info) {
+        return String.format("'%s'", buildSpacedString(info.getBuildBranch(),
+                info.getBuildFlavor(), info.getBuildId()));
+    }
+
+    /**
+     * Helper method for adding space delimited sequence of strings. Will ignore null segments
+     */
+    private String buildSpacedString(String... segments) {
+        StringBuilder sb = new StringBuilder();
+        for (String s : segments) {
+            if (s != null) {
+                if (sb.length() > 0) {
+                    sb.append(' ');
+                }
+                sb.append(s);
+            }
+        }
+        return sb.toString();
     }
 
     /**
