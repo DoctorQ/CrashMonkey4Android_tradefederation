@@ -61,6 +61,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
 
     // Constants for running the tests
     private static final String TEST_PACKAGE_NAME = "com.google.android.gallery3d.tests";
+    private static final String TEST_RUNNER = "com.android.gallery3d.stress.CameraStressTestRunner";
 
     //Max test timeout - 3 hrs
     private static final int MAX_TEST_TIMEOUT = 3 * 60 * 60 * 1000;
@@ -166,7 +167,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
     private void executeTest(TestInfo test, ITestInvocationListener listener)
             throws DeviceNotAvailableException {
         IRemoteAndroidTestRunner runner = new RemoteAndroidTestRunner(TEST_PACKAGE_NAME,
-                mTestDevice.getIDevice());
+                TEST_RUNNER, mTestDevice.getIDevice());
         CollectingTestListener auxListener = new CollectingTestListener();
 
         runner.setClassName(test.mClassName);
