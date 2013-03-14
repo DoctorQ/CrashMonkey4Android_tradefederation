@@ -198,6 +198,7 @@ public class EmailTest extends TestCase {
      * appropriate email addresses to verify that Email functionality is working after changes.
      * Not enabled by default because the particular addresses to use will depend on the environment
      */
+    @SuppressWarnings("unused")
     public void _manual_testFuncSend() throws IOException {
         final String sender = null;
         final String[] to = {"RECIPIENT"};
