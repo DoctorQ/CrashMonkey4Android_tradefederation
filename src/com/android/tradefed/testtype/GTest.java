@@ -262,7 +262,7 @@ public class GTest implements IDeviceTest, IRemoteTest {
         // TODO: add individual test timeout support, and rerun support
         try {
             String cmd = getGTestCmdLine(fullPath, flags);
-            testDevice.executeShellCommand(String.format("%s %s", fullPath, flags), resultParser,
+            testDevice.executeShellCommand(cmd, resultParser,
                     mMaxTestTimeMs /* maxTimeToShellOutputResponse */,
                     0 /* retryAttempts */);
         } catch (DeviceNotAvailableException e) {

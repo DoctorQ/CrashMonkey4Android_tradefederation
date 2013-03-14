@@ -451,8 +451,9 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
                     BugreportCollector.Relation.AFTER,
                     mBugreportFrequency,
                     BugreportCollector.Noun.FAILED_TESTCASE);
-
-            listener = new BugreportCollector(listener, mDevice);
+            BugreportCollector collector  = new BugreportCollector(listener, mDevice);
+            collector.addPredicate(pred);
+            listener = collector;
         }
 
         if (mRemainingTests == null) {

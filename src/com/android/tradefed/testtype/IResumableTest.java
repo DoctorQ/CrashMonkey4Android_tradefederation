@@ -15,7 +15,7 @@
  */
 package com.android.tradefed.testtype;
 
-import java.util.List;
+import com.android.tradefed.result.ITestInvocationListener;
 
 
 /**
