@@ -188,7 +188,7 @@ public class DeviceManagerTest extends TestCase {
 
     private DeviceManager createDeviceManagerNoInit() {
 
-        DeviceManager mgr = new DeviceManager(false /* no async proxy */) {
+        DeviceManager mgr = new DeviceManager() {
             @Override
             IAndroidDebugBridge createAdbBridge() {
                 return mMockAdbBridge;
@@ -626,14 +626,13 @@ public class DeviceManagerTest extends TestCase {
         dvcMon.setDeviceLister((DeviceLister) EasyMock.anyObject());
         dvcMon.run();
         // add emulators
-        dvcMon.updateFullDeviceState();
+        dvcMon.notifyDeviceStateChange();
         // add null devices
-        dvcMon.updateFullDeviceState();
+        dvcMon.notifyDeviceStateChange();
         // allocate actual IDevice(s)
-        dvcMon.updateFullDeviceState();
-        dvcMon.deviceAllocated(EasyMock.eq(mMockIDevice));
+        dvcMon.notifyDeviceStateChange();
         // create ITestDevice from IDevice
-        dvcMon.updateFullDeviceState();
+        dvcMon.notifyDeviceStateChange();
 
         setCheckAvailableDeviceExpectations();
         replayMocks(dvcMon);

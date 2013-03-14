@@ -15,9 +15,8 @@
  */
 package com.android.tradefed.util;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.ConcurrentModificationException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,9 +27,14 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * A class with {@link PriorityBlockingQueue}-like operations that can retrieve objects that
- * match a certain condition.
- *
+ * A thread-safe class with {@link PriorityBlockingQueue}-like operations that can retrieve objects
+ * that match a certain condition.
+ * <p/>
+ * Iteration is also thread-safe, but not consistent. A copy of the queue is made at iterator
+ * creation time, and that copy is used as the iteration target. If queue is modified during
+ * iteration, a {@link ConcurrentModificationException} will not be thrown, but the iterator
+ * will also not reflect the modified contents.
+ * <p/>
  * @see {@link PriorityBlockingQueue}
  */
 public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
@@ -104,40 +108,9 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      * @param c the {@link Comparator} used to prioritize the queue.
      */
     public ConditionPriorityBlockingQueue(Comparator<T> c) {
-        this(c, false);
-    }
-
-    /**
-     * Creates a {@link ConditionPriorityBlockingQueue} with elements prioritized in FIFO order
-     *
-     * @param threadSafe whether or not to use internal synchronization.  If <code>false</code>,
-     *        then a {@link ConcurrentModificationException} may be thrown if this Queue is
-     *        structurally modified while iteration is in progress.  <code>true</code> will reduce
-     *        overhead for modifications and accesses.
-     */
-    public ConditionPriorityBlockingQueue(boolean threadSafe) {
-        this(null, threadSafe);
-    }
-
-    /**
-     * Creates a {@link ConditionPriorityBlockingQueue}
-     *
-     * @param c the {@link Comparator} used to prioritize the queue.
-     * @param threadSafe whether or not to use internal synchronization.  If <code>false</code>,
-     *        then a {@link ConcurrentModificationException} may be thrown if this Queue is
-     *        structurally modified while iteration is in progress.  <code>true</code> will reduce
-     *        overhead for modifications and accesses.
-     */
-    public ConditionPriorityBlockingQueue(Comparator<T> c, boolean threadSafe) {
         mComparator = c;
-        if (threadSafe) {
-            mList = Collections.synchronizedList(new LinkedList<T>());
-            mWaitingMatcherList =
-                    Collections.synchronizedList(new LinkedList<ConditionMatcherPair<T>>());
-        } else {
-            mList = new LinkedList<T>();
-            mWaitingMatcherList = new LinkedList<ConditionMatcherPair<T>>();
-        }
+        mList = new LinkedList<T>();
+        mWaitingMatcherList = new LinkedList<ConditionMatcherPair<T>>();
     }
 
     /**
@@ -344,7 +317,22 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      */
     @Override
     public Iterator<T> iterator() {
-        return mList.iterator();
+        return getCopy().iterator();
+    }
+
+    /**
+     * Get a copy of the contents of the queue.
+     * @return
+     */
+    public List<T> getCopy() {
+        mLock.lock();
+        try {
+            List<T> l = new ArrayList<T>(size());
+            l.addAll(mList);
+            return l;
+        } finally {
+            mLock.unlock();
+        }
     }
 
     /**
@@ -355,14 +343,24 @@ public class ConditionPriorityBlockingQueue<T> implements Iterable<T> {
      *         otherwise.
      */
     public boolean contains(T object) {
-        return mList.contains(object);
+        mLock.lock();
+        try {
+            return mList.contains(object);
+        } finally {
+            mLock.unlock();
+        }
     }
 
     /**
      * @return the number of elements in queue
      */
     public int size() {
-        return mList.size();
+        mLock.lock();
+        try {
+            return mList.size();
+        } finally {
+            mLock.unlock();
+        }
     }
 
     /**
