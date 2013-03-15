@@ -22,6 +22,7 @@ import com.google.common.base.Objects;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -459,6 +460,13 @@ public class OptionSetter {
                                 optionSource.getClass().getName(), option.updateRule(),
                                 field.getGenericType()));
                     }
+                }
+
+                // don't allow 'final' for non-Collections
+                if ((field.getModifiers() & Modifier.FINAL) != 0) {
+                    throw new ConfigurationException(String.format(
+                            "Option '%s' in class '%s' is final and cannot be set", option.name(),
+                            optionSource.getClass().getName()));
                 }
             }
 
