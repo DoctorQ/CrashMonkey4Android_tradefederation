@@ -49,19 +49,13 @@ public interface IDeviceMonitor {
     public void setDeviceLister(DeviceLister lister);
 
     /**
-     * Allows one or more labels to be set which may be used to identify the host, and group it with
-     * or disambiguate it from other hosts.
+     * Signals the {@link IDeviceMonitor} that device states may have been updated.
+     * Monitor implementations should limit the amount of processing and
+     * IDeviceManager/DeviceLister interaction they do in this method.
+     *
+     * TODO: consider passing in serial and new state.
      */
-    public void setHostLabels(Collection<String> labels);
+    public void notifyDeviceStateChange();
 
-    /**
-     * Signals the {@link IDeviceMonitor} that device states may have been updated.  The Monitor
-     * may observe the new device states by calling its DeviceLister
-     */
-    public void updateFullDeviceState();
-
-    public void deviceAllocated(IDevice device);
-
-//    public void deviceFreed(IDevice device);
 }
 

@@ -271,6 +271,39 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
     }
 
     /**
+     * Test behavior when queue is modified during iteration
+     * @throws Throwable
+     */
+    public void testModificationOnIterating() throws Throwable {
+        final ConditionPriorityBlockingQueue<Integer> queue =
+                new ConditionPriorityBlockingQueue<Integer>(new IntCompare());
+        for (int i = 0; i < 10; i++) {
+            queue.add(i);
+        }
+        final Throwable[] throwables = new Throwable[1];
+        Thread iterator = new Thread() {
+            @Override
+            public void run() {
+                try {
+                    for (Integer i : queue) {
+                        Thread.sleep(10);
+                    }
+                } catch (Throwable t) {
+                    throwables[0] = t;
+                }
+            }
+        };
+        iterator.start();
+        for (int i = 0; i < 10 && throwables[0] == null; i++) {
+            queue.add(i);
+            Thread.sleep(10);
+        }
+        if (throwables[0] != null) {
+            throw throwables[0];
+        }
+    }
+
+    /**
      * A {@link Comparator} for {@link Integer}
      */
     private static class IntCompare implements Comparator<Integer> {

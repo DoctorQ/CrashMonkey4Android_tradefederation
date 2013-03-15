@@ -97,22 +97,7 @@ public class DeviceManager implements IDeviceManager {
      * Use {@link #getInstance()} instead.
      */
     DeviceManager() {
-        this(true);
-    }
-
-    /**
-     * Package-private constructor, should only be used by this class and its associated unit test.
-     * Use {@link #getInstance()} instead.
-     */
-    DeviceManager(boolean useProxy) {
-        IDeviceMonitor dvcMon = getGlobalConfig().getDeviceMonitor();
-        if (useProxy) {
-            mDvcMon = new DeviceMonitorAsyncProxy(dvcMon);
-        } else {
-            CLog.w("Running DeviceManager with unproxied DeviceMonitor!  This could lead to " +
-                    "deadlocks!");
-            mDvcMon = dvcMon;
-        }
+        mDvcMon = getGlobalConfig().getDeviceMonitor();
     }
 
     @Override
@@ -138,7 +123,7 @@ public class DeviceManager implements IDeviceManager {
         mGlobalDeviceFilter = globalDeviceFilter;
         // Using ConcurrentHashMap for thread safety: handles concurrent modification and iteration
         mAllocatedDeviceMap = new ConcurrentHashMap<String, IManagedTestDevice>();
-        mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>(true /* thread-safe */);
+        mAvailableDeviceQueue = new ConditionPriorityBlockingQueue<IDevice>();
         mCheckDeviceMap = new ConcurrentHashMap<String, IDeviceStateMonitor>();
 
         if (isFastbootAvailable()) {
@@ -382,15 +367,7 @@ public class DeviceManager implements IDeviceManager {
             CLog.w("updateDeviceMonitor called before DeviceManager was initialized!");
         }
         if (mAdbBridge == null) return;
-        mDvcMon.updateFullDeviceState();
-    }
-
-    void updateDmAllocated(IDevice device) {
-        if (mDvcMon == null) return;
-        if (!mIsInitialized) {
-            CLog.w("updateDmAllocated called before DeviceManager was initialized!");
-        }
-        mDvcMon.deviceAllocated(device);
+        mDvcMon.notifyDeviceStateChange();
     }
 
     /**
@@ -494,7 +471,6 @@ public class DeviceManager implements IDeviceManager {
         }
         mAllocatedDeviceMap.put(allocatedDevice.getSerialNumber(), testDevice);
         CLog.i("Allocated device %s", testDevice.getSerialNumber());
-        updateDmAllocated(allocatedDevice);
         updateDeviceMonitor();
         return testDevice;
     }
@@ -867,35 +843,41 @@ public class DeviceManager implements IDeviceManager {
     }
 
     private Map<IDevice, String> fetchDevicesInfo() {
-        final Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
         synchronized (this) {
             checkInit();
-            final Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
-            final List<IDevice> allDeviceCopy = ArrayUtil.list(mAdbBridge.getDevices());
+        }
+        final Map<IDevice, String> deviceMap = new LinkedHashMap<IDevice, String>();
 
-            for (IDevice device : allDeviceCopy) {
-                // ignore devices not matching global filter
-                if (mGlobalDeviceFilter.matches(device)) {
-                    visibleDeviceSet.add(device);
-                }
-            }
+        // these data structures all have their own locks
+        final List<IDevice> allDeviceCopy = ArrayUtil.list(mAdbBridge.getDevices());
+        final List<IDevice> availableDeviceCopy = mAvailableDeviceQueue.getCopy();
+        final List<ITestDevice> allocatedDeviceCopy = new ArrayList<ITestDevice>(
+                mAllocatedDeviceMap.values());
 
-            for (ITestDevice device : mAllocatedDeviceMap.values()) {
-                deviceMap.put(device.getIDevice(), "Allocated");
-                visibleDeviceSet.remove(device.getIDevice());
-            }
+        final Set<IDevice> visibleDeviceSet = new HashSet<IDevice>();
 
-            for (IDevice device : mAvailableDeviceQueue) {
-                // don't add placeholder devices to available devices display
-                if (!(device instanceof StubDevice)) {
-                    deviceMap.put(device, "Available");
-                    visibleDeviceSet.remove(device);
-                }
+        for (IDevice device : allDeviceCopy) {
+            // ignore devices not matching global filter
+            if (mGlobalDeviceFilter.matches(device)) {
+                visibleDeviceSet.add(device);
             }
+        }
 
-            for (IDevice device : visibleDeviceSet) {
-                deviceMap.put(device, "Unavailable");
+        for (ITestDevice device : allocatedDeviceCopy) {
+            deviceMap.put(device.getIDevice(), "Allocated");
+            visibleDeviceSet.remove(device.getIDevice());
+        }
+
+        for (IDevice device : availableDeviceCopy) {
+            // don't add placeholder devices to available devices display
+            if (!(device instanceof StubDevice)) {
+                deviceMap.put(device, "Available");
+                visibleDeviceSet.remove(device);
             }
+        }
+
+        for (IDevice device : visibleDeviceSet) {
+            deviceMap.put(device, "Unavailable");
         }
 
         return deviceMap;
