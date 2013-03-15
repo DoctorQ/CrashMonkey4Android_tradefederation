@@ -104,7 +104,7 @@ public class OptionSetterTest extends TestCase {
     @OptionClass(alias = "all")
     private static class AllTypesOptionSource {
         @Option(name = "string_collection")
-        private Collection<String> mStringCollection = new ArrayList<String>();
+        private final Collection<String> mStringCollection = new ArrayList<String>();
 
         @Option(name = "string_string_map")
         private Map<String, String> mStringMap = new HashMap<String, String>();
@@ -211,6 +211,11 @@ public class OptionSetterTest extends TestCase {
         public int getVal() {
             return mVal;
         }
+    }
+
+    private static class FinalOption {
+        @Option(name = "final-string", description="final field, not allowed")
+        private final String mFinal= "foo";
     }
 
     /**
@@ -793,6 +798,19 @@ public class OptionSetterTest extends TestCase {
         Field field = AllTypesOptionSource.class.getDeclaredField("mEnum");
         String actualValues = OptionSetter.getEnumFieldValuesAsString(field);
         assertEquals(expectedValues, actualValues);
+    }
+
+    /**
+     * Test {@link OptionSetter} for a final field
+     */
+    public void testOptionSetter_finalField() throws ConfigurationException {
+        FinalOption optionSource = new FinalOption();
+        try {
+            new OptionSetter(optionSource);
+            fail("ConfigurationException not thrown");
+        } catch (ConfigurationException e) {
+            // expected
+        }
     }
 
     /**
