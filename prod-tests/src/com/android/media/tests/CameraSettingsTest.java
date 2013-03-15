@@ -194,11 +194,10 @@ public class CameraSettingsTest implements IDeviceTest, IRemoteTest {
 
             if ((key != null) && (expectedCount != null) && (actualCount != null)) {
                 metrics.put(key, String.format("%d", actualCount));
+                key = null;
+                expectedCount = null;
+                actualCount = null;
             }
-
-            key = null;
-            expectedCount = null;
-            actualCount = null;
         }
 
         return metrics;
