@@ -56,8 +56,8 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     ITestDevice mTestDevice = null;
     private static final String METRICS_RUN_NAME = "VideoRecordingStress";
 
-    //Max test timeout - 5 hrs
-    private static final int MAX_TEST_TIMEOUT = 5 * 60 * 60 * 1000;
+    //Max test timeout - 2 hrs
+    private static final int MAX_TEST_TIMEOUT = 2 * 60 * 60 * 1000;
 
     // Constants for running the tests
     private static final String TEST_CLASS_NAME =
@@ -129,12 +129,9 @@ public class MediaStressTest implements IDeviceTest, IRemoteTest {
     private void parseOutputFile(File outputFile, ITestInvocationListener listener) {
         Map<String, String> runMetrics = new HashMap<String, String>();
         Map<String, String> stanzaKeyMap = new HashMap<String, String>();
-        stanzaKeyMap.put("testStressCamera", "StopPreviewAndRelease");
-        stanzaKeyMap.put("testStressCameraSwitchRecorder", "SwitchModeCameraVideo");
         stanzaKeyMap.put("testStressRecordVideoAndPlayback1080P", "VideoRecordPlayback1080P");
         stanzaKeyMap.put("testStressRecordVideoAndPlayback720P", "VideoRecordPlayback720P");
         stanzaKeyMap.put("testStressRecordVideoAndPlayback480P", "VideoRecordPlayback480P");
-        stanzaKeyMap.put("testStressRecorder", "VideoRecording");
         stanzaKeyMap.put("testStressTimeLapse", "TimeLapseRecord");
 
         // try to parse it
