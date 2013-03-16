@@ -39,7 +39,7 @@ public class MediaResultReporter extends EmailResultReporter {
     private String mSummaryUrl = "";
 
     @Option(name = "log-name", description = "Name of the report that attach to email")
-    private final String mLogName = null;
+    private String mLogName = null;
 
     public MediaResultReporter() {
         mEmailBodyBuilder = new StringBuilder();
