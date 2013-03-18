@@ -285,7 +285,7 @@ public class ConditionPriorityBlockingQueueTest extends TestCase {
             @Override
             public void run() {
                 try {
-                    for (Integer i : queue) {
+                    for (@SuppressWarnings("unused") Integer i : queue) {
                         Thread.sleep(10);
                     }
                 } catch (Throwable t) {

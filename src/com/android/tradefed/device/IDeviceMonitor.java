@@ -18,7 +18,6 @@ package com.android.tradefed.device;
 
 import com.android.ddmlib.IDevice;
 
-import java.util.Collection;
 import java.util.Map;
 
 /**
