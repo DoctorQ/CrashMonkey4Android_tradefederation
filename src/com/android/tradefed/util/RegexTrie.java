@@ -25,10 +25,11 @@ import java.util.regex.Pattern;
 
 /**
  * The RegexTrie is a trie where each <emph>stored</emph> segment of the key is a regex
- * {@link Pattern}.  Thus, the full <emph>stored</emph> key is a {@code List<Pattern>} rather than
- * a {@code List<String>} as in a standard trie.  Note that the {@link #retrieve(String...)} method
- * will be pointwise matched against the {@code Pattern}s, rather than checked for pointwise
- * equality as in a standard trie.  Because of this, it may perform poorly for large datasets.
+ * {@link Pattern}.  Thus, the full <emph>stored</emph> key is a {@code List&lt;Pattern&gt;} rather
+ * than a {@code List&lt;String&gt;} as in a standard trie.  Note that the
+ * {@link #retrieve(String...)} method will be pointwise matched against the {@code Pattern}s,
+ * rather than checked for pointwise equality as in a standard trie.  Because of this, it may
+ * perform poorly for large datasets.
  * <p />
  * One can also use a {@code null} entry in the {@code Pattern} sequence to serve as a wildcard.  If
  * a {@code null} is encountered, all subsequent entries in the sequence will be ignored.
@@ -41,8 +42,8 @@ import java.util.regex.Pattern;
  * <p />
  * A short sample of the wildcard functionality:
  * <pre>
- * List<List<String>> captures = new LinkedList<List<String>>();
- * RegexTrie<Integer> trie = new RegexTrie<Integer>();
+ * List&lt;List&lt;String&gt;&gt; captures = new LinkedList&lt;List&lt;String&gt;&gt;();
+ * RegexTrie&lt;Integer&gt; trie = new RegexTrie&lt;Integer&gt;();
  * trie.put(2, "a", null);
  * trie.put(4, "a", "b");
  * trie.retrieve(captures, "a", "c", "e");

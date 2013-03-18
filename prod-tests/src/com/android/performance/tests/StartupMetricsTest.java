@@ -137,7 +137,7 @@ public class StartupMetricsTest implements IDeviceTest, IRemoteTest {
     }
 
     /**
-     * Helper method to convert Map<String, Integer> to Map<String, String>.
+     * Helper method to convert Map&lt;String, Integer&gt; to Map&lt;String, String&gt;.
      *
      * @param input the {@link Map} to convert from
      * @return output the converted {@link Map}

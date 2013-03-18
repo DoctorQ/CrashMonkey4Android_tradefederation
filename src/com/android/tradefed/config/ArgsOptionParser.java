@@ -69,7 +69,7 @@ import java.util.ListIterator;
  * non-option positional argument.
  * <p/>
  * The fields corresponding to options are updated as their options are processed. Any remaining
- * positional arguments are returned as a List<String>.
+ * positional arguments are returned as a List&lt;String&gt;.
  * <p/>
  * Here's a simple example:
  * <p/>
@@ -100,12 +100,12 @@ import java.util.ListIterator;
  *     // Multiple options are added to the collection.
  *     // The collection field itself must be non-null.
  *     &#64;Option(name = "input-file", shortName = 'i')
- *     List<File> inputs = new ArrayList<File>();
+ *     List&lt;File&gt; inputs = new ArrayList&lt;File&gt;();
  *
  * }
  *
  * Options options = new Options();
- * List<String> posArgs = new OptionParser(options).parse("--input-file", "/tmp/file1.txt");
+ * List&lt;String&gt; posArgs = new OptionParser(options).parse("--input-file", "/tmp/file1.txt");
  * for (File inputFile : options.inputs) {
  *     if (!options.quiet) {
  *        ...

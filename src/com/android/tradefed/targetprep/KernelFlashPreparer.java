@@ -96,7 +96,7 @@ public class KernelFlashPreparer implements ITargetPreparer {
     /**
      * Creates a boot.img file using mkbootimg, ramdisk, and kernel files.
      * <p>
-     * Runs {@code mkbootimg --kernel <filename> --ramdisk <filename> -o <filename>} to create a
+     * Runs {@code mkbootimg --kernel (filename) --ramdisk (filename) -o (filename)} to create a
      * boot.img image file. Exposed for unit testing.
      * </p>
      *

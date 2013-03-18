@@ -73,8 +73,8 @@ public class FlashingResourcesParser implements IFlashingResourcesParser {
     private AndroidInfo mReqs;
 
     /**
-     * A typedef for {@code Map<String, MultiMap<String, String>>}.  Useful parsed format for
-     * storing the data encoded in ANDROID_INFO_FILE_NAME
+     * A typedef for {@code Map&lt;String, MultiMap&lt;String, String&gt;&gt;}.  Useful parsed
+     * format for storing the data encoded in ANDROID_INFO_FILE_NAME
      */
     @SuppressWarnings("serial")
     public static class AndroidInfo extends HashMap<String, MultiMap<String, String>> {}
