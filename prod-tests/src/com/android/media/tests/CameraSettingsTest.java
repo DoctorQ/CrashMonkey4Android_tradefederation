@@ -54,7 +54,7 @@ public class CameraSettingsTest implements IDeviceTest, IRemoteTest {
     private static final Pattern EXPECTED_LOOP_COUNT_PATTERN =
             Pattern.compile("(Total number of loops:)(\\s*)(\\d+)");
     private static final Pattern ACTUAL_LOOP_COUNT_PATTERN =
-            Pattern.compile("(No of loop:)(.*,)(\\d+)$");
+            Pattern.compile("(No of loop:)(.*,\\s)(\\d+)$");
 
     private static final String TEST_CLASS_NAME =
             "com.android.mediaframeworktest.stress.CameraStressTest";
