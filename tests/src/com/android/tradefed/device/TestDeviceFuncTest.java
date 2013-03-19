@@ -91,14 +91,46 @@ public class TestDeviceFuncTest extends DeviceTestCase {
      */
     public void testInstallUninstall() throws IOException, DeviceNotAvailableException {
         Log.i(LOG_TAG, "testInstallUninstall");
-        // TODO: somehow inject path to apk file to test
-//        File tmpFile = new File("<path toTradeFedTestApp.apk>");
-//        mTestDevice.uninstallPackage(TestAppConstants.TESTAPP_PACKAGE);
-//        assertFalse(mTestDevice.executeShellCommand("pm list packages").contains(
-//                TestAppConstants.TESTAPP_PACKAGE));
-//        mTestDevice.installPackage(tmpFile, true);
-//        assertTrue(mTestDevice.executeShellCommand("pm list packages").contains(
-//                TestAppConstants.TESTAPP_PACKAGE));
+
+        // use the wifi util apk
+        File tmpFile = WifiHelper.extractWifiUtilApk();
+        assertWifiApkInstall(tmpFile);
+    }
+
+    /**
+     * Verifies that the given wifi util apk can be installed and uninstalled successfully
+     */
+    void assertWifiApkInstall(File tmpFile) throws DeviceNotAvailableException {
+        try {
+            mTestDevice.uninstallPackage(WifiHelper.INSTRUMENTATION_PKG);
+            assertFalse(mTestDevice.getInstalledPackageNames().contains(
+                    WifiHelper.INSTRUMENTATION_PKG));
+            assertNull(mTestDevice.installPackage(tmpFile, false));
+            assertTrue(mTestDevice.getInstalledPackageNames().contains(
+                    WifiHelper.INSTRUMENTATION_PKG));
+            assertFalse("apk file was not cleaned up after install",
+                    mTestDevice.doesFileExist(String.format("/data/local/tmp/%s",
+                            tmpFile.getName())));
+        } finally {
+            FileUtil.deleteFile(tmpFile);
+        }
+    }
+
+    /**
+     * Test install and uninstall of package with spaces in file name
+     */
+    public void testInstallUninstall_space() throws IOException, DeviceNotAvailableException {
+        Log.i(LOG_TAG, "testInstallUninstall_space");
+
+        File tmpFile = WifiHelper.extractWifiUtilApk();
+        File tmpFileSpaces = null;
+        try {
+            tmpFileSpaces = FileUtil.createTempFile("wifi util (3)", ".apk");
+            FileUtil.copyFile(tmpFile, tmpFileSpaces);
+            assertWifiApkInstall(tmpFileSpaces);
+        } finally {
+            FileUtil.deleteFile(tmpFileSpaces);
+        }
     }
 
     /**

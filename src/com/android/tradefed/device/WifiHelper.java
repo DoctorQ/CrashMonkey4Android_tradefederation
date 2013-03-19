@@ -36,7 +36,7 @@ public class WifiHelper implements IWifiHelper {
 
     private static final String NULL_IP_ADDR = "0.0.0.0";
     private static final String INSTRUMENTATION_CLASS = ".WifiUtil";
-    private static final String INSTRUMENTATION_PKG = "com.android.tradefed.utils.wifi";
+    static final String INSTRUMENTATION_PKG = "com.android.tradefed.utils.wifi";
     static final String FULL_INSTRUMENTATION_NAME =
             String.format("%s/%s", INSTRUMENTATION_PKG, INSTRUMENTATION_CLASS);
 
@@ -73,10 +73,7 @@ public class WifiHelper implements IWifiHelper {
             // Attempt to install utility
             File apkTempFile = null;
             try {
-                apkTempFile = FileUtil.createTempFile(WIFIUTIL_APK_NAME, ".apk");
-                InputStream apkStream = getClass().getResourceAsStream(
-                    String.format("/apks/wifiutil/%s", WIFIUTIL_APK_NAME));
-                FileUtil.writeToFile(apkStream, apkTempFile);
+                apkTempFile = extractWifiUtilApk();
 
                 final String result = mDevice.installPackage(apkTempFile, false);
                 if (result == null) {
@@ -93,6 +90,18 @@ public class WifiHelper implements IWifiHelper {
                 FileUtil.deleteFile(apkTempFile);
             }
         }
+    }
+
+    /**
+     * Helper method to extract the wifi util apk from the classpath
+     */
+    static File extractWifiUtilApk() throws IOException {
+        File apkTempFile;
+        apkTempFile = FileUtil.createTempFile(WIFIUTIL_APK_NAME, ".apk");
+        InputStream apkStream = WifiHelper.class.getResourceAsStream(
+            String.format("/apks/wifiutil/%s", WIFIUTIL_APK_NAME));
+        FileUtil.writeToFile(apkStream, apkTempFile);
+        return apkTempFile;
     }
 
     /**
