@@ -535,6 +535,14 @@ public class StubTestDevice implements IManagedTestDevice {
      * {@inheritDoc}
      */
     @Override
+    public String getBuildFlavor() {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getIpAddress() throws DeviceNotAvailableException {
         // ignore
         return null;

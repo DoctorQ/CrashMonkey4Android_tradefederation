@@ -87,8 +87,9 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         CLog.i("Flashing device %s with build %s", device.getSerialNumber(),
                 deviceBuild.getDeviceBuildId());
 
-        // get system build id before booting into fastboot
+        // get system build id and build flavor before booting into fastboot
         String systemBuildId = device.getBuildId();
+        String systemBuildFlavor = device.getBuildFlavor();
 
         device.rebootIntoBootloader();
 
@@ -98,7 +99,7 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
         checkAndFlashBaseband(device, deviceBuild);
         flashUserData(device, deviceBuild);
         wipeCache(device);
-        checkAndFlashSystem(device, systemBuildId, deviceBuild);
+        checkAndFlashSystem(device, systemBuildId, systemBuildFlavor, deviceBuild);
     }
 
     /**
@@ -401,30 +402,58 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     /**
      * If needed, flash the system image on device.
      * <p/>
-     * Will only flash system if current version on device != required version.
+     * Please look at {@link #shouldFlashSystem(String, String, IDeviceBuildInfo)}
      * <p/>
      * Regardless of path chosen, after method execution device should be booting into userspace.
      *
      * @param device the {@link ITestDevice} to flash
-     * @param systemBuildId the current build id running on device
+     * @param systemBuildId the current build id running on the device
+     * @param systemBuildFlavor the current build flavor running on the device
      * @param deviceBuild the {@link IDeviceBuildInfo} that contains the system image to flash
      * @return <code>true</code> if system was flashed, <code>false</code> if it was skipped
      * @throws DeviceNotAvailableException if device is not available
      * @throws TargetSetupError if failed to flash bootloader
      */
     protected boolean checkAndFlashSystem(ITestDevice device, String systemBuildId,
-            IDeviceBuildInfo deviceBuild) throws DeviceNotAvailableException, TargetSetupError {
-        if (mForceSystemFlash ||
-                (systemBuildId != null && !systemBuildId.equals(deviceBuild.getDeviceBuildId()))) {
+            String systemBuildFlavor, IDeviceBuildInfo deviceBuild)
+                    throws DeviceNotAvailableException, TargetSetupError {
+       if (shouldFlashSystem(systemBuildId, systemBuildFlavor, deviceBuild)) {
             CLog.i("Flashing system %s", deviceBuild.getDeviceBuildId());
             flashSystem(device, deviceBuild);
             return true;
-        } else {
-            CLog.i("System is already version %s, skipping flashing", systemBuildId);
-            // reboot
-            device.rebootUntilOnline();
+       }
+       CLog.i("System is already version %s and build flavor %s, skipping flashing",
+               systemBuildId, systemBuildFlavor);
+       // reboot
+       device.rebootUntilOnline();
+       return false;
+    }
+
+    /**
+     * Helper method used to determine if we need to flash the system image.
+     *
+     * @param systemBuildId the current build id running on the device
+     * @param systemBuildFlavor the current build flavor running on the device
+     * @param deviceBuild the {@link IDeviceBuildInfo} that contains the system image to flash
+     * @return <code>true</code> if we should flash the system, <code>false</code> otherwise.
+     */
+    private boolean shouldFlashSystem(String systemBuildId, String systemBuildFlavor,
+            IDeviceBuildInfo deviceBuild) {
+        if (mForceSystemFlash) {
+            // Flag overrides all logic.
+            return true;
+        }
+        // Err on the side of caution, if we failed to get the build id or build flavor, force a
+        // flash of the system.
+        if (systemBuildFlavor == null || systemBuildId == null) {
+            return true;
+        }
+        // If we have the same build id and build flavor we don't need to flash it.
+        if (systemBuildId.equals(deviceBuild.getDeviceBuildId()) &&
+                systemBuildFlavor.equalsIgnoreCase(deviceBuild.getBuildFlavor())) {
             return false;
         }
+        return true;
     }
 
     /**

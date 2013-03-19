@@ -205,6 +205,13 @@ public interface ITestDevice {
     public String getBuildId();
 
     /**
+     * Retrieve the build flavor for the device.
+     *
+     * @return the build flavor or null if it could not be retrieved
+     */
+    public String getBuildFlavor();
+
+    /**
      * Retrieve the given cached property value from the device.
      * <p/>
      * Note this method should only be used for read-only properties that won't change after

@@ -74,8 +74,9 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
         Log.i(LOG_TAG, String.format("Flashing device %s with build %s",
                 device.getSerialNumber(), deviceBuild.getBuildId()));
 
-        // get system build id before booting into fastboot
+        // get system build id and build flavor before booting into fastboot
         String systemBuildId = device.getBuildId();
+        String systemBuildFlavor = device.getBuildFlavor();
 
         device.rebootIntoBootloader();
 
@@ -95,14 +96,14 @@ public class CdmaDeviceFlasher extends FastbootDeviceFlasher {
 
             // Flash system, boot, recovery.  Will reboot the device before returning.  After these
             // are flashed, all partitions are up-to-date.
-            checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            checkAndFlashSystem(device, systemBuildId, systemBuildFlavor, deviceBuild);
             // flashSystem will leave the device in fastboot; reboot into userspace
             device.reboot();
         } else {
             // Do the standard thing
             flashUserData(device, deviceBuild);
             wipeCache(device);
-            checkAndFlashSystem(device, systemBuildId, deviceBuild);
+            checkAndFlashSystem(device, systemBuildId, systemBuildFlavor, deviceBuild);
             device.reboot();
         }
     }
