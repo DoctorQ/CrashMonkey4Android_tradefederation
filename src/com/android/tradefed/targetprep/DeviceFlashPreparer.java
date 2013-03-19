@@ -28,6 +28,9 @@ import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
 
+import java.util.ArrayList;
+import java.util.Collection;
+
 /**
  * A {@link ITargetPreparer} that flashes an image on physical Android hardware.
  */
@@ -51,6 +54,10 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
     @Option(name="force-system-flash", description=
         "specify if system should always be flashed even if already running desired build.")
     private boolean mForceSystemFlash = false;
+
+    @Option(name="wipe-skip-list", description=
+        "list of /data subdirectories to NOT wipe when doing UserDataFlashOption.TESTS_ZIP")
+    private Collection<String> mDataWipeSkipList = new ArrayList<String>();
 
     /**
      * Sets the device boot time
@@ -104,6 +111,7 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         flasher.overrideDeviceOptions(device);
         flasher.setUserDataFlashOption(mUserDataFlashOption);
         flasher.setForceSystemFlash(mForceSystemFlash);
+        flasher.setDataWipeSkipList(mDataWipeSkipList);
         preEncryptDevice(device, flasher);
         flasher.flash(device, deviceBuild);
         device.waitForDeviceOnline();

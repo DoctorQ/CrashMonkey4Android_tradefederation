@@ -21,6 +21,8 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
+import java.util.Collection;
+
 /**
  * Installs tests from a tests zip file (as outputted by the build system) on
  * a device.
@@ -40,6 +42,19 @@ public interface ITestsZipInstaller {
 
     /**
      * Sets the list of paths under {@code /data} to avoid clearing.
+     *
+     * @param skipList the list of directories to skip.
+     * <p />
+     * Note that the granularity of the skip list is direct children of {@code /data}.
+     *
+     * @see #deleteData
+     */
+    public void setDataWipeSkipList(Collection<String> skipList);
+
+    /**
+     * Sets the list of paths under {@code /data} to avoid clearing.
+     *
+     * @param skipList the list of directories to skip.
      * <p />
      * Note that the granularity of the skip list is direct children of {@code /data}.
      *

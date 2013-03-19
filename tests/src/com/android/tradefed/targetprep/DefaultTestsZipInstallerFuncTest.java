@@ -18,21 +18,14 @@ package com.android.tradefed.targetprep;
 
 import com.android.tradefed.testtype.DeviceTestCase;
 
+
 /**
  * Functional tests for {@link DefaultTestsZipInstaller}.
  * <p/>
  * Note: this test is destructive, and shouldn't be included in the default suite.
  */
 public class DefaultTestsZipInstallerFuncTest extends DeviceTestCase {
-    private static final String SKIP_THIS = "media";
-
-    private DefaultTestsZipInstaller mZipInstaller;
-
-    @Override
-    protected void setUp() throws Exception {
-        super.setUp();
-        mZipInstaller = new DefaultTestsZipInstaller(SKIP_THIS);
-    }
+    private DefaultTestsZipInstaller mZipInstaller = new DefaultTestsZipInstaller("media");
 
     /**
      * Simple test to ensure wipe data succeeds

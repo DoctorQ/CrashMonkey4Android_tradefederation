@@ -20,6 +20,8 @@ import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 
+import java.util.Collection;
+
 /**
  * Flashes a device image on a device.
  */
@@ -64,6 +66,14 @@ public interface IDeviceFlasher {
      * @param flashOption
      */
     public void setUserDataFlashOption(UserDataFlashOption flashOption);
+
+    /**
+     * Sets the list of paths under {@code /data} to avoid clearing when using
+     * {@link ITestsZipInsaller}
+     * <p />
+     * Note that the granularity of the skip list is direct children of {@code /data}.
+     */
+    public void setDataWipeSkipList(Collection<String> dataWipeSkipList);
 
     /**
      * Gets whether the user data image should be flashed, wiped, or retained
