@@ -25,8 +25,8 @@
         <option name="target-count" value="10000" />
         <option name="throttle" value="100" />
         <option name="idle-time" value="0" />
-        <!-- 10 minute timeout for the monkey -->
-        <option name="monkey-timeout" value="10" />
+        <!-- 30 minute timeout for the monkey -->
+        <option name="monkey-timeout" value="30" />
         <option name="retry-on-failure" value="true" />
     </test>
 </configuration>

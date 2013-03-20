@@ -30,7 +30,8 @@ public class MonkeyMetricsTest extends MonkeyBase {
      */
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
-        MonkeyBrillopadForwarder brilloAnalyzer = new MonkeyBrillopadForwarder(listener);
+        MonkeyBrillopadForwarder brilloAnalyzer = new MonkeyBrillopadForwarder(listener,
+                getMonkeyTimeoutMs());
         super.run(brilloAnalyzer);
     }
 }

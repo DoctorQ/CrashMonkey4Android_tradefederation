@@ -103,6 +103,7 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
             };
 
             t.start();
+
             try {
                 t.join(timeout);
             } catch (InterruptedException e) {
@@ -202,11 +203,13 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
         listener.testRunStarted(getClass().getCanonicalName(), 1);
         listener.testStarted(id);
 
-        runMonkey(listener);
-
-        Map<String, String> empty = Collections.emptyMap();
-        listener.testEnded(id, empty);
-        listener.testRunEnded(System.currentTimeMillis() - startTime, empty);
+        try {
+            runMonkey(listener);
+        } finally {
+            Map<String, String> empty = Collections.emptyMap();
+            listener.testEnded(id, empty);
+            listener.testRunEnded(System.currentTimeMillis() - startTime, empty);
+        }
     }
 
     /**
@@ -254,7 +257,7 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
 
         try {
             long start = System.currentTimeMillis();
-            commandHelper.runCommand(mTestDevice, command, mMonkeyTimeout * 60 * 1000);
+            commandHelper.runCommand(mTestDevice, command, getMonkeyTimeoutMs());
             duration = System.currentTimeMillis() - start;
         } finally {
             outputBuilder.append(commandHelper.getOutput());
@@ -519,5 +522,12 @@ public class MonkeyBase implements IDeviceTest, IRemoteTest, IRetriableTest {
 
         // Missing count
         Assert.fail("Missing count");
+    }
+
+    /**
+     * Get the monkey timeout in milliseconds
+     */
+    protected long getMonkeyTimeoutMs() {
+        return mMonkeyTimeout * 60 * 1000;
     }
 }

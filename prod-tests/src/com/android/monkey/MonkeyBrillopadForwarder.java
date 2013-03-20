@@ -56,7 +56,8 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
         FALSE_COUNT("Monkey run reported an invalid count. " +
                 "Check logs for details."),
         UPTIME_FAILURE("Monkey output is indicating an invalid uptime. " +
-                "Device may have reset during run.");
+                "Device may have reset during run."),
+        TIMEOUT("Monkey did not complete within the specified time");
 
         private String mDescription;
 
@@ -75,9 +76,11 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
 
     private BugreportItem mBugreport = null;
     private MonkeyLogItem mMonkeyLog = null;
+    private final long mMonkeyTimeoutMs;
 
-    public MonkeyBrillopadForwarder(ITestInvocationListener listener) {
+    public MonkeyBrillopadForwarder(ITestInvocationListener listener, long monkeyTimeoutMs) {
         super(listener);
+        mMonkeyTimeoutMs = monkeyTimeoutMs;
     }
 
     /**
@@ -231,6 +234,9 @@ public class MonkeyBrillopadForwarder extends ResultForwarder {
             long totalDuration = monkeyLog.getTotalDuration();
             if (stopUptime - startUptime < totalDuration - MonkeyBase.UPTIME_BUFFER) {
                 return MonkeyStatus.UPTIME_FAILURE;
+            }
+            if (totalDuration >= mMonkeyTimeoutMs) {
+                return MonkeyStatus.TIMEOUT;
             }
         } catch (NullPointerException e) {
             return MonkeyStatus.UPTIME_FAILURE;
