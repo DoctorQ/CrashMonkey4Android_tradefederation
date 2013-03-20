@@ -29,6 +29,9 @@ import junit.framework.TestCase;
 import org.easymock.EasyMock;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,10 +51,11 @@ public class DefaultTestsZipInstallerTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         super.setUp();
-        mZipInstaller = new DefaultTestsZipInstaller(SKIP_THIS) {
+        ArrayList<String> skipThis = new ArrayList<String>(Arrays.asList(SKIP_THIS));
+        mZipInstaller = new DefaultTestsZipInstaller(skipThis) {
             @Override
             File[] getTestsZipDataFiles(File hostDir) {
-                return new File[] { new File("foo") };
+                return new File[] { new File(TEST_STRING) };
             }
 
             @Override
@@ -73,6 +77,24 @@ public class DefaultTestsZipInstallerTest extends TestCase {
         EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getBuildId()).andStubReturn("1");
         mDeviceBuild = new DeviceBuildInfo("1", TEST_STRING, TEST_STRING);
+    }
+
+    public void testSkipWipeFileSetup() throws Exception {
+        DefaultTestsZipInstaller testZipInstaller = new DefaultTestsZipInstaller();
+        Set<String> skipList = testZipInstaller.getDataWipeSkipList();
+        assertNull("Invalid wipe list set.", skipList);
+        testZipInstaller.setDataWipeSkipList("foo");
+        skipList = testZipInstaller.getDataWipeSkipList();
+        assertTrue("Invalid wipe list set. Missing value set.", skipList.contains("foo"));
+        Collection<String> skipArrayList = new ArrayList<String>();
+        skipArrayList.add("bar");
+        skipArrayList.add("foobar");
+        testZipInstaller.setDataWipeSkipList(skipArrayList);
+        skipList = testZipInstaller.getDataWipeSkipList();
+        assertFalse("Invalid wipe list set, should not contain old value.",
+                skipList.contains("foo"));
+        assertTrue("Invalid wipe list set. Missing value set.", skipList.contains("bar"));
+        assertTrue("Invalid wipe list set. Missing value set.", skipList.contains("foobar"));
     }
 
     public void testCantTouchFilesystem() throws Exception {

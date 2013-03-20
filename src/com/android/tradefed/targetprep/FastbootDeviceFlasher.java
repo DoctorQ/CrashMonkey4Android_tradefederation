@@ -24,6 +24,8 @@ import com.android.tradefed.util.CommandResult;
 import com.android.tradefed.util.CommandStatus;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,8 +38,10 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     private UserDataFlashOption mUserDataFlashOption = UserDataFlashOption.FLASH;
 
     private IFlashingResourcesRetriever mResourceRetriever;
-    // TODO: make this list configurable
-    private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller("media");
+
+    private ITestsZipInstaller mTestsZipInstaller = null;
+
+    private Collection<String> mDataWipeSkipList = null;
 
     private boolean mForceSystemFlash;
 
@@ -74,6 +78,18 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     }
 
     ITestsZipInstaller getTestsZipInstaller() {
+        // Lazily initialize the TestZipInstaller.
+        if (mTestsZipInstaller == null) {
+            if (mDataWipeSkipList == null) {
+                mDataWipeSkipList = new ArrayList<String> ();
+            }
+            if (mDataWipeSkipList.isEmpty()) {
+                // To maintain backwards compatibility. Keep media by default.
+                // TODO: deprecate and remove this.
+                mDataWipeSkipList.add("media");
+            }
+            mTestsZipInstaller = new DefaultTestsZipInstaller(mDataWipeSkipList);
+        }
         return mTestsZipInstaller;
     }
 
@@ -544,5 +560,21 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
     @Override
     public void setForceSystemFlash(boolean forceSystemFlash) {
         mForceSystemFlash = forceSystemFlash;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDataWipeSkipList(Collection<String> dataWipeSkipList) {
+        if (dataWipeSkipList == null) {
+            dataWipeSkipList = new ArrayList<String> ();
+        }
+        if(dataWipeSkipList.isEmpty()) {
+            // To maintain backwards compatibility.
+            // TODO: deprecate and remove.
+            dataWipeSkipList.add("media");
+        }
+        mDataWipeSkipList = dataWipeSkipList;
     }
 }

@@ -23,7 +23,9 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -38,6 +40,8 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     private UserDataFlashOption mFlashOption = UserDataFlashOption.TESTS_ZIP;
 
     private boolean mForceSystemFlash;
+
+    private Collection<String> mDataWipeSkipList = new ArrayList<String>();
 
     /**
      * {@inheritDoc}
@@ -152,5 +156,18 @@ public class SystemUpdaterDeviceFlasher implements IDeviceFlasher {
     @Override
     public void setForceSystemFlash(boolean forceSystemFlash) {
         mForceSystemFlash = forceSystemFlash;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void setDataWipeSkipList(Collection<String> dataWipeSkipList) {
+        if (dataWipeSkipList != null) {
+            mDataWipeSkipList = dataWipeSkipList;
+        }
+        if (mTestsZipInstaller != null) {
+            mTestsZipInstaller.setDataWipeSkipList(mDataWipeSkipList);
+        }
     }
 }

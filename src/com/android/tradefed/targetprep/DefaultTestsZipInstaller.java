@@ -30,6 +30,7 @@ import com.android.tradefed.util.RunUtil;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,11 +49,28 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
     private Set<String> mDataWipeSkipList;
 
     /**
+     * Default constructor.
+     */
+    public DefaultTestsZipInstaller() {
+    }
+
+    /**
      * This convenience constructor allows the caller to set the skip list directly, rather than
      * needing to call {@link #setDataWipeSkipList} separately.
      *
-     * @param skipList The list of paths under {@code /data} to keep when clearing the filesystem
-     * @see #setDataWipeSkipList
+     * @param skipList The collection of paths under {@code /data} to keep when clearing the
+     * filesystem @see #setDataWipeSkipList
+     */
+    public DefaultTestsZipInstaller(Collection<String> skipList) {
+        setDataWipeSkipList(skipList);
+    }
+
+    /**
+     * This convenience constructor allows the caller to set the skip list directly, rather than
+     * needing to call {@link #setDataWipeSkipList} separately.
+     *
+     * @param skipList The collection of paths under {@code /data} to keep when clearing the
+     * filesystem @see #setDataWipeSkipList
      */
     public DefaultTestsZipInstaller(String... skipList) {
         setDataWipeSkipList(skipList);
@@ -62,9 +80,26 @@ public class DefaultTestsZipInstaller implements ITestsZipInstaller {
      * {@inheritDoc}
      */
     @Override
+    public void setDataWipeSkipList(Collection<String> skipList) {
+        mDataWipeSkipList = new HashSet<String>(skipList.size());
+        mDataWipeSkipList.addAll(skipList);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public void setDataWipeSkipList(String... skipList) {
         mDataWipeSkipList = new HashSet<String>(skipList.length);
         mDataWipeSkipList.addAll(Arrays.asList(skipList));
+    }
+
+    /**
+     * Get the directory of directories to wipe, used for testing only.
+     * @return the set of directories to skip when wiping a directory
+     */
+    public Set<String> getDataWipeSkipList() {
+        return mDataWipeSkipList;
     }
 
     /**

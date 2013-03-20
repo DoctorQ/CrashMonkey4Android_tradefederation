@@ -16,16 +16,23 @@
 package com.android.tradefed.targetprep;
 
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.config.Option;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * A {@link ITargetPreparer} that wipes user data on the device.
  */
 public class EraseUserDataPreparer implements ITargetPreparer {
 
-    // TODO: make this list configurable
-    private ITestsZipInstaller mTestsZipInstaller = new DefaultTestsZipInstaller("media");
+    @Option(name="wipe-skip-list", description=
+            "list of /data subdirectories to NOT wipe when doing UserDataFlashOption.TESTS_ZIP")
+        private Collection<String> mDataWipeSkipList = new ArrayList<String>();
+
+    private ITestsZipInstaller mTestsZipInstaller = null;
 
     /**
      * {@inheritDoc}
@@ -34,6 +41,14 @@ public class EraseUserDataPreparer implements ITargetPreparer {
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             BuildError, DeviceNotAvailableException {
         device.enableAdbRoot();
+        if (mTestsZipInstaller == null) {
+            if (mDataWipeSkipList.isEmpty()) {
+                // Maintain backwards compatibility
+                // TODO: deprecate and remove
+                mDataWipeSkipList.add("media");
+            }
+            mTestsZipInstaller = new DefaultTestsZipInstaller(mDataWipeSkipList);
+        }
         mTestsZipInstaller.deleteData(device);
         device.reboot();
     }
