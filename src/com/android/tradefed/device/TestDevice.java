@@ -109,6 +109,9 @@ class TestDevice implements IManagedTestDevice {
     static final String DISMISS_DIALOG_CMD = "input keyevent 23";
 
     private static final String BUILD_ID_PROP = "ro.build.version.incremental";
+    private static final String PRODUCT_NAME_PROP = "ro.product.name";
+    private static final String BUILD_TYPE_PROP = "ro.build.type";
+
 
     /** The time in ms to wait for a command to complete. */
     private int mCmdTimeout = 2 * 60 * 1000;
@@ -429,6 +432,20 @@ class TestDevice implements IManagedTestDevice {
             return IBuildInfo.UNKNOWN_BUILD_ID;
         }
         return bid;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getBuildFlavor() {
+        String productName = getIDevice().getProperty(PRODUCT_NAME_PROP);
+        String buildType = getIDevice().getProperty(BUILD_TYPE_PROP);
+        if (productName == null || buildType == null) {
+            CLog.w("Could not get device %s build flavor.", getSerialNumber());
+            return null;
+        }
+        return String.format("%s-%s", productName, buildType);
     }
 
     /**
