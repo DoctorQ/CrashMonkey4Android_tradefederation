@@ -23,6 +23,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
+import com.android.tradefed.targetprep.IDeviceFlasher;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.FileUtil;
 
@@ -31,6 +32,7 @@ import junit.framework.TestCase;
 import org.easymock.EasyMock;
 
 import java.io.File;
+import java.util.Arrays;
 
 /**
  * Unit tests for {@link DeviceFlashPreparer}.
@@ -96,6 +98,7 @@ public class DeviceFlashPreparerTest extends TestCase {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.overrideDeviceOptions(mMockDevice);
         mMockFlasher.setForceSystemFlash(false);
+        mMockFlasher.setDataWipeSkipList(Arrays.asList(new String[]{}));
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);
@@ -126,6 +129,7 @@ public class DeviceFlashPreparerTest extends TestCase {
         mMockDevice.setRecoveryMode(RecoveryMode.ONLINE);
         mMockFlasher.overrideDeviceOptions(mMockDevice);
         mMockFlasher.setForceSystemFlash(false);
+        mMockFlasher.setDataWipeSkipList(Arrays.asList(new String[]{}));
         mMockFlasher.flash(mMockDevice, mMockBuildInfo);
         mMockDevice.waitForDeviceOnline();
         EasyMock.expect(mMockDevice.isEncryptionSupported()).andStubReturn(Boolean.TRUE);

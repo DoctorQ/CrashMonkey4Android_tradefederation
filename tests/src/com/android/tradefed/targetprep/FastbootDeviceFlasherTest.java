@@ -56,6 +56,7 @@ public class FastbootDeviceFlasherTest extends TestCase {
         EasyMock.expect(mMockDevice.getSerialNumber()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getProductType()).andStubReturn(TEST_STRING);
         EasyMock.expect(mMockDevice.getBuildId()).andStubReturn("1");
+        EasyMock.expect(mMockDevice.getBuildFlavor()).andStubReturn("test-debug");
         mMockBuildInfo = new DeviceBuildInfo("0", TEST_STRING, TEST_STRING);
         mMockBuildInfo.setDeviceImageFile(new File(TEST_STRING), "0");
         mMockBuildInfo.setUserDataImageFile(new File(TEST_STRING), "0");
