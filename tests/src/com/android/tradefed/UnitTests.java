@@ -69,6 +69,7 @@ import com.android.tradefed.targetprep.StopServicesSetupTest;
 import com.android.tradefed.targetprep.SystemUpdaterDeviceFlasherTest;
 import com.android.tradefed.testtype.DeviceTestCaseTest;
 import com.android.tradefed.testtype.DeviceTestSuite;
+import com.android.tradefed.testtype.FakeTestTest;
 import com.android.tradefed.testtype.GTestResultParserTest;
 import com.android.tradefed.testtype.GTestTest;
 import com.android.tradefed.testtype.HostTestTest;
@@ -175,6 +176,7 @@ public class UnitTests extends DeviceTestSuite {
 
         // testtype
         addTestSuite(DeviceTestCaseTest.class);
+        addTestSuite(FakeTestTest.class);
         addTestSuite(GTestResultParserTest.class);
         addTestSuite(GTestTest.class);
         addTestSuite(HostTestTest.class);
