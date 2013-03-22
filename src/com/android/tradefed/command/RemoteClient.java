@@ -76,15 +76,6 @@ public class RemoteClient {
     }
 
     /**
-     * Send a 'remove all devices from global ignore filter' command
-     *
-     * @throws IOException
-     */
-    public boolean sendUnfilterAll() throws IOException {
-        return sendCommand(RemoteManager.UNFILTER, RemoteManager.ALL_DEVICES);
-    }
-
-    /**
      * Send a 'add command' command.
      *
      * @param commandArgs

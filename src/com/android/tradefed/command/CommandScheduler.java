@@ -521,7 +521,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     private void closeRemoteClient() {
         if (mRemoteClient != null) {
             try {
-                mRemoteClient.sendUnfilterAll();
                 mRemoteClient.sendClose();
                 mRemoteClient.close();
             } catch (IOException e) {
