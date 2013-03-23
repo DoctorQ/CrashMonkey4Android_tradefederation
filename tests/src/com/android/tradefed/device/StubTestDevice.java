@@ -403,6 +403,13 @@ public class StubTestDevice implements IManagedTestDevice {
         return false;
     }
 
+    @Override
+    public boolean connectToWifiNetworkIfNeeded(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException {
+        // ignore
+        return false;
+    }
+
     /**
      * {@inheritDoc}
      */

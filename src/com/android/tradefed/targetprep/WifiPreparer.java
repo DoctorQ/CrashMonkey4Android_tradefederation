@@ -22,7 +22,9 @@ import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
 
 /**
- * A {@link ITargetPreparer} that configures wifi on the device
+ * A {@link ITargetPreparer} that configures wifi on the device if necessary.
+ * <p/>
+ * Unlike {@link DeviceSetup}, this preparer works when adb is not root aka user builds.
  */
 public class WifiPreparer implements ITargetPreparer {
 
@@ -44,7 +46,7 @@ public class WifiPreparer implements ITargetPreparer {
     public void setUp(ITestDevice device, IBuildInfo buildInfo) throws TargetSetupError,
             BuildError, DeviceNotAvailableException {
         for (int i=1; i <= mWifiAttempts; i++) {
-            if (!device.connectToWifiNetwork(mWifiNetwork, mWifiPsk)) {
+            if (!device.connectToWifiNetworkIfNeeded(mWifiNetwork, mWifiPsk)) {
                 CLog.w("Failed to connect to wifi network %s on %s on attempt %d of %d",
                         mWifiNetwork, device.getSerialNumber(), i, mWifiAttempts);
 

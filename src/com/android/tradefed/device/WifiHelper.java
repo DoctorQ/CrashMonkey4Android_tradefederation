@@ -210,15 +210,10 @@ public class WifiHelper implements IWifiHelper {
      */
     @Override
     public boolean waitForIp(long timeout) throws DeviceNotAvailableException {
-        if (!asBool(runWifiUtil("isWifiEnabled"))) {
-            return false;
-        }
-
         long startTime = System.currentTimeMillis();
 
         while (System.currentTimeMillis() < (startTime + timeout)) {
-            final String ip = getIpAddress();
-            if (ip != null && !ip.isEmpty() && !NULL_IP_ADDR.equals(ip)) {
+            if (hasValidIp()) {
                 return true;
             }
             getRunUtil().sleep(getPollTime());
@@ -230,8 +225,25 @@ public class WifiHelper implements IWifiHelper {
      * {@inheritDoc}
      */
     @Override
+    public boolean hasValidIp() throws DeviceNotAvailableException {
+        final String ip = getIpAddress();
+        return ip != null && !ip.isEmpty() && !NULL_IP_ADDR.equals(ip);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public String getIpAddress() throws DeviceNotAvailableException {
         return runWifiUtil("getIpAddress");
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getSSID() throws DeviceNotAvailableException {
+        return runWifiUtil("getSSID");
     }
 
     /**

@@ -1646,17 +1646,12 @@ class TestDevice implements IManagedTestDevice {
                         getSerialNumber());
                 return false;
             }
-            // wait for ping success
-            for (int i = 0; i < 10; i++) {
-                String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
-                if (pingOutput.contains("1 packets transmitted, 1 received")) {
-                    return true;
-                }
-                getRunUtil().sleep(1 * 1000);
+            if (!checkConnectivity()) {
+                CLog.e("ping unsuccessful after connecting to wifi network %s on %s", wifiSsid,
+                        getSerialNumber());
+                return false;
             }
-            CLog.e("ping unsuccessful after connecting to wifi network %s on %s", wifiSsid,
-                    getSerialNumber());
-            return false;
+            return true;
         } catch (TargetSetupError e) {
             CLog.e(e);
             return false;
@@ -1664,10 +1659,65 @@ class TestDevice implements IManagedTestDevice {
     }
 
     /**
+     * Check that device has network connectivity.
+     * <p/>
+     * Currently executes a ping to www.google.com
+     */
+    boolean checkConnectivity() throws DeviceNotAvailableException {
+        // wait for ping success
+        for (int i = 0; i < 10; i++) {
+            String pingOutput = executeShellCommand("ping -c 1 -w 5 www.google.com");
+            if (pingOutput.contains("1 packets transmitted, 1 received")) {
+                return true;
+            }
+            getRunUtil().sleep(1 * 1000);
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean connectToWifiNetworkIfNeeded(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException {
+        try {
+            if (!checkWifiConnection(wifiSsid))  {
+                disconnectFromWifi();
+                return connectToWifiNetwork(wifiSsid, wifiPsk);
+            }
+            return true;
+        } catch (TargetSetupError e) {
+            CLog.e(e);
+            return false;
+        }
+    }
+
+    /**
+     * Checks that the device is currently successfully connected to given wifi SSID.
+     *
+     * @param wifiSSID the wifi ssid
+     * @return <code>true</code> if device is currently connected to wifiSSID and has network
+     *         connectivity. <code>false</code> otherwise
+     * @throws TargetSetupError if error occurred obtaining wifi info
+     * @throws DeviceNotAvailableException if connection with device was lost
+     */
+    boolean checkWifiConnection(String wifiSSID) throws TargetSetupError,
+            DeviceNotAvailableException {
+        CLog.i("Checking connection with wifi network %s on %s", wifiSSID, getSerialNumber());
+        IWifiHelper wifi = createWifiHelper();
+        // getSSID returns SSID as "SSID"
+        String quotedSSID = String.format("\"%s\"", wifiSSID);
+        return wifi.isWifiEnabled() && quotedSSID.equals(wifi.getSSID()) && wifi.hasValidIp() &&
+                checkConnectivity();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
     public boolean disconnectFromWifi() throws DeviceNotAvailableException {
+        CLog.i("Disconnecting from wifi on %s", getSerialNumber());
         try {
             IWifiHelper wifi = createWifiHelper();
             wifi.removeAllNetworks();
