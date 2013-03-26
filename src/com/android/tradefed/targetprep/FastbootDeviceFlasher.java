@@ -562,6 +562,8 @@ public class FastbootDeviceFlasher implements IDeviceFlasher  {
      */
     private String handleFastbootResult(ITestDevice device, CommandResult result, String... cmdArgs)
             throws TargetSetupError {
+        CLog.v("fastboot stdout: " + result.getStdout());
+        CLog.v("fastboot stderr: " + result.getStderr());
         // TODO: consider re-trying
         if (result.getStatus() != CommandStatus.SUCCESS || result.getStderr().contains("FAILED")) {
             throw new TargetSetupError(String.format(
