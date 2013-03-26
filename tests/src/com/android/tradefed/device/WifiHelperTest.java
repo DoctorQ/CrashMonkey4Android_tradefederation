@@ -80,9 +80,6 @@ public class WifiHelperTest extends TestCase {
      * succeeds on second.
      */
     public void testWaitForIp_failThenPass() throws Exception {
-        // expect 'iswifienabled' check
-        MockTestDeviceHelper.injectShellResponse(mMockDevice, null,
-                "INSTRUMENTATION_RESULT: result=true", false);
         MockTestDeviceHelper.injectShellResponse(mMockDevice, null, "", false);
         MockTestDeviceHelper.injectShellResponse(mMockDevice, null,
                 "INSTRUMENTATION_RESULT: result=1.2.3.4", false);
