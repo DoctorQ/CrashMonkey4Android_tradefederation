@@ -644,6 +644,19 @@ public interface ITestDevice {
             throws DeviceNotAvailableException;
 
     /**
+     * A variant of {@link #connectToWifiNetwork(String, String)} that only connects if not
+     * currently successfully connected to the given network.
+     *
+     * @param wifiSsid
+     * @param wifiPsk
+     * @return <code>true</code> if connected to wifi network successfully. <code>false</code>
+     *         otherwise
+     * @throws DeviceNotAvailableException
+     */
+    public boolean connectToWifiNetworkIfNeeded(String wifiSsid, String wifiPsk)
+            throws DeviceNotAvailableException;
+
+    /**
      * Disconnects from a wifi network.
      * <p/>
      * Removes all networks from known networks list and disables wifi.

@@ -166,6 +166,11 @@ public class WifiUtil extends Instrumentation {
 
                 result.putString("result", String.format("%s.%s.%s.%s", a, b, c, d));
 
+            } else if ("getSSID".equals(method)) {
+                final WifiInfo info = mWifiManager.getConnectionInfo();
+
+                result.putString("result", info.getSSID());
+
             } else if ("removeAllNetworks".equals(method)) {
                 boolean success = true;
                 List<WifiConfiguration> netlist = mWifiManager.getConfiguredNetworks();

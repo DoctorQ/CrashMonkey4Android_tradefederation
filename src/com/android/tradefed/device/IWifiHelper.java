@@ -96,6 +96,14 @@ interface IWifiHelper {
     String getIpAddress() throws DeviceNotAvailableException;
 
     /**
+     * Gets the service set identifier of the currently connected network.
+     *
+     * @see http://developer.android.com/reference/android/net/wifi/WifiInfo.html#getSSID()
+     * @throws DeviceNotAvailableException
+     */
+    String getSSID() throws DeviceNotAvailableException;
+
+    /**
      * Removes all known networks.
      *
      * @throws DeviceNotAvailableException
@@ -124,4 +132,9 @@ interface IWifiHelper {
      */
     boolean waitForWifiEnabled(long timeout) throws DeviceNotAvailableException;
 
+    /**
+     * @return <code>true</code> if device has a valid IP address
+     * @throws DeviceNotAvailableException
+     */
+    boolean hasValidIp() throws DeviceNotAvailableException;
 }
