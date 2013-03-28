@@ -85,6 +85,10 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
             "collector, so use the EACH setting with due caution.")
     private BugreportCollector.Freq mBugreportFrequency = null;
 
+    @Option(name = "class",
+            description = "Only run tests in specified class")
+    private String mTestClass = null;
+
     private List<InstrumentationTest> mTests = null;
 
     /**
@@ -168,6 +172,7 @@ public class InstalledInstrumentationsTest implements IDeviceTest, IResumableTes
                 sendCoverage(test.getPackageName(), test.getCoverageTarget(), listener);
             }
             test.setDevice(getDevice());
+            test.setClassName(mTestClass);
             test.run(listener);
             // test completed, remove from list
             mTests.remove(0);
