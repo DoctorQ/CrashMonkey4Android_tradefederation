@@ -46,7 +46,7 @@ public interface IBuildInfo {
      * Return complete name for the build being tested.
      * <p/>
      * A common implementation is to construct the build target name from a combination of
-     * the build flavor and branch name. (ie <branch name>-<build flavor>)
+     * the build flavor and branch name. [ie (branch name)-(build flavor)]
      */
     public String getBuildTargetName();
 
@@ -54,7 +54,7 @@ public interface IBuildInfo {
      * Optional method to return the type of build being tested.
      * <p/>
      * A common implementation for Android platform builds is to return
-     * <build product>-<build os>-<build variant>.
+     * (build product)-(build os)-(build variant).
      * ie generic-linux-userdebug
      *
      * @return the build flavor or <code>null</code> if unset/not applicable

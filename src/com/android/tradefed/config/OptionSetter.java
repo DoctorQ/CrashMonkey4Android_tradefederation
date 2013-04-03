@@ -44,9 +44,9 @@ import java.util.Map;
  * File option fields are supported by simply wrapping the string argument in a File object without
  * testing for the existence of the file.
  * <p/>
- * Parameterized Collection fields such as List<File> and Set<String> are supported as long as the
- * parameter type is otherwise supported by the option setter. The collection field should be
- * initialized with an appropriate collection instance.
+ * Parameterized Collection fields such as List&lt;File&gt; and Set&lt;String&gt; are supported as
+ * long as the parameter type is otherwise supported by the option setter. The collection field
+ * should be initialized with an appropriate collection instance.
  * <p/>
  * All fields will be processed, including public, protected, default (package) access, private and
  * inherited fields.

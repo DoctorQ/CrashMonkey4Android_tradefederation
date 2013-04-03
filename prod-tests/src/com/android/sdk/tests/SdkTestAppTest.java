@@ -164,7 +164,7 @@ public class SdkTestAppTest implements IRemoteTest, IBuildReceiver {
 
     /**
      * Build test app, and report results to the <var>listener</var> using test name
-     * 'com.android.tradefed.testtype.SdkTestAppTest#<testAppName><sdkTarget>'
+     * 'com.android.tradefed.testtype.SdkTestAppTest#(testAppName)(sdkTarget)'
      *
      * @param target the sdk target to build against
      * @param listener the {@link ITestInvocationListener}

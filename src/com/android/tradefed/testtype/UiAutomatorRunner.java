@@ -41,7 +41,7 @@ import java.util.Map.Entry;
  * test output format so that existing parsing code in ddmlib and TF can be reused.
  *
  * Essentially, this is a wrapper around this command:
- * adb shell uiautomator runtest <jar files> -e class <test classes> ...
+ * adb shell uiautomator runtest (jar files) -e class (test classes) ...
  *
  */
 public class UiAutomatorRunner implements IRemoteAndroidTestRunner {

@@ -499,7 +499,7 @@ public class ArgsOptionParserTest extends TestCase {
     }
 
     /**
-     * Test the "--no-<bool option>" syntax
+     * Test the "--no-(bool option)" syntax
      */
     public void testParse_boolFalse() throws ConfigurationException {
         BooleanTrueOptionSource object = new BooleanTrueOptionSource();

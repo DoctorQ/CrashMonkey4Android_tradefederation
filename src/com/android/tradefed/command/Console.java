@@ -86,7 +86,7 @@ public class Console extends Thread {
     private boolean mShouldExit = false;
     private List<String> mMainArgs = new ArrayList<String>(0);
 
-    /** A convenience type for List<List<String>> */
+    /** A convenience type for <code>{@literal List<List<String>>}</code> */
     @SuppressWarnings("serial")
     protected static class CaptureList extends LinkedList<List<String>> {
         CaptureList() {

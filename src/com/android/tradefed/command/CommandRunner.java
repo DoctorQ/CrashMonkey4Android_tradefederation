@@ -25,7 +25,7 @@ import com.android.tradefed.config.GlobalConfiguration;
  * <p/>
  * Intended for use with a debugger and other non-interactive modes of operation.
  * <p/>
- * Expected arguments: [commands options] <config to run>
+ * Expected arguments: [commands options] (config to run)
  */
 public class CommandRunner {
     private ICommandScheduler mScheduler;
