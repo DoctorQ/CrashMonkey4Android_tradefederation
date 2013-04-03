@@ -429,7 +429,7 @@ public class CameraStressTest implements IDeviceTest, IRemoteTest {
         public void testParse_new() throws Exception {
             String output = join(
                     "Camera Stress Test result",
-                    "/auto/android-test/data/CameraStressTest_git_honeycomb-mr1-release_" +
+                    "/folder/subfolder/data/CameraStressTest_git_honeycomb-mr1-release_" +
                         "1700614441c02617_109535_CameraStressOut.txt",
                     "Back Camera Image Capture",
                     "No of loops :100",
