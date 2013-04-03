@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * class that extracts info from apk by parsing output of 'aapt dump badging'.
+ * Class that extracts info from apk by parsing output of 'aapt dump badging'.
  * <p/>
  * aapt must be on PATH
  */
@@ -44,13 +44,18 @@ public class AaptParser {
         }
     }
 
+    /**
+     * Parse info from the apk.
+     *
+     * @param apkFile the apk file
+     * @return the {@link AaptParser} or <code>null</code> if failed to extract the information
+     */
     public static AaptParser parse(File apkFile) {
         CommandResult result = RunUtil.getDefault().runTimedCmd(5000, "aapt", "dump", "badging",
                 apkFile.getAbsolutePath());
         if (result.getStatus() == CommandStatus.SUCCESS) {
             AaptParser p = new AaptParser();
             p.parse(result.getStdout());
-
             return p;
         }
         CLog.e("Failed to run aapt on %s", apkFile.getAbsoluteFile());
@@ -60,4 +65,5 @@ public class AaptParser {
     public String getPackageName() {
         return mPackageName;
     }
+
 }

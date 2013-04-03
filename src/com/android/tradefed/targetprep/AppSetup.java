@@ -23,12 +23,16 @@ import com.android.tradefed.config.OptionClass;
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.util.AaptParser;
 
+import java.io.File;
 import java.util.HashSet;
 import java.util.Set;
 
 /**
  * A {@link ITargetPreparer} that installs an apk and its tests.
+ * <p/>
+ * Requires 'aapt' on PATH when --uninstall is set
  */
 @OptionClass(alias="app-setup")
 public class AppSetup implements ITargetPreparer, ITargetCleaner {
@@ -39,12 +43,20 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
     @Option(name = "install", description = "install all apks in build.")
     private boolean mInstall = true;
 
-    @Option(name = "uninstall", description = "uninstall all apks after test completes.")
+    @Option(name = "uninstall", description =
+            "uninstall only apks in build after test completes.")
     private boolean mUninstall = true;
 
+    @Option(name = "uninstall-all", description =
+            "uninstall all unnstallable apks found on device after test completes.")
+    private boolean mUninstallAll = false;
+
     @Option(name = "skip-uninstall-pkg", description =
-            "force retention of this package when --uninstall is set.")
+            "force retention of this package when --uninstall-all is set.")
     private Set<String> mSkipUninstallPkgs = new HashSet<String>();
+
+    /** contains package names of installed apps. Used for uninstall */
+    private Set<String> mInstalledPkgs = new HashSet<String>();
 
     /**
      * {@inheritDoc}
@@ -59,7 +71,7 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         CLog.i("Performing setup on %s", device.getSerialNumber());
 
         // double check that device is clean, in case it has unexpected cruft on it
-        if (mUninstall && !uninstallApps(device)) {
+        if (mUninstallAll && !uninstallAllApps(device)) {
             // cannot cleanup device! Bad things may happen in future tests. Take device out
             // of service
             // TODO: in future, consider doing more sophisticated recovery operations
@@ -75,9 +87,25 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
                             "Failed to install %s on %s. Reason: %s",
                             apkFile.getFile().getName(), device.getSerialNumber(), result));
                 }
+                if (mUninstall && !mUninstallAll) {
+                    addPackageNameToUninstall(apkFile.getFile());
+                }
             }
         }
 
+    }
+
+    private void addPackageNameToUninstall(File apkFile) throws TargetSetupError {
+        AaptParser aaptParser = AaptParser.parse(apkFile);
+        if (aaptParser == null) {
+            throw new TargetSetupError(String.format("Failed to extract info from '%s' using aapt",
+                    apkFile.getAbsolutePath()));
+        }
+        if (aaptParser.getPackageName() == null) {
+            throw new TargetSetupError(String.format(
+                    "Failed to find package name for '%s' using aapt", apkFile.getAbsolutePath()));
+        }
+        mInstalledPkgs.add(aaptParser.getPackageName());
     }
 
     /**
@@ -90,7 +118,16 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         if (mReboot) {
             device.reboot();
         }
-        if (mUninstall && !uninstallApps(device)) {
+        if (mUninstall && !mUninstallAll) {
+            for (String pkgName : mInstalledPkgs) {
+                String result = device.uninstallPackage(pkgName);
+                if (result != null) {
+                    CLog.e("Failed to uninstall %s: %s", pkgName, result);
+                    // TODO: consider throwing here
+                }
+            }
+        }
+        if (mUninstallAll && !uninstallAllApps(device)) {
             // cannot cleanup device! Bad things may happen in future tests. Take device out
             // of service
             // TODO: in future, consider doing more sophisticated recovery operations
@@ -99,12 +136,12 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         }
     }
 
-    private boolean uninstallApps(ITestDevice device) throws DeviceNotAvailableException {
+    private boolean uninstallAllApps(ITestDevice device) throws DeviceNotAvailableException {
         // make multiple attempts to uninstall apps, aborting if failed
         // TODO: consider moving this to ITestDevice, so more sophisticated recovery attempts
         // can be performed
         for (int i = 0; i < 3; i++) {
-            Set<String> pkgs = getAppsToUninstall(device);
+            Set<String> pkgs = getAllAppsToUninstall(device);
             if (pkgs.isEmpty()) {
                 return true;
             }
@@ -118,10 +155,10 @@ public class AppSetup implements ITargetPreparer, ITargetCleaner {
         }
         // check getAppsToUninstall one more time, cause last attempt through loop might have been
         // successful
-        return getAppsToUninstall(device).isEmpty();
+        return getAllAppsToUninstall(device).isEmpty();
     }
 
-    private Set<String> getAppsToUninstall(ITestDevice device) throws DeviceNotAvailableException {
+    private Set<String> getAllAppsToUninstall(ITestDevice device) throws DeviceNotAvailableException {
         Set<String> pkgs = device.getUninstallablePackageNames();
         pkgs.removeAll(mSkipUninstallPkgs);
         return pkgs;
