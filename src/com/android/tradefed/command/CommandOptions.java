@@ -51,15 +51,40 @@ public class CommandOptions implements ICommandOptions {
             "the minimum invocation time in ms when in loop mode.")
     private long mMinLoopTime = 10 * 60 * 1000;
 
-    @Option(name = "loop", description = "keep running continuously.",
-            importance = Importance.ALWAYS)
-    private boolean mLoopMode = false;
+    @Option(name = "loop", description = "keep running continuously.")
+    private boolean mLoopMode = true;
 
     @Option(name = "all-devices", description =
             "fork this command to run on all connected devices.")
     private boolean mAllDevices = false;
 
-    /**
+    @Option(name = "need-prepare", description = "is needed to prepare device")
+    private boolean mNeedPrepare = true;
+    
+//    @Option(name = "need-flash", description = "is needed to fastboot device")
+//    private boolean mNeedFlash = true;
+    
+    @Option(name = "need-tearDown", description = "is needed to clean device")
+    private boolean mNeedTearDown = true;
+    
+    
+    public boolean isNeedPrepare() {
+		return mNeedPrepare;
+	}
+
+	public void setNeedPrepare(boolean needPrepare) {
+		mNeedPrepare = needPrepare;
+	}
+
+	public boolean isNeedTearDown() {
+		return mNeedTearDown;
+	}
+
+	public void setNeedTearDown(boolean needTearDown) {
+		mNeedTearDown = needTearDown;
+	}
+
+	/**
      * Set the help mode for the config.
      * <p/>
      * Exposed for testing.

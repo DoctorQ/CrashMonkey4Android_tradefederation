@@ -17,6 +17,7 @@
 package com.android.tradefed.targetprep;
 
 import com.android.ddmlib.Log;
+import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.build.IBuildInfo;
 import com.android.tradefed.build.IDeviceBuildInfo;
 import com.android.tradefed.config.Option;
@@ -24,6 +25,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.device.ITestDevice.RecoveryMode;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.targetprep.IDeviceFlasher.UserDataFlashOption;
 import com.android.tradefed.util.IRunUtil;
 import com.android.tradefed.util.RunUtil;
@@ -114,7 +116,17 @@ public abstract class DeviceFlashPreparer implements ITargetPreparer {
         flasher.setDataWipeSkipList(mDataWipeSkipList);
         preEncryptDevice(device, flasher);
         flasher.flash(device, deviceBuild);
-        device.waitForDeviceOnline();
+    	//after flash, the device may not be online due to driver or other error
+        try {
+        	//等待设备开机处于online状态
+        	CLog.logAndDisplay(LogLevel.DEBUG, String.format("OS have been setup on %s,device is starting up,please wait...", device.getSerialNumber()));
+        	device.waitForDeviceOnline();
+        } catch (DeviceNotAvailableException e) {
+            // assume this is a build problem
+            throw new DeviceNotAvailableOnBootError(String.format(
+                    "Device %s did not become online after flashing %s",
+                    device.getSerialNumber(), deviceBuild.getDeviceBuildId()));
+        }
         postEncryptDevice(device, flasher);
         // only want logcat captured for current build, delete any accumulated log data
         device.clearLogcat();

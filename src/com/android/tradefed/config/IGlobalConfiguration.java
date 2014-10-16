@@ -17,6 +17,7 @@
 package com.android.tradefed.config;
 
 import com.android.tradefed.device.DeviceManager;
+import com.android.tradefed.device.IDeviceLabelMapper;
 import com.android.tradefed.device.IDeviceMonitor;
 import com.android.tradefed.device.IDeviceSelection;
 
@@ -106,5 +107,8 @@ public interface IGlobalConfiguration {
      */
     public IDeviceSelection getDeviceRequirements();
 
+    public void setSerialToDeviceLabelMapper(IDeviceLabelMapper deviceMapper);
+    
+    public IDeviceLabelMapper getDeviceLabelMapper();
 
 }

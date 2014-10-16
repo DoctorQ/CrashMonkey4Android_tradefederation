@@ -83,6 +83,16 @@ public class StreamUtil {
      * @return a {@link String} containing the stream contents
      * @throws IOException if failure occurred reading the stream
      */
+    public static String getStringFromStream(InputStream stream, String charset) throws IOException {
+        Reader ir = new BufferedReader(new InputStreamReader(stream, charset));
+        int irChar = -1;
+        StringBuilder builder = new StringBuilder();
+        while ((irChar = ir.read()) != -1) {
+            builder.append((char)irChar);
+        }
+        return builder.toString();
+    }
+
     public static String getStringFromStream(InputStream stream) throws IOException {
         Reader ir = new BufferedReader(new InputStreamReader(stream));
         int irChar = -1;
@@ -92,7 +102,7 @@ public class StreamUtil {
         }
         return builder.toString();
     }
-
+    
     /**
      * Retrieves a {@link ByteArrayList} from a byte stream.
      *
@@ -123,9 +133,11 @@ public class StreamUtil {
     public static void copyStreams(InputStream inStream, OutputStream outStream)
             throws IOException {
 
+    	//fix buffer
+    	byte[] buf = new byte[8192];
         int data = -1;
-        while ((data = inStream.read()) != -1) {
-            outStream.write(data);
+        while ((data = inStream.read(buf)) != -1) {
+            outStream.write(buf,0,data);
         }
     }
 

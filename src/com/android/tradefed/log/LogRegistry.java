@@ -17,6 +17,9 @@ package com.android.tradefed.log;
 
 import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
+import com.android.tradefed.config.Option;
+import com.android.tradefed.config.OptionClass;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
 import com.android.tradefed.util.FileUtil;
 import com.android.tradefed.util.StreamUtil;
@@ -38,13 +41,13 @@ import java.util.Map;
  * logger, and thus will need to register its own logger with the LogRegistry if it wants to log
  * output.
  */
+@OptionClass(alias="logreg")
 public class LogRegistry implements ILogRegistry {
     private static final String LOG_TAG = "LogRegistry";
     private static LogRegistry mLogRegistry = null;
     private Map<ThreadGroup, ILeveledLogOutput> mLogTable =
             new Hashtable<ThreadGroup, ILeveledLogOutput>();
     private FileLogger mGlobalLogger;
-
     /**
      * Package-private constructor; callers should use {@link #getLogRegistry} to get an instance of
      * the {@link LogRegistry}.
@@ -223,7 +226,7 @@ public class LogRegistry implements ILogRegistry {
         try {
             File tradefedLog = FileUtil.createTempFile(filePrefix, ".txt");
             FileUtil.writeToFile(logData.createInputStream(), tradefedLog);
-            System.out.println(String.format("Saved log to %s", tradefedLog.getAbsolutePath()));
+            CLog.logAndDisplay(LogLevel.INFO, String.format("Saved log to %s", tradefedLog.getAbsolutePath()));
         } catch (IOException e) {
             // ignore
         }

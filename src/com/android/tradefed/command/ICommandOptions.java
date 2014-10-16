@@ -21,6 +21,14 @@ package com.android.tradefed.command;
  */
 public interface ICommandOptions {
 
+	public boolean isNeedPrepare();
+	
+	public void setNeedPrepare(boolean needPrepare);
+	
+	public boolean isNeedTearDown();
+	
+	public void setNeedTearDown(boolean needTearDown);
+	
     /**
      * Returns <code>true</code> if abbreviated help mode has been requested
      */

@@ -167,6 +167,7 @@ public class Configuration implements IConfiguration {
     }
 
     /**
+     * <device_recovery>标签的内容
      * {@inheritDoc}
      */
     @Override
@@ -228,7 +229,7 @@ public class Configuration implements IConfiguration {
      */
     @Override
     public Object getConfigurationObject(String typeName) {
-        List<?> configObjects = getConfigurationObjectList(typeName);
+         List<?> configObjects = getConfigurationObjectList(typeName);
         if (configObjects == null) {
             return null;
         }

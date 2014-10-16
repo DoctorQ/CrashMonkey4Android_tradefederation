@@ -118,7 +118,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
             // first attempt to load cached config def
             ConfigurationDef def = mConfigDefMap.get(name);
             if (def == null) {
-                // not found - load from file
+                // not found - load from file,解析cts.xml配置文件里的信息
                 def = loadConfiguration(name);
                 mConfigDefMap.put(name, def);
             }
@@ -220,6 +220,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
     public IGlobalConfiguration createGlobalConfigurationFromArgs(String[] arrayArgs,
             List<String> remainingArgs) throws ConfigurationException {
         List<String> listArgs = new ArrayList<String>(arrayArgs.length);
+        //读取tf_global_config.xml配置文件里的信息
         IGlobalConfiguration config =
                 internalCreateGlobalConfigurationFromArgs(arrayArgs, listArgs);
         remainingArgs.addAll(config.setOptionsFromCommandLineArgs(listArgs));
@@ -245,6 +246,7 @@ public class ConfigurationFactory implements IConfigurationFactory {
         optionArgsRef.addAll(Arrays.asList(arrayArgs));
         // first arg is config name
         final String configName = optionArgsRef.remove(0);
+        //读取tf_global_config.xml中内容,option属性存到mOptionList中,类存到mObjectClassMap中
         ConfigurationDef configDef = getConfigurationDef(configName, false);
         return configDef.createGlobalConfiguration();
     }

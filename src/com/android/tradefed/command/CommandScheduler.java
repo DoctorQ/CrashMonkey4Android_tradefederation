@@ -28,6 +28,7 @@ import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.device.DeviceUnresponsiveException;
 import com.android.tradefed.device.IDeviceManager;
 import com.android.tradefed.device.IDeviceManager.FreeDeviceState;
+import com.android.tradefed.device.IDeviceSelection;
 import com.android.tradefed.device.ITestDevice;
 import com.android.tradefed.invoker.IRescheduler;
 import com.android.tradefed.invoker.ITestInvocation;
@@ -406,7 +407,6 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
      */
     public CommandScheduler() {
         initLogging();
-
         initDeviceManager();
 
         mCommandQueue = new ConditionPriorityBlockingQueue<ExecutableCommand>(
@@ -461,13 +461,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
         try {
             // Notify other threads that we're running.
             mRunLatch.countDown();
-
+            
             IDeviceManager manager = getDeviceManager();
             while (!isShutdown()) {
                 ExecutableCommand cmd = dequeueConfigCommand();
                 if (cmd != null) {
-                    ITestDevice device = manager.allocateDevice(0, cmd.getConfiguration()
-                            .getDeviceRequirements());
+                	IDeviceSelection options = cmd.getConfiguration().getDeviceRequirements();
+                    ITestDevice device = manager.allocateDevice(0, options);
                     if (device != null) {
                         // Spawn off a thread to perform the invocation
                         InvocationThread invThread = startInvocation(manager, device, cmd);
@@ -481,6 +481,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                         // are scarce
                         cmd.getCommandTracker().incrementExecTime(1);
                         addExecCommandToQueue(cmd, NO_DEVICE_DELAY_TIME);
+                        //CLog.logAndDisplay(LogLevel.ERROR,String.format("Can't find device %s.",options.getSerials()));
                     }
                 }
             }
@@ -583,6 +584,7 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
                 return true;
             }
         } catch (ConfigurationException e) {
+        	e.printStackTrace();
             // FIXME: do this with jline somehow for ANSI support
             // note: make sure not to log (aka record) this line, as (args) may contain passwords.
             System.out.println(String.format("Error while processing args: %s",

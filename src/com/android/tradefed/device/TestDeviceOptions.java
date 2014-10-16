@@ -64,7 +64,19 @@ public class TestDeviceOptions {
             + "to be available aka fully boot.")
     private long mAvailableTimeout = 6 * 60 * 1000;
 
-    /**
+    @Option(name = "device-comm-port", description = "comm port related to this device")
+    private String mCommPort = null;
+    
+    
+    public String getCommPort() {
+		return mCommPort;
+	}
+
+	public void setCommPort(String commPort) {
+		mCommPort = commPort;
+	}
+
+	/**
      * Check whether adb root should be enabled on boot for this device
      */
     public boolean isEnableAdbRoot() {

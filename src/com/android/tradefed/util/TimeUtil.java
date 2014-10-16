@@ -17,6 +17,7 @@ package com.android.tradefed.util;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -25,7 +26,9 @@ import java.util.concurrent.TimeUnit;
 public class TimeUtil {
 
     private final static SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-
+    private final static SimpleDateFormat TIME_FORMAT_MSEC = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss SSS");
+    private final static SimpleDateFormat FILE_TIME_FORMAT = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss");
+    
     // only static methods, don't allow construction
     private TimeUtil() {
     }
@@ -64,4 +67,25 @@ public class TimeUtil {
     public static String formatTimeStamp(long epochTime) {
         return TIME_FORMAT.format(new Date(epochTime));
     }
+    
+    public static String getTimestamp() {
+        return formatTimeStamp(System.currentTimeMillis());
+    }
+    
+    public static String formatTimeStampMsec(long epochTime) {
+        return TIME_FORMAT_MSEC.format(new Date(epochTime));
+    }
+    
+    public static String getTimestampMsec() {
+        return formatTimeStampMsec(System.currentTimeMillis());
+    }
+    
+    public static String formatTimeForFile(long epochTime) {
+        return FILE_TIME_FORMAT.format(new Date(epochTime));
+    }
+    
+    public static String getTimestampForFile() {
+        return formatTimeForFile(System.currentTimeMillis());
+    }
+    
 }

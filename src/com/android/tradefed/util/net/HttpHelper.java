@@ -23,6 +23,10 @@ import com.android.tradefed.util.MultiMap;
 import com.android.tradefed.util.RunUtil;
 import com.android.tradefed.util.StreamUtil;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -125,6 +129,23 @@ public class HttpHelper implements IHttpHelper {
         }
     }
 
+    public void doGet(String url,File destFile) throws IOException {
+        CLog.d("Performing GET request for %s", url);
+        BufferedInputStream remote = null;
+        BufferedOutputStream bof = new BufferedOutputStream(new FileOutputStream(destFile));
+        byte[] buf = new byte[8192];
+        int c = 0;
+        try {
+            remote = new BufferedInputStream(getRemoteUrlStream(new URL(url)));
+            while((c = remote.read(buf)) != -1) {
+            	bof.write(buf, 0, c);
+            }
+        } finally {
+        	StreamUtil.close(bof);
+            StreamUtil.close(remote);
+        }
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -191,6 +212,18 @@ public class HttpHelper implements IHttpHelper {
         }
     }
 
+    public void doGetWithRetry(String url, File destFile) throws IOException {
+    	DownloadRequestRunnable runnable = new DownloadRequestRunnable(url,destFile);
+    	if(getRunUtil().runEscalatingTimedRetry(getOpTimeout(), getInitialPollInterval(), 
+    			getMaxPollInterval(), getMaxTime(), runnable)) {
+    		
+    	} else if (runnable.getException() instanceof IOException) {
+            throw (IOException) runnable.getException();
+    	} else {
+    		throw new IOException("GET request could not be completed");
+    	}
+    }
+    
     /**
      * {@inheritDoc}
      */
@@ -319,6 +352,28 @@ public class HttpHelper implements IHttpHelper {
 
             return false;
         }
+    }
+    
+    private class DownloadRequestRunnable extends RequestRunnable {
+    	private File mDestFile;
+    	
+		public DownloadRequestRunnable(String url, File destFile) {
+			super(url);
+			mDestFile = destFile;
+		}
+
+		@Override
+		public boolean run() {
+			try {
+				doGet(getUrl(),mDestFile);
+				return true;
+			} catch (IOException e) {
+                CLog.i("IOException %s from %s", e.getMessage(), getUrl());
+                setException(e);
+			} 
+			return false;
+		}
+    	
     }
 
     /**

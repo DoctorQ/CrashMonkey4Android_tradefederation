@@ -160,6 +160,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
     @Override
     public void run(ITestInvocationListener listener) throws DeviceNotAvailableException {
         if (!isInstrumentationTest()) {
+        	//检查/data/local/tmp中是否含有测试的jar包
             buildJarPaths();
         }
         mRunner = createTestRunner();
@@ -167,6 +168,7 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             getTestRunner().setClassNames(mClasses.toArray(new String[]{}));
         }
         getTestRunner().setRunName(mRunName);
+        //检查
         preTestSetup();
         getRunUtil().sleep(getSyncTime());
         getTestRunner().setMaxtimeToOutputResponse(mTestTimeout);
@@ -174,12 +176,15 @@ public class UiAutomatorTest implements IRemoteTest, IDeviceTest {
             getTestRunner().addInstrumentationArg(entry.getKey(), entry.getValue());
         }
         if (!isInstrumentationTest()) {
+        	//设置命令的执行模式,如果设置为true,则表示会在后台不间断的执行
             ((UiAutomatorRunner)getTestRunner()).setIgnoreSighup(mIgnoreSighup);
         }
         if (mLoggingOption != LoggingOption.OFF) {
+        	//需要执行保存bugreport和截图的操作
             getDevice().runInstrumentationTests(getTestRunner(), listener,
                     new LoggingWrapper(listener));
         } else {
+        	//不需要执行保存bugreport和截图的操作
             getDevice().runInstrumentationTests(getTestRunner(), listener);
         }
     }

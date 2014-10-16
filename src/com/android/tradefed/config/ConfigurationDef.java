@@ -174,7 +174,7 @@ public class ConfigurationDef {
      */
     IGlobalConfiguration createGlobalConfiguration() throws ConfigurationException {
         IGlobalConfiguration config = new GlobalConfiguration(getName(), getDescription());
-
+        //
         for (Map.Entry<String, List<String>> objClassEntry : mObjectClassMap.entrySet()) {
             List<Object> objectList = new ArrayList<Object>(objClassEntry.getValue().size());
             for (String className : objClassEntry.getValue()) {

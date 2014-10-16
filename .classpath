@@ -3,10 +3,14 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry exported="true" kind="var" path="TRADEFED_ROOT/prebuilts/misc/common/kxml2/kxml2-2.3.0.jar"/>
-	<classpathentry exported="true" kind="var" path="TRADEFED_ROOT/out/host/common/obj/JAVA_LIBRARIES/guavalib_intermediates/javalib.jar" sourcepath="/TRADEFED_ROOT/external/guava/guava/src"/>
-	<classpathentry exported="true" kind="var" path="TRADEFED_ROOT/out/host/common/obj/JAVA_LIBRARIES/jline-1.0_intermediates/javalib.jar" sourcepath="/TRADEFED_ROOT/external/jline/src"/>
-	<classpathentry exported="true" kind="var" path="TRADEFED_ROOT/out/host/common/obj/JAVA_LIBRARIES/junit_intermediates/javalib.jar" sourcepath="/TRADEFED_ROOT/external/junit/src"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/ddmlib"/>
+	<classpathentry kind="lib" path="libs/ddmlib-prebuilt.jar" sourcepath="D:/sdk/tools/lib/ddmlib-r16-sources.zip"/>
+	<classpathentry kind="lib" path="libs/hosttestlib.jar"/>
+	<classpathentry kind="lib" path="libs/javalib-deviceinfo.jar"/>
+	<classpathentry kind="lib" path="libs/javalib-deviceutil.jar"/>
+	<classpathentry kind="lib" path="libs/tradefed-prebuilt.jar"/>
+	<classpathentry kind="lib" path="libs/gson-2.2.4.jar"/>
+	<classpathentry kind="lib" path="libs/jsoup-1.7.3.jar"/>
+	<classpathentry kind="lib" path="libs/mail.jar"/>
+	<classpathentry kind="lib" path="libs/commons-compress-1.8.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

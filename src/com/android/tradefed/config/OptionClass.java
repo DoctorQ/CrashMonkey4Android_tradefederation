@@ -21,6 +21,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 具有该注解的类,就代表它是一个IConfiguration对象,也就是cts.xml中的对象标签(这些标签都是cts框架定义好的)
  * Annotates a class as representing a {@link IConfiguration} object.
  */
 @Retention(RetentionPolicy.RUNTIME)

@@ -15,10 +15,6 @@
  */
 package com.android.tradefed.util;
 
-import com.android.ddmlib.Log;
-import com.android.tradefed.command.FatalHostError;
-import com.android.tradefed.log.LogUtil.CLog;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -34,11 +30,20 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+
+import com.android.ddmlib.Log;
+import com.android.tradefed.command.FatalHostError;
+import com.android.tradefed.log.LogUtil.CLog;
 /**
  * A helper class for file related operations
  */
@@ -343,6 +348,17 @@ public class FileUtil {
      * @throws IOException
      * @throws FileNotFoundException
      */
+    public static String readStringFromFile(File sourceFile, String charset) throws IOException {
+        FileInputStream is = null;
+        try {
+            // no need to buffer since StreamUtil does
+            is = new FileInputStream(sourceFile);
+            return StreamUtil.getStringFromStream(is, charset);
+        } finally {
+            StreamUtil.close(is);
+        }
+    }
+
     public static String readStringFromFile(File sourceFile) throws IOException {
         FileInputStream is = null;
         try {
@@ -353,7 +369,7 @@ public class FileUtil {
             StreamUtil.close(is);
         }
     }
-
+    
     /**
      * A helper method for writing string data to file
      *
@@ -431,6 +447,83 @@ public class FileUtil {
         }
     }
 
+    public static void extractTarGzip(File tarGzipFile,File destDir) throws FileNotFoundException, IOException, ArchiveException {
+    	GZIPInputStream gzipIn = null;
+    	ArchiveInputStream archivIn = null;
+    	BufferedInputStream buffIn = null;
+    	BufferedOutputStream buffOut = null;
+    	try {
+    		gzipIn = new GZIPInputStream(new BufferedInputStream(new FileInputStream(tarGzipFile)));
+    		archivIn = new ArchiveStreamFactory().createArchiveInputStream("tar",gzipIn);
+    		buffIn = new BufferedInputStream(archivIn);
+    		TarArchiveEntry entry = null;
+    		while((entry = (TarArchiveEntry) archivIn.getNextEntry()) != null) {
+    			String entryName = entry.getName();
+    			String[] engtryPart = entryName.split("/");
+    			StringBuilder fullPath = new StringBuilder();
+    			fullPath.append(destDir.getAbsolutePath());
+    			for(String e:engtryPart) {
+    				fullPath.append(File.separator);
+    				fullPath.append(e);
+    			}
+    			File destFile = new File(fullPath.toString());
+    			if(entryName.endsWith("/")) {
+    				if(!destFile.exists())
+    					destFile.mkdirs();
+    			} else {
+    				if(!destFile.exists())
+    					destFile.createNewFile();
+    				buffOut = new BufferedOutputStream(new FileOutputStream(destFile));
+    				byte[] buf = new byte[8192];
+    				int len = 0;
+    				while((len = buffIn.read(buf)) != -1) {
+    					buffOut.write(buf, 0, len);
+    				}
+    				buffOut.flush();
+    			}
+    		}
+    	} finally {
+    		if(buffOut != null) {
+    			buffOut.close();
+    		}
+    		if(buffIn != null) {
+    			buffIn.close();
+    		}
+    		if(archivIn != null) {
+    			archivIn.close();
+    		}
+    		if(gzipIn != null) {
+    			gzipIn.close();
+    		}
+    	}
+    	
+    }
+    
+    public static void extractGzip(File tarGzipFile,File destDir) throws FileNotFoundException, IOException, ArchiveException {
+    	String srcGzipName = tarGzipFile.getName();
+    	String srcUnzipName = srcGzipName.substring(0,srcGzipName.length() - 3);
+    	extractGzip(tarGzipFile, destDir, srcUnzipName);
+    }
+    
+    public static void extractGzip(File tarGzipFile,File destDir, String destName) throws FileNotFoundException, IOException, ArchiveException {
+    	GZIPInputStream zipIn = null;
+    	BufferedOutputStream  buffOut = null;
+    	try {
+    		File destUnzipFile = new File(destDir.getAbsolutePath(), destName);
+        	zipIn = new GZIPInputStream(new FileInputStream(tarGzipFile));
+        	buffOut = new BufferedOutputStream(new FileOutputStream(destUnzipFile));
+        	int b = 0;
+        	byte[] buf = new byte[8192];
+        	while((b = zipIn.read(buf)) != -1) {
+        		buffOut.write(buf,0,b);
+        	}
+    	} finally {
+    		if(zipIn != null)
+    			zipIn.close();
+    		if(buffOut != null)
+    			buffOut.close();
+    	}
+    }
 
     /**
      * Utility method to extract one specific file from zip file into a tmp file

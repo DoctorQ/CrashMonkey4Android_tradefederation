@@ -734,6 +734,7 @@ public class Console extends Thread {
     protected void printLine(String output) {
         System.out.print(output);
         System.out.println();
+        System.out.flush();
     }
 
     /**
@@ -837,6 +838,7 @@ public class Console extends Thread {
                         mConsoleReader.getHistory().addToHistory(cmd);
                     }
                     tokens = arrrgs.toArray(new String[0]);
+                    //置空
                     arrrgs = Collections.emptyList();
                 }
 

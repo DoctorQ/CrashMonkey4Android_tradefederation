@@ -24,16 +24,16 @@ import com.android.tradefed.build.IBuildInfo;
  * A test invocation can itself include multiple test runs, so the sequence of calls will be
  * <ul>
  * <li>invocationStarted(BuildInfo)</li>
- * <li>testRunStarted>/li>
- * <li>testStarted</li>
- * <li>[testFailed]</li>
- * <li>testEnded</li>
+ * <li>测试的开始,是cts测试类型,不是单独一条case的开始,testRunStarted</li>
+ * <li>一条case的开始,testStarted</li>
+ * <li>一条case的failed,[testFailed]</li>
+ * <li>一条case的结束,testEnded</li>
  * <li>...</li>
- * <li>testRunEnded</li>
+ * <li>测试的结束,cts测试类型,不是一条单独case的结束,是整个测试任务的结束,testRunEnded</li>
  * <li>...</li>
- * <li>testRunStarted</li>
+ * <li>测试任务的失败,testRunFailed</li>
  * <li>...</li>
- * <li>testRunEnded</li>
+ * <li>测试任务的停止,testRunStopped</li>
  * <li>[invocationFailed]</li>
  * <li>[testLog+]</li>
  * <li>invocationEnded</li>
@@ -49,7 +49,7 @@ public interface ITestInvocationListener extends ITestRunListener {
      * Reports the start of the test invocation.
      * <p/>
      * Will be automatically called by the TradeFederation framework.
-     *
+     *	方法名改为invakeStarted更容易让人理解,意思为调用的开始,因为cts的测试不只是上来就开始跑case,而是一系列的动作,前期准备build啊,机器的准备啊等等。
      * @param buildInfo information about the build being tested
      */
     public void invocationStarted(IBuildInfo buildInfo);
@@ -78,7 +78,7 @@ public interface ITestInvocationListener extends ITestRunListener {
      * condition.
      * <p/>
      * Will be automatically called by the TradeFederation framework.
-     *
+     *	
      * @param elapsedTime the elapsed time of the invocation in ms
      */
     public void invocationEnded(long elapsedTime);
@@ -94,7 +94,7 @@ public interface ITestInvocationListener extends ITestRunListener {
 
     /**
      * Allows the InvocationListener to return a summary.
-     *
+     *	返回一个TestSummary对象,可以查看一下TestSummary对象的意义
      * @return A {@link TestSummary} summarizing the run, or null
      */
     public TestSummary getSummary();

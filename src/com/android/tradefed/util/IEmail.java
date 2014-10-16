@@ -16,13 +16,15 @@
 
 package com.android.tradefed.util;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 
 /**
- * Interface for sending email.
+ * Interface for sending email.只要是发送邮件,都需要继承该接口,为抽象概念.
  */
 public interface IEmail {
 
@@ -48,15 +50,24 @@ public interface IEmail {
     public static class Message {
         static final String PLAIN = "text/plain";
         static final String HTML = "text/html";
-
+        //收件人地址
         private Collection<String> mToAddrs = null;
+        //抄送人地址
         private Collection<String> mCcAddrs = null;
+        //密送人地址
         private Collection<String> mBccAddrs = null;
+        //邮件的主题
         private String mSubject = null;
         private String mBody = null;
+        //发件人
         private String mSender = null;
+        //邮件的信息类型
         private String mContentType = PLAIN;
-
+        
+        private Collection<File> mAttaches = null;
+        private Collection<File> mDisposition = null;
+		private String mCharset = null;
+        
         public Message() {}
 
         /**
@@ -120,6 +131,28 @@ public interface IEmail {
                 setContentType(PLAIN);
             }
         }
+        
+        public void addAttach(File attach) {
+        	if(mAttaches == null) {
+        		mAttaches = new ArrayList<File>();
+        	}
+        	mAttaches.add(attach);
+        }
+        
+        public void setAttaches(File[] attaches) {
+        	mAttaches = Arrays.asList(attaches);
+        }
+        
+        public void addDisposition(File disposition) {
+        	if(mDisposition == null) {
+        		mDisposition = new ArrayList<File>();
+        	}
+        	mDisposition.add(disposition);
+        }
+        
+        public Collection<File> getDisposition() {
+        	return mDisposition;
+        }
 
         public Collection<String> getTo() {
             return mToAddrs;
@@ -148,5 +181,18 @@ public interface IEmail {
         public boolean isHtml() {
             return HTML.equals(mContentType);
         }
+        
+        public Collection<File> getAttach() {
+        	return mAttaches;
+        }
+
+        public String getCharset() {
+        	return mCharset;
+        }
+        
+        public void setCharset(String charset) {
+        	mCharset = charset;
+        }
+        
     }
 }

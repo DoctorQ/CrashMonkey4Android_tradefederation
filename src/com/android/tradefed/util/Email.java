@@ -28,139 +28,162 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * A helper class to send an email.  Note that this class is NOT PLATFORM INDEPENDENT.  It will
- * likely fail on Windows, and possibly on Mac OS X as well.  It will fail on any machine where
- * The binary pointed at by the {@code mailer} constant doesn't exist.
+ * A helper class to send an email. Note that this class is NOT PLATFORM
+ * INDEPENDENT. It will likely fail on Windows, and possibly on Mac OS X as
+ * well. It will fail on any machine where The binary pointed at by the
+ * {@code mailer} constant doesn't exist.
  */
 public class Email implements IEmail {
-    private static final String LOG_TAG = "Email";
-    private static final String[] mailer = {"/usr/sbin/sendmail", "-t", "-i"};
-    static final String CRLF = "\r\n";
+	private static final String LOG_TAG = "Email";
+	private static final String[] mailer = { "/usr/sbin/sendmail", "-t", "-i" };
+	static final String CRLF = "\r\n";
 
-    private static String join(Collection<String> list, String sep) {
-        StringBuilder builder = new StringBuilder();
-        Iterator<String> iter = list.iterator();
-        while (iter.hasNext()) {
-            String element = iter.next();
-            builder.append(element);
-            if(iter.hasNext()) {
-                builder.append(sep);
-            }
-        }
-        return builder.toString();
-    }
+	// 将一个string字符串和string集合拼接成一个长字符串
+	private static String join(Collection<String> list, String sep) {
+		StringBuilder builder = new StringBuilder();
+		Iterator<String> iter = list.iterator();
+		while (iter.hasNext()) {
+			String element = iter.next();
+			builder.append(element);
+			if (iter.hasNext()) {
+				builder.append(sep);
+			}
+		}
+		return builder.toString();
+	}
 
-    /**
-     * A helper method to use ProcessBuilder to create a new process.  This can't use
-     * {@link com.android.tradefed.util.IRunUtil} because that class doesn't provide a way to pass
-     * data to the stdin of the spawned process, which is the usage paradigm for most commandline
-     * mailers such as mailx and sendmail.
-     * <p/>
-     * Exposed for mocking
-     *
-     * @param cmd The {@link String[]} to pass to the {@link ProcessBuilder} constructor
-     * @return The {@link Process} returned from from {@link ProcessBuilder#start()}
-     * @throws IOException if sending email failed in a synchronously-detectable way
-     */
-    Process run(String[] cmd) throws IOException {
-        ProcessBuilder pb = new ProcessBuilder(cmd);
-        pb.redirectErrorStream(true);
-        return pb.start();
-    }
+	/**
+	 * A helper method to use ProcessBuilder to create a new process. This can't
+	 * use {@link com.android.tradefed.util.IRunUtil} because that class doesn't
+	 * provide a way to pass data to the stdin of the spawned process, which is
+	 * the usage paradigm for most commandline mailers such as mailx and
+	 * sendmail.
+	 * <p/>
+	 * Exposed for mocking
+	 * 
+	 * @param cmd
+	 *            The {@link String[]} to pass to the {@link ProcessBuilder}
+	 *            constructor
+	 * @return The {@link Process} returned from from
+	 *         {@link ProcessBuilder#start()}
+	 * @throws IOException
+	 *             if sending email failed in a synchronously-detectable way
+	 */
+	Process run(String[] cmd) throws IOException {
+		//创建操作系统进程
+		ProcessBuilder pb = new ProcessBuilder(cmd);
+		pb.redirectErrorStream(true);
+		return pb.start();
+	}
 
-    /**
-     * A small helper function that adds the specified header to the header list only if the value
-     * is non-null
-     */
-    private void addHeader(List<String> headers, String name, String value) {
-        if (name == null || value == null) return;
-        headers.add(String.format("%s: %s", name, value));
-    }
+	/**
+	 * 增加文件头
+	 * A small helper function that adds the specified header to the header list
+	 * only if the value is non-null
+	 */
+	private void addHeader(List<String> headers, String name, String value) {
+		if (name == null || value == null)
+			return;
+		headers.add(String.format("%s: %s", name, value));
+	}
 
-    /**
-     * A small helper function that adds the specified header to the header list only if the value
-     * is non-null
-     */
-    private void addHeaders(List<String> headers, String name, Collection<String> values) {
-        if (name == null || values == null) return;
-        if (values.isEmpty()) return;
+	/**
+	 * A small helper function that adds the specified header to the header list
+	 * only if the value is non-null
+	 */
+	private void addHeaders(List<String> headers, String name,
+			Collection<String> values) {
+		if (name == null || values == null)
+			return;
+		if (values.isEmpty())
+			return;
 
-        final String strValues = join(values, ",");
-        headers.add(String.format("%s: %s", name, strValues));
-    }
+		final String strValues = join(values, ",");
+		headers.add(String.format("%s: %s", name, strValues));
+	}
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void send(Message msg) throws IllegalArgumentException, IOException {
-        // Sanity checks
-        if (msg.getTo() == null) {
-            throw new IllegalArgumentException("Message is missing a destination");
-        } else if (msg.getSubject() == null) {
-            throw new IllegalArgumentException("Message is missing a subject");
-        } else if (msg.getBody() == null) {
-            throw new IllegalArgumentException("Message is missing a body");
-        }
+	/**
+	 * 由于1.5的局限性,继承于接口的方法上面不能写@Overrider,只能用
+	 * {@inheritDoc}代替,意思同@Overrider一样,但是1.5后可以用@Override标注
+	 * 
+	 * 该方法发送邮件,只需传入一个Message对象即可
+	 */
+	@Override
+	public void send(Message msg) throws IllegalArgumentException, IOException {
+		// Sanity checks
+		if (msg.getTo() == null) {
+			throw new IllegalArgumentException(
+					"Message is missing a destination");
+		} else if (msg.getSubject() == null) {
+			throw new IllegalArgumentException("Message is missing a subject");
+		} else if (msg.getBody() == null) {
+			throw new IllegalArgumentException("Message is missing a body");
+		}
 
-        // Sender, Recipients, CC, BCC, Subject are all set with appropriate email headers
-        final ArrayList<String> headers = new ArrayList<String>();
-        final String[] mailCmd;
-        if (msg.getSender() != null) {
-            addHeader(headers, "From", msg.getSender());
+		// Sender, Recipients, CC, BCC, Subject are all set with appropriate
+		// email headers
+		final ArrayList<String> headers = new ArrayList<String>();
+		final String[] mailCmd;
+		if (msg.getSender() != null) {
+			addHeader(headers, "From", msg.getSender());
 
-            // Envelope Sender (will receive any errors related to the email)
-            int cmdLen = mailer.length + 2;
-            mailCmd = Arrays.copyOf(mailer, cmdLen);
-            mailCmd[cmdLen - 2] = "-f";
-            mailCmd[cmdLen - 1] = msg.getSender();
-        } else {
-            mailCmd = mailer;
-        }
-        addHeaders(headers, "To", msg.getTo());
-        addHeaders(headers, "Cc", msg.getCc());
-        addHeaders(headers, "Bcc", msg.getBcc());
-        addHeader(headers, "Content-type", msg.getContentType());
-        addHeader(headers, "Subject", msg.getSubject());
+			// Envelope Sender (will receive any errors related to the email)
+			int cmdLen = mailer.length + 2;
+			mailCmd = Arrays.copyOf(mailer, cmdLen);
+			mailCmd[cmdLen - 2] = "-f";
+			mailCmd[cmdLen - 1] = msg.getSender();
+		} else {
+			mailCmd = mailer;
+		}
+		addHeaders(headers, "To", msg.getTo());
+		addHeaders(headers, "Cc", msg.getCc());
+		addHeaders(headers, "Bcc", msg.getBcc());
+		addHeader(headers, "Content-type", msg.getContentType());
+		addHeader(headers, "Subject", msg.getSubject());
 
-        final StringBuilder fullMsg = new StringBuilder();
-        fullMsg.append(join(headers, CRLF));
-        fullMsg.append(CRLF);
-        fullMsg.append(CRLF);
-        fullMsg.append(msg.getBody());
+		final StringBuilder fullMsg = new StringBuilder();
+		fullMsg.append(join(headers, CRLF));
+		fullMsg.append(CRLF);
+		fullMsg.append(CRLF);
+		fullMsg.append(msg.getBody());
 
-        Log.d(LOG_TAG, String.format("About to send email with command: %s",
-                Arrays.toString(mailCmd)));
-        Process mailerProc = run(mailCmd);
-        BufferedOutputStream mailerStdin = new BufferedOutputStream(mailerProc.getOutputStream());
-        /* There is no such thing as a "character" in the land of the shell; there are only bytes.
-         * Here, we convert the body from a Java string (consisting of characters) to a byte array
-         * encoding each character with UTF-8.  Each character will be represented as between one
-         * and four bytes apiece.
-         */
-        mailerStdin.write(fullMsg.toString().getBytes("UTF-8"));
-        mailerStdin.flush();
-        mailerStdin.close();
+		Log.d(LOG_TAG,
+				String.format("About to send email with command: %s",
+						Arrays.toString(mailCmd)));
+		Process mailerProc = run(mailCmd);
+		BufferedOutputStream mailerStdin = new BufferedOutputStream(
+				mailerProc.getOutputStream());
+		/*
+		 * There is no such thing as a "character" in the land of the shell;
+		 * there are only bytes. Here, we convert the body from a Java string
+		 * (consisting of characters) to a byte array encoding each character
+		 * with UTF-8. Each character will be represented as between one and
+		 * four bytes apiece.
+		 */
+		mailerStdin.write(fullMsg.toString().getBytes("UTF-8"));
+		mailerStdin.flush();
+		mailerStdin.close();
 
-        int retValue;
-        try {
-            retValue = mailerProc.waitFor();
-        } catch (InterruptedException e) {
-            // ignore, but set retValue to something bogus
-            retValue = -12345;
-        }
-        if (retValue != 0) {
-            Log.e(LOG_TAG, String.format("Mailer finished with non-zero return value: %d", retValue));
-            BufferedInputStream mailerStdout = new BufferedInputStream(mailerProc.getInputStream());
-            StringBuilder stdout = new StringBuilder();
-            int theByte;
-            while((theByte = mailerStdout.read()) != -1) {
-                stdout.append((char)theByte);
-            }
-            Log.e(LOG_TAG, "Mailer output was: " + stdout.toString());
-        } else {
-            Log.v(LOG_TAG, "Mailer returned successfully.");
-        }
-    }
+		int retValue;
+		try {
+			retValue = mailerProc.waitFor();
+		} catch (InterruptedException e) {
+			// ignore, but set retValue to something bogus
+			retValue = -12345;
+		}
+		if (retValue != 0) {
+			Log.e(LOG_TAG, String.format(
+					"Mailer finished with non-zero return value: %d", retValue));
+			BufferedInputStream mailerStdout = new BufferedInputStream(
+					mailerProc.getInputStream());
+			StringBuilder stdout = new StringBuilder();
+			int theByte;
+			while ((theByte = mailerStdout.read()) != -1) {
+				stdout.append((char) theByte);
+			}
+			Log.e(LOG_TAG, "Mailer output was: " + stdout.toString());
+		} else {
+			Log.v(LOG_TAG, "Mailer returned successfully.");
+		}
+	}
 }
-

@@ -20,6 +20,7 @@ import com.android.ddmlib.AndroidDebugBridge.IDeviceChangeListener;
 import com.android.ddmlib.DdmPreferences;
 import com.android.ddmlib.EmulatorConsole;
 import com.android.ddmlib.IDevice;
+import com.android.ddmlib.Log;
 import com.android.ddmlib.Log.LogLevel;
 import com.android.tradefed.config.GlobalConfiguration;
 import com.android.tradefed.config.IGlobalConfiguration;
@@ -258,8 +259,10 @@ public class DeviceManager implements IDeviceManager {
             public void run() {
                 CLog.d("checking new device %s responsiveness", device.getSerialNumber());
                 if (monitor.waitForDeviceShell(CHECK_WAIT_DEVICE_AVAIL_MS)) {
-                    CLog.logAndDisplay(LogLevel.INFO, "Detected new device %s",
-                            device.getSerialNumber());
+//                    CLog.logAndDisplay(LogLevel.INFO, "DeviceManager",String.format("Detected new device %s",
+//                            device.getSerialNumber()));
+                    Log.logAndDisplay(LogLevel.INFO, "DeviceManager", String.format("Detected new device %s",
+                            device.getSerialNumber()));
                     addAvailableDevice(device);
                 } else{
                     CLog.e("Device %s is not responsive to adb shell command , " +

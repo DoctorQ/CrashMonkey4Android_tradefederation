@@ -36,6 +36,7 @@ import java.util.zip.ZipOutputStream;
 
 
 /**
+ * 保存log的工具类
  * A helper for {@link ITestInvocationListener}'s that will save log data to a file
  */
 public class LogFileSaver implements ILogFileSaver {

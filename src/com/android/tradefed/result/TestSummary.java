@@ -19,100 +19,123 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A class to represent a test summary.  Provides a single field for a summary, in addition to a
- * key-value store for more detailed summary.  Also provides a place for the summary source to be
- * identified.
+ * 主要作用用来存储键值对的数据
+ *  A class to represent a test summary. Provides a single field
+ * for a summary, in addition to a key-value store for more detailed summary.
+ * Also provides a place for the summary source to be identified.
  */
 public class TestSummary {
-    private TypedString mSummary = null;
-    private Map<String, TypedString> mKvStore = null;
-    private String mSource = null;
+	private TypedString mSummary = null;
+	// private Map<String, TypedString> mKvStore = null;
+	private Map<String, Object> mKvStore = null;
+	private String mSource = null;
 
-    public static enum Type {
-        URI("uri"),
-        TEXT("text");
-        private final String mType;
-        Type() {
-            mType = "uri";
-        }
+	public static enum Type {
+		URI("uri"), TEXT("text");
+		private final String mType;
 
-        Type(String type) {
-            mType = type;
-        }
+		Type() {
+			mType = "uri";
+		}
 
-        String getType() {
-            return mType;
-        }
-    }
+		Type(String type) {
+			mType = type;
+		}
 
-    public static class TypedString {
-        private Type mType;
-        private String mString;
-        public TypedString(String string) {
-            this(string, Type.URI);
-        }
-        public TypedString(String string, Type type) {
-            mType = type;
-            mString = string;
-        }
-        public Type getType() {
-            return mType;
-        }
-        public String getString() {
-            return mString;
-        }
+		String getType() {
+			return mType;
+		}
+	}
 
-        @Override
-        public String toString() {
-            return String.format("%s: %s", mType.toString(), mString);
-        }
-    }
+	public static class TypedString {
+		private Type mType;
+		private String mString;
 
-    /**
-     * A convenience constructor that takes the string representation of a URI
-     *
-     * @param summaryUri A {@link String} representing a URI
-     */
-    public TestSummary(String summaryUri) {
-        this(new TypedString(summaryUri));
-    }
+		public TypedString(String string) {
+			this(string, Type.URI);
+		}
 
-    public TestSummary(TypedString summary) {
-        setSummary(summary);
-        mKvStore = new HashMap<String, TypedString>();
-    }
+		public TypedString(String string, Type type) {
+			mType = type;
+			mString = string;
+		}
 
-    /**
-     * Set the source of the summary, in case a consumer wants to implement a contract with a
-     * specific producer
-     *
-     * @param source A {@link String} containing the fully-qualified Java class name of the source
-     */
-    public void setSource(String source) {
-        mSource = source;
-    }
-    public void setSummary(TypedString summary) {
-        mSummary = summary;
-    }
-    public void addKvEntry(String key, TypedString value) {
-        mKvStore.put(key, value);
-    }
+		public Type getType() {
+			return mType;
+		}
 
-    // trampolines
-    public void setSummary(String summary) {
-        setSummary(new TypedString(summary));
-    }
-    public void addKvEntry(String key, String value) {
-        addKvEntry(key, new TypedString(value));
-    }
+		public String getString() {
+			return mString;
+		}
 
-    public String getSource() {
-        return mSource;
-    }
-    public TypedString getSummary() {
-        return mSummary;
-    }
-    public Map<String, TypedString> getKvEntries() {
-        return mKvStore;
-    }
+		@Override
+		public String toString() {
+			return String.format("%s: %s", mType.toString(), mString);
+		}
+	}
+
+	/**
+	 * A convenience constructor that takes the string representation of a URI
+	 * 
+	 * @param summaryUri
+	 *            A {@link String} representing a URI
+	 */
+	public TestSummary(String summaryUri) {
+		this(new TypedString(summaryUri));
+	}
+
+	public TestSummary(TypedString summary) {
+		setSummary(summary);
+		// mKvStore = new HashMap<String, TypedString>();
+		mKvStore = new HashMap<String, Object>();
+	}
+
+	/**
+	 * Set the source of the summary, in case a consumer wants to implement a
+	 * contract with a specific producer
+	 * 
+	 * @param source
+	 *            A {@link String} containing the fully-qualified Java class
+	 *            name of the source
+	 */
+	public void setSource(String source) {
+		mSource = source;
+	}
+
+	public void setSummary(TypedString summary) {
+		mSummary = summary;
+	}
+
+	// public void addKvEntry(String key, TypedString value) {
+	// mKvStore.put(key, value);
+	// }
+
+	public void addKvEntry(String key, Object value) {
+		mKvStore.put(key, value);
+	}
+
+	// trampolines
+	public void setSummary(String summary) {
+		setSummary(new TypedString(summary));
+	}
+
+	// public void addKvEntry(String key, String value) {
+	// addKvEntry(key, new TypedString(value));
+	// }
+
+	public String getSource() {
+		return mSource;
+	}
+
+	public TypedString getSummary() {
+		return mSummary;
+	}
+
+	// public Map<String, TypedString> getKvEntries() {
+	// return mKvStore;
+	// }
+
+	public Map<String, Object> getKvEntries() {
+		return mKvStore;
+	}
 }

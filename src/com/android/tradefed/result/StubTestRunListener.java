@@ -15,8 +15,10 @@
  */
 package com.android.tradefed.result;
 
+import com.android.ddmlib.Log.LogLevel;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.log.LogUtil.CLog;
 
 import java.util.Map;
 
@@ -55,6 +57,7 @@ public class StubTestRunListener implements ITestRunListener {
     @Override
     public void testRunFailed(String errorMessage) {
         // ignore
+    	CLog.logAndDisplay(LogLevel.INFO, String.format("case执行出错"));
     }
 
     /**

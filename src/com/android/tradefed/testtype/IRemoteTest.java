@@ -36,7 +36,7 @@ public interface IRemoteTest {
 
     /**
      * Runs the tests, and reports result to the listener.
-     *
+     *	启动测试,将结果发给listener监听器
      * @param listener the {@link ITestInvocationListener} of test results
      * @throws DeviceNotAvailableException
      */

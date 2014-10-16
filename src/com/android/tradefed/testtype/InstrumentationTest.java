@@ -411,6 +411,7 @@ public class InstrumentationTest implements IDeviceTest, IResumableTest {
         if (mTestSize != null) {
             mRunner.setTestSize(TestSize.getTestSize(mTestSize));
         }
+        //设置超时时间为10分钟
         mRunner.setMaxtimeToOutputResponse(mTestTimeout);
         if (mRunName != null) {
             mRunner.setRunName(mRunName);

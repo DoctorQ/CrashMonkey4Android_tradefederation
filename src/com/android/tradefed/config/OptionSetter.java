@@ -236,7 +236,7 @@ public class OptionSetter {
     }
 
     /**
-     * Sets the value for an option.
+     * Sets the value for an option.根据cts*.xml中的<option>标签的值赋给相应的变量
      * @param optionName the name of Option to set
      * @param valueText the value
      * @throws ConfigurationException if Option cannot be found or valueText is wrong type
@@ -244,7 +244,9 @@ public class OptionSetter {
     public void setOptionValue(String optionName, String valueText) throws ConfigurationException {
         OptionFieldsForName optionFields = fieldsForArg(optionName);
         for (Map.Entry<Object, Field> fieldEntry : optionFields) {
-
+        	if(valueText.equals("load-server")){
+        		System.out.println(valueText);
+        	}
             Object optionSource = fieldEntry.getKey();
             Field field = fieldEntry.getValue();
             Handler handler = getHandler(field.getGenericType());

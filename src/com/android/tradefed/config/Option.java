@@ -22,6 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * 具有该注解的变量,代表它是一个IConfiguration的option选项,也就是cts配置文件中的<option>标签
  * Annotates a field as representing a {@link IConfiguration} option.
  */
 @Retention(RetentionPolicy.RUNTIME)
@@ -31,11 +32,11 @@ public @interface Option {
     static final char NO_SHORT_NAME = '0';
 
     public enum Importance {
-        /** the option should never be treated as important */
+        /** the option should never be treated as important 不需要从外部引入值*/
         NEVER,
-        /** the option should be treated as important only if it has no value */
+        /** the option should be treated as important only if it has no value 只有没赋值时才会从外部引入值*/
         IF_UNSET,
-        /** the option should always be treated as important */
+        /** the option should always be treated as important 从外部引入值*/
         ALWAYS;
     }
 
@@ -81,6 +82,7 @@ public @interface Option {
      *   <li>The field is {@code null}.</li>
      *   <li>The field is an empty {@link java.util.Collection}.</li>
      * </ul>
+     * 当mandatory为true时,如果变量为空或者数组变量大小为0时,都会抛出ConfigurationException错误,可以理解为变量检查
      */
      boolean mandatory() default false;
 

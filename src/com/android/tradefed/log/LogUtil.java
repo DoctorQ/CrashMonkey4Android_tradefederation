@@ -126,6 +126,7 @@ public class LogUtil {
         public static void i(String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.i(getClassName(2), String.format(format, args));
+            System.out.flush();
         }
 
         /**
@@ -192,6 +193,7 @@ public class LogUtil {
         public static void logAndDisplay(LogLevel logLevel, String format, Object... args) {
             // frame 2: skip frames 0 (#getClassName) and 1 (this method)
             Log.logAndDisplay(logLevel, getClassName(2), String.format(format, args));
+            System.out.flush();
         }
 
         /**
