@@ -194,7 +194,7 @@ public class LogFileSaver implements ILogFileSaver {
                     logFile), BUFFER_SIZE));
             outStream.putNextEntry(new ZipEntry(saneDataName + "." + dataType.getFileExt()));
             StreamUtil.copyStreams(bufInput, outStream);
-            CLog.i("Saved log file %s", logFile.getAbsolutePath());
+            //CLog.i("Saved log file %s", logFile.getAbsolutePath());
             return logFile;
         } finally {
             StreamUtil.close(bufInput);

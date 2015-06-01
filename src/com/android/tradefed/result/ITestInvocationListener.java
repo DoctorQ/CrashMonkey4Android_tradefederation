@@ -15,6 +15,8 @@
  */
 package com.android.tradefed.result;
 
+import java.io.File;
+
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
 
@@ -53,7 +55,6 @@ public interface ITestInvocationListener extends ITestRunListener {
      * @param buildInfo information about the build being tested
      */
     public void invocationStarted(IBuildInfo buildInfo);
-
     /**
      * Provides the associated log or debug data from the test invocation.
      * <p/>
@@ -98,5 +99,9 @@ public interface ITestInvocationListener extends ITestRunListener {
      * @return A {@link TestSummary} summarizing the run, or null
      */
     public TestSummary getSummary();
+    
+    
+    	
+    
 
 }

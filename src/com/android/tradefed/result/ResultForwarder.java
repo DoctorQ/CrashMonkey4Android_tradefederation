@@ -24,9 +24,10 @@ import com.android.ddmlib.testrunner.TestIdentifier;
 import com.android.tradefed.build.IBuildInfo;
 
 /**
- * ResultForwarder本身是ITestInvocationListener子类,然后有包含了其他的ITestInvocationListener的子类,这样就通过该类得到所有的监听器
- * A {@link ITestInvocationListener} that forwards invocation results to a list
- * of other listeners.
+ * ResultForwarder本身是ITestInvocationListener子类,
+ * 然后有包含了其他的ITestInvocationListener的子类,这样就通过该类得到所有的监听器 A
+ * {@link ITestInvocationListener} that forwards invocation results to a list of
+ * other listeners.
  */
 public class ResultForwarder implements ITestInvocationListener {
 
@@ -72,6 +73,10 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	protected void setListeners(List<ITestInvocationListener> listeners) {
 		mListeners = listeners;
+	}
+
+	public List<ITestInvocationListener> getListeners() {
+		return mListeners;
 	}
 
 	/**
@@ -129,8 +134,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	@Override
 	public void testLog(String dataName, LogDataType dataType,
 			InputStreamSource dataStream) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testLog] dataName: %s", dataName));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testLog] dataName: %s", dataName));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testLog(dataName, dataType, dataStream);
 		}
@@ -141,9 +146,9 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testRunStarted(String runName, int testCount) {
-//		CLog.logAndDisplay(LogLevel.INFO, String
-//				.format("[testRunStarted] runName: %s testCount:%d", runName,
-//						testCount));
+		// CLog.logAndDisplay(LogLevel.INFO, String
+		// .format("[testRunStarted] runName: %s testCount:%d", runName,
+		// testCount));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testRunStarted(runName, testCount);
 		}
@@ -154,8 +159,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testRunFailed(String errorMessage) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testRunFailed] errorMessage: %s", errorMessage));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testRunFailed] errorMessage: %s", errorMessage));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testRunFailed(errorMessage);
 		}
@@ -166,8 +171,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testRunStopped(long elapsedTime) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testRunStopped] elapsedTime: %d", elapsedTime));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testRunStopped] elapsedTime: %d", elapsedTime));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testRunStopped(elapsedTime);
 		}
@@ -178,8 +183,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testRunEnded(long elapsedTime, Map<String, String> runMetrics) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testRunEnded] elapsedTime: %d", elapsedTime));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testRunEnded] elapsedTime: %d", elapsedTime));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testRunEnded(elapsedTime, runMetrics);
 		}
@@ -190,8 +195,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testStarted(TestIdentifier test) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testStarted] %s", test.toString()));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testStarted] %s", test.toString()));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testStarted(test);
 		}
@@ -202,8 +207,8 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testFailed(TestFailure status, TestIdentifier test, String trace) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testFailed] %s", test.toString()));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testFailed] %s", test.toString()));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testFailed(status, test, trace);
 		}
@@ -214,10 +219,17 @@ public class ResultForwarder implements ITestInvocationListener {
 	 */
 	@Override
 	public void testEnded(TestIdentifier test, Map<String, String> testMetrics) {
-//		CLog.logAndDisplay(LogLevel.INFO,
-//				String.format("[testEnded] %s", test.toString()));
+		// CLog.logAndDisplay(LogLevel.INFO,
+		// String.format("[testEnded] %s", test.toString()));
 		for (ITestInvocationListener listener : mListeners) {
 			listener.testEnded(test, testMetrics);
 		}
 	}
+
+	@Override
+	protected Object clone() throws CloneNotSupportedException {
+		// TODO Auto-generated method stub
+		return super.clone();
+	}
+
 }

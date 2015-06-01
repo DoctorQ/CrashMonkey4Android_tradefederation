@@ -56,7 +56,7 @@ public class CommandOptions implements ICommandOptions {
 
     @Option(name = "all-devices", description =
             "fork this command to run on all connected devices.")
-    private boolean mAllDevices = false;
+    private boolean mAllDevices = true;
 
     @Option(name = "need-prepare", description = "is needed to prepare device")
     private boolean mNeedPrepare = true;

@@ -559,9 +559,13 @@ public class CommandScheduler extends Thread implements ICommandScheduler {
     @Override
     public boolean addCommand(String[] args, long totalExecTime) {
         try {
+        	//得到cts配置文件的信息
             IConfiguration config = getConfigFactory().createConfigurationFromArgs(args);
+            //打印帮助信息,只打印Importance类型的option信息
             if (config.getCommandOptions().isHelpMode()) {
                 getConfigFactory().printHelpForConfig(args, true, System.out);
+                System.out.flush();
+                //打印所有option信息
             } else if (config.getCommandOptions().isFullHelpMode()) {
                 getConfigFactory().printHelpForConfig(args, false, System.out);
             } else if (config.getCommandOptions().isDryRunMode()) {

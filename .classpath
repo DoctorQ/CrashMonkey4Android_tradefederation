@@ -3,14 +3,16 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="res"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="libs/ddmlib-prebuilt.jar" sourcepath="D:/sdk/tools/lib/ddmlib-r16-sources.zip"/>
 	<classpathentry kind="lib" path="libs/hosttestlib.jar"/>
 	<classpathentry kind="lib" path="libs/javalib-deviceinfo.jar"/>
 	<classpathentry kind="lib" path="libs/javalib-deviceutil.jar"/>
-	<classpathentry kind="lib" path="libs/tradefed-prebuilt.jar"/>
 	<classpathentry kind="lib" path="libs/gson-2.2.4.jar"/>
 	<classpathentry kind="lib" path="libs/jsoup-1.7.3.jar"/>
-	<classpathentry kind="lib" path="libs/mail.jar"/>
+	<classpathentry kind="lib" path="libs/ddmlib-prebuilt.jar" sourcepath="/Users/wuxian/Desktop/ddmlib-r16-sources.jar"/>
 	<classpathentry kind="lib" path="libs/commons-compress-1.8.1.jar"/>
+	<classpathentry kind="lib" path="libs/guava-17.0.jar"/>
+	<classpathentry kind="lib" path="libs/jline-0.9.9.jar"/>
+	<classpathentry kind="lib" path="libs/mail.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/3"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

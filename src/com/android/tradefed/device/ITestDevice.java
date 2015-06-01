@@ -21,7 +21,9 @@ import com.android.ddmlib.IShellOutputReceiver;
 import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
 import com.android.ddmlib.testrunner.ITestRunListener;
 import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.log.LogUtil.CLog;
 import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.targetprep.TargetSetupError;
 import com.android.tradefed.util.CommandResult;
 
 import java.io.File;
@@ -946,4 +948,7 @@ public interface ITestDevice {
      * @throws DeviceNotAvailableException
      */
     public Set<String> getUninstallablePackageNames() throws DeviceNotAvailableException;
+
+	public abstract boolean checkWifiConnection(String wifiSSID)
+			throws TargetSetupError, DeviceNotAvailableException;
 }

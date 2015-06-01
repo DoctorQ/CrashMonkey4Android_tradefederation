@@ -63,7 +63,7 @@ import java.util.List;
 public class TestInvocation implements ITestInvocation {
 	
 	static final String TRADEFED_LOG_NAME = "host_log";
-	static final String DEVICE_LOG_NAME = "device_logcat";
+	public static final String DEVICE_LOG_NAME = "device_logcat";
 	static final String BUILD_ERROR_BUGREPORT_NAME = "build_error_bugreport";
 	static final String DEVICE_UNRESPONSIVE_BUGREPORT_NAME = "device_unresponsive_bugreport";
 
