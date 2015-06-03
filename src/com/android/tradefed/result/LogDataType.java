@@ -20,7 +20,7 @@ package com.android.tradefed.result;
  */
 public enum LogDataType {
 
-    TEXT("txt", false, true),
+    TEXT("txt", true, true),
     XML("xml", false, true),
     PNG("png", true, false),
     ZIP("zip", true, false),

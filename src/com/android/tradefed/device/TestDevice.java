@@ -16,42 +16,6 @@
 
 package com.android.tradefed.device;
 
-import com.android.ddmlib.AdbCommandRejectedException;
-import com.android.ddmlib.CollectingOutputReceiver;
-import com.android.ddmlib.FileListingService;
-import com.android.ddmlib.FileListingService.FileEntry;
-import com.android.ddmlib.IDevice;
-import com.android.ddmlib.IShellOutputReceiver;
-import com.android.ddmlib.InstallException;
-import com.android.ddmlib.Log.LogLevel;
-import com.android.ddmlib.NullOutputReceiver;
-import com.android.ddmlib.RawImage;
-import com.android.ddmlib.ShellCommandUnresponsiveException;
-import com.android.ddmlib.SyncException;
-import com.android.ddmlib.SyncException.SyncError;
-import com.android.ddmlib.SyncService;
-import com.android.ddmlib.TimeoutException;
-import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
-import com.android.ddmlib.testrunner.ITestRunListener;
-import com.android.ddmlib.testrunner.ITestRunListener.TestFailure;
-import com.android.ddmlib.testrunner.TestIdentifier;
-import com.android.tradefed.build.IBuildInfo;
-import com.android.tradefed.config.Option;
-import com.android.tradefed.device.DumpsysPackageParser.PackageInfo;
-import com.android.tradefed.device.IWifiHelper.WifiState;
-import com.android.tradefed.log.LogUtil.CLog;
-import com.android.tradefed.result.ByteArrayInputStreamSource;
-import com.android.tradefed.result.InputStreamSource;
-import com.android.tradefed.result.StubTestRunListener;
-import com.android.tradefed.targetprep.TargetSetupError;
-import com.android.tradefed.util.ArrayUtil;
-import com.android.tradefed.util.CommandResult;
-import com.android.tradefed.util.CommandStatus;
-import com.android.tradefed.util.FileUtil;
-import com.android.tradefed.util.IRunUtil;
-import com.android.tradefed.util.RunUtil;
-import com.android.tradefed.util.StreamUtil;
-
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -71,6 +35,40 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
+
+import com.android.ddmlib.AdbCommandRejectedException;
+import com.android.ddmlib.CollectingOutputReceiver;
+import com.android.ddmlib.FileListingService;
+import com.android.ddmlib.FileListingService.FileEntry;
+import com.android.ddmlib.IDevice;
+import com.android.ddmlib.IShellOutputReceiver;
+import com.android.ddmlib.InstallException;
+import com.android.ddmlib.Log.LogLevel;
+import com.android.ddmlib.NullOutputReceiver;
+import com.android.ddmlib.RawImage;
+import com.android.ddmlib.ShellCommandUnresponsiveException;
+import com.android.ddmlib.SyncException;
+import com.android.ddmlib.SyncException.SyncError;
+import com.android.ddmlib.SyncService;
+import com.android.ddmlib.TimeoutException;
+import com.android.ddmlib.testrunner.IRemoteAndroidTestRunner;
+import com.android.ddmlib.testrunner.ITestRunListener;
+import com.android.ddmlib.testrunner.TestIdentifier;
+import com.android.tradefed.build.IBuildInfo;
+import com.android.tradefed.device.DumpsysPackageParser.PackageInfo;
+import com.android.tradefed.device.IWifiHelper.WifiState;
+import com.android.tradefed.log.LogUtil.CLog;
+import com.android.tradefed.result.ByteArrayInputStreamSource;
+import com.android.tradefed.result.InputStreamSource;
+import com.android.tradefed.result.StubTestRunListener;
+import com.android.tradefed.targetprep.TargetSetupError;
+import com.android.tradefed.util.ArrayUtil;
+import com.android.tradefed.util.CommandResult;
+import com.android.tradefed.util.CommandStatus;
+import com.android.tradefed.util.FileUtil;
+import com.android.tradefed.util.IRunUtil;
+import com.android.tradefed.util.RunUtil;
+import com.android.tradefed.util.StreamUtil;
 
 /**
  * Default implementation of a {@link ITestDevice}
