@@ -133,6 +133,8 @@ public class TestInvocation implements ITestInvocation {
 					performInvocation(config, device, info, rescheduler);
 					// exit here, depend on performInvocation to deregister
 					// logger
+					
+					
 					return;
 				}
 			} else {
@@ -537,6 +539,7 @@ public class TestInvocation implements ITestInvocation {
 		// invocation can get lost
 		// unregister logger so future log calls get directed to the tradefed
 		// global log
+		getLogRegistry().dumpToGlobalLog(logger);
 		getLogRegistry().unregisterLogger();
 		logger.closeLog();
 	}

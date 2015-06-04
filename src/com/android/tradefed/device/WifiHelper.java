@@ -311,7 +311,7 @@ public class WifiHelper implements IWifiHelper {
 	private String runWifiUtil(String method, String... args)
 			throws DeviceNotAvailableException {
 		final String cmd = buildWifiUtilCmd(method, args);
-		CLog.i(String.format("向wifi app发送命令 %s", cmd));
+		CLog.d(String.format("向wifi app发送命令 %s", cmd));
 		WifiUtilOutput parser = new WifiUtilOutput();
 		mDevice.executeShellCommand(cmd, parser);
 		return parser.getResult();

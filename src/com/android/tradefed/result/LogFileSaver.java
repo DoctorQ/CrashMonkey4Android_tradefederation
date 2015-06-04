@@ -72,7 +72,7 @@ public class LogFileSaver implements ILogFileSaver {
             // try to create one in a tmp location instead
             mRootDir = createTempDir();
         }
-        CLog.i("Using log file directory %s", mRootDir.getAbsolutePath());
+        CLog.d("Using log file directory %s", mRootDir.getAbsolutePath());
     }
 
     private File createTempDir() {
@@ -168,7 +168,7 @@ public class LogFileSaver implements ILogFileSaver {
         File logFile = FileUtil.createTempFile(saneDataName + "_", "." + dataType.getFileExt(),
                 mRootDir);
         FileUtil.writeToFile(dataStream, logFile);
-        CLog.i("Saved log file %s", logFile.getAbsolutePath());
+        CLog.d("Saved log file %s", logFile.getAbsolutePath());
         return logFile;
     }
 
@@ -194,7 +194,7 @@ public class LogFileSaver implements ILogFileSaver {
                     logFile), BUFFER_SIZE));
             outStream.putNextEntry(new ZipEntry(saneDataName + "." + dataType.getFileExt()));
             StreamUtil.copyStreams(bufInput, outStream);
-            //CLog.i("Saved log file %s", logFile.getAbsolutePath());
+            CLog.d("Saved log file %s", logFile.getAbsolutePath());
             return logFile;
         } finally {
             StreamUtil.close(bufInput);
