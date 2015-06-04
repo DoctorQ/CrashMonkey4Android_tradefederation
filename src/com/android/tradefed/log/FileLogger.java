@@ -44,7 +44,7 @@ public class FileLogger implements ILeveledLogOutput {
     @Option(name = "log-level-display", shortName = 'l',
             description = "the minimum log level to display on stdout.",
             importance = Importance.ALWAYS)
-    private LogLevel mLogLevelDisplay = LogLevel.ERROR;
+    private LogLevel mLogLevelDisplay = LogLevel.INFO;
 
     @Option(name = "log-tag-display", description = "Always display given tags logs on stdout")
     private Collection<String> mLogTagsDisplay = new HashSet<String>();
