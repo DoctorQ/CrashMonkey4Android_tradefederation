@@ -184,7 +184,7 @@ public class DeviceManager implements IDeviceManager {
 		// TODO: make this configurable
 //		mAdbBridge.init(false /* client support */,
 //				"/Users/wuxian/Documents/tools/sdk/tools/adb");
-		 mAdbBridge.init(false /* client support */, "adb");
+		mAdbBridge.init(false /* client support */, "adb");
 		addEmulators();
 		addNullDevices();
 	}
