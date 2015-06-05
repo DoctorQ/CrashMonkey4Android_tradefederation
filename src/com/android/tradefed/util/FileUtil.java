@@ -391,7 +391,7 @@ public class FileUtil {
         OutputStream destStream = null;
         try {
             origStream = new BufferedInputStream(input);
-            destStream = new BufferedOutputStream(new FileOutputStream(destFile));
+            destStream = new BufferedOutputStream(new FileOutputStream(destFile,true));
             StreamUtil.copyStreams(origStream, destStream);
         } finally {
             StreamUtil.close(origStream);
