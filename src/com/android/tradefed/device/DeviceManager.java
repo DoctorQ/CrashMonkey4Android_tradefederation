@@ -182,8 +182,7 @@ public class DeviceManager implements IDeviceManager {
 
 		// assume "adb" is in PATH
 		// TODO: make this configurable
-//		mAdbBridge.init(false /* client support */,
-//				"/Users/wuxian/Documents/tools/sdk/tools/adb");
+		
 		mAdbBridge.init(false /* client support */, "adb");
 		addEmulators();
 		addNullDevices();
@@ -1025,6 +1024,7 @@ public class DeviceManager implements IDeviceManager {
 		 */
 		@Override
 		public void deviceChanged(IDevice device, int changeMask) {
+			CLog.i("Device connected " + device.getSerialNumber());
 			IManagedTestDevice testDevice = mAllocatedDeviceMap.get(device
 					.getSerialNumber());
 			if ((changeMask & IDevice.CHANGE_STATE) != 0) {
